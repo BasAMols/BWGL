@@ -28,4 +28,10 @@ export abstract class Level extends CanvasWrapper{
     public mouseMove(e: MouseEvent) {
         // 
     }
+    public keyDown(e: KeyboardEvent) {
+        // 
+    }
+    public keyUp(e: KeyboardEvent) {
+        // 
+    }
 }

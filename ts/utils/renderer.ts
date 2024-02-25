@@ -15,6 +15,7 @@ export class Renderer extends CanvasWrapper {
     build() {
 
         this.canvas = new DomElement('canvas');
+        this.canvas.dom.tabIndex = 1;
         this.game.getEvent('resize').subscribe(String(Math.random()), (size: Vector2) => {
             this.canvas.size = size;
         });

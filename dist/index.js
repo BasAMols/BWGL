@@ -241,6 +241,7 @@ var Renderer = class extends CanvasWrapper {
   }
   build() {
     this.canvas = new DomElement("canvas");
+    this.canvas.dom.tabIndex = 1;
     this.game.getEvent("resize").subscribe(String(Math.random()), (size) => {
       this.canvas.size = size;
     });
@@ -350,6 +351,22 @@ var Mode = class extends CanvasWrapper {
   constructor(attr = {}) {
     super(attr);
     this.levels = {};
+    this.keyAliases = {
+      "w": "up",
+      "a": "left",
+      "s": "down",
+      "d": "right",
+      "ArrowUp": "up",
+      "ArrowLeft": "left",
+      "ArrowDown": "down",
+      "ArrowRight": "right"
+    };
+    this.input = {
+      "up": false,
+      "left": false,
+      "down": false,
+      "right": false
+    };
     this.mode = this;
   }
   addLevel(s, level) {
@@ -364,7 +381,22 @@ var Mode = class extends CanvasWrapper {
     });
   }
   mouseMove(e) {
-    Object.values(this.levels).find((l) => l.active).mouseMove(e);
+    this.getLevel().mouseMove(e);
+  }
+  keyDown(e) {
+    if (Object.keys(this.keyAliases).includes(e.key)) {
+      this.input[this.keyAliases[e.key]] = true;
+    }
+    this.getLevel().keyDown(e);
+  }
+  keyUp(e) {
+    if (Object.keys(this.keyAliases).includes(e.key)) {
+      this.input[this.keyAliases[e.key]] = false;
+    }
+    this.getLevel().keyUp(e);
+  }
+  getLevel() {
+    return Object.values(this.levels).find((l) => l.active);
   }
 };
 
@@ -485,6 +517,10 @@ var Level = class extends CanvasWrapper {
     this.height = value.y;
   }
   mouseMove(e) {
+  }
+  keyDown(e) {
+  }
+  keyUp(e) {
   }
 };
 
@@ -995,14 +1031,28 @@ var Input = class {
     this.game = game;
     this.canvas = game.renderer.canvas;
     this.canvas.addEventListener("mousemove", this.mouseMove.bind(this));
+    this.canvas.addEventListener("keydown", this.keyDown.bind(this));
+    this.canvas.addEventListener("keyup", this.keyUp.bind(this));
   }
   mouseMove(e) {
-    const mode = this.getmode();
+    const mode = this.getMode();
     if (mode && mode.mouseMove) {
       mode.mouseMove(e);
     }
   }
-  getmode() {
+  keyDown(e) {
+    const mode = this.getMode();
+    if (mode && mode.keyDown) {
+      mode.keyDown(e);
+    }
+  }
+  keyUp(e) {
+    const mode = this.getMode();
+    if (mode && mode.keyUp) {
+      mode.keyUp(e);
+    }
+  }
+  getMode() {
     return Object.values(this.game.modes).find((l) => l.active);
   }
 };
@@ -1139,6 +1189,24 @@ var CanvasGrid = class _CanvasGrid extends CanvasElement {
   }
 };
 
+// ts/modes/topdown/moveAbleSnake.ts
+var MoveableSnake = class extends Snake {
+  constructor(position = Vector2.zero) {
+    super({ position, totals: 50, distance: 6, colors: "green" });
+    this.speed = new Vector2(6, 6);
+    this.velocity = Vector2.zero;
+  }
+  tick(obj) {
+    super.tick(obj);
+    const input = new Vector2(
+      this.speed.x * (this.mode.input.right ? 1 : this.mode.input.left ? -1 : 0),
+      this.speed.y * (this.mode.input.down ? 1 : this.mode.input.up ? -1 : 0)
+    );
+    this.velocity = this.velocity.scale(0.9).add(input.scale(0.15));
+    this.position = this.position.add(this.velocity.scale(obj.interval / 10));
+  }
+};
+
 // ts/modes/topdown/overworld.ts
 var Overworld = class extends Level {
   constructor() {
@@ -1155,6 +1223,7 @@ var Overworld = class extends Level {
     this.addChild(new CanvasGrid({ json: "/json/overworld/Objects.json", width: 19, height: 19, factor: this.zoom }));
     this.addChild(new CanvasGrid({ json: "/json/overworld/decorations.json", width: 19, height: 19, factor: this.zoom }));
     this.addChild(new CanvasGrid({ json: "/json/overworld/overlay.json", width: 19, height: 19, factor: this.zoom }));
+    this.addChild(new MoveableSnake(this.start));
   }
 };
 
@@ -1166,6 +1235,9 @@ var Topdown = class extends Mode {
   build() {
     this.addLevel("overworld", new Overworld());
     this.switchLevel("overworld");
+  }
+  tick(obj) {
+    super.tick(obj);
   }
 };
 

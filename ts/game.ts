@@ -24,6 +24,7 @@ export class Game extends CanvasWrapper {
         this.game = this;
         this.addEvent(new Event('resize'));
         window.addEventListener("resize", ()=>{this.resize()});
+
         this.build();
         this.resize();
     }
@@ -41,7 +42,7 @@ export class Game extends CanvasWrapper {
         this.input = new Input(this);
 
         this.debug();
-        this.start();   
+        this.start();  
         this.resize();
     }
 
@@ -56,7 +57,7 @@ export class Game extends CanvasWrapper {
     }
 
     
-    public addMode(s: string, mode: Mode) {
+    protected addMode(s: string, mode: Mode) {
         this.modes[s] = mode;
         this.renderer.addChild(mode);
     }
@@ -69,7 +70,7 @@ export class Game extends CanvasWrapper {
         });
     }
 
-    private start() {
+    public start() {
         this.ticker.start();
     }
 }
