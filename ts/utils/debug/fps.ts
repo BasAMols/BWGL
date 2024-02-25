@@ -12,6 +12,7 @@ export class FPS extends DomText {
             fontWeight: 900,
             color: 'white',
             position: new Vector2(5,5), 
+            size: new Vector2(100, 50),
             background: '#ff0000aa',
             fontFamily: 'monospace',
             padding: [0,10,0,10]

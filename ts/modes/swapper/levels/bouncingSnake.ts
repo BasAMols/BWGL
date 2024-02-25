@@ -1,7 +1,8 @@
 import { CanvasColorBackground } from '../../../canvas/canvasBackground';
 import { Vector2 } from "../../../utils/vector2"
 import { Level } from "../../../utils/level"
-import { BounceSnake } from '../character/bouncingSnake';
+import { Snake } from '../character/snake';
+import { Bounce } from '../../../controllers/bounce';
 
 export class BouncerLevel extends Level {
     public start = new Vector2(300, 400)
@@ -15,7 +16,7 @@ export class BouncerLevel extends Level {
             this.height = size.y
         });
         this.addChild(this.background);
-        this.addChild(new BounceSnake(new Vector2(300,200), Vector2.right))
+        this.addChild(new Snake({ position: this.start, totals: 50, distance: 6, colors: 'rainbow', controllers: [new Bounce(120)] }));
     }
 
 }

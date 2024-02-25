@@ -9,10 +9,6 @@ export abstract class CanvasWrapper extends CanvasElement {
         super(attr);
     }
 
-    public addChild(child: CanvasElement){
-        super.addChild(child);
-    }
-
     public render(c: CanvasRenderingContext2D): void {
         // void
     }

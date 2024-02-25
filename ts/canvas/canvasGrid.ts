@@ -2,7 +2,6 @@
 import { Vector2 } from "../utils/vector2";
 import { CanvasElement, CanvasElementAttributes } from './canvasElement';
 import { CanvasImage } from './canvasImage';
-import { CanvasSquare } from './canvasSquare';
 import { PreppedImage } from './prepImage';
 
 export type CanvasGridAttributes = CanvasElementAttributes & {
@@ -22,7 +21,7 @@ export type SpriteData = {
 };
 
 export class CanvasGrid extends CanvasElement {
-    public type = 'grid' as const;
+    public type = 'logic' as const;
 
     public factor: number;
     public width: number;

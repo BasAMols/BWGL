@@ -48,25 +48,15 @@ export abstract class Mode extends CanvasWrapper {
         });
     }
 
-    public mouseMove(e: MouseEvent) {
-        this.getLevel().mouseMove(e);
-    }
-
     public keyDown(e: KeyboardEvent) {
         if (Object.keys(this.keyAliases).includes(e.key)){
             this.input[this.keyAliases[e.key as keyof typeof this.keyAliases]] = true;
         }
-        this.getLevel().keyDown(e);
     }
     
     public keyUp(e: KeyboardEvent) {
         if (Object.keys(this.keyAliases).includes(e.key)){
             this.input[this.keyAliases[e.key as keyof typeof this.keyAliases]] = false;
         }
-        this.getLevel().keyUp(e);
-    }
-
-    private getLevel(): Level {
-        return Object.values(this.levels).find((l)=>l.active);
     }
 }

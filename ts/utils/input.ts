@@ -1,7 +1,14 @@
+import { CanvasElement } from '../canvas/canvasElement';
 import { DomElement } from '../dom/domElement';
 import { Game } from '../game';
 import { Mode } from './mode';
 
+export type inputEvents = 'mouseMove'|'keyDown'|'keyUp';
+export type inputEventsData = {
+    'mouseMove': MouseEvent,
+    'keyDown': KeyboardEvent,
+    'keyUp': KeyboardEvent,
+}
 export class Input {
     private canvas: DomElement<"canvas">;
     private game: Game;
@@ -15,27 +22,28 @@ export class Input {
     }
 
     public mouseMove(e: MouseEvent) {
-        const mode = this.getMode();
-        if (mode && mode.mouseMove){
-            mode.mouseMove(e);
-        }
+        this.recursive('mouseMove', this.game.renderer, e); 
     }
 
     public keyDown(e: KeyboardEvent) {
-        const mode = this.getMode();
-        if (mode && mode.keyDown){
-            mode.keyDown(e);
-        }
+        this.recursive('keyDown', this.game.renderer, e);
     }
 
     public keyUp(e: KeyboardEvent) {
-        const mode = this.getMode();
-        if (mode && mode.keyUp){
-            mode.keyUp(e);
-        }
+        this.recursive('keyUp', this.game.renderer, e);
     }
 
-    private getMode(): Mode {
-        return Object.values(this.game.modes).find((l)=>l.active);
+    private recursive(event:inputEvents, element: CanvasElement, e: KeyboardEvent|MouseEvent) {
+        if (element.active) {
+            if (element[event]) {
+                if (event === 'mouseMove') {
+                    element[event](e as MouseEvent);
+                } else {
+                    element[event](e as KeyboardEvent);
+                }
+            }
+            element.lowerChildren.forEach((child) => this.recursive(event, child, e));
+            element.controllers.forEach((child) => this.recursive(event, child, e));
+        }
     }
 }

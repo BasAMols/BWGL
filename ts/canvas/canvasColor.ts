@@ -19,7 +19,7 @@ export type CanvasColorAttributes = CanvasElementAttributes & {
 }
 export abstract class CanvasColor extends CanvasElement {
     public abstract shape: 'circle'|'square';
-    public type:'color' = 'color';
+    public type = 'color' as const;
     public colorType: ColorType = 'color';
     public color: string;
     public linearGradient: LinearGradient;

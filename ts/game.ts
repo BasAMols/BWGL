@@ -1,13 +1,14 @@
 import { CanvasWrapper } from './canvas/canvasWrapper';
 import { Renderer } from './utils/renderer';
 import { FPS } from './utils/debug/fps';
-import { SwapperMode } from './modes/swapper/swapper';
+import { SnakeMode } from './modes/swapper/snakeMode';
 import { Ticker } from './utils/ticker';
 import { Event } from './utils/event';
 import { Vector2 } from './utils/vector2';
 import { Input } from './utils/input';
 import { Mode } from './utils/mode';
 import { Topdown } from './modes/topdown/topdown';
+import { DomButton } from './dom/domButton';
 
 export class Game extends CanvasWrapper {
     public ticker: Ticker;
@@ -25,16 +26,16 @@ export class Game extends CanvasWrapper {
         this.addEvent(new Event('resize'));
         window.addEventListener("resize", ()=>{this.resize()});
 
+
         this.build();
         this.resize();
     }
     build() {
+        
         this.renderer = new Renderer();
         this.addChild(this.renderer);
 
-        this.addMode('swapper', new SwapperMode())
-        this.addMode('topdown', new Topdown())
-        this.switchMode('topdown');
+        this.setupModes();
 
         this.ticker = new Ticker();
         this.ticker.add(this.tick.bind(this));
@@ -44,6 +45,42 @@ export class Game extends CanvasWrapper {
         this.debug();
         this.start();  
         this.resize();
+    }
+
+    private setupModes() {
+        this.addMode('snakes', new SnakeMode());
+        this.addMode('topdown', new Topdown());
+
+        this.dom.appendChild(new DomButton({
+            text: 'RPG',
+            fontSize: 39,
+            fontWeight: 1000,
+            color: 'white',
+            position: new Vector2(130, 5),
+            size: new Vector2(65, 50),
+            background: '#ff00ffaa',
+            fontFamily: 'monospace',
+            padding: [0, 10, 0, 10],
+            onClick: () => {
+                this.switchMode('topdown');
+            }
+        }));
+        this.dom.appendChild(new DomButton({
+            text: 'SNAKES',
+            fontSize: 39,
+            fontWeight: 1000,
+            color: 'white',
+            position: new Vector2(220, 5),
+            size: new Vector2(130, 50),
+            background: '#ff00ffaa',
+            fontFamily: 'monospace',
+            padding: [0, 10, 0, 10],
+            onClick: () => {
+                this.switchMode('snakes');
+            }
+        }));
+
+        this.switchMode('snakes');
     }
 
     resize() {

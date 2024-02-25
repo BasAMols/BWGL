@@ -185,37 +185,61 @@ var DomElement = class extends Element {
 var CanvasElement = class extends Element {
   constructor(attr = {}) {
     super(attr);
-    this.renderStyle = "over";
     this.absolute = true;
+    this.lastPosition = Vector2.zero;
+    this.movedAmount = Vector2.zero;
+    this.position = Vector2.zero;
     this.active = true;
     this.visible = true;
-    this.children = [];
+    this.lowerChildren = [];
+    this.higherChildren = [];
+    this.controllers = [];
     this.position = attr.position || Vector2.zero;
+    this.addControllers(attr.controllers || []);
     if (attr.hasDom) {
       this.dom = new DomElement("div");
     }
   }
-  addChild(child, below = false) {
+  addChild(child, above = false) {
     var _a, _b, _c, _d;
     if (child.parent === void 0) {
       (_a = child.parent) != null ? _a : child.parent = this;
       (_b = child.game) != null ? _b : child.game = this.game;
       (_c = child.mode) != null ? _c : child.mode = this.mode;
       (_d = child.level) != null ? _d : child.level = this.level;
-      this.children.push(child);
+      this[above ? "higherChildren" : "lowerChildren"].push(child);
       if (child.dom) {
         this.dom.appendChild(child.dom);
       }
       if (child.build) {
         child.build();
       }
+      child.registerControllers(child);
     } else {
       console.log("The element is already a parent of another element.");
     }
   }
+  addControllers(c) {
+    this.controllers.push(...c);
+  }
+  registerControllers(child) {
+    child.controllers.forEach((controller) => {
+      var _a, _b, _c, _d;
+      if (controller.parent === void 0) {
+        (_a = controller.parent) != null ? _a : controller.parent = child;
+        (_b = controller.game) != null ? _b : controller.game = child.game;
+        (_c = controller.mode) != null ? _c : controller.mode = child.mode;
+        (_d = controller.level) != null ? _d : controller.level = child.level;
+      }
+    });
+  }
   tick(obj) {
     if (this.active) {
-      this.children.forEach((c) => c.tick(obj));
+      this.movedAmount = this.lastPosition.subtract(this.position);
+      this.lastPosition = this.position;
+      this.controllers.forEach((c) => c.tick(obj));
+      this.lowerChildren.forEach((c) => c.tick(obj));
+      this.higherChildren.forEach((c) => c.tick(obj));
     }
   }
 };
@@ -226,177 +250,7 @@ var CanvasWrapper = class extends CanvasElement {
     super(attr);
     this.type = "wrapper";
   }
-  addChild(child) {
-    super.addChild(child);
-  }
   render(c) {
-  }
-};
-
-// ts/utils/renderer.ts
-var Renderer = class extends CanvasWrapper {
-  constructor() {
-    super({ hasDom: true });
-    this.hasDom = true;
-  }
-  build() {
-    this.canvas = new DomElement("canvas");
-    this.canvas.dom.tabIndex = 1;
-    this.game.getEvent("resize").subscribe(String(Math.random()), (size) => {
-      this.canvas.size = size;
-    });
-    this.game.resize();
-    this.ctx = this.canvas.dom.getContext("2d");
-    this.dom.appendChild(this.canvas);
-  }
-  tick(obj) {
-    super.tick(obj);
-    this.recursive(this);
-  }
-  recursive(element) {
-    if (element.active && element.visible) {
-      if (element.renderStyle === "under") {
-        this.renderAll(element);
-      }
-      element.children.forEach((child) => this.recursive(child));
-      if (element.renderStyle === "over") {
-        this.renderAll(element);
-      }
-    }
-  }
-  renderAll(c) {
-    c.render(this.ctx);
-  }
-};
-
-// ts/dom/domText.ts
-var DomText = class extends DomElement {
-  set color(v) {
-    this.dom.style.color = v;
-  }
-  set fontSize(v) {
-    this.dom.style.fontSize = String(v) + "px";
-  }
-  set fontWeight(v) {
-    this.dom.style.fontWeight = String(v);
-  }
-  set fontFamily(v) {
-    this.dom.style.fontFamily = v;
-  }
-  get text() {
-    return this.dom.innerHTML;
-  }
-  set text(v) {
-    this.dom.innerHTML = v ? v : "";
-  }
-  set padding(v) {
-    this.dom.style.padding = v.join("px ") + "px";
-  }
-  constructor(attr = {}) {
-    super("div", attr);
-    this.color = attr.color;
-    this.text = attr.text;
-    this.fontSize = attr.fontSize;
-    this.fontWeight = attr.fontWeight;
-    this.fontFamily = attr.fontFamily;
-    this.padding = attr.padding || [0, 0, 0, 0];
-    this.dom.style.pointerEvents = "none";
-    this.dom.style.userSelect = "none";
-  }
-};
-
-// ts/utils/debug/fps.ts
-var FPS = class _FPS extends DomText {
-  constructor() {
-    super({
-      text: _FPS.getString(0),
-      fontSize: 35,
-      fontWeight: 900,
-      color: "white",
-      position: new Vector2(5, 5),
-      background: "#ff0000aa",
-      fontFamily: "monospace",
-      padding: [0, 10, 0, 10]
-    });
-    this.fCount = 0;
-    this.tCount = 0;
-  }
-  tick({ interval }) {
-    this.fCount++;
-    this.tCount += interval;
-    if (this.tCount > 1e3) {
-      this.text = _FPS.getString(this.fCount);
-      this.fCount = 0;
-      this.tCount = 0;
-    }
-  }
-  static getString(v) {
-    return "".concat(String(v), '<sub style="font-size:25px; top: -7px; position: relative">FPS</sub>');
-  }
-};
-
-// ts/dom/domButton.ts
-var DomButton = class extends DomText {
-  constructor(attr) {
-    super(attr);
-    this.onClick = attr.onClick;
-    this.dom.style.pointerEvents = "auto";
-    this.dom.style.cursor = "pointer";
-    this.dom.onclick = this.onClick;
-  }
-};
-
-// ts/utils/mode.ts
-var Mode = class extends CanvasWrapper {
-  constructor(attr = {}) {
-    super(attr);
-    this.levels = {};
-    this.keyAliases = {
-      "w": "up",
-      "a": "left",
-      "s": "down",
-      "d": "right",
-      "ArrowUp": "up",
-      "ArrowLeft": "left",
-      "ArrowDown": "down",
-      "ArrowRight": "right"
-    };
-    this.input = {
-      "up": false,
-      "left": false,
-      "down": false,
-      "right": false
-    };
-    this.mode = this;
-  }
-  addLevel(s, level) {
-    this.levels[s] = level;
-    this.addChild(level);
-  }
-  switchLevel(s) {
-    Object.entries(this.levels).forEach(([key, level]) => {
-      level.active = key === s;
-      level.visible = key === s;
-      level.dom ? level.dom.visible = key === s : null;
-    });
-  }
-  mouseMove(e) {
-    this.getLevel().mouseMove(e);
-  }
-  keyDown(e) {
-    if (Object.keys(this.keyAliases).includes(e.key)) {
-      this.input[this.keyAliases[e.key]] = true;
-    }
-    this.getLevel().keyDown(e);
-  }
-  keyUp(e) {
-    if (Object.keys(this.keyAliases).includes(e.key)) {
-      this.input[this.keyAliases[e.key]] = false;
-    }
-    this.getLevel().keyUp(e);
-  }
-  getLevel() {
-    return Object.values(this.levels).find((l) => l.active);
   }
 };
 
@@ -487,6 +341,177 @@ var CanvasSquare = class extends CanvasColor {
   }
 };
 
+// ts/utils/renderer.ts
+var Renderer = class extends CanvasWrapper {
+  constructor() {
+    super({ hasDom: true });
+    this.hasDom = true;
+  }
+  build() {
+    this.canvas = new DomElement("canvas");
+    this.canvas.dom.tabIndex = 1;
+    this.blockRight = new CanvasSquare({
+      position: new Vector2(0, 0),
+      size: new Vector2(20, 20),
+      color: "black"
+    });
+    this.addChild(this.blockRight, true);
+    this.game.getEvent("resize").subscribe(String(Math.random()), (size) => {
+      this.canvas.size = size;
+    });
+    this.game.resize();
+    this.ctx = this.canvas.dom.getContext("2d");
+    this.dom.appendChild(this.canvas);
+  }
+  tick(obj) {
+    super.tick(obj);
+    this.recursive(this);
+  }
+  recursive(element) {
+    if (element.active && element.visible) {
+      element.lowerChildren.forEach((child) => this.recursive(child));
+      this.renderAll(element);
+      element.higherChildren.forEach((child) => this.recursive(child));
+    }
+  }
+  renderAll(c) {
+    var _a;
+    const activeLevel = Object.values((_a = Object.values(this.game.modes).find((mode) => mode.active)) == null ? void 0 : _a.levels).find((level) => level.active);
+    if (activeLevel.width < this.canvas.width) {
+      this.blockRight.visible = true;
+      this.blockRight.position = new Vector2(activeLevel.width, 0);
+      this.blockRight.size = new Vector2(this.canvas.width - activeLevel.width, this.canvas.height);
+    } else {
+      this.blockRight.visible = false;
+    }
+    c.render(this.ctx);
+  }
+};
+
+// ts/dom/domText.ts
+var DomText = class extends DomElement {
+  set color(v) {
+    this.dom.style.color = v;
+  }
+  set fontSize(v) {
+    this.dom.style.fontSize = String(v) + "px";
+  }
+  set fontWeight(v) {
+    this.dom.style.fontWeight = String(v);
+  }
+  set fontFamily(v) {
+    this.dom.style.fontFamily = v;
+  }
+  get text() {
+    return this.dom.innerHTML;
+  }
+  set text(v) {
+    this.dom.innerHTML = v ? v : "";
+  }
+  set padding(v) {
+    this.dom.style.padding = v.join("px ") + "px";
+  }
+  constructor(attr = {}) {
+    super("div", attr);
+    this.color = attr.color;
+    this.text = attr.text;
+    this.fontSize = attr.fontSize;
+    this.fontWeight = attr.fontWeight;
+    this.fontFamily = attr.fontFamily;
+    this.padding = attr.padding || [0, 0, 0, 0];
+    this.dom.style.pointerEvents = "none";
+    this.dom.style.userSelect = "none";
+  }
+};
+
+// ts/utils/debug/fps.ts
+var FPS = class _FPS extends DomText {
+  constructor() {
+    super({
+      text: _FPS.getString(0),
+      fontSize: 35,
+      fontWeight: 900,
+      color: "white",
+      position: new Vector2(5, 5),
+      size: new Vector2(100, 50),
+      background: "#ff0000aa",
+      fontFamily: "monospace",
+      padding: [0, 10, 0, 10]
+    });
+    this.fCount = 0;
+    this.tCount = 0;
+  }
+  tick({ interval }) {
+    this.fCount++;
+    this.tCount += interval;
+    if (this.tCount > 1e3) {
+      this.text = _FPS.getString(this.fCount);
+      this.fCount = 0;
+      this.tCount = 0;
+    }
+  }
+  static getString(v) {
+    return "".concat(String(v), '<sub style="font-size:25px; top: -7px; position: relative">FPS</sub>');
+  }
+};
+
+// ts/dom/domButton.ts
+var DomButton = class extends DomText {
+  constructor(attr) {
+    super(attr);
+    this.onClick = attr.onClick;
+    this.dom.style.pointerEvents = "auto";
+    this.dom.style.cursor = "pointer";
+    this.dom.onclick = this.onClick;
+  }
+};
+
+// ts/utils/mode.ts
+var Mode = class extends CanvasWrapper {
+  constructor(attr = {}) {
+    super(attr);
+    this.levels = {};
+    this.keyAliases = {
+      "w": "up",
+      "a": "left",
+      "s": "down",
+      "d": "right",
+      "ArrowUp": "up",
+      "ArrowLeft": "left",
+      "ArrowDown": "down",
+      "ArrowRight": "right"
+    };
+    this.input = {
+      "up": false,
+      "left": false,
+      "down": false,
+      "right": false
+    };
+    this.mode = this;
+  }
+  addLevel(s, level) {
+    this.levels[s] = level;
+    this.addChild(level);
+  }
+  switchLevel(s) {
+    Object.entries(this.levels).forEach(([key, level]) => {
+      level.active = key === s;
+      level.visible = key === s;
+      level.dom ? level.dom.visible = key === s : null;
+    });
+  }
+  keyDown(e) {
+    if (Object.keys(this.keyAliases).includes(e.key)) {
+      this.input[this.keyAliases[e.key]] = true;
+    }
+  }
+  keyUp(e) {
+    if (Object.keys(this.keyAliases).includes(e.key)) {
+      this.input[this.keyAliases[e.key]] = false;
+    }
+  }
+};
+
 // ts/canvas/canvasBackground.ts
 var CanvasColorBackground = class extends CanvasSquare {
   constructor(color) {
@@ -516,34 +541,22 @@ var Level = class extends CanvasWrapper {
     this.width = value.x;
     this.height = value.y;
   }
-  mouseMove(e) {
-  }
-  keyDown(e) {
-  }
-  keyUp(e) {
-  }
 };
 
 // ts/canvas/canvasCircle.ts
 var CanvasCircle = class extends CanvasColor {
-  constructor(attr = {}) {
+  constructor(attr) {
     super(attr);
     this.shape = "circle";
     this.radius = attr.radius;
+    this.radiusY = attr.radiusY || attr.radius;
     this.center = attr.center;
-  }
-  get radius() {
-    return this._radius;
-  }
-  set radius(value) {
-    if (value) {
-      this._radius = value;
-    }
+    this.angle = attr.angle || 0;
   }
   render(ctx) {
     ctx.fillStyle = this.getColor();
     ctx.beginPath();
-    ctx.arc(this.position.x, this.position.y, this.radius, 0, 2 * Math.PI, false);
+    ctx.ellipse(this.position.x, this.position.y, this.radius, this.radiusY, this.angle, 0, 2 * Math.PI, false);
     ctx.fill();
     if (this.strokeWidth) {
       ctx.lineWidth = this.strokeWidth;
@@ -554,7 +567,7 @@ var CanvasCircle = class extends CanvasColor {
   }
   getLiniarGradient() {
     if (this.linearGradient) {
-      const grd = this.game.renderer.ctx.createLinearGradient(this.position.x - this.radius, this.position.y - this.radius, this.position.x + this.radius, this.position.y + this.radius);
+      const grd = this.game.renderer.ctx.createLinearGradient(this.position.x - this.radius, this.position.y - this.radiusY, this.position.x + this.radius, this.position.y + this.radiusY);
       this.linearGradient.stops.forEach(([number, color]) => {
         grd.addColorStop(number, color);
       });
@@ -573,7 +586,7 @@ var CanvasCircle = class extends CanvasColor {
         0,
         this.position.x,
         this.position.y,
-        this.radius
+        Math.max(this.radius, this.radiusY)
       );
       this.radialGradient.stops.forEach(([number, color]) => {
         grd.addColorStop(number, color);
@@ -586,47 +599,61 @@ var CanvasCircle = class extends CanvasColor {
 
 // ts/modes/swapper/character/parts/eye.ts
 var Eye = class extends CanvasCircle {
-  constructor(offset) {
+  constructor(offset, size = 65) {
     super({
       radialGradient: {
-        stops: [[0.3, "black"], [0.4, "white"], [0.9, "red"], [0.9, "black"]]
+        stops: [[0, "#555555"], [0.5, "black"], [0.5, "white"], [1, "grey"]]
       },
-      radius: 65,
+      // strokeWidth: 5,
+      radius: size,
+      radiusY: size * 1.1,
       stroke: "black"
     });
-    this.renderStyle = "over";
     this.colorType = "radialGradient";
     this.offset = offset;
   }
   tick(obj) {
     super.tick(obj);
+    this.radialGradient.offset = new Vector2(
+      -this.radius * Math.max(Math.min(this.movedAmount.x / obj.interval, 0.5), -0.5),
+      -this.radiusY * Math.max(Math.min(this.movedAmount.y / obj.interval, 0.6), -0.6)
+    );
     this.position = this.parent.position.add(this.offset);
   }
 };
 
 // ts/modes/swapper/character/parts/tail.ts
 var Tail = class _Tail extends CanvasCircle {
-  constructor(number, distance, total) {
+  constructor({
+    number,
+    distance,
+    total,
+    topRadius = 120,
+    bottomRadius = 20,
+    controllers = []
+  }) {
     super({
       position: new Vector2(200, 200),
-      radius: 170 - number / total * 155,
+      radius: (1 - number / total) * (topRadius - bottomRadius) + bottomRadius,
       color: "transparant",
-      center: true
+      center: true,
+      controllers
     });
     this.trace = [];
     this.moving = false;
     this.colorType = "radialGradient";
-    this.renderStyle = "over";
     this.number = number;
     this.distance = distance;
     this.total = total;
     this.visible = false;
+    this.topRadius = topRadius;
+    this.bottomRadius = bottomRadius;
   }
   add(total) {
     if (this.next) {
       this.next.add(total);
     } else {
-      this.next = new _Tail(this.number + 1, this.distance, total);
+      this.next = new _Tail({ number: this.number + 1, distance: this.distance, total, topRadius: this.topRadius, bottomRadius: this.bottomRadius, controllers: [] });
       this.next.colors = this.colors;
       this.addChild(this.next);
     }
@@ -683,40 +710,28 @@ var Snake = class extends Tail {
     position = Vector2.zero,
     totals = 10,
     distance = 10,
-    colors = "rainbow"
+    topRadius = 120,
+    bottomRadius = 5,
+    colors = "rainbow",
+    controllers = []
   } = {}) {
-    super(0, distance, totals);
-    this.renderStyle = "over";
+    super({ number: 0, distance, total: totals, controllers, topRadius: topRadius + 25, bottomRadius });
+    this.faceSize = topRadius;
     this.position = position;
     this.colors = colors;
   }
   build() {
     this.moving = true;
     this.visible = true;
-    this.radius = 120;
-    this.strokeWidth = 5;
-    this.colorType = "linearGradient";
-    this.linearGradient = {
-      stops: [
-        [0, "rgba(255,0,0,1)"],
-        [0.1, "rgba(255,154,0,1)"],
-        [0.2, "rgba(208,222,33,1)"],
-        [0.3, "rgba(79,220,74,1)"],
-        [0.4, "rgba(63,218,216,1)"],
-        [0.5, "rgba(47,201,226,1)"],
-        [0.6, "rgba(28,127,238,1)"],
-        [0.7, "rgba(95,21,242,1)"],
-        [0.8, "rgba(186,12,248,1)"],
-        [0.9, "rgba(251,7,217,1)"],
-        [1, "rgba(255,0,0,1)"]
-      ],
-      angle: 2
-    };
+    this.radius = this.faceSize * 1.2;
+    this.radiusY = this.faceSize;
+    this.strokeWidth = 3;
+    this.setcolor();
     for (let index = 0; index < this.total; index++) {
       this.add(this.total);
     }
-    this.addChild(new Eye(new Vector2(-70, -40)));
-    this.addChild(new Eye(new Vector2(70, -40)));
+    this.addChild(new Eye(new Vector2(-this.faceSize * 0.62, -this.faceSize * 0.4), this.faceSize * 0.6), true);
+    this.addChild(new Eye(new Vector2(this.faceSize * 0.62, -this.faceSize * 0.4), this.faceSize * 0.6), true);
   }
   tick(obj) {
     super.tick(obj);
@@ -724,18 +739,77 @@ var Snake = class extends Tail {
       this.next.follow(this.position.clone());
     }
   }
+  setcolor() {
+    if (this.colors === "rainbow") {
+      this.colorType = "linearGradient";
+      this.linearGradient = {
+        stops: [
+          [0, "rgba(255,0,0,1)"],
+          [0.1, "rgba(255,154,0,1)"],
+          [0.2, "rgba(208,222,33,1)"],
+          [0.3, "rgba(79,220,74,1)"],
+          [0.4, "rgba(63,218,216,1)"],
+          [0.5, "rgba(47,201,226,1)"],
+          [0.6, "rgba(28,127,238,1)"],
+          [0.7, "rgba(95,21,242,1)"],
+          [0.8, "rgba(186,12,248,1)"],
+          [0.9, "rgba(251,7,217,1)"],
+          [1, "rgba(255,0,0,1)"]
+        ],
+        angle: 0
+      };
+    } else if (this.colors === "dark") {
+      this.colorType = "radialGradient";
+      this.radialGradient = {
+        stops: [
+          [0, "rgba(255,0,0,1)"],
+          [0.1, "rgba(255,154,0,1)"],
+          [0.2, "rgba(208,222,33,1)"],
+          [0.3, "rgba(79,220,74,1)"],
+          [0.4, "rgba(63,218,216,1)"],
+          [0.5, "rgba(47,201,226,1)"],
+          [0.6, "rgba(28,127,238,1)"],
+          [0.7, "rgba(95,21,242,1)"],
+          [0.8, "rgba(186,12,248,1)"],
+          [0.9, "rgba(251,7,217,1)"],
+          [1, "rgba(255,0,0,1)"]
+        ]
+      };
+    } else if (this.colors === "green") {
+      this.colorType = "radialGradient";
+      this.radialGradient = {
+        stops: [
+          [0, "hsla(140,100%,20%,".concat(100, "%)")],
+          [1, "hsla(140,45%,40%,".concat(100, "%)")]
+        ]
+      };
+    }
+  }
 };
 
-// ts/modes/swapper/character/bouncingSnake.ts
-var BounceSnake = class extends Snake {
-  constructor(position = Vector2.zero, direction = Vector2.up) {
-    super({ position, totals: 10, distance: 3, colors: "green" });
+// ts/utils/controller.ts
+var CanvasController = class extends CanvasElement {
+  constructor(attr = {}) {
+    super(attr);
+    this.type = "logic";
+  }
+  render(c) {
+  }
+  mouseMove(e) {
+  }
+  keyDown(e) {
+  }
+  keyUp(e) {
+  }
+};
+
+// ts/controllers/bounce.ts
+var Bounce = class extends CanvasController {
+  constructor(radius) {
+    super();
     this.velocity = new Vector2(10, 0);
     this.bouncing = true;
-    this.moving = true;
-  }
-  build() {
-    super.build();
+    this.radius = radius;
   }
   tick(obj) {
     super.tick(obj);
@@ -743,21 +817,21 @@ var BounceSnake = class extends Snake {
     this.bounceWall();
   }
   bounceWall() {
+    if (this.parent.position.add(this.velocity).x > this.level.width - this.radius) {
+      this.velocity.x = -this.velocity.x * 0.8;
+    } else if (this.parent.position.add(this.velocity).x < this.radius) {
+      this.velocity.x = -this.velocity.x * 0.8;
+    }
     if (this.bouncing) {
-      if (this.position.add(this.velocity).x > this.level.width - this.radius - this.strokeWidth) {
-        this.velocity.x = -this.velocity.x * 0.8;
-      } else if (this.position.add(this.velocity).x < this.radius - this.strokeWidth) {
-        this.velocity.x = -this.velocity.x * 0.8;
-      }
-      this.position.x += this.velocity.x;
+      this.parent.position.x += this.velocity.x;
     } else {
       this.velocity.x *= 0.98;
-      this.position.x += this.velocity.x;
+      this.parent.position.x += this.velocity.x;
     }
   }
   bounceGround() {
     if (this.bouncing) {
-      if (this.position.add(this.velocity).y > this.level.height - this.radius - this.strokeWidth) {
+      if (this.parent.position.add(this.velocity).y > this.level.height - this.radius) {
         if (this.velocity.y > 5) {
           this.velocity.y = -this.velocity.y + 3;
         } else {
@@ -766,11 +840,11 @@ var BounceSnake = class extends Snake {
         }
       }
       this.velocity.y += 1;
-      this.position.y += this.velocity.y;
+      this.parent.position.y += this.velocity.y;
     }
   }
   land() {
-    this.position.y = this.level.height - this.radius - this.strokeWidth;
+    this.parent.position.y = this.level.height - this.radius;
     this.bouncing = false;
   }
 };
@@ -790,42 +864,7 @@ var BouncerLevel = class extends Level {
       this.height = size.y;
     });
     this.addChild(this.background);
-    this.addChild(new BounceSnake(new Vector2(300, 200), Vector2.right));
-  }
-};
-
-// ts/modes/swapper/character/randomSnake.ts
-var RandomSnake = class extends Snake {
-  constructor({
-    position = Vector2.zero,
-    direction = Vector2.up,
-    colors = "rainbow"
-  } = {}) {
-    super({ position, totals: 40, distance: 6, colors });
-    this.speed = new Vector2(10, 10);
-    this.direction = Vector2.up;
-    this.steering = Math.random();
-    this.maxSteering = 5;
-    this.moving = true;
-    this.direction = direction;
-  }
-  tick(obj) {
-    super.tick(obj);
-    this.steering = Math.max(Math.min(this.steering + (Math.random() * 2 - 1) / 5, this.maxSteering), -this.maxSteering);
-    this.direction = this.direction.rotate(this.steering / 200);
-    this.position = this.position.add(this.speed.multiply(this.direction).scale(obj.interval / 10));
-    if (this.position.x > this.level.width + this.radius) {
-      this.position.x = -this.radius;
-    }
-    if (this.position.y > this.level.height + this.radius) {
-      this.position.y = -this.radius;
-    }
-    if (this.position.x < -this.radius) {
-      this.position.x = this.level.width + this.radius;
-    }
-    if (this.position.y < -this.radius) {
-      this.position.y = this.level.height + this.radius;
-    }
+    this.addChild(new Snake({ position: this.start, totals: 50, distance: 6, colors: "rainbow", controllers: [new Bounce(120)] }));
   }
 };
 
@@ -842,6 +881,37 @@ var CanvasRadialGradientBackground = class extends CanvasSquare {
     this.game.getEvent("resize").subscribe(String(Math.random()), (size) => {
       this.size = this.level.size;
     });
+  }
+};
+
+// ts/controllers/random.ts
+var Random = class extends CanvasController {
+  constructor(radius, direction = Vector2.up) {
+    super();
+    this.speed = new Vector2(7, 7);
+    this.direction = Vector2.up;
+    this.steering = Math.random();
+    this.maxSteering = 5;
+    this.radius = radius;
+    this.direction = direction;
+  }
+  tick(obj) {
+    super.tick(obj);
+    this.steering = Math.max(Math.min(this.steering + (Math.random() * 2 - 1) / 5, this.maxSteering), -this.maxSteering);
+    this.direction = this.direction.rotate(this.steering / 200);
+    this.parent.position = this.parent.position.add(this.speed.multiply(this.direction).scale(obj.interval / 10));
+    if (this.parent.position.x > this.level.width + this.radius) {
+      this.parent.position.x = -this.radius;
+    }
+    if (this.parent.position.y > this.level.height + this.radius) {
+      this.parent.position.y = -this.radius;
+    }
+    if (this.parent.position.x < -this.radius) {
+      this.parent.position.x = this.level.width + this.radius;
+    }
+    if (this.parent.position.y < -this.radius) {
+      this.parent.position.y = this.level.height + this.radius;
+    }
   }
 };
 
@@ -862,8 +932,27 @@ var DiscoLevel = class extends Level {
       this.height = size.y;
     });
     this.addChild(this.background);
-    this.addChild(new RandomSnake({ position: new Vector2(0 - 150, 200), direction: Vector2.right }));
-    this.addChild(new RandomSnake({ position: new Vector2(this.width + 150, 950), direction: Vector2.left, colors: "green" }));
+    this.addChild(new Snake({
+      totals: 30,
+      distance: 1,
+      topRadius: 50,
+      bottomRadius: 1,
+      position: new Vector2(0 - 150, 200),
+      controllers: [new Random(200, Vector2.left)]
+    }));
+    this.addChild(new Snake({
+      totals: 50,
+      distance: 4,
+      position: new Vector2(0 - 150, 200),
+      controllers: [new Random(200, Vector2.right)]
+    }));
+    this.addChild(new Snake({
+      totals: 50,
+      distance: 4,
+      position: new Vector2(this.width + 150, 950),
+      colors: "green",
+      controllers: [new Random(100, Vector2.left)]
+    }));
   }
 };
 
@@ -881,28 +970,29 @@ var Empty = class extends Level {
   }
 };
 
-// ts/modes/swapper/character/mouseSnake.ts
-var MouseSnake = class extends Snake {
-  constructor(position = Vector2.zero, direction = Vector2.up) {
-    super({ position, totals: 50, distance: 6, colors: "green" });
+// ts/controllers/followMouse.ts
+var FollowMouse = class extends CanvasController {
+  constructor(direction = Vector2.up) {
+    super();
     this.speed = new Vector2(6, 6);
     this.direction = Vector2.right;
-    this.steering = 0;
-    this.maxSteering = 5;
-    this.moving = true;
     this.direction = direction;
   }
   tick(obj) {
     super.tick(obj);
     if (this.target) {
-      const d = this.target.subtract(this.position).angle() + Math.PI - this.direction.angle();
+      const d = this.target.subtract(this.parent.position).angle() + Math.PI - this.direction.angle();
       if (d > Math.PI || d < 0) {
         this.direction = this.direction.rotate(Math.PI / 120);
       } else {
         this.direction = this.direction.rotate(-Math.PI / 120);
       }
-      this.position = this.position.add(this.direction.multiply(this.speed).scale(obj.interval / 10));
+      this.parent.position = this.parent.position.add(this.direction.multiply(this.speed).scale(obj.interval / 10));
     }
+  }
+  mouseMove(e) {
+    super.mouseMove(e);
+    this.target = new Vector2(e.clientX, e.clientY);
   }
 };
 
@@ -923,17 +1013,12 @@ var FollowLevel = class extends Level {
       this.height = size.y;
     });
     this.addChild(this.background);
-    this.snake = new MouseSnake(new Vector2(0 - 150, 200), Vector2.right);
-    this.addChild(this.snake);
-  }
-  mouseMove(e) {
-    super.mouseMove(e);
-    this.snake.target = new Vector2(e.clientX, e.clientY);
+    this.addChild(new Snake({ position: this.start, totals: 50, distance: 6, colors: "rainbow", controllers: [new FollowMouse()] }));
   }
 };
 
-// ts/modes/swapper/swapper.ts
-var SwapperMode = class extends Mode {
+// ts/modes/swapper/snakeMode.ts
+var SnakeMode = class extends Mode {
   constructor() {
     super({ hasDom: true });
     this.dom.appendChild(new DomButton({
@@ -941,7 +1026,8 @@ var SwapperMode = class extends Mode {
       fontSize: 39,
       fontWeight: 1e3,
       color: "black",
-      position: new Vector2(130, 5),
+      position: new Vector2(5, 60),
+      size: new Vector2(105, 50),
       background: "linear-gradient(90deg, rgba(255,0,0,1) 0%, rgba(255,154,0,1) 10%, rgba(208,222,33,1) 20%, rgba(79,220,74,1) 30%, rgba(63,218,216,1) 40%, rgba(47,201,226,1) 50%, rgba(28,127,238,1) 60%, rgba(95,21,242,1) 70%, rgba(186,12,248,1) 80%, rgba(251,7,217,1) 90%, rgba(255,0,0,1) 100%)",
       fontFamily: "monospace",
       padding: [0, 10, 0, 10],
@@ -954,7 +1040,8 @@ var SwapperMode = class extends Mode {
       fontSize: 39,
       fontWeight: 1e3,
       color: "white",
-      position: new Vector2(263, 5),
+      position: new Vector2(135, 60),
+      size: new Vector2(130, 50),
       background: "#ff00ffaa",
       fontFamily: "monospace",
       padding: [0, 10, 0, 10],
@@ -968,7 +1055,7 @@ var SwapperMode = class extends Mode {
     this.addLevel("bounce", new BouncerLevel());
     this.addLevel("follow", new FollowLevel());
     this.addLevel("Empty", new Empty());
-    this.switchLevel("follow");
+    this.switchLevel("disco");
   }
 };
 
@@ -1035,25 +1122,26 @@ var Input = class {
     this.canvas.addEventListener("keyup", this.keyUp.bind(this));
   }
   mouseMove(e) {
-    const mode = this.getMode();
-    if (mode && mode.mouseMove) {
-      mode.mouseMove(e);
-    }
+    this.recursive("mouseMove", this.game.renderer, e);
   }
   keyDown(e) {
-    const mode = this.getMode();
-    if (mode && mode.keyDown) {
-      mode.keyDown(e);
-    }
+    this.recursive("keyDown", this.game.renderer, e);
   }
   keyUp(e) {
-    const mode = this.getMode();
-    if (mode && mode.keyUp) {
-      mode.keyUp(e);
-    }
+    this.recursive("keyUp", this.game.renderer, e);
   }
-  getMode() {
-    return Object.values(this.game.modes).find((l) => l.active);
+  recursive(event, element, e) {
+    if (element.active) {
+      if (element[event]) {
+        if (event === "mouseMove") {
+          element[event](e);
+        } else {
+          element[event](e);
+        }
+      }
+      element.lowerChildren.forEach((child) => this.recursive(event, child, e));
+      element.controllers.forEach((child) => this.recursive(event, child, e));
+    }
   }
 };
 
@@ -1145,7 +1233,7 @@ var PreppedImage = class {
 var CanvasGrid = class _CanvasGrid extends CanvasElement {
   constructor(attr = {}) {
     super(attr);
-    this.type = "grid";
+    this.type = "logic";
     this.ready = false;
     this.sprites = {};
     this.width = attr.width || 10;
@@ -1189,30 +1277,12 @@ var CanvasGrid = class _CanvasGrid extends CanvasElement {
   }
 };
 
-// ts/modes/topdown/moveAbleSnake.ts
-var MoveableSnake = class extends Snake {
-  constructor(position = Vector2.zero) {
-    super({ position, totals: 50, distance: 6, colors: "green" });
-    this.speed = new Vector2(6, 6);
-    this.velocity = Vector2.zero;
-  }
-  tick(obj) {
-    super.tick(obj);
-    const input = new Vector2(
-      this.speed.x * (this.mode.input.right ? 1 : this.mode.input.left ? -1 : 0),
-      this.speed.y * (this.mode.input.down ? 1 : this.mode.input.up ? -1 : 0)
-    );
-    this.velocity = this.velocity.scale(0.9).add(input.scale(0.15));
-    this.position = this.position.add(this.velocity.scale(obj.interval / 10));
-  }
-};
-
 // ts/modes/topdown/overworld.ts
 var Overworld = class extends Level {
   constructor() {
     super(...arguments);
     this.zoom = 3;
-    this.start = new Vector2(13 * 50, 8 * 50);
+    this.start = new Vector2(-100, -100);
     this.background = new CanvasColorBackground("#272727");
     this.height = 20 * this.zoom * 16;
     this.width = 20 * this.zoom * 16;
@@ -1223,7 +1293,15 @@ var Overworld = class extends Level {
     this.addChild(new CanvasGrid({ json: "/json/overworld/Objects.json", width: 19, height: 19, factor: this.zoom }));
     this.addChild(new CanvasGrid({ json: "/json/overworld/decorations.json", width: 19, height: 19, factor: this.zoom }));
     this.addChild(new CanvasGrid({ json: "/json/overworld/overlay.json", width: 19, height: 19, factor: this.zoom }));
-    this.addChild(new MoveableSnake(this.start));
+    this.addChild(new Snake({
+      position: this.start,
+      totals: 30,
+      distance: 6,
+      topRadius: 100,
+      bottomRadius: 4,
+      colors: "green",
+      controllers: [new Random(100, Vector2.down)]
+    }));
   }
 };
 
@@ -1259,15 +1337,46 @@ var Game = class extends CanvasWrapper {
   build() {
     this.renderer = new Renderer();
     this.addChild(this.renderer);
-    this.addMode("swapper", new SwapperMode());
-    this.addMode("topdown", new Topdown());
-    this.switchMode("topdown");
+    this.setupModes();
     this.ticker = new Ticker();
     this.ticker.add(this.tick.bind(this));
     this.input = new Input(this);
     this.debug();
     this.start();
     this.resize();
+  }
+  setupModes() {
+    this.addMode("snakes", new SnakeMode());
+    this.addMode("topdown", new Topdown());
+    this.dom.appendChild(new DomButton({
+      text: "RPG",
+      fontSize: 39,
+      fontWeight: 1e3,
+      color: "white",
+      position: new Vector2(130, 5),
+      size: new Vector2(65, 50),
+      background: "#ff00ffaa",
+      fontFamily: "monospace",
+      padding: [0, 10, 0, 10],
+      onClick: () => {
+        this.switchMode("topdown");
+      }
+    }));
+    this.dom.appendChild(new DomButton({
+      text: "SNAKES",
+      fontSize: 39,
+      fontWeight: 1e3,
+      color: "white",
+      position: new Vector2(220, 5),
+      size: new Vector2(130, 50),
+      background: "#ff00ffaa",
+      fontFamily: "monospace",
+      padding: [0, 10, 0, 10],
+      onClick: () => {
+        this.switchMode("snakes");
+      }
+    }));
+    this.switchMode("snakes");
   }
   resize() {
     this.game.getEvent("resize").alert(new Vector2(document.body.clientWidth, document.body.clientHeight));

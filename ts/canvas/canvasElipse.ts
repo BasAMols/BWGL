@@ -1,35 +1,31 @@
 import { Vector2 } from '../utils/vector2';
 import { CanvasColor, CanvasColorAttributes } from './canvasColor';
 
-export type CanvasCircleAttributes = CanvasColorAttributes & {
-    radius: number,
+export type CanvasElipseAttributes = CanvasColorAttributes & {
+    radiusX?: number,
     radiusY?: number,
     center?: boolean;
-    angle?: number;
 };
-export class CanvasCircle extends CanvasColor {
+export class CanvasElipse extends CanvasColor {
 
     public readonly shape = 'circle';
 
-    public radius: number;
-    public radiusY: number;
-    public angle: number;
+    private radiusX: number;
+    private radiusY: number;
 
     public center: boolean;
 
-    constructor(attr: CanvasCircleAttributes) {
+    constructor(attr: CanvasElipseAttributes = {}) {
         super(attr);
-        this.radius = attr.radius;
-        this.radiusY = attr.radiusY || attr.radius;
+        this.radiusX = attr.radiusX;
+        this.radiusY = attr.radiusY;
         this.center = attr.center;
-        this.angle = attr.angle || 0;
     }
 
     public render(ctx: CanvasRenderingContext2D): void {
         ctx.fillStyle = this.getColor();
         ctx.beginPath();
-        
-        ctx.ellipse(this.position.x, this.position.y, this.radius, this.radiusY,this.angle, 0, 2 * Math.PI, false);
+        ctx.ellipse(this.position.x, this.position.y, this.radiusX, this.radiusY, 0, 2 * Math.PI, 0, false);
         ctx.fill();
         if (this.strokeWidth) {
             ctx.lineWidth = this.strokeWidth;
@@ -41,7 +37,7 @@ export class CanvasCircle extends CanvasColor {
 
     public getLiniarGradient(): CanvasGradient | '' {
         if (this.linearGradient) {
-            const grd = this.game.renderer.ctx.createLinearGradient(this.position.x - this.radius, this.position.y - this.radiusY, this.position.x + this.radius, this.position.y + this.radiusY);
+            const grd = this.game.renderer.ctx.createLinearGradient(this.position.x - this.radiusX, this.position.y - this.radiusY, this.position.x + this.radiusX, this.position.y + this.radiusY);
             this.linearGradient.stops.forEach(([number,color])=>{
                 grd.addColorStop(number, color);
             })
@@ -60,7 +56,7 @@ export class CanvasCircle extends CanvasColor {
                 0,
                 this.position.x ,
                 this.position.y,
-                Math.max(this.radius, this.radiusY)
+                Math.max(this.radiusX, this.radiusY)
             );
             this.radialGradient.stops.forEach(([number,color])=>{
                 grd.addColorStop(number, color);

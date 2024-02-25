@@ -1,39 +1,60 @@
 import { CanvasCircle } from '../../../../canvas/canvasCircle';
 import { ColorType } from '../../../../canvas/canvasColor';
+import { CanvasController } from '../../../../utils/controller';
 import { Vector2 } from '../../../../utils/vector2';
 import { SnakeColors } from '../snake';
 
 export class Tail extends CanvasCircle {
     private trace: Vector2[] = [];
     private number: number;
-
+    
+    protected bottomRadius: number;
+    protected topRadius: number;
     protected moving: boolean = false;
     protected next: Tail;
 
     public colorType: ColorType = 'radialGradient';
-    public renderStyle: 'over' | 'under' = 'over';
     public colors: SnakeColors;
     public distance: number;
     public total: number;
 
-    constructor(number: number, distance: number, total: number) {
+    constructor({
+        number,
+        distance,
+        total,
+        topRadius = 120,
+        bottomRadius = 20,
+        controllers = []
+    }: {
+        number: number;
+        distance: number;
+        total: number;
+        topRadius?: number;
+        bottomRadius?: number;
+        controllers?: CanvasController[];
+    }) {
+
         super({
             position: new Vector2(200, 200),
-            radius: 170 - ((number / total) * 155),
+            radius: (1- (number / total)) * (topRadius - bottomRadius) + bottomRadius,
             color: `transparant`,
             center: true,
+            controllers
         });
+        
         this.number = number;
         this.distance = distance;
         this.total = total;
         this.visible = false;
+        this.topRadius = topRadius;
+        this.bottomRadius = bottomRadius;
     }
 
     public add(total: number) {
         if (this.next) {
             this.next.add(total);
         } else {
-            this.next = new Tail(this.number + 1, this.distance, total);
+            this.next = new Tail({ number: this.number + 1, distance: this.distance, total, topRadius: this.topRadius, bottomRadius: this.bottomRadius, controllers: [] });
             this.next.colors = this.colors;
             this.addChild(this.next);
         }
