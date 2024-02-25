@@ -34,13 +34,19 @@ export class CanvasSquare extends CanvasColor {
     }
 
     public render(ctx: CanvasRenderingContext2D): void {
+        super.render(ctx);
         ctx.fillStyle = this.getColor();
-        ctx.fillRect(this.position.x, this.position.y, this.size.x, this.size.y);
+        ctx.fillRect(this.position.x+this.anchoredPosition.x, this.position.y+this.anchoredPosition.y, this.size.x, this.size.y);
     }
 
     public getLiniarGradient(): CanvasGradient | '' {
         if (this.linearGradient) {
-            const grd = this.game.renderer.ctx.createLinearGradient(this.position.x, this.position.y, this.position.x + this.width, this.position.y + this.height);
+            const grd = this.game.renderer.ctx.createLinearGradient(
+                this.position.x+this.anchoredPosition.x, 
+                this.position.y+this.anchoredPosition.y, 
+                this.position.x+this.anchoredPosition.x + this.width, 
+                this.position.y+this.anchoredPosition.y + this.height
+                );
             
             this.linearGradient.stops.forEach(([number,color])=>{
                 grd.addColorStop(number, color);
@@ -53,11 +59,11 @@ export class CanvasSquare extends CanvasColor {
     public getRadialGradient(): CanvasGradient | '' {
         if (this.radialGradient) {
             const grd = this.game.renderer.ctx.createRadialGradient(
-                this.position.x + this.width /2,
-                this.position.y + this.height /2,
+                this.position.x+this.anchoredPosition.x + this.width /2,
+                this.position.y+this.anchoredPosition.y + this.height /2,
                 0,
-                this.position.x + this.width /2,
-                this.position.y + this.height /2,
+                this.position.x+this.anchoredPosition.x + this.width /2,
+                this.position.y+this.anchoredPosition.y + this.height /2,
                 this.width
             );            
             this.radialGradient.stops.forEach(([number,color])=>{

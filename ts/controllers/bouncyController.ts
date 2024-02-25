@@ -2,7 +2,7 @@ import { CanvasController } from '../utils/controller';
 import { TickerReturnData } from '../utils/ticker';
 import { Vector2 } from '../utils/vector2';
 
-export class Bounce extends CanvasController {
+export class BouncyController extends CanvasController {
     private velocity: Vector2 = new Vector2(10, 0);
     private bouncing: boolean = true;
     private radius: number;

@@ -2,16 +2,17 @@ import { CanvasController } from '../utils/controller';
 import { TickerReturnData } from '../utils/ticker';
 import { Vector2 } from '../utils/vector2';
 
-export class Random extends CanvasController {
+export class RandomController extends CanvasController {
     private speed = new Vector2(7, 7);
     private direction = Vector2.up;
     private steering: number = Math.random();
     private maxSteering: number = 5;
     private radius: number;;
 
-    constructor(radius: number, direction: Vector2 = Vector2.up) {
+    constructor(radius: number, speed: Vector2 = new Vector2(7, 7), direction: Vector2 = Vector2.up) {
         super();
         this.radius = radius
+        this.speed = speed
         this.direction = direction;
     }
 

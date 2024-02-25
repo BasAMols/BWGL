@@ -2,7 +2,7 @@ import { CanvasController } from '../utils/controller';
 import { TickerReturnData } from '../utils/ticker';
 import { Vector2 } from '../utils/vector2';
 
-export class FollowMouse extends CanvasController {
+export class mouseController extends CanvasController {
     private speed = new Vector2(6, 6);
     private direction = Vector2.right;
     public target: Vector2;

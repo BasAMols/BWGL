@@ -26,10 +26,21 @@ export class CanvasCircle extends CanvasColor {
     }
 
     public render(ctx: CanvasRenderingContext2D): void {
+        super.render(ctx);
         ctx.fillStyle = this.getColor();
         ctx.beginPath();
-        
-        ctx.ellipse(this.position.x, this.position.y, this.radius, this.radiusY,this.angle, 0, 2 * Math.PI, false);
+
+        ctx.ellipse(
+            this.position.x + this.anchoredPosition.x,
+            this.position.y + this.anchoredPosition.y,
+            this.radius,
+            this.radiusY,
+            this.angle,
+            0, 2
+        * Math.PI,
+            false
+        );
+
         ctx.fill();
         if (this.strokeWidth) {
             ctx.lineWidth = this.strokeWidth;
@@ -41,30 +52,35 @@ export class CanvasCircle extends CanvasColor {
 
     public getLiniarGradient(): CanvasGradient | '' {
         if (this.linearGradient) {
-            const grd = this.game.renderer.ctx.createLinearGradient(this.position.x - this.radius, this.position.y - this.radiusY, this.position.x + this.radius, this.position.y + this.radiusY);
-            this.linearGradient.stops.forEach(([number,color])=>{
+            const grd = this.game.renderer.ctx.createLinearGradient(
+                this.position.x+this.anchoredPosition.x - this.radius, 
+                this.position.y+this.anchoredPosition.y - this.radiusY, 
+                this.position.x+this.anchoredPosition.x + this.radius, 
+                this.position.y+this.anchoredPosition.y + this.radiusY
+                );
+            this.linearGradient.stops.forEach(([number, color]) => {
                 grd.addColorStop(number, color);
-            })
+            });
             return grd;
         }
         return '';
     }
     public getRadialGradient(): CanvasGradient | '' {
         if (this.radialGradient) {
-            if (!this.radialGradient.offset){
-                this.radialGradient.offset = Vector2.zero
+            if (!this.radialGradient.offset) {
+                this.radialGradient.offset = Vector2.zero;
             }
             const grd = this.game.renderer.ctx.createRadialGradient(
-                this.position.x+ this.radialGradient.offset.x,
-                this.position.y + this.radialGradient.offset.y,
+                this.position.x+this.anchoredPosition.x + this.radialGradient.offset.x,
+                this.position.y+this.anchoredPosition.y + this.radialGradient.offset.y,
                 0,
-                this.position.x ,
-                this.position.y,
+                this.position.x+this.anchoredPosition.x,
+                this.position.y+this.anchoredPosition.y,
                 Math.max(this.radius, this.radiusY)
             );
-            this.radialGradient.stops.forEach(([number,color])=>{
+            this.radialGradient.stops.forEach(([number, color]) => {
                 grd.addColorStop(number, color);
-            })
+            });
             return grd;
         }
         return '';

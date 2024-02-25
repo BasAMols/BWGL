@@ -20,8 +20,10 @@ export interface CanvasElement {
     keyUp?(e: KeyboardEvent): void
 }
 export type CanvasElementType = 'color'|'image'|'wrapper'|'logic';
+export type CanvasElementRelativity = 'absolute'|'relative'|'anchor';
 export abstract class CanvasElement extends Element {
     public abstract type: CanvasElementType;
+    public relativity: CanvasElementRelativity = 'absolute';
     public parent!: CanvasElement;
     public game!: Game;
     public mode!: Mode;
@@ -37,6 +39,7 @@ export abstract class CanvasElement extends Element {
     public lowerChildren: CanvasElement[] = [];
     public higherChildren: CanvasElement[] = [];
     public controllers: CanvasController[] = [];
+    public anchoredPosition: Vector2 = Vector2.zero;
     constructor(attr: CanvasElementAttributes = {}) {
         super(attr);
         this.position = attr.position || Vector2.zero;
@@ -95,7 +98,18 @@ export abstract class CanvasElement extends Element {
         }
     }
 
-    public abstract render(c: CanvasRenderingContext2D ): void
+    public render(c: CanvasRenderingContext2D){
+        if (this.relativity === 'absolute'){
+            this.anchoredPosition = Vector2.zero;
+        }
+        if (this.relativity === 'relative'){
+            this.anchoredPosition = this.parent.anchoredPosition;
+        }
+        if (this.relativity === 'anchor'){
+            this.anchoredPosition = this.position;
+            // console.log(this.anchoredPosition);
+        }
+    }
 }
 
 

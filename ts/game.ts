@@ -1,16 +1,18 @@
 import { CanvasWrapper } from './canvas/canvasWrapper';
 import { Renderer } from './utils/renderer';
 import { FPS } from './utils/debug/fps';
-import { SnakeMode } from './modes/swapper/snakeMode';
+import { SnakeMode } from './modes/snakeMode/snakeMode';
 import { Ticker } from './utils/ticker';
 import { Event } from './utils/event';
 import { Vector2 } from './utils/vector2';
 import { Input } from './utils/input';
 import { Mode } from './utils/mode';
-import { Topdown } from './modes/topdown/topdown';
+import { RPGMode } from './modes/rpg/rpgMode';
 import { DomButton } from './dom/domButton';
+import { CanvasElementRelativity } from './canvas/canvasElement';
 
 export class Game extends CanvasWrapper {
+    public relativity: CanvasElementRelativity = 'anchor';
     public ticker: Ticker;
     public renderer: Renderer;
     private fps: FPS;
@@ -49,7 +51,7 @@ export class Game extends CanvasWrapper {
 
     private setupModes() {
         this.addMode('snakes', new SnakeMode());
-        this.addMode('topdown', new Topdown());
+        this.addMode('rpg', new RPGMode());
 
         this.dom.appendChild(new DomButton({
             text: 'RPG',
@@ -62,7 +64,7 @@ export class Game extends CanvasWrapper {
             fontFamily: 'monospace',
             padding: [0, 10, 0, 10],
             onClick: () => {
-                this.switchMode('topdown');
+                this.switchMode('rpg');
             }
         }));
         this.dom.appendChild(new DomButton({
@@ -100,6 +102,7 @@ export class Game extends CanvasWrapper {
     }
 
     public switchMode(s:string){
+        document.title = s;
         Object.entries(this.modes).forEach(([key, mode])=>{
             mode.active = key === s;
             mode.visible = key === s;

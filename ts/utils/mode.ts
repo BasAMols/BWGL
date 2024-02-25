@@ -1,3 +1,4 @@
+import { CanvasElementRelativity } from '../canvas/canvasElement';
 import { CanvasWrapper, CanvasWrapperAttributes } from '../canvas/canvasWrapper';
 import { Level } from './level';
 
@@ -6,6 +7,7 @@ export type modeAttributes = CanvasWrapperAttributes & {
 }
 export abstract class Mode extends CanvasWrapper {
     public levels: Record<string, Level> = {};
+    public relativity: CanvasElementRelativity = 'anchor';
 
     private keyAliases = {
         'w': 'up',

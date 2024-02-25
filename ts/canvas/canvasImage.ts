@@ -1,4 +1,5 @@
-import { CanvasElement, CanvasElementAttributes } from './canvasElement';
+import { Vector2 } from '../utils/vector2';
+import { CanvasElement, CanvasElementAttributes, CanvasElementRelativity } from './canvasElement';
 import { PreppedImage } from './prepImage';
 
 export type CanvasImageAttributes = CanvasElementAttributes & {
@@ -6,7 +7,8 @@ export type CanvasImageAttributes = CanvasElementAttributes & {
 }
 export class CanvasImage extends CanvasElement {
     public type = 'image' as const;
-    public prepped: PreppedImage;
+    public prepped: PreppedImage; 
+    public relativity: CanvasElementRelativity = 'relative';
 
     public get width() { return this.prepped.size.x; }
     public set width(value: number) {
@@ -24,8 +26,9 @@ export class CanvasImage extends CanvasElement {
     }
 
     public render(ctx: CanvasRenderingContext2D) {
+        super.render(ctx);
         if (this.prepped.ready){
-            ctx.drawImage(this.prepped.image, this.position.x, this.position.y, this.prepped.width, this.prepped.height);
+            ctx.drawImage(this.prepped.image, this.position.x+this.anchoredPosition.x, this.position.y+this.anchoredPosition.y, this.prepped.width, this.prepped.height);
         }
     }
 }

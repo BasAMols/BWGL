@@ -1,6 +1,6 @@
 
 import { Vector2 } from "../utils/vector2";
-import { CanvasElement, CanvasElementAttributes } from './canvasElement';
+import { CanvasElement, CanvasElementAttributes, CanvasElementRelativity } from './canvasElement';
 import { CanvasImage } from './canvasImage';
 import { PreppedImage } from './prepImage';
 
@@ -22,6 +22,7 @@ export type SpriteData = {
 
 export class CanvasGrid extends CanvasElement {
     public type = 'logic' as const;
+    public relativity: CanvasElementRelativity = 'relative';
 
     public factor: number;
     public width: number;
@@ -76,8 +77,8 @@ export class CanvasGrid extends CanvasElement {
         return data;
     }
 
-    public render(c: CanvasRenderingContext2D): void {
-        //
+    public render(ctx: CanvasRenderingContext2D): void {
+        super.render(ctx);
     }
 
 }

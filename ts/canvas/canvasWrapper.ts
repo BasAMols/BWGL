@@ -8,8 +8,4 @@ export abstract class CanvasWrapper extends CanvasElement {
     constructor(attr: CanvasWrapperAttributes = {}) {
         super(attr);
     }
-
-    public render(c: CanvasRenderingContext2D): void {
-        // void
-    }
 }

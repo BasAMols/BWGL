@@ -1,10 +1,8 @@
 import { DomButton } from '../../dom/domButton';
 import { Mode } from '../../utils/mode';
 import { Vector2 } from '../../utils/vector2';
-import { BouncerLevel } from './levels/bouncingSnake';
-import { DiscoLevel } from './levels/discoSnake';
-import { Empty } from './levels/empty';
-import { FollowLevel } from './levels/followMouse';
+import { BouncerLevel } from './levels/bouncerLevel';
+import { DiscoLevel } from './levels/discoLevel';
 
 export class SnakeMode extends Mode{
     public constructor() {
@@ -42,8 +40,6 @@ export class SnakeMode extends Mode{
     build(){
         this.addLevel('disco', new DiscoLevel());
         this.addLevel('bounce', new BouncerLevel());
-        this.addLevel('follow', new FollowLevel());
-        this.addLevel('Empty', new Empty());
         this.switchLevel('disco');
     }
 }

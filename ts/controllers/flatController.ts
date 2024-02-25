@@ -2,7 +2,7 @@ import { CanvasController } from '../utils/controller';
 import { TickerReturnData } from '../utils/ticker';
 import { Vector2 } from '../utils/vector2';
 
-export class DirectTop extends CanvasController {
+export class FlatContoller extends CanvasController {
     private speed = new Vector2(4, 4);
     private velocity: Vector2 = Vector2.zero;
 
@@ -16,6 +16,5 @@ export class DirectTop extends CanvasController {
 
         this.velocity = this.velocity.scale(0.9).add(input.scale(0.15));
         this.parent.position = this.parent.position.add(this.velocity.scale(obj.interval / 10));
-
     }
 }

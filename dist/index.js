@@ -185,6 +185,7 @@ var DomElement = class extends Element {
 var CanvasElement = class extends Element {
   constructor(attr = {}) {
     super(attr);
+    this.relativity = "absolute";
     this.absolute = true;
     this.lastPosition = Vector2.zero;
     this.movedAmount = Vector2.zero;
@@ -194,6 +195,7 @@ var CanvasElement = class extends Element {
     this.lowerChildren = [];
     this.higherChildren = [];
     this.controllers = [];
+    this.anchoredPosition = Vector2.zero;
     this.position = attr.position || Vector2.zero;
     this.addControllers(attr.controllers || []);
     if (attr.hasDom) {
@@ -242,6 +244,17 @@ var CanvasElement = class extends Element {
       this.higherChildren.forEach((c) => c.tick(obj));
     }
   }
+  render(c) {
+    if (this.relativity === "absolute") {
+      this.anchoredPosition = Vector2.zero;
+    }
+    if (this.relativity === "relative") {
+      this.anchoredPosition = this.parent.anchoredPosition;
+    }
+    if (this.relativity === "anchor") {
+      this.anchoredPosition = this.position;
+    }
+  }
 };
 
 // ts/canvas/canvasWrapper.ts
@@ -249,8 +262,6 @@ var CanvasWrapper = class extends CanvasElement {
   constructor(attr = {}) {
     super(attr);
     this.type = "wrapper";
-  }
-  render(c) {
   }
 };
 
@@ -309,12 +320,18 @@ var CanvasSquare = class extends CanvasColor {
     this._size.y = value;
   }
   render(ctx) {
+    super.render(ctx);
     ctx.fillStyle = this.getColor();
-    ctx.fillRect(this.position.x, this.position.y, this.size.x, this.size.y);
+    ctx.fillRect(this.position.x + this.anchoredPosition.x, this.position.y + this.anchoredPosition.y, this.size.x, this.size.y);
   }
   getLiniarGradient() {
     if (this.linearGradient) {
-      const grd = this.game.renderer.ctx.createLinearGradient(this.position.x, this.position.y, this.position.x + this.width, this.position.y + this.height);
+      const grd = this.game.renderer.ctx.createLinearGradient(
+        this.position.x + this.anchoredPosition.x,
+        this.position.y + this.anchoredPosition.y,
+        this.position.x + this.anchoredPosition.x + this.width,
+        this.position.y + this.anchoredPosition.y + this.height
+      );
       this.linearGradient.stops.forEach(([number, color]) => {
         grd.addColorStop(number, color);
       });
@@ -325,11 +342,11 @@ var CanvasSquare = class extends CanvasColor {
   getRadialGradient() {
     if (this.radialGradient) {
       const grd = this.game.renderer.ctx.createRadialGradient(
-        this.position.x + this.width / 2,
-        this.position.y + this.height / 2,
+        this.position.x + this.anchoredPosition.x + this.width / 2,
+        this.position.y + this.anchoredPosition.y + this.height / 2,
         0,
-        this.position.x + this.width / 2,
-        this.position.y + this.height / 2,
+        this.position.x + this.anchoredPosition.x + this.width / 2,
+        this.position.y + this.anchoredPosition.y + this.height / 2,
         this.width
       );
       this.radialGradient.stops.forEach(([number, color]) => {
@@ -345,6 +362,7 @@ var CanvasSquare = class extends CanvasColor {
 var Renderer = class extends CanvasWrapper {
   constructor() {
     super({ hasDom: true });
+    this.relativity = "anchor";
     this.hasDom = true;
   }
   build() {
@@ -471,6 +489,7 @@ var Mode = class extends CanvasWrapper {
   constructor(attr = {}) {
     super(attr);
     this.levels = {};
+    this.relativity = "anchor";
     this.keyAliases = {
       "w": "up",
       "a": "left",
@@ -531,6 +550,7 @@ var CanvasColorBackground = class extends CanvasSquare {
 var Level = class extends CanvasWrapper {
   constructor(attr = {}) {
     super(attr);
+    this.relativity = "anchor";
     this.ready = false;
     this.level = this;
   }
@@ -554,9 +574,19 @@ var CanvasCircle = class extends CanvasColor {
     this.angle = attr.angle || 0;
   }
   render(ctx) {
+    super.render(ctx);
     ctx.fillStyle = this.getColor();
     ctx.beginPath();
-    ctx.ellipse(this.position.x, this.position.y, this.radius, this.radiusY, this.angle, 0, 2 * Math.PI, false);
+    ctx.ellipse(
+      this.position.x + this.anchoredPosition.x,
+      this.position.y + this.anchoredPosition.y,
+      this.radius,
+      this.radiusY,
+      this.angle,
+      0,
+      2 * Math.PI,
+      false
+    );
     ctx.fill();
     if (this.strokeWidth) {
       ctx.lineWidth = this.strokeWidth;
@@ -567,7 +597,12 @@ var CanvasCircle = class extends CanvasColor {
   }
   getLiniarGradient() {
     if (this.linearGradient) {
-      const grd = this.game.renderer.ctx.createLinearGradient(this.position.x - this.radius, this.position.y - this.radiusY, this.position.x + this.radius, this.position.y + this.radiusY);
+      const grd = this.game.renderer.ctx.createLinearGradient(
+        this.position.x + this.anchoredPosition.x - this.radius,
+        this.position.y + this.anchoredPosition.y - this.radiusY,
+        this.position.x + this.anchoredPosition.x + this.radius,
+        this.position.y + this.anchoredPosition.y + this.radiusY
+      );
       this.linearGradient.stops.forEach(([number, color]) => {
         grd.addColorStop(number, color);
       });
@@ -581,11 +616,11 @@ var CanvasCircle = class extends CanvasColor {
         this.radialGradient.offset = Vector2.zero;
       }
       const grd = this.game.renderer.ctx.createRadialGradient(
-        this.position.x + this.radialGradient.offset.x,
-        this.position.y + this.radialGradient.offset.y,
+        this.position.x + this.anchoredPosition.x + this.radialGradient.offset.x,
+        this.position.y + this.anchoredPosition.y + this.radialGradient.offset.y,
         0,
-        this.position.x,
-        this.position.y,
+        this.position.x + this.anchoredPosition.x,
+        this.position.y + this.anchoredPosition.y,
         Math.max(this.radius, this.radiusY)
       );
       this.radialGradient.stops.forEach(([number, color]) => {
@@ -597,12 +632,12 @@ var CanvasCircle = class extends CanvasColor {
   }
 };
 
-// ts/modes/swapper/character/parts/eye.ts
+// ts/entities/snake/parts/eye.ts
 var Eye = class extends CanvasCircle {
   constructor(offset, size = 65) {
     super({
       radialGradient: {
-        stops: [[0, "#555555"], [0.5, "black"], [0.5, "white"], [1, "grey"]]
+        stops: [[0, "#666"], [0.5, "black"], [0.5, "white"], [1, "grey"]]
       },
       // strokeWidth: 5,
       radius: size,
@@ -615,14 +650,18 @@ var Eye = class extends CanvasCircle {
   tick(obj) {
     super.tick(obj);
     this.radialGradient.offset = new Vector2(
-      -this.radius * Math.max(Math.min(this.movedAmount.x / obj.interval, 0.5), -0.5),
-      -this.radiusY * Math.max(Math.min(this.movedAmount.y / obj.interval, 0.6), -0.6)
+      -this.radius * this.movedAmount.x * 0.2,
+      -this.radiusY * this.movedAmount.y * 0.2
     );
+    this.radialGradient.offset.x = Math.min(this.radialGradient.offset.x, this.radius * 0.6);
+    this.radialGradient.offset.x = Math.max(this.radialGradient.offset.x, -this.radius * 0.6);
+    this.radialGradient.offset.y = Math.min(this.radialGradient.offset.y, this.radiusY * 0.6);
+    this.radialGradient.offset.y = Math.max(this.radialGradient.offset.y, -this.radiusY * 0.6);
     this.position = this.parent.position.add(this.offset);
   }
 };
 
-// ts/modes/swapper/character/parts/tail.ts
+// ts/entities/snake/parts/tail.ts
 var Tail = class _Tail extends CanvasCircle {
   constructor({
     number,
@@ -676,11 +715,12 @@ var Tail = class _Tail extends CanvasCircle {
   }
   getColorGradient() {
     const lin = 1 - this.number / this.total;
+    const siz = (this.radius - this.topRadius) / this.topRadius;
     const h = lin * 360;
     const s = {
       rainbow: [
-        [0.1, "hsla(".concat(h, ",0%,0%,").concat(100, "%)")],
-        [0.68, "hsla(".concat(h, ",100%,50%,").concat(100, "%)")]
+        [0.1, "hsla(".concat(h, ",0%,0%,").concat(70 * lin, "%)")],
+        [0.68, "hsla(".concat(h, ",100%,50%,").concat(70 * lin, "%)")]
       ],
       green: [
         [0.1, "hsla(140,0%,0%,".concat(100, "%)")],
@@ -691,20 +731,29 @@ var Tail = class _Tail extends CanvasCircle {
         [0.68, "black"]
       ]
     }[this.colors];
-    s.push(
-      [0.68, "black"],
-      [0.7 + (1 - lin) * 0.06, "black"],
-      [0.7 + (1 - lin) * 0.06, "#00000011"],
-      [1, "#00000000"]
-    );
+    if (1 - siz < 1) {
+      s.push(
+        [0.68, "black"],
+        [0.68 + (1 - siz) * 0.03, "#00000011"],
+        [0.68 + (1 - siz) * 0.03, "#00000005"],
+        [1, "#00000000"]
+      );
+    } else {
+      s.push(
+        [0.68, "black"],
+        [0.68 + (1 - siz) * 0.03, "black"],
+        [0.68 + (1 - siz) * 0.03, "#00000011"],
+        [1, "#00000000"]
+      );
+    }
     this.radialGradient = {
       stops: s,
-      offset: new Vector2(10 * lin, 10 * lin)
+      offset: new Vector2(10 * siz, 10 * siz)
     };
   }
 };
 
-// ts/modes/swapper/character/snake.ts
+// ts/entities/snake/snake.ts
 var Snake = class extends Tail {
   constructor({
     position = Vector2.zero,
@@ -725,7 +774,7 @@ var Snake = class extends Tail {
     this.visible = true;
     this.radius = this.faceSize * 1.2;
     this.radiusY = this.faceSize;
-    this.strokeWidth = 3;
+    this.strokeWidth = this.faceSize * 0.05;
     this.setcolor();
     for (let index = 0; index < this.total; index++) {
       this.add(this.total);
@@ -803,8 +852,8 @@ var CanvasController = class extends CanvasElement {
   }
 };
 
-// ts/controllers/bounce.ts
-var Bounce = class extends CanvasController {
+// ts/controllers/bouncyController.ts
+var BouncyController = class extends CanvasController {
   constructor(radius) {
     super();
     this.velocity = new Vector2(10, 0);
@@ -849,7 +898,7 @@ var Bounce = class extends CanvasController {
   }
 };
 
-// ts/modes/swapper/levels/bouncingSnake.ts
+// ts/modes/snakeMode/levels/bouncerLevel.ts
 var BouncerLevel = class extends Level {
   constructor() {
     super(...arguments);
@@ -864,7 +913,7 @@ var BouncerLevel = class extends Level {
       this.height = size.y;
     });
     this.addChild(this.background);
-    this.addChild(new Snake({ position: this.start, totals: 50, distance: 6, colors: "rainbow", controllers: [new Bounce(120)] }));
+    this.addChild(new Snake({ position: this.start, totals: 50, distance: 6, colors: "rainbow", controllers: [new BouncyController(120)] }));
   }
 };
 
@@ -884,15 +933,16 @@ var CanvasRadialGradientBackground = class extends CanvasSquare {
   }
 };
 
-// ts/controllers/random.ts
-var Random = class extends CanvasController {
-  constructor(radius, direction = Vector2.up) {
+// ts/controllers/randomController.ts
+var RandomController = class extends CanvasController {
+  constructor(radius, speed = new Vector2(7, 7), direction = Vector2.up) {
     super();
     this.speed = new Vector2(7, 7);
     this.direction = Vector2.up;
     this.steering = Math.random();
     this.maxSteering = 5;
     this.radius = radius;
+    this.speed = speed;
     this.direction = direction;
   }
   tick(obj) {
@@ -915,91 +965,28 @@ var Random = class extends CanvasController {
   }
 };
 
-// ts/modes/swapper/levels/discoSnake.ts
-var DiscoLevel = class extends Level {
+// ts/controllers/flatController.ts
+var FlatContoller = class extends CanvasController {
   constructor() {
     super(...arguments);
-    this.start = new Vector2(300, 400);
-    this.background = new CanvasRadialGradientBackground({
-      stops: [[0, "purple"], [1, "pink"]]
-    });
-    this.height = 1145;
-    this.width = 2e3;
-  }
-  build() {
-    this.game.getEvent("resize").subscribe(String(Math.random()), (size) => {
-      this.width = size.x;
-      this.height = size.y;
-    });
-    this.addChild(this.background);
-    this.addChild(new Snake({
-      totals: 30,
-      distance: 1,
-      topRadius: 50,
-      bottomRadius: 1,
-      position: new Vector2(0 - 150, 200),
-      controllers: [new Random(200, Vector2.left)]
-    }));
-    this.addChild(new Snake({
-      totals: 50,
-      distance: 4,
-      position: new Vector2(0 - 150, 200),
-      controllers: [new Random(200, Vector2.right)]
-    }));
-    this.addChild(new Snake({
-      totals: 50,
-      distance: 4,
-      position: new Vector2(this.width + 150, 950),
-      colors: "green",
-      controllers: [new Random(100, Vector2.left)]
-    }));
-  }
-};
-
-// ts/modes/swapper/levels/empty.ts
-var Empty = class extends Level {
-  constructor() {
-    super(...arguments);
-    this.start = new Vector2(300, 400);
-    this.background = new CanvasColorBackground("darkblue");
-    this.height = 1145;
-    this.width = 1594;
-  }
-  build() {
-    this.addChild(this.background);
-  }
-};
-
-// ts/controllers/followMouse.ts
-var FollowMouse = class extends CanvasController {
-  constructor(direction = Vector2.up) {
-    super();
-    this.speed = new Vector2(6, 6);
-    this.direction = Vector2.right;
-    this.direction = direction;
+    this.speed = new Vector2(4, 4);
+    this.velocity = Vector2.zero;
   }
   tick(obj) {
     super.tick(obj);
-    if (this.target) {
-      const d = this.target.subtract(this.parent.position).angle() + Math.PI - this.direction.angle();
-      if (d > Math.PI || d < 0) {
-        this.direction = this.direction.rotate(Math.PI / 120);
-      } else {
-        this.direction = this.direction.rotate(-Math.PI / 120);
-      }
-      this.parent.position = this.parent.position.add(this.direction.multiply(this.speed).scale(obj.interval / 10));
-    }
-  }
-  mouseMove(e) {
-    super.mouseMove(e);
-    this.target = new Vector2(e.clientX, e.clientY);
+    const input = new Vector2(
+      this.speed.x * (this.mode.input.right ? 1 : this.mode.input.left ? -1 : 0),
+      this.speed.y * (this.mode.input.down ? 1 : this.mode.input.up ? -1 : 0)
+    );
+    this.velocity = this.velocity.scale(0.9).add(input.scale(0.15));
+    this.parent.position = this.parent.position.add(this.velocity.scale(obj.interval / 10));
   }
 };
 
-// ts/modes/swapper/levels/followMouse.ts
-var FollowLevel = class extends Level {
+// ts/modes/snakeMode/levels/discoLevel.ts
+var DiscoLevel = class extends Level {
   constructor() {
-    super(...arguments);
+    super({ hasDom: true });
     this.start = new Vector2(300, 400);
     this.background = new CanvasRadialGradientBackground({
       stops: [[0, "red"], [1, "blue"]]
@@ -1013,11 +1000,47 @@ var FollowLevel = class extends Level {
       this.height = size.y;
     });
     this.addChild(this.background);
-    this.addChild(new Snake({ position: this.start, totals: 50, distance: 6, colors: "rainbow", controllers: [new FollowMouse()] }));
+    this.dom.appendChild(new DomButton({
+      text: "ADD",
+      fontSize: 39,
+      fontWeight: 1e3,
+      color: "black",
+      position: new Vector2(5, 120),
+      size: new Vector2(70, 50),
+      background: "linear-gradient(90deg, rgba(255,0,0,1) 0%, rgba(255,154,0,1) 10%, rgba(208,222,33,1) 20%, rgba(79,220,74,1) 30%, rgba(63,218,216,1) 40%, rgba(47,201,226,1) 50%, rgba(28,127,238,1) 60%, rgba(95,21,242,1) 70%, rgba(186,12,248,1) 80%, rgba(251,7,217,1) 90%, rgba(255,0,0,1) 100%)",
+      fontFamily: "monospace",
+      padding: [0, 10, 0, 10],
+      onClick: () => {
+        this.addSnake();
+      }
+    }));
+    this.addChild(new Snake({
+      totals: 30,
+      distance: 1,
+      topRadius: 50,
+      bottomRadius: 1,
+      colors: "rainbow",
+      position: new Vector2(150, 200),
+      controllers: [new FlatContoller()]
+    }));
+    this.addSnake();
+  }
+  addSnake() {
+    const topSize = 15 + Math.random() * 170;
+    const bottomSize = 2;
+    this.addChild(new Snake({
+      totals: Math.ceil(Math.random() * 40 + 10),
+      distance: Math.ceil(topSize / 17),
+      topRadius: topSize,
+      bottomRadius: bottomSize,
+      position: new Vector2(-topSize, -topSize),
+      colors: Math.random() < 0.2 ? "green" : "rainbow",
+      controllers: [new RandomController(topSize, new Vector2(3 + (185 - topSize) / 17, 3 + (185 - topSize) / 17), Vector2.right)]
+    }));
   }
 };
 
-// ts/modes/swapper/snakeMode.ts
+// ts/modes/snakeMode/snakeMode.ts
 var SnakeMode = class extends Mode {
   constructor() {
     super({ hasDom: true });
@@ -1053,8 +1076,6 @@ var SnakeMode = class extends Mode {
   build() {
     this.addLevel("disco", new DiscoLevel());
     this.addLevel("bounce", new BouncerLevel());
-    this.addLevel("follow", new FollowLevel());
-    this.addLevel("Empty", new Empty());
     this.switchLevel("disco");
   }
 };
@@ -1150,6 +1171,7 @@ var CanvasImage = class extends CanvasElement {
   constructor(attr) {
     super(attr);
     this.type = "image";
+    this.relativity = "relative";
     this.prepped = attr.image;
   }
   get width() {
@@ -1165,8 +1187,9 @@ var CanvasImage = class extends CanvasElement {
     this.prepped.size.y = value;
   }
   render(ctx) {
+    super.render(ctx);
     if (this.prepped.ready) {
-      ctx.drawImage(this.prepped.image, this.position.x, this.position.y, this.prepped.width, this.prepped.height);
+      ctx.drawImage(this.prepped.image, this.position.x + this.anchoredPosition.x, this.position.y + this.anchoredPosition.y, this.prepped.width, this.prepped.height);
     }
   }
 };
@@ -1234,6 +1257,7 @@ var CanvasGrid = class _CanvasGrid extends CanvasElement {
   constructor(attr = {}) {
     super(attr);
     this.type = "logic";
+    this.relativity = "relative";
     this.ready = false;
     this.sprites = {};
     this.width = attr.width || 10;
@@ -1273,16 +1297,39 @@ var CanvasGrid = class _CanvasGrid extends CanvasElement {
     const data = await response.json();
     return data;
   }
-  render(c) {
+  render(ctx) {
+    super.render(ctx);
   }
 };
 
-// ts/modes/topdown/overworld.ts
-var Overworld = class extends Level {
+// ts/entities/rpgCharacter/rpgCharacter.ts
+var RPGCharacter = class extends CanvasWrapper {
+  constructor({
+    scale = 1,
+    position = Vector2.zero,
+    controllers = []
+  } = {}) {
+    super({
+      position,
+      controllers
+    });
+    this.relativity = "anchor";
+    this.scale = scale;
+  }
+  build() {
+    this.addChild(new CanvasGrid({ json: "/json/overworld/overlay.json", width: 19, height: 19, factor: this.scale }));
+  }
+  tick(o) {
+    super.tick(o);
+  }
+};
+
+// ts/modes/rpg/levels/overworldLevel.ts
+var OverworldLevel = class extends Level {
   constructor() {
     super(...arguments);
     this.zoom = 3;
-    this.start = new Vector2(-100, -100);
+    this.start = new Vector2(10, 10);
     this.background = new CanvasColorBackground("#272727");
     this.height = 20 * this.zoom * 16;
     this.width = 20 * this.zoom * 16;
@@ -1290,28 +1337,24 @@ var Overworld = class extends Level {
   build() {
     this.addChild(this.background);
     this.addChild(new CanvasGrid({ json: "/json/overworld/terrain.json", width: 19, height: 19, factor: this.zoom }));
-    this.addChild(new CanvasGrid({ json: "/json/overworld/Objects.json", width: 19, height: 19, factor: this.zoom }));
+    this.addChild(new CanvasGrid({ json: "/json/overworld/objects.json", width: 19, height: 19, factor: this.zoom }));
     this.addChild(new CanvasGrid({ json: "/json/overworld/decorations.json", width: 19, height: 19, factor: this.zoom }));
     this.addChild(new CanvasGrid({ json: "/json/overworld/overlay.json", width: 19, height: 19, factor: this.zoom }));
-    this.addChild(new Snake({
+    this.addChild(new RPGCharacter({
       position: this.start,
-      totals: 30,
-      distance: 6,
-      topRadius: 100,
-      bottomRadius: 4,
-      colors: "green",
-      controllers: [new Random(100, Vector2.down)]
+      scale: 1,
+      controllers: [new FlatContoller()]
     }));
   }
 };
 
-// ts/modes/topdown/topdown.ts
-var Topdown = class extends Mode {
+// ts/modes/rpg/rpgMode.ts
+var RPGMode = class extends Mode {
   constructor() {
     super({ hasDom: true });
   }
   build() {
-    this.addLevel("overworld", new Overworld());
+    this.addLevel("overworld", new OverworldLevel());
     this.switchLevel("overworld");
   }
   tick(obj) {
@@ -1323,6 +1366,7 @@ var Topdown = class extends Mode {
 var Game = class extends CanvasWrapper {
   constructor() {
     super({ hasDom: true });
+    this.relativity = "anchor";
     this.modes = {};
     this.game = this;
     this.hasDom = true;
@@ -1347,7 +1391,7 @@ var Game = class extends CanvasWrapper {
   }
   setupModes() {
     this.addMode("snakes", new SnakeMode());
-    this.addMode("topdown", new Topdown());
+    this.addMode("rpg", new RPGMode());
     this.dom.appendChild(new DomButton({
       text: "RPG",
       fontSize: 39,
@@ -1359,7 +1403,7 @@ var Game = class extends CanvasWrapper {
       fontFamily: "monospace",
       padding: [0, 10, 0, 10],
       onClick: () => {
-        this.switchMode("topdown");
+        this.switchMode("rpg");
       }
     }));
     this.dom.appendChild(new DomButton({
@@ -1391,6 +1435,7 @@ var Game = class extends CanvasWrapper {
     this.renderer.addChild(mode);
   }
   switchMode(s) {
+    document.title = s;
     Object.entries(this.modes).forEach(([key, mode]) => {
       mode.active = key === s;
       mode.visible = key === s;

@@ -1,13 +1,13 @@
-import { CanvasCircle } from '../../../../canvas/canvasCircle';
-import { ColorType } from '../../../../canvas/canvasColor';
-import { CanvasController } from '../../../../utils/controller';
-import { Vector2 } from '../../../../utils/vector2';
+import { CanvasCircle } from '../../../canvas/canvasCircle';
+import { ColorType } from '../../../canvas/canvasColor';
+import { CanvasController } from '../../../utils/controller';
+import { Vector2 } from '../../../utils/vector2';
 import { SnakeColors } from '../snake';
 
 export class Tail extends CanvasCircle {
     private trace: Vector2[] = [];
     private number: number;
-    
+
     protected bottomRadius: number;
     protected topRadius: number;
     protected moving: boolean = false;
@@ -36,12 +36,12 @@ export class Tail extends CanvasCircle {
 
         super({
             position: new Vector2(200, 200),
-            radius: (1- (number / total)) * (topRadius - bottomRadius) + bottomRadius,
+            radius: (1 - (number / total)) * (topRadius - bottomRadius) + bottomRadius,
             color: `transparant`,
             center: true,
             controllers
         });
-        
+
         this.number = number;
         this.distance = distance;
         this.total = total;
@@ -84,11 +84,12 @@ export class Tail extends CanvasCircle {
 
 
         const lin = 1 - (this.number / this.total);
+        const siz = ((this.radius - this.topRadius) / this.topRadius);
         const h = (lin * 360);
         const s = ({
             rainbow: [
-                [0.1, `hsla(${h},0%,0%,${100}%)`],
-                [0.68, `hsla(${h},100%,50%,${100}%)`],
+                [0.1, `hsla(${h},0%,0%,${70*lin}%)`],
+                [0.68, `hsla(${h},100%,50%,${70*lin}%)`],
             ],
             green: [
                 [0.1, `hsla(140,0%,0%,${100}%)`],
@@ -99,17 +100,25 @@ export class Tail extends CanvasCircle {
                 [0.68, `black`],
             ],
         } as Record<SnakeColors, [number, string][]>)[this.colors];
-
-        s.push(
-            [0.68, `black`],
-            [0.7 + ((1 - lin) * .06), `black`],
-            [0.7 + ((1 - lin) * .06), `#00000011`],
-            [1, `#00000000`]
-        );
+        if (1 - siz < 1) {
+            s.push(
+                [0.68, `black`],
+                [0.68 + ((1-siz) * .03), `#00000011`],
+                [0.68 + ((1-siz) * .03), `#00000005`],
+                [1, `#00000000`]
+            );
+        } else {
+            s.push(
+                [0.68, `black`],
+                [0.68 + ((1-siz) * .03), `black`],
+                [0.68 + ((1-siz) * .03), `#00000011`],
+                [1, `#00000000`]
+            );
+        }
 
         this.radialGradient = {
             stops: s,
-            offset: new Vector2(10 * lin, 10 * lin)
+            offset: new Vector2(10 * siz, 10 * siz)
         };
     }
 }

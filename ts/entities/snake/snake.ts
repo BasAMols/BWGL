@@ -1,7 +1,7 @@
-import { CanvasCircle } from '../../../canvas/canvasCircle';
-import { CanvasController } from '../../../utils/controller';
-import { TickerReturnData } from '../../../utils/ticker';
-import { Vector2 } from '../../../utils/vector2';
+import { CanvasCircle } from '../../canvas/canvasCircle';
+import { CanvasController } from '../../utils/controller';
+import { TickerReturnData } from '../../utils/ticker';
+import { Vector2 } from '../../utils/vector2';
 import { Eye } from './parts/eye';
 import { Tail } from './parts/tail';
 
@@ -40,7 +40,7 @@ export class Snake extends Tail {
         this.visible = true;
         this.radius = this.faceSize * 1.2;
         this.radiusY = this.faceSize;
-        this.strokeWidth = 3;
+        this.strokeWidth = this.faceSize*0.05;
         this.setcolor();
 
         for (let index = 0; index < this.total; index++) {

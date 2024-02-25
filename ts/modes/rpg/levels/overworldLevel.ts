@@ -1,0 +1,28 @@
+import { CanvasColorBackground } from '../../../canvas/canvasBackground';
+import { CanvasGrid } from '../../../canvas/canvasGrid';
+import { Level } from '../../../utils/level';
+import { Vector2 } from '../../../utils/vector2';
+import { RPGCharacter } from '../../../entities/rpgCharacter/rpgCharacter';
+import { FlatContoller } from '../../../controllers/flatController';
+
+export class OverworldLevel extends Level {
+    private zoom = 3;
+
+    public start = new Vector2(10, 10)
+    public background = new CanvasColorBackground('#272727')
+    public height = 20*this.zoom*16
+    public width = 20*this.zoom*16
+
+    build() {
+        this.addChild(this.background);
+        this.addChild(new CanvasGrid({json: '/json/overworld/terrain.json', width: 19, height: 19, factor: this.zoom}));
+        this.addChild(new CanvasGrid({json: '/json/overworld/objects.json', width: 19, height: 19, factor: this.zoom}));
+        this.addChild(new CanvasGrid({json: '/json/overworld/decorations.json', width: 19, height: 19, factor: this.zoom}));
+        this.addChild(new CanvasGrid({json: '/json/overworld/overlay.json', width: 19, height: 19, factor: this.zoom}));
+        this.addChild(new RPGCharacter({
+            position: this.start,
+            scale: 1,
+            controllers: [new FlatContoller()]
+        }));
+    }
+}

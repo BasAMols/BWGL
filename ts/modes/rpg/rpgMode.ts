@@ -1,14 +1,14 @@
 import { Mode } from '../../utils/mode';
 import { TickerReturnData } from '../../utils/ticker';
-import { Overworld as Overworld } from './overworld';
+import { OverworldLevel as OverworldLevel } from './levels/overworldLevel';
 
-export class Topdown extends Mode{
+export class RPGMode extends Mode{
     public constructor() {
         super({hasDom: true});
     }
 
     build(){
-        this.addLevel('overworld', new Overworld());
+        this.addLevel('overworld', new OverworldLevel());
         this.switchLevel('overworld');
     }
     
