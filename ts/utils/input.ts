@@ -11,6 +11,13 @@ export class Input {
     }
 
     public mouseMove(e: MouseEvent) {
-        Object.values(this.game.modes).find((l)=>l.active).mouseMove(e);
+        const mode = this.getmode();
+        if (mode && mode.mouseMove){
+            mode.mouseMove(e);
+        }
+    }
+
+    private getmode() {
+        return Object.values(this.game.modes).find((l)=>l.active);
     }
 }

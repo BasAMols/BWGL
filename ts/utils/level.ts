@@ -11,6 +11,15 @@ export abstract class Level extends CanvasWrapper{
     abstract height: number;
     abstract width: number;
 
+    public get size(): Vector2 {
+        return new Vector2(this.width, this.height);
+    }
+    public set size(value: Vector2) {
+        this.width = value.x;
+        this.height = value.y;
+    }
+    public ready = false;
+
     constructor(attr: levelAttributes = {}) {
         super(attr);
         this.level = this;

@@ -36,7 +36,6 @@ export abstract class CanvasColor extends CanvasElement {
         this.radialGradient = attr.radialGradient
     }
 
-    public abstract render(c: CanvasRenderingContext2D ): void
     public getColor(): string | CanvasGradient | CanvasPattern {
         if (this.colorType === 'color'){
             return this.color

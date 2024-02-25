@@ -1,25 +1,21 @@
-import { CanvasSquare } from '../canvas/canvasSquare';
-import { CanvasColor } from '../canvas/canvasColor';
-import { CanvasCircle } from '../canvas/canvasCircle';
 import { CanvasElement } from '../canvas/canvasElement';
 import { CanvasWrapper } from '../canvas/canvasWrapper';
 import { TickerReturnData } from './ticker';
 import { DomElement } from '../dom/domElement';
 import { Vector2 } from './vector2';
-import { Input } from './input';
 
 export class Renderer extends CanvasWrapper {
     public ctx: CanvasRenderingContext2D;
     public canvas: DomElement<'canvas'>;
     public hasDom = true;
     public constructor() {
-        super({hasDom: true});
+        super({ hasDom: true });
     }
 
     build() {
 
         this.canvas = new DomElement('canvas');
-        this.game.getEvent('resize').subscribe(String(Math.random()), (size: Vector2)=>{
+        this.game.getEvent('resize').subscribe(String(Math.random()), (size: Vector2) => {
             this.canvas.size = size;
         });
         this.game.resize();
@@ -33,21 +29,19 @@ export class Renderer extends CanvasWrapper {
         this.recursive(this);
     }
 
-    private recursive(parent: CanvasElement) {
-        if (parent.active && parent.visible) {
-            if (parent.renderStyle === 'under'){
-                this.render(parent);
+    private recursive(element: CanvasElement) {
+        if (element.active && element.visible) {
+            if (element.renderStyle === 'under') {
+                this.renderAll(element);
             }
-            parent.children.forEach((child) => this.recursive(child));
-            if (parent.renderStyle === 'over'){
-                this.render(parent);
+            element.children.forEach((child) => this.recursive(child));
+            if (element.renderStyle === 'over') {
+                this.renderAll(element);
             }
         }
     }
 
-    private render(c: CanvasElement) {
-        if (c.type === 'color') {
-            (c as CanvasColor).render(this.ctx);
-        }
+    public renderAll(c: CanvasElement) {
+        c.render(this.ctx);
     }
 }

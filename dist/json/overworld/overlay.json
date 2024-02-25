@@ -1,0 +1,297 @@
+{
+    "tiles": [
+        {
+            "x": 12,
+            "y": 11,
+            "type": "stand_1"
+        },
+        {
+            "x": 14,
+            "y": 8,
+            "type": "stand_14"
+        },
+        {
+            "x": 15,
+            "y": 7,
+            "type": "stand_16"
+        },
+        {
+            "x": 13,
+            "y": 8,
+            "type": "stand_3"
+        },
+        {
+            "x": 13,
+            "y": 7,
+            "type": "stand_7"
+        },
+        {
+            "x": 12,
+            "y": 8,
+            "type": "stand_2"
+        },
+        {
+            "x": 15,
+            "y": 8,
+            "type": "stand_5"
+        }
+    ],
+    "sprites": [
+        {
+            "url": "img/overworld/terrain_grass_1.png",
+            "name": "terrain_grass_1"
+        },
+        {
+            "url": "img/overworld/terrain_grass_water_7.png",
+            "name": "terrain_grass_water_7"
+        },
+        {
+            "url": "img/overworld/terrain_water.png",
+            "name": "terrain_water"
+        },
+        {
+            "url": "img/overworld/terrain_sand_water_2.png",
+            "name": "terrain_sand_water_2"
+        },
+        {
+            "url": "img/overworld/terrain_sand.png",
+            "name": "terrain_sand"
+        },
+        {
+            "url": "img/overworld/forrest_10.png",
+            "name": "forrest_10"
+        },
+        {
+            "url": "img/overworld/forrest_3.png",
+            "name": "forrest_3"
+        },
+        {
+            "url": "img/overworld/forrest_12.png",
+            "name": "forrest_12"
+        },
+        {
+            "url": "img/overworld/log_h_3.png",
+            "name": "log_h_3"
+        },
+        {
+            "url": "img/overworld/log_h_2.png",
+            "name": "log_h_2"
+        },
+        {
+            "url": "img/overworld/log_h_1.png",
+            "name": "log_h_1"
+        },
+        {
+            "url": "img/overworld/forrest_2.png",
+            "name": "forrest_2"
+        },
+        {
+            "url": "img/overworld/forrest_11.png",
+            "name": "forrest_11"
+        },
+        {
+            "url": "img/overworld/forrest_4.png",
+            "name": "forrest_4"
+        },
+        {
+            "url": "img/overworld/forrest_5.png",
+            "name": "forrest_5"
+        },
+        {
+            "url": "img/overworld/bridge_wood_v_9.png",
+            "name": "bridge_wood_v_9"
+        },
+        {
+            "url": "img/overworld/bridge_wood_v_8.png",
+            "name": "bridge_wood_v_8"
+        },
+        {
+            "url": "img/overworld/bridge_wood_v_7.png",
+            "name": "bridge_wood_v_7"
+        },
+        {
+            "url": "img/overworld/bridge_wood_v_6.png",
+            "name": "bridge_wood_v_6"
+        },
+        {
+            "url": "img/overworld/bridge_wood_v_5.png",
+            "name": "bridge_wood_v_5"
+        },
+        {
+            "url": "img/overworld/bridge_wood_v_4.png",
+            "name": "bridge_wood_v_4"
+        },
+        {
+            "url": "img/overworld/bridge_wood_v_3.png",
+            "name": "bridge_wood_v_3"
+        },
+        {
+            "url": "img/overworld/bridge_wood_v_2.png",
+            "name": "bridge_wood_v_2"
+        },
+        {
+            "url": "img/overworld/bridge_wood_v_1.png",
+            "name": "bridge_wood_v_1"
+        },
+        {
+            "url": "img/overworld/stand_6.png",
+            "name": "stand_6"
+        },
+        {
+            "url": "img/overworld/stand_10.png",
+            "name": "stand_10"
+        },
+        {
+            "url": "img/overworld/statue_1.png",
+            "name": "statue_1"
+        },
+        {
+            "url": "img/overworld/stand_23.png",
+            "name": "stand_23"
+        },
+        {
+            "url": "img/overworld/object_box_small_5.png",
+            "name": "object_box_small_5"
+        },
+        {
+            "url": "img/overworld/object_box_small_4.png",
+            "name": "object_box_small_4"
+        },
+        {
+            "url": "img/overworld/object_box_small_1.png",
+            "name": "object_box_small_1"
+        },
+        {
+            "url": "img/overworld/fence_8.png",
+            "name": "fence_8"
+        },
+        {
+            "url": "img/overworld/fence_7.png",
+            "name": "fence_7"
+        },
+        {
+            "url": "img/overworld/fence_9.png",
+            "name": "fence_9"
+        },
+        {
+            "url": "img/overworld/object_bench_h2_4.png",
+            "name": "object_bench_h2_4"
+        },
+        {
+            "url": "img/overworld/object_bench_h2_5.png",
+            "name": "object_bench_h2_5"
+        },
+        {
+            "url": "img/overworld/object_bench_h2_6.png",
+            "name": "object_bench_h2_6"
+        },
+        {
+            "url": "img/overworld/object_bench_h2_1.png",
+            "name": "object_bench_h2_1"
+        },
+        {
+            "url": "img/overworld/object_bench_h2_2.png",
+            "name": "object_bench_h2_2"
+        },
+        {
+            "url": "img/overworld/object_bench_h2_3.png",
+            "name": "object_bench_h2_3"
+        },
+        {
+            "url": "img/overworld/object_barrel_1.png",
+            "name": "object_barrel_1"
+        },
+        {
+            "url": "img/overworld/object_barrel_4.png",
+            "name": "object_barrel_4"
+        },
+        {
+            "url": "img/overworld/building_doghouse.png",
+            "name": "building_doghouse"
+        },
+        {
+            "url": "img/overworld/building_house_1.png",
+            "name": "building_house_1"
+        },
+        {
+            "url": "img/overworld/cannon_1.png",
+            "name": "cannon_1"
+        },
+        {
+            "url": "img/overworld/cannon_balls_5.png",
+            "name": "cannon_balls_5"
+        },
+        {
+            "url": "img/overworld/stand_11.png",
+            "name": "stand_11"
+        },
+        {
+            "url": "img/overworld/deco_flower_3.png",
+            "name": "deco_flower_3"
+        },
+        {
+            "url": "img/overworld/deco_flower_4.png",
+            "name": "deco_flower_4"
+        },
+        {
+            "url": "img/overworld/deco_flower_5.png",
+            "name": "deco_flower_5"
+        },
+        {
+            "url": "img/overworld/deco_lillipad_4.png",
+            "name": "deco_lillipad_4"
+        },
+        {
+            "url": "img/overworld/deco_lillipad_2.png",
+            "name": "deco_lillipad_2"
+        },
+        {
+            "url": "img/overworld/deco_lillipad_1.png",
+            "name": "deco_lillipad_1"
+        },
+        {
+            "url": "img/overworld/rock_water_large_3.png",
+            "name": "rock_water_large_3"
+        },
+        {
+            "url": "img/overworld/rock_water_large_1.png",
+            "name": "rock_water_large_1"
+        },
+        {
+            "url": "img/overworld/rock_water_large_2.png",
+            "name": "rock_water_large_2"
+        },
+        {
+            "url": "img/overworld/rock_water_large_4.png",
+            "name": "rock_water_large_4"
+        },
+        {
+            "url": "img/overworld/stand_1.png",
+            "name": "stand_1"
+        },
+        {
+            "url": "img/overworld/stand_14.png",
+            "name": "stand_14"
+        },
+        {
+            "url": "img/overworld/stand_16.png",
+            "name": "stand_16"
+        },
+        {
+            "url": "img/overworld/stand_3.png",
+            "name": "stand_3"
+        },
+        {
+            "url": "img/overworld/stand_7.png",
+            "name": "stand_7"
+        },
+        {
+            "url": "img/overworld/stand_2.png",
+            "name": "stand_2"
+        },
+        {
+            "url": "img/overworld/stand_5.png",
+            "name": "stand_5"
+        }
+    ]
+}

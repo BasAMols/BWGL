@@ -42,11 +42,6 @@ export class SwapperMode extends Mode{
         this.addLevel('bounce', new BouncerLevel());
         this.addLevel('follow', new FollowLevel());
         this.addLevel('Empty', new Empty());
-        this.switchLevel('disco');
+        this.switchLevel('follow');
     }
-
-    // tick(obj: TickerReturnData) {
-    //     super.tick(obj);
-    //     this.switchLevel(Object.keys(this.levels)[Math.floor(obj.total % 3000 / 1500)]);
-    // }
 }

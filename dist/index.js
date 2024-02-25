@@ -109,6 +109,23 @@ var Vector2 = class _Vector2 {
 
 // ts/dom/domElement.ts
 var DomElement = class extends Element {
+  constructor(type, attr = {}) {
+    super(attr);
+    this._visible = true;
+    this.dom = document.createElement(type);
+    this.dom.style.position = "absolute";
+    this.id = attr.id || "";
+    this.size = attr.size;
+    this.background = attr.background || "";
+    this.position = attr.position || Vector2.zero;
+  }
+  get visible() {
+    return this._visible;
+  }
+  set visible(value) {
+    this.dom.style.display = value ? "block" : "none";
+    this._visible = value;
+  }
   get position() {
     return this._position;
   }
@@ -152,15 +169,6 @@ var DomElement = class extends Element {
     this.dom.style.height = "".concat(value, "px");
     this.dom.setAttribute("height", String(value));
   }
-  constructor(type, attr = {}) {
-    super(attr);
-    this.dom = document.createElement(type);
-    this.dom.style.position = "absolute";
-    this.id = attr.id || "";
-    this.size = attr.size;
-    this.background = attr.background || "";
-    this.position = attr.position || Vector2.zero;
-  }
   appendChild(e) {
     this.dom.appendChild(e.dom);
     this.dom.addEventListener;
@@ -202,7 +210,7 @@ var CanvasElement = class extends Element {
         child.build();
       }
     } else {
-      console.log("element is already parent of other element. ");
+      console.log("The element is already a parent of another element.");
     }
   }
   tick(obj) {
@@ -220,6 +228,8 @@ var CanvasWrapper = class extends CanvasElement {
   }
   addChild(child) {
     super.addChild(child);
+  }
+  render(c) {
   }
 };
 
@@ -242,21 +252,19 @@ var Renderer = class extends CanvasWrapper {
     super.tick(obj);
     this.recursive(this);
   }
-  recursive(parent) {
-    if (parent.active && parent.visible) {
-      if (parent.renderStyle === "under") {
-        this.render(parent);
+  recursive(element) {
+    if (element.active && element.visible) {
+      if (element.renderStyle === "under") {
+        this.renderAll(element);
       }
-      parent.children.forEach((child) => this.recursive(child));
-      if (parent.renderStyle === "over") {
-        this.render(parent);
+      element.children.forEach((child) => this.recursive(child));
+      if (element.renderStyle === "over") {
+        this.renderAll(element);
       }
     }
   }
-  render(c) {
-    if (c.type === "color") {
-      c.render(this.ctx);
-    }
+  renderAll(c) {
+    c.render(this.ctx);
   }
 };
 
@@ -352,6 +360,7 @@ var Mode = class extends CanvasWrapper {
     Object.entries(this.levels).forEach(([key, level]) => {
       level.active = key === s;
       level.visible = key === s;
+      level.dom ? level.dom.visible = key === s : null;
     });
   }
   mouseMove(e) {
@@ -391,6 +400,7 @@ var CanvasSquare = class extends CanvasColor {
     super(attr);
     this.shape = "square";
     this.color = attr.color;
+    this.size = attr.size;
   }
   get size() {
     return this._size;
@@ -455,21 +465,7 @@ var CanvasColorBackground = class extends CanvasSquare {
   }
   build() {
     this.game.getEvent("resize").subscribe(String(Math.random()), (size) => {
-      this.size = size;
-    });
-  }
-};
-var CanvasRadialGradientBackground = class extends CanvasSquare {
-  constructor(radialGradient) {
-    super({
-      position: Vector2.zero,
-      radialGradient
-    });
-    this.colorType = "radialGradient";
-  }
-  build() {
-    this.game.getEvent("resize").subscribe(String(Math.random()), (size) => {
-      this.size = size;
+      this.size = this.level.size;
     });
   }
 };
@@ -478,7 +474,15 @@ var CanvasRadialGradientBackground = class extends CanvasSquare {
 var Level = class extends CanvasWrapper {
   constructor(attr = {}) {
     super(attr);
+    this.ready = false;
     this.level = this;
+  }
+  get size() {
+    return new Vector2(this.width, this.height);
+  }
+  set size(value) {
+    this.width = value.x;
+    this.height = value.y;
   }
   mouseMove(e) {
   }
@@ -789,6 +793,22 @@ var RandomSnake = class extends Snake {
   }
 };
 
+// ts/canvas/canvasRadialGradientBackground.ts
+var CanvasRadialGradientBackground = class extends CanvasSquare {
+  constructor(radialGradient) {
+    super({
+      position: Vector2.zero,
+      radialGradient
+    });
+    this.colorType = "radialGradient";
+  }
+  build() {
+    this.game.getEvent("resize").subscribe(String(Math.random()), (size) => {
+      this.size = this.level.size;
+    });
+  }
+};
+
 // ts/modes/swapper/levels/discoSnake.ts
 var DiscoLevel = class extends Level {
   constructor() {
@@ -828,8 +848,8 @@ var Empty = class extends Level {
 // ts/modes/swapper/character/mouseSnake.ts
 var MouseSnake = class extends Snake {
   constructor(position = Vector2.zero, direction = Vector2.up) {
-    super({ position, totals: 50, distance: 50, colors: "green" });
-    this.speed = new Vector2(4, 4);
+    super({ position, totals: 50, distance: 6, colors: "green" });
+    this.speed = new Vector2(6, 6);
     this.direction = Vector2.right;
     this.steering = 0;
     this.maxSteering = 5;
@@ -912,12 +932,8 @@ var SwapperMode = class extends Mode {
     this.addLevel("bounce", new BouncerLevel());
     this.addLevel("follow", new FollowLevel());
     this.addLevel("Empty", new Empty());
-    this.switchLevel("disco");
+    this.switchLevel("follow");
   }
-  // tick(obj: TickerReturnData) {
-  //     super.tick(obj);
-  //     this.switchLevel(Object.keys(this.levels)[Math.floor(obj.total % 3000 / 1500)]);
-  // }
 };
 
 // ts/utils/ticker.ts
@@ -981,7 +997,175 @@ var Input = class {
     this.canvas.addEventListener("mousemove", this.mouseMove.bind(this));
   }
   mouseMove(e) {
-    Object.values(this.game.modes).find((l) => l.active).mouseMove(e);
+    const mode = this.getmode();
+    if (mode && mode.mouseMove) {
+      mode.mouseMove(e);
+    }
+  }
+  getmode() {
+    return Object.values(this.game.modes).find((l) => l.active);
+  }
+};
+
+// ts/canvas/canvasImage.ts
+var CanvasImage = class extends CanvasElement {
+  constructor(attr) {
+    super(attr);
+    this.type = "image";
+    this.prepped = attr.image;
+  }
+  get width() {
+    return this.prepped.size.x;
+  }
+  set width(value) {
+    this.prepped.size.x = value;
+  }
+  get height() {
+    return this.prepped.size.y;
+  }
+  set height(value) {
+    this.prepped.size.y = value;
+  }
+  render(ctx) {
+    if (this.prepped.ready) {
+      ctx.drawImage(this.prepped.image, this.position.x, this.position.y, this.prepped.width, this.prepped.height);
+    }
+  }
+};
+
+// ts/canvas/prepImage.ts
+var PreppedImage = class {
+  constructor(attr) {
+    this.ready = false;
+    this.factor = attr.factor;
+    this.original = new Image();
+    this.original.src = attr.url;
+    this.original.onload = () => {
+      if (this.factor) {
+        this.upScale();
+      } else {
+        this.loaded(this.original);
+      }
+    };
+  }
+  get size() {
+    return new Vector2(this.width, this.height);
+  }
+  get width() {
+    return this.image.width;
+  }
+  get height() {
+    return this.image.height;
+  }
+  upScale() {
+    const os = document.createElement("canvas");
+    os.width = this.original.width;
+    os.height = this.original.height;
+    const osCTX = os.getContext("2d", { alpha: true });
+    osCTX.drawImage(this.original, 0, 0, this.original.width, this.original.height);
+    const ss = document.createElement("canvas");
+    ss.width = this.factor * this.original.width;
+    ss.height = this.factor * this.original.height;
+    const ssCTX = ss.getContext("2d");
+    for (let x = 0; x < this.original.width; x++) {
+      for (let y = 0; y < this.original.height; y++) {
+        const r = osCTX.getImageData(x, y, 1, 1).data.join(",");
+        ssCTX.fillStyle = "rgba(".concat(r, ")");
+        ssCTX.fillRect(
+          x * this.factor,
+          y * this.factor,
+          this.factor,
+          this.factor
+        );
+      }
+    }
+    const newI = new Image();
+    newI.src = ss.toDataURL();
+    newI.onload = () => {
+      this.loaded(newI);
+    };
+  }
+  loaded(i) {
+    this.image = i;
+    this.ready = true;
+  }
+};
+
+// ts/canvas/canvasGrid.ts
+var CanvasGrid = class _CanvasGrid extends CanvasElement {
+  constructor(attr = {}) {
+    super(attr);
+    this.type = "grid";
+    this.ready = false;
+    this.sprites = {};
+    this.width = attr.width || 10;
+    this.height = attr.height || 10;
+    this.factor = attr.factor || 10;
+    this.json = attr.json;
+    _CanvasGrid.loadJsonFile(this.json).then(this.jsonLoaded.bind(this));
+  }
+  get gridDimentsion() {
+    return new Vector2(this.width, this.height);
+  }
+  set gridDimentsion(value) {
+    this.width = value.x;
+    this.height = value.y;
+  }
+  jsonLoaded({ sprites, tiles }) {
+    sprites.forEach((sprite) => {
+      if (tiles.find((tile) => sprite.name === tile.type)) {
+        this.sprites[sprite.name] = new PreppedImage({
+          url: sprite.url,
+          factor: this.factor
+        });
+      }
+    });
+    tiles.forEach((sprite) => {
+      this.addChild(new CanvasImage({
+        position: new Vector2(
+          sprite.x * this.factor * 16,
+          (this.height - sprite.y) * this.factor * 16
+        ),
+        image: this.sprites[sprite.type]
+      }));
+    });
+  }
+  static async loadJsonFile(url) {
+    const response = await fetch(url);
+    const data = await response.json();
+    return data;
+  }
+  render(c) {
+  }
+};
+
+// ts/modes/topdown/overworld.ts
+var Overworld = class extends Level {
+  constructor() {
+    super(...arguments);
+    this.zoom = 3;
+    this.start = new Vector2(13 * 50, 8 * 50);
+    this.background = new CanvasColorBackground("#272727");
+    this.height = 20 * this.zoom * 16;
+    this.width = 20 * this.zoom * 16;
+  }
+  build() {
+    this.addChild(this.background);
+    this.addChild(new CanvasGrid({ json: "/json/overworld/terrain.json", width: 19, height: 19, factor: this.zoom }));
+    this.addChild(new CanvasGrid({ json: "/json/overworld/Objects.json", width: 19, height: 19, factor: this.zoom }));
+    this.addChild(new CanvasGrid({ json: "/json/overworld/decorations.json", width: 19, height: 19, factor: this.zoom }));
+    this.addChild(new CanvasGrid({ json: "/json/overworld/overlay.json", width: 19, height: 19, factor: this.zoom }));
+  }
+};
+
+// ts/modes/topdown/topdown.ts
+var Topdown = class extends Mode {
+  constructor() {
+    super({ hasDom: true });
+  }
+  build() {
+    this.addLevel("overworld", new Overworld());
+    this.switchLevel("overworld");
   }
 };
 
@@ -1004,6 +1188,8 @@ var Game = class extends CanvasWrapper {
     this.renderer = new Renderer();
     this.addChild(this.renderer);
     this.addMode("swapper", new SwapperMode());
+    this.addMode("topdown", new Topdown());
+    this.switchMode("topdown");
     this.ticker = new Ticker();
     this.ticker.add(this.tick.bind(this));
     this.input = new Input(this);
@@ -1027,10 +1213,10 @@ var Game = class extends CanvasWrapper {
     Object.entries(this.modes).forEach(([key, mode]) => {
       mode.active = key === s;
       mode.visible = key === s;
+      mode.dom ? mode.dom.visible = key === s : null;
     });
   }
   start() {
-    this.switchMode("swapper");
     this.ticker.start();
   }
 };

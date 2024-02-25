@@ -6,7 +6,7 @@ import { Mode } from '../utils/mode';
 import { TickerReturnData } from '../utils/ticker';
 import { Vector2 } from "../utils/vector2";
 
-export type  CanvasElementAttributes = ElementAttributes & {
+export type CanvasElementAttributes = ElementAttributes & {
     hasDom?: boolean,
     position?: Vector2
 }
@@ -15,7 +15,7 @@ export interface CanvasElement {
     build?(): void
 }
 export abstract class CanvasElement extends Element {
-    public abstract type: 'color'|'image'|'wrapper';
+    public abstract type: 'color'|'image'|'wrapper'|'grid';
     public renderStyle: 'over'|'under' = 'over';
 
     public parent!: CanvasElement;
@@ -53,7 +53,7 @@ export abstract class CanvasElement extends Element {
                 child.build()
             }
         } else {
-            console.log('element is already parent of other element. ');
+            console.log('The element is already a parent of another element.');
         }
     }
     
@@ -62,4 +62,9 @@ export abstract class CanvasElement extends Element {
             this.children.forEach((c) => c.tick(obj) );
         }
     }
+
+    public abstract render(c: CanvasRenderingContext2D ): void
+
 }
+
+

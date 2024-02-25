@@ -21,6 +21,7 @@ export abstract class Mode extends CanvasWrapper {
         Object.entries(this.levels).forEach(([key, level])=>{
             level.active = key === s;
             level.visible = key === s;
+            level.dom?level.dom.visible = key === s: null;
         });
     }
 

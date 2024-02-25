@@ -7,6 +7,7 @@ import { Event } from './utils/event';
 import { Vector2 } from './utils/vector2';
 import { Input } from './utils/input';
 import { Mode } from './utils/mode';
+import { Topdown } from './modes/topdown/topdown';
 
 export class Game extends CanvasWrapper {
     public ticker: Ticker;
@@ -31,6 +32,8 @@ export class Game extends CanvasWrapper {
         this.addChild(this.renderer);
 
         this.addMode('swapper', new SwapperMode())
+        this.addMode('topdown', new Topdown())
+        this.switchMode('topdown');
 
         this.ticker = new Ticker();
         this.ticker.add(this.tick.bind(this));
@@ -62,11 +65,11 @@ export class Game extends CanvasWrapper {
         Object.entries(this.modes).forEach(([key, mode])=>{
             mode.active = key === s;
             mode.visible = key === s;
+            mode.dom?mode.dom.visible = key === s: null;
         });
     }
 
     private start() {
-        this.switchMode('swapper');
         this.ticker.start();
     }
 }

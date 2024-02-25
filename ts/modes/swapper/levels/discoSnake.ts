@@ -1,7 +1,7 @@
-import { CanvasRadialGradientBackground } from '../../../canvas/canvasBackground';
 import { Vector2 } from "../../../utils/vector2";
 import { Level } from "../../../utils/level";
 import { RandomSnake } from '../character/randomSnake';
+import { CanvasRadialGradientBackground } from '../../../canvas/canvasRadialGradientBackground';
 
 export class DiscoLevel extends Level {
     public start = new Vector2(300, 400);

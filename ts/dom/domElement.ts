@@ -12,6 +12,15 @@ export class DomElement<T extends keyof HTMLElementTagNameMap> extends Element {
 
     private _position: Vector2; 
 
+    private _visible: boolean = true;
+    public get visible(): boolean {
+        return this._visible;
+    }
+    public set visible(value: boolean) {
+        this.dom.style.display = value ? 'block' : 'none';
+        this._visible = value;
+    }
+
     public get position(): Vector2 {
         return this._position;
     }

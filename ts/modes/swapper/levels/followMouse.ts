@@ -1,7 +1,6 @@
-import { CanvasRadialGradientBackground } from '../../../canvas/canvasBackground';
+import { CanvasRadialGradientBackground } from '../../../canvas/canvasRadialGradientBackground';
 import { Vector2 } from "../../../utils/vector2";
 import { Level } from "../../../utils/level";
-import { Snake } from '../character/snake';
 import { MouseSnake } from '../character/mouseSnake';
 
 export class FollowLevel extends Level {

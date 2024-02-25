@@ -30,6 +30,7 @@ export class CanvasSquare extends CanvasColor {
     constructor(attr: CanvasSquareAttributes = {}) {
         super(attr);
         this.color = attr.color;
+        this.size = attr.size;
     }
 
     public render(ctx: CanvasRenderingContext2D): void {
