@@ -1,13 +1,17 @@
-import { CanvasElementRelativity } from '../canvas/canvasElement';
+import { CanvasElement } from '../canvas/canvasElement';
 import { CanvasWrapper, CanvasWrapperAttributes } from '../canvas/canvasWrapper';
+import { DomElement } from '../dom/domElement';
+import { Game } from '../game';
+import { ElementRelativity } from './elementPosition';
 import { Level } from './level';
+import { Vector2 } from './vector2';
 
 export type modeAttributes = CanvasWrapperAttributes & {
 
 }
 export abstract class Mode extends CanvasWrapper {
     public levels: Record<string, Level> = {};
-    public relativity: CanvasElementRelativity = 'anchor';
+    public relativity: ElementRelativity = 'anchor';
 
     private keyAliases = {
         'w': 'up',
@@ -32,9 +36,11 @@ export abstract class Mode extends CanvasWrapper {
         'right': false,
     }
 
-    constructor(attr: modeAttributes = {}) {
-        super(attr);
-        this.mode = this;
+    build(): void {
+        super.build();
+        this.game.getEvent('resize').subscribe(String(Math.random()), (size: Vector2) => {
+            this.size = size;
+        });
     }
 
     protected addLevel(s: string, level: Level) {

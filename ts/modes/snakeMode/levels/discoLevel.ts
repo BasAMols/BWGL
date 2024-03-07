@@ -1,9 +1,9 @@
 import { Vector2 } from "../../../utils/vector2";
 import { Level } from "../../../utils/level";
 import { CanvasRadialGradientBackground } from '../../../canvas/canvasRadialGradientBackground';
-import { Snake } from '../../../entities/snake/snake';
-import { RandomController } from '../../../controllers/randomController';
-import { FlatContoller } from '../../../controllers/flatController';
+import { Snake } from '../snake';
+import { RandomController } from '../controllers/randomController';
+import { FlatContoller } from '../../rpg/flatController';
 import { DomButton } from '../../../dom/domButton';
 
 export class DiscoLevel extends Level {
@@ -11,17 +11,15 @@ export class DiscoLevel extends Level {
     public background = new CanvasRadialGradientBackground({
         stops: [[0, 'red'], [1, 'blue']],
     });
-    public height = 1145;
-    public width = 2000;
-
+    
     constructor() {
         super({hasDom: true});
+        this.size = new Vector2(1145, 2000)
     }
 
     build() {
         this.game.getEvent('resize').subscribe(String(Math.random()), (size: Vector2) => {
-            this.width = size.x;
-            this.height = size.y;
+            this.size = size;
         });
         this.addChild(this.background);
 
@@ -65,7 +63,7 @@ export class DiscoLevel extends Level {
             bottomRadius: bottomSize,
             position: new Vector2(-topSize, -topSize),
             colors: Math.random() < 0.2? 'green': 'rainbow',
-            controllers: [new RandomController(topSize, new Vector2( 3 + (185 - topSize)/17, 3 + (185 - topSize)/17), Vector2.right)]
+            controllers: [new RandomController(topSize, 3 + (185 - topSize)/17, Vector2.right)]
         }));
 
 

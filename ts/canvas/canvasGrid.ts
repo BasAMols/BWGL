@@ -1,84 +1,86 @@
 
+import { ElementRelativity } from '../utils/elementPosition';
+import { TickerReturnData } from '../utils/ticker';
 import { Vector2 } from "../utils/vector2";
-import { CanvasElement, CanvasElementAttributes, CanvasElementRelativity } from './canvasElement';
+import { CanvasAnimation } from './canvasAnimation';
+import { CanvasElement, CanvasElementAttributes } from './canvasElement';
 import { CanvasImage } from './canvasImage';
-import { PreppedImage } from './prepImage';
+import { CanvasPrepSprites } from './canvasPrepSprites';
+import { PrepAnimation } from './prepAnimation';
+import { PrepImage } from './prepImage';
 
 export type CanvasGridAttributes = CanvasElementAttributes & {
+    json: string;
+    sprites: CanvasPrepSprites
     factor?: number;
-    width?: number;
-    height?: number;
-    json?: string;
+    paralax?: number;
+    condition?: (position: Vector2, size: Vector2)=>void
 };
 export type TileData = {
     x: number,
     y: number,
     "type": string;
 };
-export type SpriteData = {
-    "url": string,
-    "name": string,
-};
-
 export class CanvasGrid extends CanvasElement {
     public type = 'logic' as const;
-    public relativity: CanvasElementRelativity = 'relative';
+    public relativity: ElementRelativity = 'anchor';
 
     public factor: number;
-    public width: number;
-    public height: number;
     public json: string;
     public ready: Boolean = false;
-    private sprites: Record<string, PreppedImage> = {};
+    private spritesData: CanvasPrepSprites;
+    private paralax: number;
+    condition: (position: Vector2, size: Vector2) => void;
 
-    public get gridDimentsion(): Vector2 {
-        return new Vector2(this.width, this.height);
-    }
-
-    public set gridDimentsion(value: Vector2) {
-        this.width = value.x;
-        this.height = value.y;
-    }
-
-    constructor(attr: CanvasGridAttributes = {}) {
+    constructor(attr: CanvasGridAttributes) {
         super(attr);
-        this.width = attr.width || 10;
-        this.height = attr.height || 10;
         this.factor = attr.factor || 10;
         this.json = attr.json;
-
-        CanvasGrid.loadJsonFile(this.json).then(this.jsonLoaded.bind(this));
+        this.spritesData = attr.sprites;
+        this.paralax = attr.paralax || 0;
+        this.condition = attr.condition;
     }
 
-    private jsonLoaded({ sprites, tiles }: { sprites: SpriteData[], tiles: TileData[]; }) {
-        sprites.forEach((sprite) => {
-            if (tiles.find((tile) => sprite.name === tile.type)){
-                this.sprites[sprite.name] = new PreppedImage({
-                    url: sprite.url,
-                    factor: this.factor
-                });
-            }
+    public build(): void {
+        CanvasGrid.loadJsonFile(this.json).then(this.jsonLoaded.bind(this));
+        this.game.waitCount++;
+    }
 
+    private jsonLoaded(tiles: TileData[]) {
+        tiles.forEach((tile) => {
+            
+            if (this.spritesData.sprites[tile.type].type === 'image'){
+                this.addChild(new CanvasImage({
+                    position: new Vector2(
+                        tile.x * this.factor,
+                        tile.y * this.factor
+                    ),
+                    image: this.spritesData.sprites[tile.type] as PrepImage,
+                    condition: this.condition?this.condition:null
+                }));
+            } else {
+                this.addChild(new CanvasAnimation({
+                    position: new Vector2(
+                        tile.x * this.factor,
+                        tile.y * this.factor
+                    ),
+                    animation: this.spritesData.sprites[tile.type] as PrepAnimation,
+                }));
+            }
         });
-        tiles.forEach((sprite) => {
-            this.addChild(new CanvasImage({
-                position: new Vector2(
-                    sprite.x * this.factor * 16,
-                    (this.height - sprite.y) * this.factor * 16
-                ),
-                image: this.sprites[sprite.type],
-            }));
-        });
+
+        this.game.waitCount--
+    }
+
+    public tick(obj: TickerReturnData): void {
+        super.tick(obj);
+        this.x = (this.paralax * this.level.x);
     }
 
     private static async loadJsonFile(url: string): Promise<any> {
         const response = await fetch(url);
         const data = await response.json();
         return data;
-    }
-
-    public render(ctx: CanvasRenderingContext2D): void {
-        super.render(ctx);
     }
 
 }

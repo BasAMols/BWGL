@@ -68,9 +68,14 @@ export class Vector2 {
 		return vector;
 	}
 
+	angleDegrees() {
+		return this.angle() * (180/Math.PI);
+	}
+
 	angle() {
 		return Math.atan2(this.y, this.x);
 	}
+
 
 	rotate(rad: number) {
 		var cos = Math.cos(rad);
@@ -93,14 +98,45 @@ export class Vector2 {
 		return ("[" + vector.x + "; " + vector.y + "]");
 	}
 
+	public clamp(min:Vector2, max:Vector2) {
+		return Vector2.clamp(this, min, max);
+    }
+
+	public static min(a:Vector2, b:Vector2) {
+        return new Vector2(
+			Math.min(a.x, b.x),
+			Math.min(a.y, b.y),
+		)
+    }
+
+	public static max(a:Vector2, b:Vector2) {
+		return new Vector2(
+			Math.max(a.x, b.x),
+			Math.max(a.y, b.y),
+		)
+    }
+
+	public static clamp(value:Vector2, min:Vector2, max:Vector2) {
+        return Vector2.max(Vector2.min(value, min), max);
+    }
+
+	public clampMagnitute(mag: number) {
+		return Vector2.clampMagnitute(this, mag);
+    }
+
+	public static clampMagnitute(value:Vector2, mag: number) {
+		var ratio = value.magnitude() / mag;
+		return new Vector2(value.x / ratio, value.y / ratio);
+    }
+
 	static get zero() {
 		return new Vector2(0, 0);
 	}
 	static get down() {
-		return new Vector2(0, 1);
+		return new Vector2(0, -1);
 	}
 	static get up() {
-		return new Vector2(0, -1);
+		return new Vector2(0, 1);
 	}
 	static get right() {
 		return new Vector2(1, 0);

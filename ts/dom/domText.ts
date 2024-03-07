@@ -41,6 +41,5 @@ export class DomText extends DomElement<'div'> {
 
         this.dom.style.pointerEvents = 'none';
         this.dom.style.userSelect = 'none';
-
     }
 }

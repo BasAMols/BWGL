@@ -38,6 +38,7 @@ export class SnakeMode extends Mode{
     }
 
     build(){
+        super.build();
         this.addLevel('disco', new DiscoLevel());
         this.addLevel('bounce', new BouncerLevel());
         this.switchLevel('disco');

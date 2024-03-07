@@ -1,115 +1,187 @@
 import { DomElement } from '../dom/domElement';
-import { Game } from '../game';
+import { Collider } from '../utils/collider';
 import { CanvasController } from '../utils/controller';
 import { Element, ElementAttributes } from "../utils/element";
 import { Level } from '../utils/level';
-import { Mode } from '../utils/mode';
 import { TickerReturnData } from '../utils/ticker';
 import { Vector2 } from "../utils/vector2";
 
 export type CanvasElementAttributes = ElementAttributes & {
     hasDom?: boolean,
-    position?: Vector2,
-    controllers?: CanvasController[]
-}
+    autoReady?: boolean,
+    controllers?: CanvasController[];
+};
 export interface CanvasElement {
-    tick?(obj: TickerReturnData): void
-    build?(): void
-    mouseMove?(e: MouseEvent): void
-    keyDown?(e: KeyboardEvent): void
-    keyUp?(e: KeyboardEvent): void
+    mouseMove?(e: MouseEvent): void;
+    keyDown?(e: KeyboardEvent): void;
+    keyUp?(e: KeyboardEvent): void;
 }
-export type CanvasElementType = 'color'|'image'|'wrapper'|'logic';
-export type CanvasElementRelativity = 'absolute'|'relative'|'anchor';
+export type CanvasElementType = 'color' | 'image' | 'wrapper' | 'logic' | 'animation' | 'collider';
 export abstract class CanvasElement extends Element {
     public abstract type: CanvasElementType;
-    public relativity: CanvasElementRelativity = 'absolute';
-    public parent!: CanvasElement;
-    public game!: Game;
-    public mode!: Mode;
-    public level!: Level;
+    public rendererType = 'canvas' as const;
     public dom!: DomElement<any>;
+    private autoReady: boolean;
+    private hasDom: boolean;
 
-    public absolute: boolean = true; 
-    private lastPosition: Vector2  = Vector2.zero; 
-    public movedAmount: Vector2 = Vector2.zero; 
-    public position: Vector2  = Vector2.zero; 
-    public active: boolean = true;
-    public visible: boolean = true;
+    public get x() {
+        return super.x;
+    }
+
+    public set x(n: number) {
+        super.x = n;
+        if (this.dom) {
+            this.dom.x = n;
+        }
+    }
+
+    public get y() {
+        return super.y;
+    }
+
+    public set y(n: number) {
+        super.y = n;
+        if (this.dom) {
+            this.dom.y = n;
+        }
+    }
+
+    public get width() {
+        return super.width;
+    }
+
+    public set width(n: number) {
+        super.width = n;
+        if (this.dom) {
+            this.dom.width = n;
+        }
+    }
+
+    public get height() {
+        return super.height;
+    }
+
+    public set height(n: number) {
+        super.height = n;
+        if (this.dom) {
+            this.dom.height = n;
+        }
+    }
+
+    public get renderPosition(): Vector2 {
+        return this.position.add(this.anchoredPosition);
+    }
+    public get renderX() { return this.renderPosition.x; }
+    public get renderY() { return this.renderPosition.y; }
+
     public lowerChildren: CanvasElement[] = [];
     public higherChildren: CanvasElement[] = [];
     public controllers: CanvasController[] = [];
     public anchoredPosition: Vector2 = Vector2.zero;
+
     constructor(attr: CanvasElementAttributes = {}) {
         super(attr);
-        this.position = attr.position || Vector2.zero;
+        this.hasDom = attr.hasDom || false;
+        if (this.hasDom) {
+            this.dom = new DomElement('div');
+        }
+        this.autoReady = attr.autoReady || false;
         this.addControllers(attr.controllers || []);
-        if (attr.hasDom){
-            this.dom = new DomElement('div')
-        }
     }
 
-    public addChild(child: CanvasElement, above: boolean = false){
-        if (child.parent === undefined){
-            child.parent ??= this;
-            child.game ??= this.game;
-            child.mode ??= this.mode;
-            child.level ??= this.level;
+    public addChild(child: CanvasElement | DomElement<any>, above: boolean = false) {
+        child.parent ??= this;
+        child.game ??= this.game;
+        child.mode ??= this.mode;
+        child.level ??= this.level;
+        this.game.waitCount++;
 
-            this[above?'higherChildren':'lowerChildren'].push(child);
-
-            if (child.dom){
-                this.dom.appendChild(child.dom);
-            }
-
-            if (child.build){
-                child.build()
-            }
-
+        if (child.rendererType === 'canvas') {
+            this[above ? 'higherChildren' : 'lowerChildren'].push(child);
             child.registerControllers(child);
-
+            if (child.dom && this.hasDom) {
+                this.dom.addChild(child.dom);
+            }
         } else {
-            console.log('The element is already a parent of another element.');
+            if (this.hasDom) {
+                this.dom.addChild(child);
+            } else {
+                console.log('The CanvasElement class does not have a dom element to add children to. Child:', child.constructor.name);
+            }
         }
+
+        if (!this.autoReady) {
+            child.build();
+            this.game.waitCount--;
+        }
+
+        if (child.rendererType === 'canvas' && child.type === 'collider' && (child as Collider).colliderType === 'static' && this.level) {
+            this.level.colliders.push(child as Collider);
+        }
+
+
     }
 
-    public addControllers(c: CanvasController[]){
-        this.controllers.push(...c);
+    public addControllers(c: CanvasController[]) {
+        if (c.length > 0) {
+            this.controllers.push(...c);
+        }
     }
 
     public registerControllers(child: CanvasElement) {
         child.controllers.forEach((controller) => {
-            if (controller.parent === undefined){
+            if (controller.parent === undefined) {
                 controller.parent ??= child;
                 controller.game ??= child.game;
                 controller.mode ??= child.mode;
                 controller.level ??= child.level;
+                controller.build();
             }
         });
     }
+
+    public tick(obj: TickerReturnData) {
+        super.tick(obj);
+        
+        this.controllers.filter((child)=>child.active).forEach((c) => c.tick(obj));
+        this.lowerChildren.filter((child)=>child.active).forEach((c) => c.tick(obj));
+        this.higherChildren.filter((child)=>child.active).forEach((c) => c.tick(obj));
+        if (this.dom) {
+            this.dom.tick(obj);
+        }
+    }
     
-    public tick?(obj: TickerReturnData) {
-        if (this.active){
-            this.movedAmount = this.lastPosition.subtract(this.position);
-            this.lastPosition = this.position;
-            this.controllers.forEach((c) => c.tick(obj) );
-            this.lowerChildren.forEach((c) => c.tick(obj) );
-            this.higherChildren.forEach((c) => c.tick(obj) );
+
+    public preRender(c: CanvasRenderingContext2D) {
+        if (this.relativity === 'anchor') {
+            c.save();
+            // c.scale(this.scaleX, this.scaleY);
+            c.translate(this.x, this.y);
+        }
+        
+        this.lowerChildren.filter((child)=>child.visible && child.active).forEach((child) => {
+            child.preRender(c);
+            child.postRender(c);
+        });
+        
+        this.render(c);
+    }
+
+    public render(c: CanvasRenderingContext2D) {
+        //
+    }
+
+    public postRender(c: CanvasRenderingContext2D) {
+        this.higherChildren.filter((child)=>child.visible && child.active).forEach((child) => {
+            child.preRender(c);
+            child.postRender(c);
+        });
+
+        if (this.relativity === 'anchor') {
+            c.restore();
         }
     }
 
-    public render(c: CanvasRenderingContext2D){
-        if (this.relativity === 'absolute'){
-            this.anchoredPosition = Vector2.zero;
-        }
-        if (this.relativity === 'relative'){
-            this.anchoredPosition = this.parent.anchoredPosition;
-        }
-        if (this.relativity === 'anchor'){
-            this.anchoredPosition = this.position;
-            // console.log(this.anchoredPosition);
-        }
-    }
 }
 
 

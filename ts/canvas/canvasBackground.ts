@@ -11,9 +11,10 @@ export class CanvasColorBackground extends CanvasSquare {
 
     build() {
         this.game.getEvent('resize').subscribe(String(Math.random()), (size: Vector2)=>{
-            this.size = this.level.size
+            this.size = this.parent.size;            
         });
     }
+
 }
 
 

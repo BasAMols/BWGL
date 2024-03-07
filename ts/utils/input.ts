@@ -14,23 +14,27 @@ export class Input {
     private game: Game;
     public constructor(game: Game) {
         this.game = game;
-        this.canvas = game.renderer.canvas;
+        this.canvas = game.renderer;
         this.canvas.addEventListener('mousemove', this.mouseMove.bind(this));
         this.canvas.addEventListener('keydown', this.keyDown.bind(this));
         this.canvas.addEventListener('keyup', this.keyUp.bind(this));
-
+        
     }
 
     public mouseMove(e: MouseEvent) {
-        this.recursive('mouseMove', this.game.renderer, e); 
+        this.send('mouseMove', e); 
     }
 
     public keyDown(e: KeyboardEvent) {
-        this.recursive('keyDown', this.game.renderer, e);
+        this.send('keyDown', e);
     }
 
     public keyUp(e: KeyboardEvent) {
-        this.recursive('keyUp', this.game.renderer, e);
+        this.send('keyUp', e);
+    }
+
+    private send(event:inputEvents, e: KeyboardEvent|MouseEvent){
+        Object.values(this.game.modes).forEach((mode) => this.recursive(event, mode, e));
     }
 
     private recursive(event:inputEvents, element: CanvasElement, e: KeyboardEvent|MouseEvent) {

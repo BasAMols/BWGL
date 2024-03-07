@@ -2,27 +2,130 @@ import { CanvasColorBackground } from '../../../canvas/canvasBackground';
 import { CanvasGrid } from '../../../canvas/canvasGrid';
 import { Level } from '../../../utils/level';
 import { Vector2 } from '../../../utils/vector2';
-import { RPGCharacter } from '../../../entities/rpgCharacter/rpgCharacter';
-import { FlatContoller } from '../../../controllers/flatController';
+import { RPGCharacter } from '../rpgCharacter';
+import { FlatContoller } from '../flatController';
+import { CameraController } from '../../snakeMode/controllers/cameraController';
+import { TickerReturnData } from '../../../utils/ticker';
+import { CanvasPrepSprites } from '../../../canvas/canvasPrepSprites';
+import { CanvasImage } from '../../../canvas/canvasImage';
+import { PrepImage } from '../../../canvas/prepImage';
+import { Collider } from '../../../utils/collider';
+import { DomText } from '../../../dom/domText';
+import { DomButton } from '../../../dom/domButton';
 
 export class OverworldLevel extends Level {
-    private zoom = 3;
+    private zoom = 6;
 
-    public start = new Vector2(10, 10)
-    public background = new CanvasColorBackground('#272727')
-    public height = 20*this.zoom*16
-    public width = 20*this.zoom*16
+    public start = new Vector2(7 * this.zoom * 16, 7 * this.zoom * 16);
+    public background = new CanvasColorBackground('#272727');
+    public character: RPGCharacter;
+    public sprites: CanvasPrepSprites;
+    public mo: DomText;
 
-    build() {
-        this.addChild(this.background);
-        this.addChild(new CanvasGrid({json: '/json/overworld/terrain.json', width: 19, height: 19, factor: this.zoom}));
-        this.addChild(new CanvasGrid({json: '/json/overworld/objects.json', width: 19, height: 19, factor: this.zoom}));
-        this.addChild(new CanvasGrid({json: '/json/overworld/decorations.json', width: 19, height: 19, factor: this.zoom}));
-        this.addChild(new CanvasGrid({json: '/json/overworld/overlay.json', width: 19, height: 19, factor: this.zoom}));
-        this.addChild(new RPGCharacter({
+    constructor() {
+        super({
+            hasDom: true,
+            size: new Vector2(320 * 6, 320 * 6),
+        });
+
+        this.character = new RPGCharacter({
             position: this.start,
-            scale: 1,
-            controllers: [new FlatContoller()]
-        }));
+            controllers: [new FlatContoller()],
+        });
+
+        this.addControllers([new CameraController({ target: this.character })]);
+
+        this.sprites = new CanvasPrepSprites({
+            jsons: ['/json/overworld/sprites.json'],
+            factor: this.zoom,
+            callback: () => {
+                this.assetsLoaded();
+            }
+        });
+        this.addControllers([this.sprites])
     }
+
+    assetsLoaded() {
+        this.addChild(this.background);
+
+        this.addChild(new CanvasImage({
+            image: new PrepImage({ url: '/img/overworld/terrain.png', factor: this.zoom }, this.game),
+        }));
+
+        
+        this.addChild(new CanvasGrid({
+            sprites: this.sprites,
+            json: '/json/overworld/decorations.json',
+            factor: this.zoom,
+        }));
+
+        this.addChild(new CanvasGrid({
+            sprites: this.sprites,
+            json: '/json/overworld/objects.json',
+            factor: this.zoom,
+            condition: (entity)=>entity.y >= this.character.y
+        }));
+
+        this.addChild(this.character);
+
+        this.addChild(new CanvasGrid({
+            sprites: this.sprites,
+            json: '/json/overworld/objects.json',
+            factor: this.zoom,
+            condition: (entity)=>entity.y < this.character.y
+        }));
+
+        this.addChild(new CanvasGrid({
+            sprites: this.sprites,
+            json: '/json/overworld/overlay.json',
+            factor: this.zoom
+        }));
+
+        (([
+            [20,122,25,28],//doghouse
+            [147,163,173,50],//riverRight
+            [0,163,125,50],//riverLeft
+            [64,120,31,30],//statue
+            [23,260,25,62],//house1
+            [48,282,17,39],//house2
+            [65,260,24,62],//house3
+            [-15,0,30,112,100], //hedgeLeft
+            [305,0,30,112,100], //hedgeRight
+            [0,0,320,14,100], //hedgeBottom
+            [97,272,13,24],
+            [176,112,15,19],
+            [194,103,49,10],
+            [255,103,15,60],
+            [272,113,41,39],
+            [67,20,58,16],
+            [32,37,15,16],
+        ]) as ([number,number,number,number,number?])[]).forEach(([x,y,w,h,t = 30]) => {
+            this.addChild(new Collider({
+                position: new Vector2(this.zoom*x,this.zoom*y),
+                size: new Vector2(this.zoom*w,this.zoom*h),
+                cornerTolerance: t,
+            }));
+        });
+
+        // const [x,y,w,h] = [23,260,25,62];
+        // this.mo = new DomButton({
+        //     position: new Vector2(this.zoom*x,this.zoom*y),
+        //     size: new Vector2(this.zoom*w,this.zoom*h),
+        //     background: 'rgba(0, 255,0,0.3)',
+        //     fontSize: 50,
+        //     onClick: () => {
+        //         navigator.clipboard.writeText(this.mo.text)
+        //     },
+        // })
+        // this.mo.dom.style.pointerEvents = 'all';
+        // this.mo.dom.style.userSelect = 'all';
+        // this.addChild(this.mo);
+    }
+
+    // tick(obj: TickerReturnData): void {
+    //     super.tick(obj);
+    //     if (this.mo){
+    //         this.mo.text = `[${Math.round(this.mo.x/this.zoom)},${Math.round(this.mo.y/this.zoom)},${Math.round(this.mo.width/this.zoom)},${Math.round(this.mo.height/this.zoom)}]`;
+    //     }
+    // }
 }

@@ -1,11 +1,10 @@
-import { CanvasElement, CanvasElementAttributes } from './canvasElement';
+import { ElementRelativity } from '../utils/elementPosition';
+import { CanvasElement, CanvasElementAttributes, CanvasElementType } from './canvasElement';
 
 export type CanvasWrapperAttributes = CanvasElementAttributes & {
 }
 export abstract class CanvasWrapper extends CanvasElement {
-    public readonly type = 'wrapper';
-
-    constructor(attr: CanvasWrapperAttributes = {}) {
-        super(attr);
-    }
+    public type: CanvasElementType = 'wrapper';
+    public relativity: ElementRelativity =  'anchor';
 }
+

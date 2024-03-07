@@ -10,10 +10,32 @@ export type CanvasCircleAttributes = CanvasColorAttributes & {
 export class CanvasCircle extends CanvasColor {
 
     public readonly shape = 'circle';
-
-    public radius: number;
-    public radiusY: number;
+    
     public angle: number;
+
+    private _radius: number;
+    public get radius(): number {
+        return this._radius;
+    }
+    public set radius(value: number) {
+        this._radius = value;
+    }
+    private _radiusY: number;
+    public get radiusY(): number {
+        return this._radiusY;
+    }
+    public set radiusY(value: number) {
+        this._radiusY = value;
+    }
+    public get width() { return this.radius*2; }
+    public set width(value: number) {
+        this.radius = value / 2;
+    }
+
+    public get height() { return this.radiusY*2; }
+    public set height(value: number) {
+        this.radiusY = value / 2;
+    }
 
     public center: boolean;
 
@@ -26,13 +48,12 @@ export class CanvasCircle extends CanvasColor {
     }
 
     public render(ctx: CanvasRenderingContext2D): void {
-        super.render(ctx);
         ctx.fillStyle = this.getColor();
         ctx.beginPath();
 
         ctx.ellipse(
-            this.position.x + this.anchoredPosition.x,
-            this.position.y + this.anchoredPosition.y,
+            this.position.x,
+            this.position.y,
             this.radius,
             this.radiusY,
             this.angle,
@@ -53,11 +74,11 @@ export class CanvasCircle extends CanvasColor {
     public getLiniarGradient(): CanvasGradient | '' {
         if (this.linearGradient) {
             const grd = this.game.renderer.ctx.createLinearGradient(
-                this.position.x+this.anchoredPosition.x - this.radius, 
-                this.position.y+this.anchoredPosition.y - this.radiusY, 
-                this.position.x+this.anchoredPosition.x + this.radius, 
-                this.position.y+this.anchoredPosition.y + this.radiusY
-                );
+                this.position.x + this.anchoredPosition.x - this.radius,
+                this.position.y + this.anchoredPosition.y - this.radiusY,
+                this.position.x + this.anchoredPosition.x + this.radius,
+                this.position.y + this.anchoredPosition.y + this.radiusY
+            );
             this.linearGradient.stops.forEach(([number, color]) => {
                 grd.addColorStop(number, color);
             });
@@ -71,11 +92,11 @@ export class CanvasCircle extends CanvasColor {
                 this.radialGradient.offset = Vector2.zero;
             }
             const grd = this.game.renderer.ctx.createRadialGradient(
-                this.position.x+this.anchoredPosition.x + this.radialGradient.offset.x,
-                this.position.y+this.anchoredPosition.y + this.radialGradient.offset.y,
+                this.position.x + this.anchoredPosition.x + this.radialGradient.offset.x,
+                this.position.y + this.anchoredPosition.y + this.radialGradient.offset.y,
                 0,
-                this.position.x+this.anchoredPosition.x,
-                this.position.y+this.anchoredPosition.y,
+                this.position.x + this.anchoredPosition.x,
+                this.position.y + this.anchoredPosition.y,
                 Math.max(this.radius, this.radiusY)
             );
             this.radialGradient.stops.forEach(([number, color]) => {
