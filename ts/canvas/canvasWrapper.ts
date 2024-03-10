@@ -3,7 +3,7 @@ import { CanvasElement, CanvasElementAttributes, CanvasElementType } from './can
 
 export type CanvasWrapperAttributes = CanvasElementAttributes & {
 }
-export abstract class CanvasWrapper extends CanvasElement {
+export class CanvasWrapper extends CanvasElement {
     public type: CanvasElementType = 'wrapper';
     public relativity: ElementRelativity =  'anchor';
 }

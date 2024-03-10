@@ -1,4 +1,3 @@
-import { CanvasCustom } from '../../../canvas/canvasCustom';
 import { CanvasImage } from '../../../canvas/canvasImage';
 import { CanvasWrapper } from '../../../canvas/canvasWrapper';
 import { PrepImage } from '../../../canvas/prepImage';
