@@ -1,14 +1,20 @@
+import { CanvasCustom } from '../../../canvas/canvasCustom';
 import { CanvasImage } from '../../../canvas/canvasImage';
 import { CanvasWrapper } from '../../../canvas/canvasWrapper';
 import { PrepImage } from '../../../canvas/prepImage';
 import { Vector2 } from '../../../utils/vector2';
+import { CanvasDrawer } from './perspectiveDrawer';
+import { TrainCar } from './trainCar';
 
 export class TrainDoor extends CanvasWrapper {
     public offset: Vector2;
-    public factor = 0.05;
-    public doorHeight = 45 * 6;
+    public doorHeight = 45 *this.draw.scale;
     public outer: CanvasImage;
     public inner: CanvasImage;
+    
+    constructor(public draw: CanvasDrawer, public car: TrainCar) {
+        super();
+    }
 
     public build(): void {
         this.outer = new CanvasImage({
@@ -21,15 +27,15 @@ export class TrainDoor extends CanvasWrapper {
         this.addChild(this.outer);
         const or = this.outer.render.bind(this.outer);
         this.outer.render = (c: CanvasRenderingContext2D) => {
-            if (this.offset.x + 17 * 6 * this.factor > 0) {
+            if (this.offset.x + 17 *this.draw.scale * this.draw.factor > 0) {
                 c.save();
-                c.transform((this.offset.x + 17 * 6 * this.factor) / this.outer.prepped.width, -(0.22), 0, 1 / (this.outer.prepped.height / this.doorHeight), 17 * 6, 13 * 6);
+                c.transform((this.offset.x + 17 *this.draw.scale * this.draw.factor) / this.outer.prepped.width, -(0.22), 0, 1 / (this.outer.prepped.height / this.doorHeight), 17 *this.draw.scale, 13 *this.draw.scale);
                 or(c);
                 c.restore();
             }
-            if (this.offset.x + 223 * 6 * this.factor < 0) {
+            if (this.offset.x + 223 *this.draw.scale * this.draw.factor < 0) {
                 c.save();
-                c.transform((this.offset.x + 223 * 6 * this.factor) / this.outer.prepped.width, -(0.22), 0, 1 / (this.outer.prepped.height / this.doorHeight), 240 * 6, 13 * 6);
+                c.transform((this.offset.x + 223 *this.draw.scale * this.draw.factor) / this.outer.prepped.width, -(0.22), 0, 1 / (this.outer.prepped.height / this.doorHeight), 240 *this.draw.scale, 13 *this.draw.scale);
                 or(c);
                 c.restore();
             }
@@ -45,20 +51,18 @@ export class TrainDoor extends CanvasWrapper {
         this.addChild(this.inner);
         const ir = this.inner.render.bind(this.inner);
         this.inner.render = (c: CanvasRenderingContext2D) => {
-            if (this.offset.x + 17 * 6 * this.factor < 0) {
+            if (this.offset.x + 17 *this.draw.scale * this.draw.factor < 0) {
                 c.save();
-                c.transform((this.offset.x + 17 * 6 * this.factor) / this.inner.prepped.width, -(0.22), 0, 1 / (this.inner.prepped.height / this.doorHeight), 17 * 6, 14 * 6);
+                c.transform((this.offset.x + 17 *this.draw.scale * this.draw.factor) / this.inner.prepped.width, -(0.22), 0, 1 / (this.inner.prepped.height / this.doorHeight), 17 *this.draw.scale, 14 *this.draw.scale);
                 ir(c);
                 c.restore();
             }
-            if (this.offset.x + 223 * 6 * this.factor > 0) {
+            if (this.offset.x + 223 *this.draw.scale * this.draw.factor > 0) {
                 c.save();
-                c.transform((this.offset.x + 223 * 6 * this.factor) / this.inner.prepped.width, -(0.22), 0, 1 / (this.inner.prepped.height / this.doorHeight), 240 * 6, 14 * 6);
+                c.transform((this.offset.x + 223 *this.draw.scale * this.draw.factor) / this.inner.prepped.width, -(0.22), 0, 1 / (this.inner.prepped.height / this.doorHeight), 240 *this.draw.scale, 14 *this.draw.scale);
                 ir(c);
                 c.restore();
             }
         };
-
-
     }
 }

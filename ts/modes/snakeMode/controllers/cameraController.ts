@@ -17,12 +17,12 @@ export class CameraController extends CanvasController {
         super.tick(obj);
 
         const mid = this.target.position
-            .add(this.target.size.subtract(this.mode.size).scale(0.5))
+            .add(this.target.size.subtract(this.target.mode.size).scale(0.5))
             .scale(-1)
             
-        const rel = this.mode.size.subtract(this.level.size);
+        const rel = this.target.mode.size.subtract(this.target.level.size);
 
-        this.parent.position = new Vector2(
+        this.target.level.position = new Vector2(
             rel.x < 0 ? Util.clamp(mid.x, rel.x, 0): rel.x/2,
             rel.y < 0 ? Util.clamp(mid.y, rel.y, 0): rel.y/2
         )

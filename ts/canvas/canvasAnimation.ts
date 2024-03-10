@@ -10,6 +10,7 @@ export type CanvasAnimationAttributes = CanvasElementAttributes & {
     paralax?: number,
     shadow?: [string, number, number, number],
     reverse?: boolean,
+    loop? : boolean,
 
 };
 export class CanvasAnimation extends CanvasElement {
@@ -21,6 +22,7 @@ export class CanvasAnimation extends CanvasElement {
     public interval: number;
     public shadow: [string, number, number, number];
     public reverse: boolean;
+    public loop: boolean = true;
 
     public get max (){ return this.prepped.max }
     public get frames (){ return this.prepped.frames }
@@ -32,6 +34,7 @@ export class CanvasAnimation extends CanvasElement {
         this.interval = attr.interval || this.prepped.interval;
         this.shadow = attr.shadow;
         this.reverse = attr.reverse || false;
+        this.loop = attr.loop !== undefined? attr.loop : true;
     }
 
     get width() {
@@ -52,7 +55,14 @@ export class CanvasAnimation extends CanvasElement {
 
     tick(obj: TickerReturnData) {
         super.tick(obj);
-        this.frame = (this.frame+1)%(this.max*this.interval);
+        if (this.loop){
+            this.frame = (this.frame+1)%(this.max*this.interval);
+        } else {
+            if (this.frame < this.max*this.interval - 1){
+                this.frame++;
+            }
+        }
+
         this.frames.forEach((frame,i) => {
             if (this.reverse){
                 frame.active = Math.floor(this.frame/this.interval) === this.max - i - 1;

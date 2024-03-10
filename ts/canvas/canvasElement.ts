@@ -2,7 +2,6 @@ import { DomElement } from '../dom/domElement';
 import { Collider } from '../utils/collider';
 import { CanvasController } from '../utils/controller';
 import { Element, ElementAttributes } from "../utils/element";
-import { Level } from '../utils/level';
 import { TickerReturnData } from '../utils/ticker';
 import { Vector2 } from "../utils/vector2";
 
@@ -164,7 +163,6 @@ export abstract class CanvasElement extends Element {
             c.translate(this.x, this.y);
             c.scale(this.zoom.x, this.zoom.y);
         }
-
         
         this.lowerChildren.filter((child)=>child.visible && child.active).forEach((child) => {
             child.preRender(c);

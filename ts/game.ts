@@ -81,8 +81,8 @@ export class Game extends CanvasWrapper {
     }
 
     private setupModes() {
-        this.addMode('snakes', new SnakeMode());
-        this.addMode('rpg', new RPGMode());
+        // this.addMode('snakes', new SnakeMode());
+        // this.addMode('rpg', new RPGMode());
         this.addMode('side', new SideMode());
 
         this.switchMode('side');

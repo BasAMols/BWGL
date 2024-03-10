@@ -1,5 +1,4 @@
 import { CanvasElement, CanvasElementAttributes, CanvasElementType } from '../canvas/canvasElement';
-import { CanvasSquare } from '../canvas/canvasSquare';
 import { ElementRelativity } from './elementPosition';
 
 export type ColliderAttributes = CanvasElementAttributes & {
@@ -26,6 +25,6 @@ export class Collider extends CanvasElement {
     }
 
     public build(): void {
-        // this.addChild( new CanvasSquare({size: this.size, color: 'rgba(255,0,0,0.5)', rounded: 0}));
+        // this.addChild( new CanvasSquare({size: this.size, color: 'rgba(255,0,0,0.5)', rounded: 0}), true);
     }
 }

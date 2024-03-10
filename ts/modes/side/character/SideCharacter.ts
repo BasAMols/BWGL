@@ -1,70 +1,70 @@
 import { CanvasAnimation } from '../../../canvas/canvasAnimation';
-import { CanvasPrepSprites, SpriteAnimationJSON } from '../../../canvas/canvasPrepSprites';
-import { CanvasSquare } from '../../../canvas/canvasSquare';
-import { PrepAnimation } from '../../../canvas/prepAnimation';
+import { PrepSpritesheet } from '../../../canvas/spritesheet';
 import { Character } from '../../../utils/character';
 import { CanvasController } from '../../../utils/controller';
 import { ElementRelativity } from '../../../utils/elementPosition';
 import { TickerReturnData } from '../../../utils/ticker';
 import { Util } from '../../../utils/utils';
 import { Vector2 } from '../../../utils/vector2';
+import { CameraController } from '../../snakeMode/controllers/cameraController';
 
 export class SideCharacter extends Character {
-    private scale: number = 6;
+    private scale: number = 5;
     public relativity: ElementRelativity = 'anchor';
     public animations: Record<string, CanvasAnimation> = {};
-    public direction: '00' | '09' | '18' | '27' = '00';
-    public phase: 'idle' | 'attack' | 'walk' = 'idle';
+    public direction: number = 1;
+    public phase: 'idle' | 'walk' = 'idle';
+    private specifics: [`${typeof this.phase}`, string, number, number][];
 
     constructor({
-        scale = 5,
         position = Vector2.zero,
         controllers = []
     }: {
-        scale?: number;
         position?: Vector2;
         controllers?: CanvasController[];
     } = {}) {
         super({
             position,
             controllers,
-            size: new Vector2(10 * scale, 20 * scale),
+            size: new Vector2(15*5, 40*5),
         });
+        this.specifics = [
+            ['idle', '/img/spritesheets/hat-man-idle.png', 4, 40],
+            ['walk', '/img/spritesheets/hat-man-walk.png', 6, 60],
+        ];
     }
 
     build() {
-        super.build();
+        this.level.addControllers([new CameraController({ target: this })]);
 
-        // this.addChild(new CanvasSquare({ color: 'blue', size: new Vector2(16*this.scale*4, 16*this.scale*4), relativity: 'relative' }));
-        CanvasPrepSprites.loadJsonFile('/json/character/sprites.json').then((sprite: SpriteAnimationJSON[]) => {
-            sprite.forEach(sprite => {
-                this.animations[sprite.name] = new CanvasAnimation({
-                    position: new Vector2(-165, -100),
-                    animation: new PrepAnimation({
-                        urls: sprite.animation.urls,
-                        interval: 30,
-                        factor: this.scale
-                    }, this.game)
-                });
-                this.addChild(this.animations[sprite.name]);
+        this.specifics.forEach(([key, url, count, interval]) => {
+            this.animations[key] = new CanvasAnimation({
+                animation: new PrepSpritesheet({
+                    url,
+                    factor: this.scale,
+                    size: new Vector2(39, 52),
+                    repeatX: count,
+                    interval: interval,
+                }, this.game),
             });
+
+            this.addChild(this.animations[key], true);
         });
 
     }
     public tick(o: TickerReturnData) {
         super.tick(o);
         this.phase = this.movedAmount.magnitude() > .1 ? 'walk' : 'idle';
-        if (this.phase === 'walk') {
-            const degrees = (3 - Math.round((this.movedAmount.angleDegrees() + 1) / 90 + 4) % 4) * 9;
-            this.direction = degrees.toString().padStart(2, '0') as '00' | '09' | '18' | '27';
-        }
 
-
-        Object.entries(this.animations).forEach(([key, animation]) => {
-            if (key.startsWith('walk')) {
-                animation.interval = Util.clamp(Math.floor(30 - this.movedAmount.magnitude() * 0.8), 5, 50);
+        Object.entries(this.animations).forEach(([key, a])=>{
+            if (this.movedAmount.x !== 0){
+                a.zoom = new Vector2(this.movedAmount.x < 0 ? 1 : -1, 1);
+                a.x = ((20*this.scale) * (this.movedAmount.x < 0 ? -1 : 1)) + (7.5*this.scale)
             }
-            animation.active = key === `${this.phase}${this.direction}`;
+            if (key.startsWith('walk')) {
+                a.interval = Util.clamp(Math.floor(30 - this.movedAmount.magnitude() * 0.8), 5, 50);
+            }
+            a.active = key === `${this.phase}`;
         });
     }
 }
