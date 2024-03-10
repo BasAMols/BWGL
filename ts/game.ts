@@ -21,7 +21,7 @@ export class Game extends CanvasWrapper {
     private fps: FPS;
     public modes: Record<string, Mode> = {};
     public game = this;
-    public ctx: any;
+    public ctx: CanvasRenderingContext2D;
     public input: Input;
     public ready: boolean = false;
     private _waitCount: number = 0;
@@ -119,48 +119,48 @@ export class Game extends CanvasWrapper {
         this.loader.visible = false;
         this.fps.visible = true;
         this.ticker.start();
-        this.addChild(new DomButton({
-            text: 'RPG',
-            fontSize: 39,
-            fontWeight: 1000,
-            color: 'white',
-            position: new Vector2(130, 5),
-            size: new Vector2(65, 50),
-            background: '#ff00ffaa',
-            fontFamily: 'monospace',
-            padding: [0, 10, 0, 10],
-            onClick: () => {
-                this.switchMode('rpg');
-            }
-        }));
-        this.addChild(new DomButton({
-            text: 'SNAKES',
-            fontSize: 39,
-            fontWeight: 1000,
-            color: 'white',
-            position: new Vector2(220, 5),
-            size: new Vector2(130, 50),
-            background: '#ff00ffaa',
-            fontFamily: 'monospace',
-            padding: [0, 10, 0, 10],
-            onClick: () => {
-                this.switchMode('snakes');
-            }
-        }));
-        this.addChild(new DomButton({
-            text: 'TRAIN',
-            fontSize: 39,
-            fontWeight: 1000,
-            color: 'white',
-            position: new Vector2(375, 5),
-            size: new Vector2(130, 50),
-            background: '#ff00ffaa',
-            fontFamily: 'monospace',
-            padding: [0, 10, 0, 10],
-            onClick: () => {
-                this.switchMode('side');
-            }
-        }));
+        // this.addChild(new DomButton({
+        //     text: 'RPG',
+        //     fontSize: 39,
+        //     fontWeight: 1000,
+        //     color: 'white',
+        //     position: new Vector2(130, 5),
+        //     size: new Vector2(65, 50),
+        //     background: '#ff00ffaa',
+        //     fontFamily: 'monospace',
+        //     padding: [0, 10, 0, 10],
+        //     onClick: () => {
+        //         this.switchMode('rpg');
+        //     }
+        // }));
+        // this.addChild(new DomButton({
+        //     text: 'SNAKES',
+        //     fontSize: 39,
+        //     fontWeight: 1000,
+        //     color: 'white',
+        //     position: new Vector2(220, 5),
+        //     size: new Vector2(130, 50),
+        //     background: '#ff00ffaa',
+        //     fontFamily: 'monospace',
+        //     padding: [0, 10, 0, 10],
+        //     onClick: () => {
+        //         this.switchMode('snakes');
+        //     }
+        // }));
+        // this.addChild(new DomButton({
+        //     text: 'TRAIN',
+        //     fontSize: 39,
+        //     fontWeight: 1000,
+        //     color: 'white',
+        //     position: new Vector2(375, 5),
+        //     size: new Vector2(130, 50),
+        //     background: '#ff00ffaa',
+        //     fontFamily: 'monospace',
+        //     padding: [0, 10, 0, 10],
+        //     onClick: () => {
+        //         this.switchMode('side');
+        //     }
+        // }));
     }
 }
 

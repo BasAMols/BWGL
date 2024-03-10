@@ -7,7 +7,7 @@ import { Vector2 } from '../../../utils/vector2';
 
 export class SideContoller extends CanvasController {
     private speed = 4;
-    private jumpHeight = 11;
+    private jumpHeight = 14;
     private velocity: Vector2 = Vector2.zero;
     public parent: Character;
     public jumping: boolean = false;
@@ -36,7 +36,7 @@ export class SideContoller extends CanvasController {
                 this.velocity.x = r.find((a) => a[0] === "x")[1] / (obj.interval / 10);
             }
             if (r.find((a) => a[0] === "y")) {
-                if (this.velocity.y < 0) {
+                if (this.velocity.y <= 0) {
                     this.jumping = false;
                 }
                 this.velocity.y = r.find((a) => a[0] === "y")[1] / (obj.interval / 10);

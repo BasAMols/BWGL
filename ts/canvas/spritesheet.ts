@@ -16,7 +16,7 @@ export type PrepSpritesheetAttributes = {
 export class PrepSpritesheet {
     public type: 'animation' = 'animation';
     protected url: string;
-    protected size: Vector2;
+    public size: Vector2;
     protected repeatX: number;
     protected repeatY: number;
     protected sectionX: number;

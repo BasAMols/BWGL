@@ -18,6 +18,10 @@ export class PrepAnimation {
     protected game: Game;
     public callback: ()=>void;
 
+    public get size() {
+        return this.frames[0].prepped.size;
+    }
+
     constructor(attr: PrepAnimationAttributes, game: Game) {
         this.game = game;
         this.factor = attr.factor || 1;

@@ -186,35 +186,39 @@ var ElementPosition = class {
 };
 
 // ts/utils/elementZoom.ts
-var ElementScale = class extends ElementPosition {
-  // protected _scaleX: number = 1;
-  // protected _scaleY: number = 1;
-  // public get scaleX() {
-  //     return this._scaleX;
-  // };
-  // public set scaleX(n) {
-  //     this._scaleX = n;
-  // };
-  // public get scaleY() {
-  //     return this._scaleY;
-  // };
-  // public set scaleY(n) {
-  //     this._scaleY = n;
-  // };
-  // public get scale() {
-  //     return new Vector2(this.scaleX, this.scaleY);
-  // }
-  // public set scale(value: Vector2) {
-  //     this.scaleX = value.x;
-  //     this.scaleY = value.y;
-  // };
+var ElementZoom = class extends ElementPosition {
   constructor(attr = {}) {
     super(attr);
+    this._zoomX = 1;
+    this._zoomY = 1;
+    if (attr.zoom) {
+      this._zoomX = attr.zoom.x;
+      this._zoomY = attr.zoom.y;
+    }
+  }
+  get zoomX() {
+    return this._zoomX;
+  }
+  set zoomX(n) {
+    this._zoomX = n;
+  }
+  get zoomY() {
+    return this._zoomY;
+  }
+  set zoomY(n) {
+    this._zoomY = n;
+  }
+  get zoom() {
+    return new Vector2(this.zoomX, this.zoomY);
+  }
+  set zoom(value) {
+    this.zoomX = value.x;
+    this.zoomY = value.y;
   }
 };
 
 // ts/utils/elementSize.ts
-var ElementSize = class extends ElementScale {
+var ElementSize = class extends ElementZoom {
   constructor(attr = {}) {
     super(attr);
     this._width = 0;
@@ -428,7 +432,9 @@ var CanvasElement = class extends Element {
     (_b = child.game) != null ? _b : child.game = this.game;
     (_c = child.mode) != null ? _c : child.mode = this.mode;
     (_d = child.level) != null ? _d : child.level = this.level;
-    this.game.waitCount++;
+    if (this.game.waitCount) {
+      this.game.waitCount++;
+    }
     if (child.rendererType === "canvas") {
       this[above ? "higherChildren" : "lowerChildren"].push(child);
       child.registerControllers(child);
@@ -444,7 +450,9 @@ var CanvasElement = class extends Element {
     }
     if (!this.autoReady) {
       child.build();
-      this.game.waitCount--;
+      if (this.game.waitCount) {
+        this.game.waitCount--;
+      }
     }
     if (child.rendererType === "canvas" && child.type === "collider" && child.colliderType === "static" && this.level) {
       this.level.colliders.push(child);
@@ -477,9 +485,10 @@ var CanvasElement = class extends Element {
     }
   }
   preRender(c) {
+    c.save();
     if (this.relativity === "anchor") {
-      c.save();
       c.translate(this.x, this.y);
+      c.scale(this.zoom.x, this.zoom.y);
     }
     this.lowerChildren.filter((child) => child.visible && child.active).forEach((child) => {
       child.preRender(c);
@@ -494,9 +503,7 @@ var CanvasElement = class extends Element {
       child.preRender(c);
       child.postRender(c);
     });
-    if (this.relativity === "anchor") {
-      c.restore();
-    }
+    c.restore();
   }
 };
 
@@ -1435,6 +1442,8 @@ var CanvasAnimation = class extends CanvasElement {
     this.prepped = attr.animation;
     this.prepped.callback = this.build.bind(this);
     this.interval = attr.interval || this.prepped.interval;
+    this.shadow = attr.shadow;
+    this.reverse = attr.reverse || false;
   }
   get max() {
     return this.prepped.max;
@@ -1442,16 +1451,27 @@ var CanvasAnimation = class extends CanvasElement {
   get frames() {
     return this.prepped.frames;
   }
+  get width() {
+    return this.prepped.size.x;
+  }
+  get height() {
+    return this.prepped.size.y;
+  }
   build() {
     this.prepped.frames.forEach((frame) => {
-      this.addChild(frame);
+      this.addChild(frame, true);
+      frame.shadow = this.shadow;
     });
   }
   tick(obj) {
     super.tick(obj);
     this.frame = (this.frame + 1) % (this.max * this.interval);
     this.frames.forEach((frame, i) => {
-      frame.active = Math.floor(this.frame / this.interval) === i;
+      if (this.reverse) {
+        frame.active = Math.floor(this.frame / this.interval) === this.max - i - 1;
+      } else {
+        frame.active = Math.floor(this.frame / this.interval) === i;
+      }
     });
   }
 };
@@ -1464,19 +1484,37 @@ var CanvasImage = class extends CanvasElement {
     this.relativity = "relative";
     this.prepped = attr.image;
     this.condition = attr.condition;
-    this.paralax = attr.paralax || 0;
+    this.worldSpaceParalaxX = attr.worldSpaceParalaxX || 0;
+    this.worldSpaceParalaxY = attr.worldSpaceParalaxY || 0;
+    this.screenSpaceParalaxX = attr.screenSpaceParalaxX || 0;
+    this.screenSpaceParalaxY = attr.screenSpaceParalaxY || 0;
     this.repeatX = attr.repeatX || 1;
     this.repeatY = attr.repeatY || 1;
     this.opacity = attr.opacity || 1;
+    this.shadow = attr.shadow;
+  }
+  get width() {
+    return this.prepped.width;
+  }
+  get height() {
+    return this.prepped.height;
   }
   render(ctx) {
     if (this.prepped.ready && (!this.condition || this.condition(this.position.add(this.parent.position), this.prepped.size))) {
       for (let i = 0; i < this.repeatX; i++) {
         for (let j = 0; j < this.repeatY; j++) {
-          ctx.globalAlpha = this.opacity;
+          if (this.opacity !== 1) {
+            ctx.globalAlpha = this.opacity;
+          }
+          if (this.shadow) {
+            ctx.shadowColor = this.shadow[0];
+            ctx.shadowOffsetX = this.shadow[1];
+            ctx.shadowOffsetY = this.shadow[2];
+            ctx.shadowBlur = this.shadow[3];
+          }
           ctx.drawImage(
             this.prepped.image,
-            this.x + this.paralax * this.level.x + i * this.prepped.width,
+            this.x + this.worldSpaceParalaxX * this.level.x + (this.width / 2 + this.x - (this.mode.width / 2 - this.level.x)) * this.screenSpaceParalaxX + i * this.prepped.width,
             this.y + j * this.prepped.height,
             this.prepped.width,
             this.prepped.height
@@ -1619,6 +1657,9 @@ var PrepAnimation = class {
     this.interval = attr.interval || 10;
     this.urls = attr.urls;
     this.add();
+  }
+  get size() {
+    return this.frames[0].prepped.size;
   }
   add() {
     this.urls.forEach((url) => {
@@ -1796,8 +1837,8 @@ var OverworldLevel = class extends Level {
       hasDom: true,
       size: new Vector2(320 * 6, 320 * 6)
     });
-    this.zoom = 6;
-    this.start = new Vector2(7 * this.zoom * 16, 7 * this.zoom * 16);
+    this.scale = 6;
+    this.start = new Vector2(7 * this.scale * 16, 7 * this.scale * 16);
     this.background = new CanvasColorBackground("#272727");
     this.character = new RPGCharacter({
       position: this.start,
@@ -1806,7 +1847,7 @@ var OverworldLevel = class extends Level {
     this.addControllers([new CameraController({ target: this.character })]);
     this.sprites = new CanvasPrepSprites({
       jsons: ["/json/overworld/sprites.json"],
-      factor: this.zoom,
+      factor: this.scale,
       callback: () => {
         this.assetsLoaded();
       }
@@ -1816,30 +1857,30 @@ var OverworldLevel = class extends Level {
   assetsLoaded() {
     this.addChild(this.background);
     this.addChild(new CanvasImage({
-      image: new PrepImage({ url: "/img/overworld/terrain.png", factor: this.zoom }, this.game)
+      image: new PrepImage({ url: "/img/overworld/terrain.png", factor: this.scale }, this.game)
     }));
     this.addChild(new CanvasGrid({
       sprites: this.sprites,
       json: "/json/overworld/decorations.json",
-      factor: this.zoom
+      factor: this.scale
     }));
     this.addChild(new CanvasGrid({
       sprites: this.sprites,
       json: "/json/overworld/objects.json",
-      factor: this.zoom,
+      factor: this.scale,
       condition: (entity) => entity.y >= this.character.y
     }));
     this.addChild(this.character);
     this.addChild(new CanvasGrid({
       sprites: this.sprites,
       json: "/json/overworld/objects.json",
-      factor: this.zoom,
+      factor: this.scale,
       condition: (entity) => entity.y < this.character.y
     }));
     this.addChild(new CanvasGrid({
       sprites: this.sprites,
       json: "/json/overworld/overlay.json",
-      factor: this.zoom
+      factor: this.scale
     }));
     [
       [20, 122, 25, 28],
@@ -1871,8 +1912,8 @@ var OverworldLevel = class extends Level {
       [32, 37, 15, 16]
     ].forEach(([x, y, w, h, t = 30]) => {
       this.addChild(new Collider({
-        position: new Vector2(this.zoom * x, this.zoom * y),
-        size: new Vector2(this.zoom * w, this.zoom * h),
+        position: new Vector2(this.scale * x, this.scale * y),
+        size: new Vector2(this.scale * w, this.scale * h),
         cornerTolerance: t
       }));
     });
@@ -1880,7 +1921,7 @@ var OverworldLevel = class extends Level {
   // tick(obj: TickerReturnData): void {
   //     super.tick(obj);
   //     if (this.mo){
-  //         this.mo.text = `[${Math.round(this.mo.x/this.zoom)},${Math.round(this.mo.y/this.zoom)},${Math.round(this.mo.width/this.zoom)},${Math.round(this.mo.height/this.zoom)}]`;
+  //         this.mo.text = `[${Math.round(this.mo.x/this.scale)},${Math.round(this.mo.y/this.scale)},${Math.round(this.mo.width/this.scale)},${Math.round(this.mo.height/this.scale)}]`;
   //     }
   // }
 };
@@ -1911,6 +1952,7 @@ var DomCanvas = class extends DomElement {
     this.ctx.imageSmoothingEnabled = false;
   }
   build() {
+    this.game.ctx = this.ctx;
     this.dom.tabIndex = 1;
     this.game.getEvent("resize").subscribe(String(Math.random()), (size) => {
       this.size = size;
@@ -1953,7 +1995,7 @@ var SideCharacter = class extends Character {
       controllers,
       size: new Vector2(10 * scale, 20 * scale)
     });
-    this.scale = 5;
+    this.scale = 6;
     this.relativity = "anchor";
     this.animations = {};
     this.direction = "00";
@@ -1961,25 +2003,34 @@ var SideCharacter = class extends Character {
   }
   build() {
     super.build();
-    this.addChild(new CanvasSquare({
-      color: "red",
-      size: this.size
-    }));
+    CanvasPrepSprites.loadJsonFile("/json/character/sprites.json").then((sprite) => {
+      sprite.forEach((sprite2) => {
+        this.animations[sprite2.name] = new CanvasAnimation({
+          position: new Vector2(-165, -100),
+          animation: new PrepAnimation({
+            urls: sprite2.animation.urls,
+            interval: 30,
+            factor: this.scale
+          }, this.game)
+        });
+        this.addChild(this.animations[sprite2.name]);
+      });
+    });
   }
-  // public tick(o: TickerReturnData) {
-  //     super.tick(o);
-  //     this.phase = this.movedAmount.magnitude() > .1 ? 'walk' : 'idle';
-  //     if (this.phase === 'walk') {
-  //         const degrees = (3 - Math.round((this.movedAmount.angleDegrees() + 1) / 90 + 4) % 4) * 9;
-  //         this.direction = degrees.toString().padStart(2, '0') as '00' | '09' | '18' | '27';
-  //     }
-  //     Object.entries(this.animations).forEach(([key, animation]) => {
-  //         if (key.startsWith('walk')){
-  //             animation.interval = Util.clamp(Math.floor(30 - this.movedAmount.magnitude()*0.8), 5, 50);
-  //         }
-  //         animation.active = key === `${this.phase}${this.direction}`;
-  //     });
-  // }
+  tick(o) {
+    super.tick(o);
+    this.phase = this.movedAmount.magnitude() > 0.1 ? "walk" : "idle";
+    if (this.phase === "walk") {
+      const degrees = (3 - Math.round((this.movedAmount.angleDegrees() + 1) / 90 + 4) % 4) * 9;
+      this.direction = degrees.toString().padStart(2, "0");
+    }
+    Object.entries(this.animations).forEach(([key, animation]) => {
+      if (key.startsWith("walk")) {
+        animation.interval = Util.clamp(Math.floor(30 - this.movedAmount.magnitude() * 0.8), 5, 50);
+      }
+      animation.active = key === "".concat(this.phase).concat(this.direction);
+    });
+  }
 };
 
 // ts/modes/side/character/SideController.ts
@@ -1987,7 +2038,7 @@ var SideContoller = class extends CanvasController {
   constructor() {
     super(...arguments);
     this.speed = 4;
-    this.jumpHeight = 11;
+    this.jumpHeight = 14;
     this.velocity = Vector2.zero;
     this.jumping = false;
   }
@@ -2011,7 +2062,7 @@ var SideContoller = class extends CanvasController {
         this.velocity.x = r.find((a) => a[0] === "x")[1] / (obj.interval / 10);
       }
       if (r.find((a) => a[0] === "y")) {
-        if (this.velocity.y < 0) {
+        if (this.velocity.y <= 0) {
           this.jumping = false;
         }
         this.velocity.y = r.find((a) => a[0] === "y")[1] / (obj.interval / 10);
@@ -2022,112 +2073,6 @@ var SideContoller = class extends CanvasController {
       this.level.size.subtract(this.parent.size),
       Vector2.zero
     );
-  }
-};
-
-// ts/modes/side/levels/scrolling.ts
-var Scroller = class extends CanvasWrapper {
-  constructor() {
-    super(...arguments);
-    this.speed = 6;
-    this.layers = [];
-  }
-  add(layer, width, paralax) {
-    this.layers.push([layer, width, paralax]);
-    this.addChild(layer);
-  }
-  build() {
-    this.size = this.parent.size;
-    this.addChild(new CanvasImage({
-      image: new PrepImage({
-        url: "/img/dusk/sky.png",
-        factor: 5
-      }, this.game),
-      paralax: -1,
-      position: new Vector2(800, 100)
-    }));
-    this.add(new CanvasImage({
-      image: new PrepImage({
-        url: "/img/dusk/far-clouds.png",
-        factor: 3
-      }, this.game),
-      position: new Vector2(0, 400),
-      paralax: -0.98,
-      repeatX: 16,
-      opacity: 0.4
-    }), 128 * 3, 0.05);
-    this.add(new CanvasImage({
-      image: new PrepImage({
-        url: "/img/dusk/near-clouds.png",
-        factor: 3
-      }, this.game),
-      position: new Vector2(0, 400),
-      paralax: -0.96,
-      repeatX: 16,
-      opacity: 0.3
-    }), 144 * 3, 0.1);
-    this.add(new CanvasImage({
-      image: new PrepImage({
-        url: "/img/dusk/far-mountains.png",
-        factor: 3
-      }, this.game),
-      position: new Vector2(0, 350),
-      paralax: -0.94,
-      repeatX: 16
-    }), 160 * 3, 0.15);
-    this.add(new CanvasImage({
-      image: new PrepImage({
-        url: "/img/dusk/mountains.png",
-        factor: 4
-      }, this.game),
-      position: new Vector2(0, 250),
-      paralax: -0.92,
-      repeatX: 16
-    }), 320 * 4, 0.17);
-    this.addChild(new CanvasSquare({
-      color: "#2C2546",
-      size: new Vector2(this.width, 500)
-    }));
-    this.add(new CanvasImage({
-      image: new PrepImage({
-        url: "/img/dusk/trees.png",
-        factor: 2
-      }, this.game),
-      position: new Vector2(0, 500),
-      paralax: -0.7,
-      repeatX: 16
-    }), 240 * 2, 0.6);
-    this.add(new CanvasImage({
-      image: new PrepImage({
-        url: "/img/dusk/trees.png",
-        factor: 3
-      }, this.game),
-      position: new Vector2(0, 350),
-      paralax: -0.65,
-      repeatX: 16
-    }), 240 * 3, 0.8);
-    this.add(new CanvasImage({
-      image: new PrepImage({
-        url: "/img/dusk/trees.png",
-        factor: 5
-      }, this.game),
-      position: new Vector2(0, -50),
-      paralax: -0.6,
-      repeatX: 16
-    }), 240 * 5, 0.9);
-    this.add(new CanvasImage({
-      image: new PrepImage({
-        url: "/img/train/railtrack_v1.png",
-        factor: 6
-      }, this.game),
-      repeatX: Math.ceil(this.level.width / 64 * 6 + 1)
-    }), 64 * 6, 1);
-  }
-  tick(obj) {
-    super.tick(obj);
-    this.layers.forEach(([layer, width, paralax]) => {
-      layer.x = (layer.x - this.speed * paralax) % width;
-    });
   }
 };
 
@@ -2177,64 +2122,557 @@ var PrepSpritesheet = class {
   }
 };
 
-// ts/modes/side/levels/trainCar.ts
-var TrainCar = class extends CanvasWrapper {
+// ts/modes/side/levels/locomotive.ts
+var Locomotive = class extends CanvasWrapper {
   constructor(x, y = 100, w = 800, h = 400) {
     super({
       position: new Vector2(x, y),
       size: new Vector2(w, h)
     });
+    this.relativity = "anchor";
   }
   build() {
     this.background = new CanvasAnimation({
-      position: Vector2.zero,
       animation: new PrepSpritesheet({
-        url: "/img/train/sheet_carriage_v18.png",
-        factor: 5,
+        url: "/img/train/sheet_train_v18.png",
+        factor: 6,
         size: new Vector2(256, 64),
         repeatX: 16,
         interval: 20
-      }, this.game)
+      }, this.game),
+      position: new Vector2(0, 0)
     });
     this.addChild(this.background);
-    this.foreground = new CanvasImage({
-      image: new PrepImage({
-        url: "/img/train/carriage_v18_car1.png",
-        factor: 5
-      }, this.game)
+    this.foreground = new CanvasAnimation({
+      animation: new PrepSpritesheet({
+        url: "/img/train/sheet_train_v18.png",
+        factor: 6,
+        size: new Vector2(256, 64),
+        repeatX: 16,
+        interval: 20
+      }, this.game),
+      position: new Vector2(0, -15)
     });
     [
-      [0, 8, 256, 7],
+      [0, 8, 256, 6]
       //hedgeBottom
-      [16, 48, 4, 8],
-      //hedgeBottom
-      [236, 48, 4, 8],
-      //hedgeBottom
-      [4, 56, 248, 8]
-      //hedgeBottom
+      // [16, 48, 4, 8], //hedgeBottom
+      // [236, 48, 4, 8], //hedgeBottom
+      // [4, 56, 248, 8], //hedgeBottom
     ].forEach(([x, y, w, h, t = 30]) => {
       this.addChild(new Collider({
-        position: new Vector2(x * 5, y * 5),
-        size: new Vector2(w * 5, h * 5),
+        position: new Vector2(x * 6, y * 6),
+        size: new Vector2(w * 6, h * 6),
         cornerTolerance: t
       }));
     });
-    this.addChild(this.foreground);
   }
 };
 
-// ts/modes/side/levels/platform.ts
-var PlatformLevel = class extends Level {
+// ts/modes/side/levels/scrolling.ts
+var Scroller = class extends CanvasWrapper {
+  constructor() {
+    super(...arguments);
+    this.speed = 6;
+    this.layers = [];
+  }
+  add(layer, width, paralax) {
+    this.layers.push([layer, width, paralax]);
+    this.addChild(layer);
+  }
+  build() {
+    this.size = this.parent.size;
+    this.addChild(new CanvasImage({
+      image: new PrepImage({
+        url: "/img/dusk/sky.png",
+        factor: 5
+      }, this.game),
+      worldSpaceParalaxX: -1,
+      position: new Vector2(800, 100)
+    }));
+    this.add(new CanvasImage({
+      image: new PrepImage({
+        url: "/img/dusk/far-clouds.png",
+        factor: 3
+      }, this.game),
+      position: new Vector2(0, 400),
+      worldSpaceParalaxX: -0.98,
+      repeatX: 16,
+      opacity: 0.4
+    }), 128 * 3, 0.05);
+    this.add(new CanvasImage({
+      image: new PrepImage({
+        url: "/img/dusk/near-clouds.png",
+        factor: 3
+      }, this.game),
+      position: new Vector2(0, 400),
+      worldSpaceParalaxX: -0.96,
+      repeatX: 16,
+      opacity: 0.3
+    }), 144 * 3, 0.1);
+    this.add(new CanvasImage({
+      image: new PrepImage({
+        url: "/img/dusk/far-mountains.png",
+        factor: 3
+      }, this.game),
+      position: new Vector2(0, 350),
+      worldSpaceParalaxX: -0.94,
+      repeatX: 16
+    }), 160 * 3, 0.15);
+    this.add(new CanvasImage({
+      image: new PrepImage({
+        url: "/img/dusk/mountains.png",
+        factor: 4
+      }, this.game),
+      position: new Vector2(0, 250),
+      worldSpaceParalaxX: -0.92,
+      repeatX: 16
+    }), 320 * 4, 0.17);
+    this.addChild(new CanvasSquare({
+      color: "#2C2546",
+      size: new Vector2(this.width, 500)
+    }));
+    this.add(new CanvasImage({
+      image: new PrepImage({
+        url: "/img/dusk/trees.png",
+        factor: 2
+      }, this.game),
+      position: new Vector2(0, 500),
+      worldSpaceParalaxX: -0.5,
+      repeatX: 16
+    }), 240 * 2, 0.6);
+    this.add(new CanvasImage({
+      image: new PrepImage({
+        url: "/img/dusk/trees.png",
+        factor: 3
+      }, this.game),
+      position: new Vector2(0, 320),
+      worldSpaceParalaxX: -0.38,
+      repeatX: 16
+    }), 240 * 3, 0.8);
+    this.add(new CanvasImage({
+      image: new PrepImage({
+        url: "/img/dusk/trees.png",
+        factor: 7
+      }, this.game),
+      position: new Vector2(0, -100),
+      worldSpaceParalaxX: -0.26,
+      repeatX: 16
+    }), 240 * 7, 0.95);
+    this.add(new CanvasImage({
+      image: new PrepImage({
+        url: "/img/train/railtrack_v1.png",
+        factor: 7
+      }, this.game),
+      position: new Vector2(0, 40),
+      repeatX: Math.ceil(this.level.width / 64 * 7 + 1)
+    }), 64 * 7, 1);
+    this.add(new CanvasImage({
+      image: new PrepImage({
+        url: "/img/train/railtrack_v1.png",
+        factor: 7
+      }, this.game),
+      position: new Vector2(0, 0),
+      repeatX: Math.ceil(this.level.width / 64 * 7 + 1)
+    }), 64 * 7, 1);
+  }
+  tick(obj) {
+    super.tick(obj);
+    this.layers.forEach(([layer, width, paralax]) => {
+      layer.x = (layer.x - this.speed * paralax) % width;
+    });
+  }
+};
+
+// ts/canvas/canvasCustom.ts
+var CanvasCustom = class extends CanvasElement {
+  constructor(attr = {}) {
+    super(attr);
+    this.type = "color";
+    this.render = attr.render.bind(this);
+  }
+};
+
+// ts/modes/side/levels/trainDoor.ts
+var TrainDoor = class extends CanvasWrapper {
+  constructor() {
+    super(...arguments);
+    this.factor = 0.05;
+    this.doorHeight = 45 * 6;
+  }
+  build() {
+    this.outer = new CanvasImage({
+      image: new PrepImage({
+        url: "/img/train/door.png",
+        factor: 6
+      }, this.game),
+      position: new Vector2(0, 0)
+    });
+    this.addChild(this.outer);
+    const or = this.outer.render.bind(this.outer);
+    this.outer.render = (c) => {
+      if (this.offset.x + 17 * 6 * this.factor > 0) {
+        c.save();
+        c.transform((this.offset.x + 17 * 6 * this.factor) / this.outer.prepped.width, -0.22, 0, 1 / (this.outer.prepped.height / this.doorHeight), 17 * 6, 13 * 6);
+        or(c);
+        c.restore();
+      }
+      if (this.offset.x + 223 * 6 * this.factor < 0) {
+        c.save();
+        c.transform((this.offset.x + 223 * 6 * this.factor) / this.outer.prepped.width, -0.22, 0, 1 / (this.outer.prepped.height / this.doorHeight), 240 * 6, 13 * 6);
+        or(c);
+        c.restore();
+      }
+    };
+    this.inner = new CanvasImage({
+      image: new PrepImage({
+        url: "/img/train/door2.png",
+        factor: 6
+      }, this.game),
+      position: new Vector2(0, 0)
+    });
+    this.addChild(this.inner);
+    const ir = this.inner.render.bind(this.inner);
+    this.inner.render = (c) => {
+      if (this.offset.x + 17 * 6 * this.factor < 0) {
+        c.save();
+        c.transform((this.offset.x + 17 * 6 * this.factor) / this.inner.prepped.width, -0.22, 0, 1 / (this.inner.prepped.height / this.doorHeight), 17 * 6, 14 * 6);
+        ir(c);
+        c.restore();
+      }
+      if (this.offset.x + 223 * 6 * this.factor > 0) {
+        c.save();
+        c.transform((this.offset.x + 223 * 6 * this.factor) / this.inner.prepped.width, -0.22, 0, 1 / (this.inner.prepped.height / this.doorHeight), 240 * 6, 14 * 6);
+        ir(c);
+        c.restore();
+      }
+    };
+  }
+};
+
+// ts/modes/side/levels/trainCar.ts
+var TrainCar = class extends CanvasWrapper {
+  constructor(train, x, y = 100, w = 800, h = 400, v = 0) {
+    super({
+      position: new Vector2(x, y),
+      size: new Vector2(w, h)
+    });
+    this.lastOffset = 1;
+    this.factor = 0.05;
+    this.scale = 6;
+    this.v = v || 0;
+    this.train = train;
+  }
+  set offset(value) {
+    this.door.offset = value;
+  }
+  build() {
+    this.frame = new CanvasImage({
+      image: new PrepImage({
+        url: "/img/train/Frame Back.png",
+        factor: this.scale
+      }, this.game),
+      position: new Vector2(0, 0)
+    });
+    this.addChild(this.frame);
+    this.interior = new CanvasImage({
+      image: new PrepImage({
+        url: "/img/train/Interior.png",
+        factor: this.scale
+      }, this.game),
+      position: new Vector2(0, 0)
+    });
+    this.addChild(this.interior);
+    this.interior.addChild(new CanvasCustom({
+      render: (c) => {
+        const ce = this.width / 2 + this.x - (this.mode.width / 2 - this.level.x);
+        this.fill([
+          [9, 14],
+          [247, 14],
+          [247, ce + 762 > 0 ? 16 : 8, ce + 762 > 0 ? 1 : 0],
+          [247, 8, 1],
+          [9, 8, 1],
+          [9, ce - 762 <= 0 ? 16 : 8, ce - 762 <= 0 ? 1 : 0],
+          [9, 16]
+        ], "#58473f", "#140e14");
+        this.fill([
+          [18, 16],
+          [240, 16],
+          [240, 16, 1],
+          [18, 16, 1]
+        ], "#8f563b");
+        for (let index = 18; index < 239; index += 4) {
+          this.line("#662736", 0 + index, 16, 0, 0 + index, 16, 1, "x");
+          this.line("#e37332", 1 + index, 16, 0, 1 + index, 16, 1, "x");
+          if (index % 8 === 2) {
+            this.line("#662736", 0 + index, 16, 0.2, 0 + index, 16, 0.3, "x", 4);
+          }
+          if (index % 8 === 6) {
+            this.line("#662736", 0 + index, 16, 0.7, 0 + index, 16, 0.8, "x", 4);
+          }
+        }
+      }
+    }), true);
+    this.door = new TrainDoor();
+    this.interior.addChild(this.door, true);
+    this.interior.addChild(new CanvasCustom({
+      render: (c) => {
+        const ce = this.width / 2 + this.x - (this.mode.width / 2 - this.level.x);
+        this.fill([
+          [8, 61],
+          [248, 61],
+          [248, ce + 762 > 0 ? 61 : 57, ce + 762 > 0 ? 1 : 0],
+          [248, 57, 1],
+          [8, 57, 1],
+          [8, ce - 762 <= 0 ? 61 : 57, ce - 762 <= 0 ? 1 : 0],
+          [8, 61]
+        ], "#7e6970", "#140e14");
+        this.line("#140e14", 8, 57, 1, 8, 61, 1);
+        this.line("#140e14", 8, 61, 1, 248, 61, 1);
+        this.line("#140e14", 248, 61, 1, 248, 57, 1);
+        this.line("#140e14", 8, 61, 0, 8, 61, 1);
+        this.line("#140e14", 248, 61, 0, 248, 61, 1);
+      }
+    }), true);
+    this.interior.relativity = "anchor";
+    [
+      [0, 5, 256, 6],
+      //hedgeBottom
+      [8, 50, 240, 8]
+      //hedgeBottom
+    ].forEach(([x, y, w, h, t = 80]) => {
+      this.addChild(new Collider({
+        position: new Vector2(x * this.scale, y * this.scale),
+        size: new Vector2(w * this.scale, h * this.scale),
+        cornerTolerance: t
+      }));
+    });
+  }
+  lineSequence(fill, points) {
+    for (let i = 0; i < points.length - 1; i++) {
+      this.line(fill, points[i][0], points[i][1], points[i][2] || 0, points[i + 1][0], points[i + 1][1], points[i + 1][2] || 0);
+    }
+  }
+  line(fill, x, y, offset, x2, y2, offset2, style = offset !== offset2 ? "z" : x === x2 ? "x" : "y", w = 1) {
+    this.game.ctx.fillStyle = fill;
+    this.game.ctx.save();
+    if (style === "x") {
+      this.switchOffsetRender(offset);
+      this.game.ctx.beginPath();
+      this.game.ctx.moveTo(x * this.scale, y * this.scale);
+      this.game.ctx.lineTo((x + w) * this.scale, y * this.scale);
+      this.switchOffsetRender(offset2);
+      this.game.ctx.lineTo((x2 + w) * this.scale, y2 * this.scale);
+      this.game.ctx.lineTo(x2 * this.scale, y2 * this.scale);
+      this.game.ctx.fill();
+      this.game.ctx.closePath();
+    }
+    if (style === "y") {
+      this.switchOffsetRender(offset);
+      this.game.ctx.beginPath();
+      this.game.ctx.moveTo(x * this.scale, y * this.scale);
+      this.game.ctx.lineTo(x * this.scale, (y + w) * this.scale);
+      this.switchOffsetRender(offset2);
+      this.game.ctx.lineTo(x2 * this.scale, (y2 + w) * this.scale);
+      this.game.ctx.lineTo(x2 * this.scale, y2 * this.scale);
+      this.game.ctx.fill();
+      this.game.ctx.closePath();
+    }
+    if (style === "z") {
+      this.switchOffsetRender(offset);
+      this.game.ctx.beginPath();
+      this.game.ctx.moveTo(x * this.scale, y * this.scale);
+      this.game.ctx.lineTo((x + w) * this.scale, y * this.scale);
+      this.switchOffsetRender(offset2);
+      this.game.ctx.lineTo((x2 + w) * this.scale, y2 * this.scale);
+      this.game.ctx.lineTo(x2 * this.scale, y2 * this.scale);
+      this.game.ctx.fill();
+      this.game.ctx.closePath();
+      this.game.ctx.beginPath();
+      this.game.ctx.moveTo(x2 * this.scale, y2 * this.scale);
+      this.game.ctx.lineTo(x2 * this.scale, (y2 + w) * this.scale);
+      this.switchOffsetRender(offset);
+      this.game.ctx.lineTo(x * this.scale, (y + w) * this.scale);
+      this.game.ctx.lineTo(x * this.scale, y * this.scale);
+      this.game.ctx.fill();
+      this.game.ctx.closePath();
+      this.game.ctx.beginPath();
+      this.game.ctx.moveTo(x * this.scale, (y + w) * this.scale);
+      this.game.ctx.lineTo((x + w) * this.scale, (y + w) * this.scale);
+      this.switchOffsetRender(offset2);
+      this.game.ctx.lineTo((x2 + w) * this.scale, (y2 + w) * this.scale);
+      this.game.ctx.lineTo(x2 * this.scale, (y2 + w) * this.scale);
+      this.game.ctx.fill();
+      this.game.ctx.closePath();
+      this.game.ctx.beginPath();
+      this.game.ctx.moveTo((x2 + w) * this.scale, y2 * this.scale);
+      this.game.ctx.lineTo((x2 + w) * this.scale, (y2 + w) * this.scale);
+      this.switchOffsetRender(offset);
+      this.game.ctx.lineTo((x + w) * this.scale, (y + w) * this.scale);
+      this.game.ctx.lineTo((x + w) * this.scale, y * this.scale);
+      this.game.ctx.fill();
+      this.game.ctx.closePath();
+    }
+    this.game.ctx.restore();
+    this.lastOffset = void 0;
+  }
+  switchOffsetRender(offset) {
+    if (this.lastOffset !== offset) {
+      this.lastOffset = offset;
+      this.game.ctx.restore();
+      this.game.ctx.save();
+      this.game.ctx.scale(1 + this.factor * offset, 1 + this.factor * offset);
+      this.game.ctx.translate(-this.width * (this.factor / 2) * offset, 0);
+      this.game.ctx.translate(
+        (this.width / 2 + this.x - (this.mode.width / 2 - this.level.x)) * this.factor * offset,
+        -50 * offset
+      );
+    }
+  }
+  fill(points, fill, stroke) {
+    this.game.ctx.beginPath();
+    this.game.ctx.save();
+    points.forEach((p, i) => {
+      this.switchOffsetRender(p[2] || 0);
+      this.game.ctx[i === 0 ? "moveTo" : "lineTo"](p[0] * this.scale, p[1] * this.scale);
+    });
+    this.game.ctx.fillStyle = fill;
+    this.game.ctx.fill();
+    this.game.ctx.closePath();
+    this.game.ctx.restore();
+    if (stroke) {
+      this.lineSequence(stroke, points);
+    }
+  }
+};
+
+// ts/modes/side/levels/trainCarForeground.ts
+var TrainCarForeground = class extends CanvasWrapper {
+  constructor(car, character) {
+    super({
+      position: new Vector2(car.x, car.y - 50),
+      size: new Vector2(car.width, car.height),
+      relativity: "anchor",
+      zoom: new Vector2(1.05, 1.05)
+    });
+    this.relativity = "anchor";
+    this.factor = 0.05;
+    this.wheelFrame = 0;
+    this.car = car;
+    this.character = character;
+  }
+  build() {
+    this.wheels1 = new CanvasAnimation({
+      animation: new PrepSpritesheet({
+        url: "/img/train/wheels.png",
+        factor: 6,
+        size: new Vector2(16, 8),
+        repeatX: 4,
+        interval: 30
+      }, this.game),
+      reverse: true,
+      position: new Vector2(24 * 6, 0)
+    });
+    this.addChild(this.wheels1);
+    this.wheels2 = new CanvasAnimation({
+      animation: new PrepSpritesheet({
+        url: "/img/train/wheels.png",
+        factor: 6,
+        size: new Vector2(16, 8),
+        repeatX: 4,
+        interval: 30
+      }, this.game),
+      reverse: true,
+      position: new Vector2(48 * 6, 0)
+    });
+    this.addChild(this.wheels2);
+    this.wheels2.frame = 1 * 20;
+    this.wheels3 = new CanvasAnimation({
+      animation: new PrepSpritesheet({
+        url: "/img/train/wheels.png",
+        factor: 6,
+        size: new Vector2(16, 8),
+        repeatX: 4,
+        interval: 30
+      }, this.game),
+      reverse: true,
+      position: new Vector2(192 * 6, 0)
+    });
+    this.addChild(this.wheels3);
+    this.wheels3.frame = 2 * 20;
+    this.wheels4 = new CanvasAnimation({
+      animation: new PrepSpritesheet({
+        url: "/img/train/wheels.png",
+        factor: 6,
+        size: new Vector2(16, 8),
+        repeatX: 4,
+        interval: 30
+      }, this.game),
+      reverse: true,
+      position: new Vector2(216 * 6, 0)
+    });
+    this.addChild(this.wheels4);
+    this.wheels4.frame = 3 * 20;
+    this.frame = new CanvasImage({
+      image: new PrepImage({
+        url: "/img/train/Frane Front.png",
+        factor: 6
+      }, this.game)
+    });
+    this.addChild(this.frame);
+    this.foreground = new CanvasImage({
+      image: new PrepImage({
+        url: "/img/train/Exterior.png",
+        factor: 6
+      }, this.game)
+    });
+    this.addChild(this.foreground);
+    this.wheelFrame = 25 * this.car.x / this.car.width;
+  }
+  tick(obj) {
+    super.tick(obj);
+    const f = 200;
+    [this.wheels4, this.wheels2, this.wheels3, this.wheels1].forEach((w) => {
+      w.interval = 160 - Math.round(this.car.train.speed / this.car.train.maxSpeed * 120);
+    });
+    this.wheelFrame = (this.wheelFrame + 1) % 200;
+    this.wheels4.y = this.wheelFrame > 0 && this.wheelFrame < 30 ? 1 * 6 : 0;
+    this.wheels3.y = this.wheelFrame > 20 && this.wheelFrame < 50 ? 1 * 6 : 0;
+    this.wheels2.y = this.wheelFrame > 0 && this.wheelFrame < 30 ? 1 * 6 : 0;
+    this.wheels1.y = this.wheelFrame > 20 && this.wheelFrame < 50 ? 1 * 6 : 0;
+    this.frame.y = this.wheelFrame > 40 && this.wheelFrame < 70 ? 1 * 6 / 3 : 0;
+    this.foreground.y = this.wheelFrame > 40 && this.wheelFrame < 70 ? 1 * 6 / 3 : 0;
+    this.car.frame.y = this.wheelFrame > 40 && this.wheelFrame < 70 ? 1 * 6 / 3 : 0;
+    this.car.interior.y = this.wheelFrame > 40 && this.wheelFrame < 70 ? 1 * 6 / 3 : 0;
+    this.x = this.car.x - this.car.width * (this.factor / 2) + (this.width / 2 + this.x - (this.mode.width / 2 - this.level.x)) * this.factor * 1;
+    this.car.offset = this.position.subtract(this.car.position);
+    if (this.character.y < this.y + this.height) {
+      this.foreground.opacity = Util.clamp((Math.abs(this.width / 2 + this.x - (this.character.width / 2 + this.character.x)) - (this.width / 2 - f)) / f, 0, 1);
+    }
+  }
+};
+
+// ts/modes/side/levels/train.ts
+var Train = class extends Level {
   constructor() {
     super({
       hasDom: true,
-      size: new Vector2(256 * 5 * 4, 1200)
+      size: new Vector2(256 * 8 * 8, 1200)
     });
-    this.start = new Vector2(2e3, 150);
+    this.start = new Vector2(
+      256 * 6 * 2,
+      250
+    );
     this.background = new CanvasColorBackground("#46345E");
     this.trainCars = [];
-    this.trainCars.push(new TrainCar(256 * 5 * 1, 35, 256 * 5, 64 * 5));
-    this.trainCars.push(new TrainCar(256 * 5 * 2, 35, 256 * 5, 64 * 5));
+    this.speed = 0;
+    this.maxSpeed = 10;
+    this.frame = 0;
+    this.trainCars.push(new TrainCar(this, 256 * 6 * 1, 90, 256 * 6, 64 * 6, 7));
+    this.trainCars.push(new TrainCar(this, 256 * 6 * 2, 90, 256 * 6, 64 * 6, 5));
+    this.trainCars.push(new TrainCar(this, 256 * 6 * 3, 90, 256 * 6, 64 * 6, 2));
+    this.trainCars.push(new TrainCar(this, 256 * 6 * 4, 90, 256 * 6, 64 * 6, 0));
+    this.trainCars.push(new TrainCar(this, 256 * 6 * 5, 90, 256 * 6, 64 * 6, 0));
     this.character = new SideCharacter({
       position: this.start,
       controllers: [new SideContoller()]
@@ -2243,12 +2681,17 @@ var PlatformLevel = class extends Level {
   }
   build() {
     this.addChild(this.background);
-    this.addChild(new Scroller());
+    this.env = new Scroller();
+    this.addChild(this.env);
     this.trainCars.forEach((trainCar) => {
       this.addChild(trainCar);
-      trainCar.foreground.condition = (bP, bS) => !Collisions.overlap(bP, bS, this.character.position, this.character.size);
     });
     this.addChild(this.character);
+    this.trainCars.forEach((trainCar) => {
+      this.addChild(new TrainCarForeground(trainCar, this.character));
+    });
+    const loco = new Locomotive(256 * 6 * 6, 90, 256 * 6, 64 * 6);
+    this.addChild(loco);
     [
       [0, 0, this.width, 35]
     ].forEach(([x, y, w, h, t = 30]) => {
@@ -2258,13 +2701,12 @@ var PlatformLevel = class extends Level {
       }));
     });
   }
-  // public tick(obj: TickerReturnData): void {
-  //     super.tick(obj);
-  //     this.ground.x = (this.ground.x - this.trainSpeed) % this.ground.prepped.width;
-  //     if (Collisions.overlap(Vector2.zero, new Vector2(this.width, 90), this.character.position, this.character.size)){
-  //         this.character.x -= this.trainSpeed;
-  //     }
-  // }
+  tick(obj) {
+    super.tick(obj);
+    this.frame = (this.frame + 1) % (3e3 * Math.PI);
+    this.speed = +(Math.sin(this.frame / 3e3) * this.maxSpeed).toPrecision(2);
+    this.env.speed = this.speed;
+  }
 };
 
 // ts/modes/side/SideMode.ts
@@ -2275,7 +2717,7 @@ var SideMode = class extends Mode {
   build() {
     super.build();
     this.addChild(new CanvasColorBackground("#272727"));
-    this.addLevel("platform", new PlatformLevel());
+    this.addLevel("platform", new Train());
     this.switchLevel("platform");
   }
 };
@@ -2399,48 +2841,6 @@ var Game = class extends CanvasWrapper {
     this.loader.visible = false;
     this.fps.visible = true;
     this.ticker.start();
-    this.addChild(new DomButton({
-      text: "RPG",
-      fontSize: 39,
-      fontWeight: 1e3,
-      color: "white",
-      position: new Vector2(130, 5),
-      size: new Vector2(65, 50),
-      background: "#ff00ffaa",
-      fontFamily: "monospace",
-      padding: [0, 10, 0, 10],
-      onClick: () => {
-        this.switchMode("rpg");
-      }
-    }));
-    this.addChild(new DomButton({
-      text: "SNAKES",
-      fontSize: 39,
-      fontWeight: 1e3,
-      color: "white",
-      position: new Vector2(220, 5),
-      size: new Vector2(130, 50),
-      background: "#ff00ffaa",
-      fontFamily: "monospace",
-      padding: [0, 10, 0, 10],
-      onClick: () => {
-        this.switchMode("snakes");
-      }
-    }));
-    this.addChild(new DomButton({
-      text: "TRAIN",
-      fontSize: 39,
-      fontWeight: 1e3,
-      color: "white",
-      position: new Vector2(375, 5),
-      size: new Vector2(130, 50),
-      background: "#ff00ffaa",
-      fontFamily: "monospace",
-      padding: [0, 10, 0, 10],
-      onClick: () => {
-        this.switchMode("side");
-      }
-    }));
   }
 };
 

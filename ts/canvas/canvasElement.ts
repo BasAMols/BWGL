@@ -94,7 +94,9 @@ export abstract class CanvasElement extends Element {
         child.game ??= this.game;
         child.mode ??= this.mode;
         child.level ??= this.level;
-        this.game.waitCount++;
+        if (this.game.waitCount){
+            this.game.waitCount++;
+        }
 
         if (child.rendererType === 'canvas') {
             this[above ? 'higherChildren' : 'lowerChildren'].push(child);
@@ -112,7 +114,10 @@ export abstract class CanvasElement extends Element {
 
         if (!this.autoReady) {
             child.build();
-            this.game.waitCount--;
+            if (this.game.waitCount){
+                this.game.waitCount--;
+            }
+    
         }
 
         if (child.rendererType === 'canvas' && child.type === 'collider' && (child as Collider).colliderType === 'static' && this.level) {
@@ -153,11 +158,13 @@ export abstract class CanvasElement extends Element {
     
 
     public preRender(c: CanvasRenderingContext2D) {
+        c.save();
+        
         if (this.relativity === 'anchor') {
-            c.save();
-            // c.scale(this.scaleX, this.scaleY);
             c.translate(this.x, this.y);
+            c.scale(this.zoom.x, this.zoom.y);
         }
+
         
         this.lowerChildren.filter((child)=>child.visible && child.active).forEach((child) => {
             child.preRender(c);
@@ -177,9 +184,7 @@ export abstract class CanvasElement extends Element {
             child.postRender(c);
         });
 
-        if (this.relativity === 'anchor') {
-            c.restore();
-        }
+        c.restore();
     }
 
 }

@@ -1,39 +1,40 @@
 import { ElementPosition, ElementPositionAttributes } from './elementPosition';
 import { Vector2 } from './vector2';
 
-export type ElementScaleAttributes = ElementPositionAttributes & {
-    // scale?: Vector2,
+export type ElementZoomAttributes = ElementPositionAttributes & {
+    zoom?: Vector2,
 };
-export abstract class ElementScale extends ElementPosition {
+export abstract class ElementZoom extends ElementPosition {
 
-    // protected _scaleX: number = 1;
-    // protected _scaleY: number = 1;
-    // public get scaleX() {
-    //     return this._scaleX;
-    // };
-    // public set scaleX(n) {
-    //     this._scaleX = n;
-    // };
-    // public get scaleY() {
-    //     return this._scaleY;
-    // };
-    // public set scaleY(n) {
-    //     this._scaleY = n;
-    // };
+    protected _zoomX: number = 1;
+    protected _zoomY: number = 1;
+    public get zoomX() {
+        return this._zoomX;
+    };
+    public set zoomX(n) {
+        this._zoomX = n;
+    };
+    public get zoomY() {
+        return this._zoomY;
+    };
+    public set zoomY(n) {
+        this._zoomY = n;
+    };
 
-    // public get scale() {
-    //     return new Vector2(this.scaleX, this.scaleY);
-    // }
-    // public set scale(value: Vector2) {
-    //     this.scaleX = value.x;
-    //     this.scaleY = value.y;
-    // };
+    public get zoom() {
+        return new Vector2(this.zoomX, this.zoomY);
+    }
+    public set zoom(value: Vector2) {
+        this.zoomX = value.x;
+        this.zoomY = value.y;
+    };
 
-    constructor(attr: ElementScaleAttributes = {}) {
+    constructor(attr: ElementZoomAttributes = {}) {
         super(attr);
-        // if (attr.scale) {
-        //     // this.scale = attr.scale;
-        // }
+        if (attr.zoom) {
+            this._zoomX = attr.zoom.x;
+            this._zoomY = attr.zoom.y;
+        }
     }
 
 }

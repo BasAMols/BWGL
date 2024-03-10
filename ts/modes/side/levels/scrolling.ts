@@ -23,7 +23,7 @@ export class Scroller extends CanvasWrapper {
                 url: '/img/dusk/sky.png', 
                 factor: 5,
             }, this.game),
-            paralax: -1,
+            worldSpaceParalaxX: -1,
             position: new Vector2(800,100),
         }));
 
@@ -33,7 +33,7 @@ export class Scroller extends CanvasWrapper {
                 factor: 3,
             }, this.game),
             position: new Vector2(0,400),
-            paralax: -0.98,
+            worldSpaceParalaxX: -0.98,
             repeatX:16,
             opacity: 0.4,
         }), 128*3, 0.05);
@@ -44,7 +44,7 @@ export class Scroller extends CanvasWrapper {
                 factor: 3,
             }, this.game),
             position: new Vector2(0,400),
-            paralax: -0.96,
+            worldSpaceParalaxX: -0.96,
             repeatX: 16,
             opacity: 0.3,
         }), 144*3, 0.10);
@@ -55,7 +55,7 @@ export class Scroller extends CanvasWrapper {
                 factor: 3,
             }, this.game),
             position: new Vector2(0,350),
-            paralax: -0.94,
+            worldSpaceParalaxX: -0.94,
             repeatX: 16,
         }), 160*3, 0.15);
 
@@ -66,7 +66,7 @@ export class Scroller extends CanvasWrapper {
                 factor: 4,
             }, this.game),
             position: new Vector2(0,250),
-            paralax: -0.92,
+            worldSpaceParalaxX: -0.92,
             repeatX: 16,
         }), 320*4, 0.17);
         
@@ -81,7 +81,8 @@ export class Scroller extends CanvasWrapper {
                 factor:2,
             }, this.game),
             position: new Vector2(0,500),
-            paralax: -0.7,
+            worldSpaceParalaxX: -0.5,
+
             repeatX: 16,
         }), 240*2, 0.6);
 
@@ -90,34 +91,44 @@ export class Scroller extends CanvasWrapper {
                 url: '/img/dusk/trees.png', 
                 factor:3,
             }, this.game),
-            position: new Vector2(0,350),
-            paralax: -0.65,
+            position: new Vector2(0,320),
+            worldSpaceParalaxX: -0.38,
             repeatX: 16,
         }), 240*3, 0.8);
 
         this.add(new CanvasImage({
             image: new PrepImage({ 
                 url: '/img/dusk/trees.png', 
-                factor:5,
+                factor:7,
             }, this.game),
-            position: new Vector2(0,-50),
-            paralax: -.6,
+            position: new Vector2(0,-100),
+            worldSpaceParalaxX: -.26,
             repeatX: 16,
-        }), 240*5, 0.9);
+        }), 240*7, 0.95);
 
         this.add(new CanvasImage({
             image: new PrepImage({ 
                 url: '/img/train/railtrack_v1.png', 
-                factor: 6
+                factor: 7
             }, this.game),
-            repeatX: Math.ceil(this.level.width / 64*6 + 1),
-        }), 64*6, 1);
+            position: new Vector2(0,40),
+            repeatX: Math.ceil(this.level.width / 64*7 + 1),
+        }), 64*7, 1);
+
+        this.add(new CanvasImage({
+            image: new PrepImage({ 
+                url: '/img/train/railtrack_v1.png', 
+                factor: 7
+            }, this.game),
+            position: new Vector2(0,0),
+            repeatX: Math.ceil(this.level.width / 64*7 + 1),
+        }), 64*7, 1);
 
     }
     public tick(obj: TickerReturnData): void {
         super.tick(obj);
         this.layers.forEach(([layer, width, paralax]) => {
-            layer.x = (layer.x - (this.speed* paralax)) % width;
+            layer.x = (layer.x - (this.speed* paralax)) % width ;
         });
     }
 }

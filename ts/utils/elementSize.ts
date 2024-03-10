@@ -1,10 +1,10 @@
-import { ElementScale, ElementScaleAttributes } from './elementZoom';
+import { ElementZoom, ElementZoomAttributes } from './elementZoom';
 import { Vector2 } from './vector2';
 
-export type ElementSizeAttributes = ElementScaleAttributes & {
+export type ElementSizeAttributes = ElementZoomAttributes & {
     size?: Vector2,
 };
-export abstract class ElementSize extends ElementScale {
+export abstract class ElementSize extends ElementZoom {
 
     protected _width: number = 0;
     protected _height: number = 0;

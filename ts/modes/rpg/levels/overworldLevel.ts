@@ -14,9 +14,9 @@ import { DomText } from '../../../dom/domText';
 import { DomButton } from '../../../dom/domButton';
 
 export class OverworldLevel extends Level {
-    private zoom = 6;
+    private scale = 6;
 
-    public start = new Vector2(7 * this.zoom * 16, 7 * this.zoom * 16);
+    public start = new Vector2(7 * this.scale * 16, 7 * this.scale * 16);
     public background = new CanvasColorBackground('#272727');
     public character: RPGCharacter;
     public sprites: CanvasPrepSprites;
@@ -37,7 +37,7 @@ export class OverworldLevel extends Level {
 
         this.sprites = new CanvasPrepSprites({
             jsons: ['/json/overworld/sprites.json'],
-            factor: this.zoom,
+            factor: this.scale,
             callback: () => {
                 this.assetsLoaded();
             }
@@ -49,20 +49,20 @@ export class OverworldLevel extends Level {
         this.addChild(this.background);
 
         this.addChild(new CanvasImage({
-            image: new PrepImage({ url: '/img/overworld/terrain.png', factor: this.zoom }, this.game),
+            image: new PrepImage({ url: '/img/overworld/terrain.png', factor: this.scale }, this.game),
         }));
 
         
         this.addChild(new CanvasGrid({
             sprites: this.sprites,
             json: '/json/overworld/decorations.json',
-            factor: this.zoom,
+            factor: this.scale,
         }));
 
         this.addChild(new CanvasGrid({
             sprites: this.sprites,
             json: '/json/overworld/objects.json',
-            factor: this.zoom,
+            factor: this.scale,
             condition: (entity)=>entity.y >= this.character.y
         }));
 
@@ -71,14 +71,14 @@ export class OverworldLevel extends Level {
         this.addChild(new CanvasGrid({
             sprites: this.sprites,
             json: '/json/overworld/objects.json',
-            factor: this.zoom,
+            factor: this.scale,
             condition: (entity)=>entity.y < this.character.y
         }));
 
         this.addChild(new CanvasGrid({
             sprites: this.sprites,
             json: '/json/overworld/overlay.json',
-            factor: this.zoom
+            factor: this.scale
         }));
 
         (([
@@ -101,16 +101,16 @@ export class OverworldLevel extends Level {
             [32,37,15,16],
         ]) as ([number,number,number,number,number?])[]).forEach(([x,y,w,h,t = 30]) => {
             this.addChild(new Collider({
-                position: new Vector2(this.zoom*x,this.zoom*y),
-                size: new Vector2(this.zoom*w,this.zoom*h),
+                position: new Vector2(this.scale*x,this.scale*y),
+                size: new Vector2(this.scale*w,this.scale*h),
                 cornerTolerance: t,
             }));
         });
 
         // const [x,y,w,h] = [23,260,25,62];
         // this.mo = new DomButton({
-        //     position: new Vector2(this.zoom*x,this.zoom*y),
-        //     size: new Vector2(this.zoom*w,this.zoom*h),
+        //     position: new Vector2(this.scale*x,this.scale*y),
+        //     size: new Vector2(this.scale*w,this.scale*h),
         //     background: 'rgba(0, 255,0,0.3)',
         //     fontSize: 50,
         //     onClick: () => {
@@ -125,7 +125,7 @@ export class OverworldLevel extends Level {
     // tick(obj: TickerReturnData): void {
     //     super.tick(obj);
     //     if (this.mo){
-    //         this.mo.text = `[${Math.round(this.mo.x/this.zoom)},${Math.round(this.mo.y/this.zoom)},${Math.round(this.mo.width/this.zoom)},${Math.round(this.mo.height/this.zoom)}]`;
+    //         this.mo.text = `[${Math.round(this.mo.x/this.scale)},${Math.round(this.mo.y/this.scale)},${Math.round(this.mo.width/this.scale)},${Math.round(this.mo.height/this.scale)}]`;
     //     }
     // }
 }
