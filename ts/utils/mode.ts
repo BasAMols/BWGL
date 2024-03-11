@@ -1,7 +1,4 @@
-import { CanvasElement } from '../canvas/canvasElement';
-import { CanvasWrapper, CanvasWrapperAttributes } from '../canvas/canvasWrapper';
-import { DomElement } from '../dom/domElement';
-import { Game } from '../game';
+import { CanvasWrapper, CanvasWrapperAttributes } from '../elements/canvasWrapper';
 import { ElementRelativity } from './elementPosition';
 import { Level } from './level';
 import { Vector2 } from './vector2';

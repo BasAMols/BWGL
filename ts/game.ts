@@ -1,17 +1,13 @@
-import { CanvasWrapper } from './canvas/canvasWrapper';
+import { CanvasWrapper } from './elements/canvasWrapper';
 import { FPS } from './utils/debug/fps';
-import { SnakeMode } from './modes/snakeMode/snakeMode';
 import { Ticker, TickerReturnData } from './utils/ticker';
 import { Event } from './utils/event';
 import { Vector2 } from './utils/vector2';
 import { Input } from './utils/input';
 import { Mode } from './utils/mode';
-import { RPGMode } from './modes/rpg/rpgMode';
-import { DomButton } from './dom/domButton';
 import { ElementRelativity } from './utils/elementPosition';
-import { DomCanvas } from './dom/domCanvas';
+import { DomCanvas } from './elements/domCanvas';
 import { SideMode } from './modes/side/SideMode';
-import { DomText } from './dom/domText';
 import { Loader } from './utils/debug/loader';
 
 export class Game extends CanvasWrapper {

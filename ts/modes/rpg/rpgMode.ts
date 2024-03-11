@@ -1,6 +1,5 @@
-import { CanvasColorBackground } from '../../canvas/canvasBackground';
+import { CanvasColorBackground } from '../../elements/canvasBackground';
 import { Mode } from '../../utils/mode';
-import { TickerReturnData } from '../../utils/ticker';
 import { OverworldLevel as OverworldLevel } from './levels/overworldLevel';
 
 export class RPGMode extends Mode{

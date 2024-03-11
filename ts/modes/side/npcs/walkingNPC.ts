@@ -1,5 +1,5 @@
-import { CanvasAnimation } from '../../../canvas/canvasAnimation';
-import { PrepSpritesheet } from '../../../canvas/spritesheet';
+import { CanvasAnimation } from '../../../elements/canvasAnimation';
+import { PrepSpritesheet } from '../../../elements/spritesheet';
 import { Character } from '../../../utils/character';
 import { CanvasController } from '../../../utils/controller';
 import { ElementRelativity } from '../../../utils/elementPosition';

@@ -1,6 +1,6 @@
-import { CanvasAnimation } from '../../../canvas/canvasAnimation';
-import { CanvasWrapper } from '../../../canvas/canvasWrapper';
-import { PrepSpritesheet } from '../../../canvas/spritesheet';
+import { CanvasAnimation } from '../../../elements/canvasAnimation';
+import { CanvasWrapper } from '../../../elements/canvasWrapper';
+import { PrepSpritesheet } from '../../../elements/spritesheet';
 import { Collider } from '../../../utils/collider';
 import { ElementRelativity } from '../../../utils/elementPosition';
 import { Vector2 } from '../../../utils/vector2';
@@ -32,11 +32,13 @@ export class Locomotive extends CanvasWrapper {
 
         const r = this.background.postRender.bind(this.background);
         this.background.postRender = (c) => {
-            c.save();
             r(c);
-            this.draw.perspectiveSwitchFunction(1, this);
-            r(c);
-            c.restore();
+            // c.save();
+            // this.background.preRender(c);
+            // r(c);
+            // this.draw.perspectiveSwitchFunction(1, this);
+            // this.background.preRender(c);
+            // c.restore();
         };
 
         this.addChild(this.background);

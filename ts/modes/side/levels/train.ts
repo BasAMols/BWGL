@@ -1,9 +1,9 @@
-import { CanvasColorBackground } from '../../../canvas/canvasBackground';
-import { CanvasElement } from '../../../canvas/canvasElement';
-import { CanvasImage } from '../../../canvas/canvasImage';
-import { CanvasPrepSprites } from '../../../canvas/canvasPrepSprites';
-import { CanvasWrapper } from '../../../canvas/canvasWrapper';
-import { DomText } from '../../../dom/domText';
+import { CanvasColorBackground } from '../../../elements/canvasBackground';
+import { CanvasElement } from '../../../elements/canvasElement';
+import { CanvasImage } from '../../../elements/canvasImage';
+import { CanvasPrepSprites } from '../../../elements/canvasPrepSprites';
+import { CanvasWrapper } from '../../../elements/canvasWrapper';
+import { DomText } from '../../../elements/domText';
 import { Collider } from '../../../utils/collider';
 import { Level } from '../../../utils/level';
 import { TickerReturnData } from '../../../utils/ticker';
@@ -50,28 +50,35 @@ export class Train extends Level {
     build() {
         this.canvasDrawer = new CanvasDrawer(this.game.ctx, this.perpective.bind(this));
         this.start = new Vector2((256 * this.canvasDrawer.scale) * 1.5, 12 * this.canvasDrawer.scale + 90);
-        this.addChild(this.background);
 
         this.env = new Scroller();
-        this.addChild(this.env);
 
         this.backgroundLayer = new CanvasWrapper();
-        this.addChild(this.backgroundLayer);
 
         this.character = new SideCharacter({
             position: this.start,
             controllers: [new SideContoller()],
         });
-        this.addChild(this.character);
         
-        this.foregroundLayer = new CanvasWrapper();
-        this.addChild(this.foregroundLayer);
+        const loco = new Locomotive(this.canvasDrawer, (256 * this.canvasDrawer.scale) * 4, 90, 256 * this.canvasDrawer.scale, 64 * this.canvasDrawer.scale);
 
+        this.foregroundLayer = new CanvasWrapper();
+        
+        this.addChild(this.background);
+        this.addChild(this.env);
+        this.addChild(this.backgroundLayer);
+        this.addChild(this.character);
+        this.addChild(this.foregroundLayer);
+        // this.addChild(new CanvasSquare({
+        //     size: this.size,
+        //     color: '#000000aa',
+        //     composite: 'multiply',
+        // }));
+        
         for (let index = 1; index < 4; index++) {
             this.addChild(new TrainCar(this, this.backgroundLayer, this.foregroundLayer, this.canvasDrawer, index, this.character));
         }
-
-        const loco = new Locomotive(this.canvasDrawer, (256 * this.canvasDrawer.scale) * 4, 90, 256 * this.canvasDrawer.scale, 64 * this.canvasDrawer.scale);
+        
         this.foregroundLayer.addChild(loco);
 
         (([

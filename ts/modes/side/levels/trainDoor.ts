@@ -1,6 +1,6 @@
-import { CanvasImage } from '../../../canvas/canvasImage';
-import { CanvasWrapper } from '../../../canvas/canvasWrapper';
-import { PrepImage } from '../../../canvas/prepImage';
+import { CanvasImage } from '../../../elements/canvasImage';
+import { CanvasWrapper } from '../../../elements/canvasWrapper';
+import { PrepImage } from '../../../elements/prepImage';
 import { Vector2 } from '../../../utils/vector2';
 import { CanvasDrawer } from './perspectiveDrawer';
 import { TrainCar } from './trainCar';
@@ -27,16 +27,12 @@ export class TrainDoor extends CanvasWrapper {
         const or = this.outer.render.bind(this.outer);
         this.outer.render = (c: CanvasRenderingContext2D) => {
             if (this.offset.x + 17 *this.draw.scale * this.draw.factor > 0) {
-                c.save();
                 c.transform((this.offset.x + 17 *this.draw.scale * this.draw.factor) / this.outer.prepped.width, -(0.22), 0, 1 / (this.outer.prepped.height / this.doorHeight), 17 *this.draw.scale, 13 *this.draw.scale);
                 or(c);
-                c.restore();
             }
             if (this.offset.x + 223 *this.draw.scale * this.draw.factor < 0) {
-                c.save();
                 c.transform((this.offset.x + 223 *this.draw.scale * this.draw.factor) / this.outer.prepped.width, -(0.22), 0, 1 / (this.outer.prepped.height / this.doorHeight), 240 *this.draw.scale, 13 *this.draw.scale);
                 or(c);
-                c.restore();
             }
         };
 
@@ -50,18 +46,18 @@ export class TrainDoor extends CanvasWrapper {
         this.addChild(this.inner);
         const ir = this.inner.render.bind(this.inner);
         this.inner.render = (c: CanvasRenderingContext2D) => {
+            c.save();
             if (this.offset.x + 17 *this.draw.scale * this.draw.factor < 0) {
-                c.save();
                 c.transform((this.offset.x + 17 *this.draw.scale * this.draw.factor) / this.inner.prepped.width, -(0.22), 0, 1 / (this.inner.prepped.height / this.doorHeight), 17 *this.draw.scale, 14 *this.draw.scale);
                 ir(c);
-                c.restore();
             }
+            c.restore();
+            c.save();
             if (this.offset.x + 223 *this.draw.scale * this.draw.factor > 0) {
-                c.save();
                 c.transform((this.offset.x + 223 *this.draw.scale * this.draw.factor) / this.inner.prepped.width, -(0.22), 0, 1 / (this.inner.prepped.height / this.doorHeight), 240 *this.draw.scale, 14 *this.draw.scale);
                 ir(c);
-                c.restore();
             }
+            c.restore();
         };
     }
 }

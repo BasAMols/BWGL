@@ -282,7 +282,7 @@ var Element = class extends ElementVisible {
   }
 };
 
-// ts/dom/domElement.ts
+// ts/elements/domElement.ts
 var DomElement = class extends Element {
   constructor(type, attr = {}) {
     super(attr);
@@ -365,11 +365,12 @@ var DomElement = class extends Element {
   }
 };
 
-// ts/canvas/canvasElement.ts
+// ts/elements/canvasElement.ts
 var CanvasElement = class extends Element {
   constructor(attr = {}) {
     super(attr);
     this.rendererType = "canvas";
+    this.composite = "source-over";
     this.lowerChildren = [];
     this.higherChildren = [];
     this.controllers = [];
@@ -379,6 +380,7 @@ var CanvasElement = class extends Element {
       this.dom = new DomElement("div");
     }
     this.autoReady = attr.autoReady || false;
+    this.composite = attr.composite || "source-over";
     this.addControllers(attr.controllers || []);
   }
   get x() {
@@ -457,6 +459,7 @@ var CanvasElement = class extends Element {
     if (child.rendererType === "canvas" && child.type === "collider" && child.colliderType === "static" && this.level) {
       this.level.colliders.push(child);
     }
+    return child;
   }
   addControllers(c) {
     if (c.length > 0) {
@@ -494,7 +497,10 @@ var CanvasElement = class extends Element {
       child.preRender(c);
       child.postRender(c);
     });
+    c.save();
+    c.globalCompositeOperation = this.composite;
     this.render(c);
+    c.restore();
   }
   render(c) {
   }
@@ -507,7 +513,7 @@ var CanvasElement = class extends Element {
   }
 };
 
-// ts/canvas/canvasWrapper.ts
+// ts/elements/canvasWrapper.ts
 var CanvasWrapper = class extends CanvasElement {
   constructor() {
     super(...arguments);
@@ -516,7 +522,7 @@ var CanvasWrapper = class extends CanvasElement {
   }
 };
 
-// ts/dom/domText.ts
+// ts/elements/domText.ts
 var DomText = class extends DomElement {
   set color(v) {
     this.dom.style.color = v;
@@ -672,7 +678,7 @@ var Input = class {
   }
 };
 
-// ts/dom/domCanvas.ts
+// ts/elements/domCanvas.ts
 var DomCanvas = class extends DomElement {
   constructor() {
     super("canvas");
@@ -704,6 +710,7 @@ var DomCanvas = class extends DomElement {
   }
   tick(obj) {
     super.tick(obj);
+    this.ctx.clearRect(0, 0, this.width, this.height);
     this.ctx.save();
     this.ctx.scale(1, -1);
     this.ctx.translate(0, -this.height);
@@ -716,7 +723,59 @@ var DomCanvas = class extends DomElement {
   }
 };
 
-// ts/canvas/canvasColor.ts
+// ts/utils/mode.ts
+var Mode = class extends CanvasWrapper {
+  constructor() {
+    super(...arguments);
+    this.levels = {};
+    this.relativity = "anchor";
+    this.keyAliases = {
+      "w": "up",
+      "a": "left",
+      "s": "down",
+      "d": "right",
+      "ArrowUp": "up",
+      "ArrowLeft": "left",
+      "ArrowDown": "down",
+      "ArrowRight": "right"
+    };
+    this.input = {
+      "up": false,
+      "left": false,
+      "down": false,
+      "right": false
+    };
+  }
+  build() {
+    super.build();
+    this.game.getEvent("resize").subscribe(String(Math.random()), (size) => {
+      this.size = size;
+    });
+  }
+  addLevel(s, level) {
+    this.levels[s] = level;
+    this.addChild(level);
+  }
+  switchLevel(s) {
+    Object.entries(this.levels).forEach(([key, level]) => {
+      level.active = key === s;
+      level.visible = key === s;
+      level.dom ? level.dom.visible = key === s : null;
+    });
+  }
+  keyDown(e) {
+    if (Object.keys(this.keyAliases).includes(e.key)) {
+      this.input[this.keyAliases[e.key]] = true;
+    }
+  }
+  keyUp(e) {
+    if (Object.keys(this.keyAliases).includes(e.key)) {
+      this.input[this.keyAliases[e.key]] = false;
+    }
+  }
+};
+
+// ts/elements/canvasColor.ts
 var CanvasColor = class extends CanvasElement {
   constructor(attr = {}) {
     super(attr);
@@ -742,7 +801,7 @@ var CanvasColor = class extends CanvasElement {
   }
 };
 
-// ts/canvas/canvasSquare.ts
+// ts/elements/canvasSquare.ts
 var CanvasSquare = class extends CanvasColor {
   constructor(attr = {}) {
     super(attr);
@@ -801,7 +860,7 @@ var CanvasSquare = class extends CanvasColor {
   }
 };
 
-// ts/canvas/canvasBackground.ts
+// ts/elements/canvasBackground.ts
 var CanvasColorBackground = class extends CanvasSquare {
   constructor(color) {
     super({
@@ -813,58 +872,6 @@ var CanvasColorBackground = class extends CanvasSquare {
     this.game.getEvent("resize").subscribe(String(Math.random()), (size) => {
       this.size = this.parent.size;
     });
-  }
-};
-
-// ts/utils/mode.ts
-var Mode = class extends CanvasWrapper {
-  constructor() {
-    super(...arguments);
-    this.levels = {};
-    this.relativity = "anchor";
-    this.keyAliases = {
-      "w": "up",
-      "a": "left",
-      "s": "down",
-      "d": "right",
-      "ArrowUp": "up",
-      "ArrowLeft": "left",
-      "ArrowDown": "down",
-      "ArrowRight": "right"
-    };
-    this.input = {
-      "up": false,
-      "left": false,
-      "down": false,
-      "right": false
-    };
-  }
-  build() {
-    super.build();
-    this.game.getEvent("resize").subscribe(String(Math.random()), (size) => {
-      this.size = size;
-    });
-  }
-  addLevel(s, level) {
-    this.levels[s] = level;
-    this.addChild(level);
-  }
-  switchLevel(s) {
-    Object.entries(this.levels).forEach(([key, level]) => {
-      level.active = key === s;
-      level.visible = key === s;
-      level.dom ? level.dom.visible = key === s : null;
-    });
-  }
-  keyDown(e) {
-    if (Object.keys(this.keyAliases).includes(e.key)) {
-      this.input[this.keyAliases[e.key]] = true;
-    }
-  }
-  keyUp(e) {
-    if (Object.keys(this.keyAliases).includes(e.key)) {
-      this.input[this.keyAliases[e.key]] = false;
-    }
   }
 };
 
@@ -896,7 +903,7 @@ var Level = class extends CanvasWrapper {
   }
 };
 
-// ts/canvas/canvasAnimation.ts
+// ts/elements/canvasAnimation.ts
 var CanvasAnimation = class extends CanvasElement {
   constructor(attr) {
     super(__spreadProps(__spreadValues({}, attr), { autoReady: false }));
@@ -949,7 +956,7 @@ var CanvasAnimation = class extends CanvasElement {
   }
 };
 
-// ts/canvas/canvasImage.ts
+// ts/elements/canvasImage.ts
 var CanvasImage = class extends CanvasElement {
   constructor(attr) {
     super(attr);
@@ -998,7 +1005,7 @@ var CanvasImage = class extends CanvasElement {
   }
 };
 
-// ts/canvas/prepImage.ts
+// ts/elements/prepImage.ts
 var PrepImage = class {
   constructor(attr, game) {
     this.type = "image";
@@ -1067,7 +1074,7 @@ var PrepImage = class {
   }
 };
 
-// ts/canvas/spritesheet.ts
+// ts/elements/spritesheet.ts
 var PrepSpritesheet = class {
   constructor(attr, game) {
     this.type = "animation";
@@ -1244,8 +1251,8 @@ var Collisions = class _Collisions {
 var SideContoller = class extends CanvasController {
   constructor() {
     super(...arguments);
-    this.speed = 4;
-    this.jumpHeight = 14;
+    this.speed = 2;
+    this.jumpHeight = 13;
     this.velocity = Vector2.zero;
     this.jumping = false;
   }
@@ -1306,11 +1313,7 @@ var Locomotive = class extends CanvasWrapper {
     });
     const r = this.background.postRender.bind(this.background);
     this.background.postRender = (c) => {
-      c.save();
       r(c);
-      this.draw.perspectiveSwitchFunction(1, this);
-      r(c);
-      c.restore();
     };
     this.addChild(this.background);
     [
@@ -1335,15 +1338,15 @@ var CanvasDrawer = class {
     this.ctx = ctx;
     this.perspectiveSwitchFunction = perspectiveSwitchFunction;
   }
-  lineSequence(target, fill, points) {
+  lineSequence(target, fill, points, style) {
     for (let i = 0; i < points.length - 1; i++) {
-      this.line(target, fill, points[i][0], points[i][1], points[i][2] || 0, points[i + 1][0], points[i + 1][1], points[i + 1][2] || 0);
+      this.line(target, fill, points[i][0], points[i][1], points[i][2] || 0, points[i + 1][0], points[i + 1][1], points[i + 1][2] || 0, style || points[i + 1][3]);
     }
   }
   line(target, fill, x, y, offset, x2, y2, offset2, style = offset !== offset2 ? "z" : x === x2 ? "x" : "y", w = 1) {
     this.ctx.fillStyle = fill;
     this.ctx.save();
-    if (style === "x") {
+    if (style === "x" || style === "xy") {
       this.switchPerspective(target, offset);
       this.ctx.beginPath();
       this.ctx.moveTo(x * this.scale, y * this.scale);
@@ -1354,7 +1357,7 @@ var CanvasDrawer = class {
       this.ctx.fill();
       this.ctx.closePath();
     }
-    if (style === "y") {
+    if (style === "y" || style === "xy") {
       this.switchPerspective(target, offset);
       this.ctx.beginPath();
       this.ctx.moveTo(x * this.scale, y * this.scale);
@@ -1400,8 +1403,8 @@ var CanvasDrawer = class {
       this.ctx.fill();
       this.ctx.closePath();
     }
-    this.ctx.restore();
     this.lastZ = void 0;
+    this.ctx.restore();
   }
   switchPerspective(target, z) {
     if (this.lastZ !== z) {
@@ -1412,16 +1415,17 @@ var CanvasDrawer = class {
     }
   }
   fill(target, points, fill, stroke) {
-    this.ctx.beginPath();
+    this.ctx.fillStyle = fill;
     this.ctx.save();
+    this.ctx.beginPath();
     points.forEach((p, i) => {
       this.switchPerspective(target, p[2] || 0);
       this.ctx[i === 0 ? "moveTo" : "lineTo"](p[0] * this.scale, p[1] * this.scale);
     });
-    this.ctx.fillStyle = fill;
     this.ctx.fill();
     this.ctx.closePath();
     this.ctx.restore();
+    this.lastZ = void 0;
     if (stroke) {
       this.lineSequence(target, stroke, points);
     }
@@ -1543,7 +1547,7 @@ var Scroller = class extends CanvasWrapper {
   }
 };
 
-// ts/canvas/canvasCustom.ts
+// ts/elements/canvasCustom.ts
 var CanvasCustom = class extends CanvasElement {
   constructor(attr = {}) {
     super(attr);
@@ -1735,64 +1739,6 @@ var NPCWoman = class extends IdleNPC {
   }
 };
 
-// ts/modes/side/levels/trainDoor.ts
-var TrainDoor = class extends CanvasWrapper {
-  constructor(draw, car) {
-    super();
-    this.draw = draw;
-    this.car = car;
-    this.doorHeight = 45 * this.draw.scale;
-  }
-  build() {
-    this.outer = new CanvasImage({
-      image: new PrepImage({
-        url: "/img/train/door.png",
-        factor: 6
-      }, this.game),
-      position: new Vector2(0, 0)
-    });
-    this.addChild(this.outer);
-    const or = this.outer.render.bind(this.outer);
-    this.outer.render = (c) => {
-      if (this.offset.x + 17 * this.draw.scale * this.draw.factor > 0) {
-        c.save();
-        c.transform((this.offset.x + 17 * this.draw.scale * this.draw.factor) / this.outer.prepped.width, -0.22, 0, 1 / (this.outer.prepped.height / this.doorHeight), 17 * this.draw.scale, 13 * this.draw.scale);
-        or(c);
-        c.restore();
-      }
-      if (this.offset.x + 223 * this.draw.scale * this.draw.factor < 0) {
-        c.save();
-        c.transform((this.offset.x + 223 * this.draw.scale * this.draw.factor) / this.outer.prepped.width, -0.22, 0, 1 / (this.outer.prepped.height / this.doorHeight), 240 * this.draw.scale, 13 * this.draw.scale);
-        or(c);
-        c.restore();
-      }
-    };
-    this.inner = new CanvasImage({
-      image: new PrepImage({
-        url: "/img/train/door2.png",
-        factor: 6
-      }, this.game),
-      position: new Vector2(0, 0)
-    });
-    this.addChild(this.inner);
-    const ir = this.inner.render.bind(this.inner);
-    this.inner.render = (c) => {
-      if (this.offset.x + 17 * this.draw.scale * this.draw.factor < 0) {
-        c.save();
-        c.transform((this.offset.x + 17 * this.draw.scale * this.draw.factor) / this.inner.prepped.width, -0.22, 0, 1 / (this.inner.prepped.height / this.doorHeight), 17 * this.draw.scale, 14 * this.draw.scale);
-        ir(c);
-        c.restore();
-      }
-      if (this.offset.x + 223 * this.draw.scale * this.draw.factor > 0) {
-        c.save();
-        c.transform((this.offset.x + 223 * this.draw.scale * this.draw.factor) / this.inner.prepped.width, -0.22, 0, 1 / (this.inner.prepped.height / this.doorHeight), 240 * this.draw.scale, 14 * this.draw.scale);
-        ir(c);
-        c.restore();
-      }
-    };
-  }
-};
-
 // ts/modes/side/levels/trainCar.ts
 var TrainCar = class extends CanvasWrapper {
   constructor(train, background, foreground, draw, count, character) {
@@ -1807,9 +1753,6 @@ var TrainCar = class extends CanvasWrapper {
     this.count = count;
     this.character = character;
     this.wheelFrame = 0;
-  }
-  set offset(value) {
-    this.door.offset = value;
   }
   build() {
     this.buildBackground();
@@ -1847,44 +1790,53 @@ var TrainCar = class extends CanvasWrapper {
           [9, 8, 1],
           [9, ce - 762 <= 0 ? 16 : 8, ce - 762 <= 0 ? 1 : 0],
           [9, 16]
-        ], "#58473f", "#140e14");
+        ], "#5d5d5d", "#381c45");
         this.draw.fill(this.backgroundWrap, [
-          [18, 16],
+          [16, 16],
           [240, 16],
           [240, 16, 1],
-          [18, 16, 1]
+          [16, 16, 1]
         ], "#8f563b");
-        for (let index = 18; index < 239; index += 4) {
+        for (let index = 16; index < 239; index += 4) {
           this.draw.line(this.backgroundWrap, "#662736", 0 + index, 16, 0, 0 + index, 16, 1, "x");
           this.draw.line(this.backgroundWrap, "#e37332", 1 + index, 16, 0, 1 + index, 16, 1, "x");
-          if (index % 8 === 2) {
+          if (index % 8 === 0) {
             this.draw.line(this.backgroundWrap, "#662736", 0 + index, 16, 0.2, 0 + index, 16, 0.3, "x", 4);
           }
-          if (index % 8 === 6) {
+          if (index % 8 === 4) {
             this.draw.line(this.backgroundWrap, "#662736", 0 + index, 16, 0.7, 0 + index, 16, 0.8, "x", 4);
           }
         }
-      }
-    }), true);
-    this.door = new TrainDoor(this.draw, this);
-    this.interior.addChild(this.door, true);
-    this.interior.addChild(new CanvasCustom({
-      render: (c) => {
-        const ce = this.width / 2 + this.x - (this.mode.width / 2 - this.level.x);
-        this.draw.fill(this.backgroundWrap, [
-          [8, 61, 0],
-          [248, 61, 0],
-          [248, ce + 762 > 0 ? 61 : 57, ce + 762 > 0 ? 1 : 0],
-          [248, 57, 1],
-          [8, 57, 1],
-          [8, ce - 762 <= 0 ? 61 : 57, ce - 762 <= 0 ? 1 : 0],
-          [8, 61, 0]
-        ], "#7e6970", "#140e14");
-        this.draw.line(this.backgroundWrap, "#140e14", 8, 57, 1, 8, 61, 1);
-        this.draw.line(this.backgroundWrap, "#140e14", 8, 61, 1, 248, 61, 1);
-        this.draw.line(this.backgroundWrap, "#140e14", 248, 61, 1, 248, 57, 1);
-        this.draw.line(this.backgroundWrap, "#140e14", 8, 61, 0, 8, 61, 1);
-        this.draw.line(this.backgroundWrap, "#140e14", 248, 61, 0, 248, 61, 1);
+        if (ce + 762 > 0) {
+          this.draw.fill(this.backgroundWrap, [
+            [239, 16, 0],
+            [239, 57, 0],
+            [239, 57, 0.25],
+            [239, 16, 0.25]
+          ], "#8f563b");
+        } else {
+          this.draw.fill(this.backgroundWrap, [
+            [240, 16, 0],
+            [240, 57, 0],
+            [240, 57, 0.25],
+            [240, 16, 0.25]
+          ], "#f3b65a");
+        }
+        if (ce - 762 < 0) {
+          this.draw.fill(this.backgroundWrap, [
+            [17, 16, 0],
+            [17, 57, 0],
+            [17, 57, 0.25],
+            [17, 16, 0.25]
+          ], "#8f563b");
+        } else {
+          this.draw.fill(this.backgroundWrap, [
+            [16, 16, 0],
+            [16, 57, 0],
+            [16, 57, 0.25],
+            [16, 16, 0.25]
+          ], "#f3b65a");
+        }
       }
     }), true);
     this.interior.addChild(new NPCOld({
@@ -1892,13 +1844,11 @@ var TrainCar = class extends CanvasWrapper {
       width: this.width - 60 * this.draw.scale
     }), true);
     this.interior.addChild(new NPCWoman({
-      position: new Vector2(12 * this.draw.scale, 13 * this.draw.scale)
+      position: new Vector2(14 * this.draw.scale, 13 * this.draw.scale)
     }), true);
     [
       [0, 5, 256, 6],
-      //hedgeBottom
-      [8, 50, 240, 8]
-      //hedgeBottom
+      [13, 50, 230, 10]
     ].forEach(([x, y, w, h, t = 80]) => {
       this.backgroundWrap.addChild(new Collider({
         position: new Vector2(x * this.draw.scale, y * this.draw.scale),
@@ -1966,6 +1916,101 @@ var TrainCar = class extends CanvasWrapper {
     });
     this.foregroundWrap.addChild(this.wheels4);
     this.wheels4.frame = 3 * 20;
+    this.foregroundWrap.addChild(new CanvasCustom({
+      render: (c) => {
+        const ce = this.width / 2 + this.x - (this.mode.width / 2 - this.level.x);
+        if (ce + 762 > 0) {
+          this.draw.fill(this.foregroundWrap, [
+            [239, 16, 0],
+            [239, 57, 0],
+            [239, 57, -0.75],
+            [239, 50, -0.75],
+            [239, 50, -0.25],
+            [239, 57, -0.25],
+            [239, 16, -0.25]
+          ], "#8f563b");
+        } else {
+          this.draw.fill(this.foregroundWrap, [
+            [240, 16, 0],
+            [240, 57, 0],
+            [240, 57, -0.75],
+            [240, 50, -0.75],
+            [240, 50, -0.25],
+            [240, 57, -0.25],
+            [240, 16, -0.25]
+          ], "#f3b65a");
+        }
+        if (ce - 762 < 0) {
+          this.draw.fill(this.foregroundWrap, [
+            [17, 16, 0],
+            [17, 57, 0],
+            [17, 57, -0.75],
+            [17, 50, -0.75],
+            [17, 50, -0.25],
+            [17, 57, -0.25],
+            [17, 16, -0.25]
+          ], "#8f563b");
+        } else {
+          this.draw.fill(this.foregroundWrap, [
+            [16, 16, 0],
+            [16, 57, 0],
+            [16, 57, -0.75],
+            [16, 50, -0.75],
+            [16, 50, -0.25],
+            [16, 57, -0.25],
+            [16, 16, -0.25]
+          ], "#f3b65a");
+        }
+        this.draw.fill(this.foregroundWrap, [
+          [9, 61, -1],
+          [11, 61, -1],
+          [11, 62, -1],
+          [16, 62, -1],
+          [16, 63, -1],
+          [240, 63, -1],
+          [240, 62, -1],
+          [245, 62, -1],
+          [245, 61, -1],
+          [248, 61, -1],
+          [248, 61, 0],
+          [9, 61, 0]
+        ], "#ffffff");
+        this.draw.fill(this.foregroundWrap, [
+          [9, 57, 0],
+          [9, 61, 0],
+          [248, 61, 0],
+          [248, 57, 0]
+        ], "#cbdbfc");
+        if (ce + 762 < 0) {
+          this.draw.fill(this.foregroundWrap, [
+            [248, 61, -1],
+            [248, 57, -1],
+            [248, 57, 0],
+            [248, 61, 0]
+          ], "#cbdbfc");
+        }
+        if (ce - 762 > 0) {
+          this.draw.fill(this.foregroundWrap, [
+            [9, 61, -1],
+            [9, 57, -1],
+            [9, 57, 0],
+            [9, 61, 0]
+          ], "#cbdbfc");
+        }
+        this.draw.lineSequence(this.foregroundWrap, "#222034", [
+          [9, 61, 0],
+          [12, 61, 0],
+          [12, 62, 0],
+          [17, 62, 0],
+          [17, 63, 0],
+          [240, 63, 0],
+          [240, 62, 0],
+          [245, 62, 0],
+          [245, 61, 0],
+          [248, 61, 0]
+        ], "y");
+      }
+    }));
     this.foregroundFrame = new CanvasImage({
       image: new PrepImage({
         url: "/img/train/Frane Front.png",
@@ -1993,15 +2038,11 @@ var TrainCar = class extends CanvasWrapper {
     this.wheels3.y = this.wheelFrame > 20 && this.wheelFrame < 50 ? this.draw.scale : 0;
     this.wheels2.y = this.wheelFrame > 0 && this.wheelFrame < 30 ? this.draw.scale : 0;
     this.wheels1.y = this.wheelFrame > 20 && this.wheelFrame < 50 ? this.draw.scale : 0;
-    this.foregroundFrame.y = this.wheelFrame > 40 && this.wheelFrame < 70 ? this.draw.scale / 3 : 0;
-    this.siding.y = this.wheelFrame > 40 && this.wheelFrame < 70 ? this.draw.scale / 3 : 0;
+    this.foregroundWrap.y = (this.wheelFrame > 40 && this.wheelFrame < 70 ? this.draw.scale / 3 : 0) + 50;
     this.frame.y = this.wheelFrame > 40 && this.wheelFrame < 70 ? this.draw.scale / 3 : 0;
     this.interior.y = this.wheelFrame > 40 && this.wheelFrame < 70 ? this.draw.scale / 3 : 0;
     this.foregroundWrap.x = this.backgroundWrap.x - this.backgroundWrap.width * (this.draw.factor / 2) + (this.width / 2 + this.x - (this.mode.width / 2 - this.level.x)) * this.draw.factor;
-    this.offset = this.foregroundWrap.position.subtract(this.backgroundWrap.position);
-    if (this.character.y < this.y + this.height - 60) {
-      this.siding.opacity = Util.clamp((Math.abs(this.width / 2 + this.x - (this.character.width / 2 + this.character.x)) - (this.width / 2 - f)) / f, 0, 1);
-    }
+    this.siding.opacity = this.character.y > this.y + this.height - 60 ? 1 : Util.clamp((Math.abs(this.width / 2 + this.x - (this.character.width / 2 + this.character.x)) - (this.width / 2 - f)) / f, 0, 1);
   }
 };
 
@@ -2029,22 +2070,22 @@ var Train = class extends Level {
   build() {
     this.canvasDrawer = new CanvasDrawer(this.game.ctx, this.perpective.bind(this));
     this.start = new Vector2(256 * this.canvasDrawer.scale * 1.5, 12 * this.canvasDrawer.scale + 90);
-    this.addChild(this.background);
     this.env = new Scroller();
-    this.addChild(this.env);
     this.backgroundLayer = new CanvasWrapper();
-    this.addChild(this.backgroundLayer);
     this.character = new SideCharacter({
       position: this.start,
       controllers: [new SideContoller()]
     });
-    this.addChild(this.character);
+    const loco = new Locomotive(this.canvasDrawer, 256 * this.canvasDrawer.scale * 4, 90, 256 * this.canvasDrawer.scale, 64 * this.canvasDrawer.scale);
     this.foregroundLayer = new CanvasWrapper();
+    this.addChild(this.background);
+    this.addChild(this.env);
+    this.addChild(this.backgroundLayer);
+    this.addChild(this.character);
     this.addChild(this.foregroundLayer);
     for (let index = 1; index < 4; index++) {
       this.addChild(new TrainCar(this, this.backgroundLayer, this.foregroundLayer, this.canvasDrawer, index, this.character));
     }
-    const loco = new Locomotive(this.canvasDrawer, 256 * this.canvasDrawer.scale * 4, 90, 256 * this.canvasDrawer.scale, 64 * this.canvasDrawer.scale);
     this.foregroundLayer.addChild(loco);
     [
       [0, 0, this.width, 35]
@@ -2070,7 +2111,6 @@ var SideMode = class extends Mode {
   }
   build() {
     super.build();
-    this.addChild(new CanvasColorBackground("#272727"));
     this.addLevel("platform", new Train());
     this.switchLevel("platform");
   }

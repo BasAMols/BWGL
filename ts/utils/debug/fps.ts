@@ -1,4 +1,4 @@
-import { DomText } from "../../dom/domText";
+import { DomText } from "../../elements/domText";
 import { TickerReturnData } from '../ticker';
 import { Vector2 } from '../vector2';
 

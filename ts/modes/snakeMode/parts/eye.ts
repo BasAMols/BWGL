@@ -1,5 +1,5 @@
 
-import { CanvasCircle } from '../../../canvas/canvasCircle';
+import { CanvasCircle } from '../../../elements/canvasCircle';
 import { TickerReturnData } from '../../../utils/ticker';
 import { Vector2 } from '../../../utils/vector2';
 

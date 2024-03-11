@@ -1,4 +1,4 @@
-import { DomButton } from '../../dom/domButton';
+import { DomButton } from '../../elements/domButton';
 import { Mode } from '../../utils/mode';
 import { Vector2 } from '../../utils/vector2';
 import { BouncerLevel } from './levels/bouncerLevel';

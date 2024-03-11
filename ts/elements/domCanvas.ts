@@ -1,4 +1,3 @@
-import { CanvasElement } from '../canvas/canvasElement';
 import { ElementAttributes } from "../utils/element";
 import { Mode } from '../utils/mode';
 import { TickerReturnData } from '../utils/ticker';
@@ -55,6 +54,7 @@ export class DomCanvas extends DomElement<'canvas'> {
         // this.ctx.closePath();
 
         super.tick(obj);
+        this.ctx.clearRect(0, 0, this.width, this.height);
 
         this.ctx.save();
         this.ctx.scale(1, -1);

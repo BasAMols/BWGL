@@ -1,17 +1,15 @@
-import { CanvasColorBackground } from '../../../canvas/canvasBackground';
-import { CanvasGrid } from '../../../canvas/canvasGrid';
+import { CanvasColorBackground } from '../../../elements/canvasBackground';
+import { CanvasGrid } from '../../../elements/canvasGrid';
 import { Level } from '../../../utils/level';
 import { Vector2 } from '../../../utils/vector2';
 import { RPGCharacter } from '../rpgCharacter';
 import { FlatContoller } from '../flatController';
 import { CameraController } from '../../snakeMode/controllers/cameraController';
-import { TickerReturnData } from '../../../utils/ticker';
-import { CanvasPrepSprites } from '../../../canvas/canvasPrepSprites';
-import { CanvasImage } from '../../../canvas/canvasImage';
-import { PrepImage } from '../../../canvas/prepImage';
+import { CanvasPrepSprites } from '../../../elements/canvasPrepSprites';
+import { CanvasImage } from '../../../elements/canvasImage';
+import { PrepImage } from '../../../elements/prepImage';
 import { Collider } from '../../../utils/collider';
-import { DomText } from '../../../dom/domText';
-import { DomButton } from '../../../dom/domButton';
+import { DomText } from '../../../elements/domText';
 
 export class OverworldLevel extends Level {
     private scale = 6;

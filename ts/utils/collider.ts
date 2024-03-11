@@ -1,4 +1,4 @@
-import { CanvasElement, CanvasElementAttributes, CanvasElementType } from '../canvas/canvasElement';
+import { CanvasElement, CanvasElementAttributes, CanvasElementType } from '../elements/canvasElement';
 import { ElementRelativity } from './elementPosition';
 
 export type ColliderAttributes = CanvasElementAttributes & {

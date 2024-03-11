@@ -1,4 +1,3 @@
-import { CanvasElement } from '../canvas/canvasElement';
 import { Collider } from './collider';
 import { Level } from './level';
 import { Vector2 } from './vector2';

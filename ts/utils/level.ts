@@ -1,7 +1,5 @@
-import { CanvasElement } from '../canvas/canvasElement';
-import { CanvasSquare } from '../canvas/canvasSquare';
-import { CanvasWrapper, CanvasWrapperAttributes } from '../canvas/canvasWrapper';
-import { DomElement } from '../dom/domElement';
+import { CanvasSquare } from '../elements/canvasSquare';
+import { CanvasWrapper, CanvasWrapperAttributes } from '../elements/canvasWrapper';
 import { Collider } from './collider';
 import { ElementRelativity } from './elementPosition';
 import { Vector2 } from "./vector2";

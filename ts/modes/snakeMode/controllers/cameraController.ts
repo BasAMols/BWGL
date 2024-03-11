@@ -1,4 +1,4 @@
-import { CanvasWrapper } from '../../../canvas/canvasWrapper';
+import { CanvasWrapper } from '../../../elements/canvasWrapper';
 import { CanvasController } from '../../../utils/controller';
 import { TickerReturnData } from '../../../utils/ticker';
 import { Util } from '../../../utils/utils';

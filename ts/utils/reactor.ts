@@ -1,4 +1,3 @@
-import { CanvasSquare } from '../canvas/canvasSquare';
 import { Collider, ColliderAttributes } from './collider';
 
 export type ReactorAttributes = ColliderAttributes & {

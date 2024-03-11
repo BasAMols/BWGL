@@ -6,8 +6,8 @@ import { Util } from '../../../utils/utils';
 import { Vector2 } from '../../../utils/vector2';
 
 export class SideContoller extends CanvasController {
-    private speed = 4;
-    private jumpHeight = 14;
+    private speed = 2;
+    private jumpHeight = 13;
     private velocity: Vector2 = Vector2.zero;
     public parent: Character;
     public jumping: boolean = false;

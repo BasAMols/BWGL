@@ -1,6 +1,6 @@
-import { CanvasAnimation } from '../../canvas/canvasAnimation';
-import { CanvasPrepSprites, SpriteAnimationJSON } from '../../canvas/canvasPrepSprites';
-import { PrepAnimation } from '../../canvas/prepAnimation';
+import { CanvasAnimation } from '../../elements/canvasAnimation';
+import { CanvasPrepSprites, SpriteAnimationJSON } from '../../elements/canvasPrepSprites';
+import { PrepAnimation } from '../../elements/prepAnimation';
 import { Character } from '../../utils/character';
 import { CanvasController } from '../../utils/controller';
 import { ElementRelativity } from '../../utils/elementPosition';

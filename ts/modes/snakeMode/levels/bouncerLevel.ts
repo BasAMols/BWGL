@@ -1,6 +1,6 @@
-import { CanvasColorBackground } from '../../../canvas/canvasBackground';
-import { Vector2 } from "../../../utils/vector2"
-import { Level } from "../../../utils/level"
+import { CanvasColorBackground } from '../../../elements/canvasBackground';
+import { Vector2 } from "../../../utils/vector2";
+import { Level } from "../../../utils/level";
 import { Snake } from '../snake';
 import { BouncyController } from '../controllers/bouncyController';
 

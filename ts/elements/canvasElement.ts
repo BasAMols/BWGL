@@ -1,4 +1,4 @@
-import { DomElement } from '../dom/domElement';
+import { DomElement } from './domElement';
 import { Collider } from '../utils/collider';
 import { CanvasController } from '../utils/controller';
 import { Element, ElementAttributes } from "../utils/element";
@@ -9,19 +9,21 @@ export type CanvasElementAttributes = ElementAttributes & {
     hasDom?: boolean,
     autoReady?: boolean,
     controllers?: CanvasController[];
+    composite?: GlobalCompositeOperation;
 };
 export interface CanvasElement {
     mouseMove?(e: MouseEvent): void;
     keyDown?(e: KeyboardEvent): void;
     keyUp?(e: KeyboardEvent): void;
 }
-export type CanvasElementType = 'color' | 'image' | 'wrapper' | 'logic' | 'animation' | 'collider';
+export type CanvasElementType = 'color' | 'image' | 'wrapper' | 'logic' | 'animation' | 'collider' ;
 export abstract class CanvasElement extends Element {
     public abstract type: CanvasElementType;
     public rendererType = 'canvas' as const;
     public dom!: DomElement<any>;
     private autoReady: boolean;
     private hasDom: boolean;
+    public composite: GlobalCompositeOperation = 'source-over';
 
     public get x() {
         return super.x;
@@ -85,10 +87,11 @@ export abstract class CanvasElement extends Element {
             this.dom = new DomElement('div');
         }
         this.autoReady = attr.autoReady || false;
+        this.composite = attr.composite || 'source-over';
         this.addControllers(attr.controllers || []);
     }
 
-    public addChild(child: CanvasElement | DomElement<any>, above: boolean = false) {
+    public addChild(child: CanvasElement | DomElement<any>, above: boolean = false): typeof child{
         child.parent ??= this;
         child.game ??= this.game;
         child.mode ??= this.mode;
@@ -123,6 +126,7 @@ export abstract class CanvasElement extends Element {
             this.level.colliders.push(child as Collider);
         }
 
+        return child;
 
     }
 
@@ -169,7 +173,10 @@ export abstract class CanvasElement extends Element {
             child.postRender(c);
         });
         
+        c.save();
+        c.globalCompositeOperation = this.composite;
         this.render(c);
+        c.restore();
     }
 
     public render(c: CanvasRenderingContext2D) {
