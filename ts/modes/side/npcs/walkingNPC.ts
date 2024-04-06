@@ -1,4 +1,4 @@
-import { CanvasAnimation } from '../../../elements/canvasAnimation';
+import { CanvasAnimation } from '../../../elements/canvas/canvasAnimation';
 import { PrepSpritesheet } from '../../../elements/spritesheet';
 import { Character } from '../../../utils/character';
 import { CanvasController } from '../../../utils/controller';
@@ -72,7 +72,7 @@ export abstract class WalkingNPC extends Character {
                     factor: this.scale,
                     size: this.size,
                     repeatX: count,
-                    interval: interval,
+                    frameRate: interval,
                 }, this.game),
                 loop,
             });

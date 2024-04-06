@@ -1,5 +1,5 @@
-import { CanvasElement } from '../elements/canvasElement';
-import { DomElement } from '../elements/domElement';
+import { CanvasElement } from '../elements/canvas/canvasElement';
+import { DomElement } from '../elements/dom/domElement';
 import { Game } from '../game';
 
 export type inputEvents = 'mouseMove'|'keyDown'|'keyUp';

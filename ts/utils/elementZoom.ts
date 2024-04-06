@@ -35,6 +35,7 @@ export abstract class ElementZoom extends ElementPosition {
             this._zoomX = attr.zoom.x;
             this._zoomY = attr.zoom.y;
         }
+
     }
 
 }

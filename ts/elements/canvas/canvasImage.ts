@@ -1,7 +1,7 @@
-import { ElementRelativity } from '../utils/elementPosition';
-import { Vector2 } from '../utils/vector2';
-import { CanvasElement, CanvasElementAttributes,CanvasElementType } from './canvasElement';
-import { PrepImage } from './prepImage';
+import { ElementRelativity } from '../../utils/elementPosition';
+import { Vector2 } from '../../utils/vector2';
+import { CanvasElement, CanvasElementAttributes, CanvasElementType } from './canvasElement';
+import { PrepImage } from '../prepImage';
 
 export type CanvasImageAttributes = CanvasElementAttributes & {
     image: PrepImage,
@@ -12,6 +12,10 @@ export type CanvasImageAttributes = CanvasElementAttributes & {
     screenSpaceParalaxY? : number,
     repeatX?: number,
     repeatY?: number,
+    repeatGapX?: number,
+    repeatGapY?: number,
+    renderOffsetX?: number,
+    renderOffsetY?: number,
     opacity?: number,
     shadow?: [string, number, number, number],
 };
@@ -22,12 +26,16 @@ export class CanvasImage extends CanvasElement {
     public condition: (position: Vector2, size: Vector2) => void;
     public repeatX: number;
     public repeatY: number;
+    public repeatGapX: number;
+    public repeatGapY: number;
     public opacity: number;
     public shadow: [string, number, number, number];
     public worldSpaceParalaxX: number;
     public worldSpaceParalaxY: number;
     public screenSpaceParalaxX: number;
     public screenSpaceParalaxY: number;
+    renderOffsetX: number;
+    renderOffsetY: number;
 
     get width() {
         return this.prepped.width;
@@ -47,6 +55,10 @@ export class CanvasImage extends CanvasElement {
         this.screenSpaceParalaxY = attr.screenSpaceParalaxY || 0;
         this.repeatX = attr.repeatX || 1;
         this.repeatY = attr.repeatY || 1;
+        this.repeatGapX = attr.repeatGapX || 0;
+        this.repeatGapY = attr.repeatGapY || 0;
+        this.renderOffsetX = attr.renderOffsetX || 0;
+        this.renderOffsetY = attr.renderOffsetY || 0;
         this.opacity = attr.opacity || 1;
         this.shadow = attr.shadow;
     }
@@ -67,8 +79,8 @@ export class CanvasImage extends CanvasElement {
 
                     ctx.drawImage(
                         this.prepped.image,
-                        this.x + (this.worldSpaceParalaxX * this.level.x) + ((this.width / 2 + this.x) - (this.mode.width / 2 - this.level.x)) * this.screenSpaceParalaxX + (i * this.prepped.width),
-                        this.y + (j * this.prepped.height),
+                        this.x + (this.worldSpaceParalaxX * this.level.x) + ((this.width / 2 + this.x) - (this.mode.width / 2 - this.level.x)) * this.screenSpaceParalaxX + (i * this.prepped.width)+ (i * this.repeatGapX)+this.renderOffsetX,
+                        this.y + (j * this.prepped.height)+ (j * this.repeatGapY)+this.renderOffsetY,
                         this.prepped.width,
                         this.prepped.height,
                     );

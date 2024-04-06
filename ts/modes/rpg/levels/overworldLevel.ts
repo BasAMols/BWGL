@@ -1,15 +1,15 @@
-import { CanvasColorBackground } from '../../../elements/canvasBackground';
-import { CanvasGrid } from '../../../elements/canvasGrid';
+import { CanvasColorBackground } from '../../../elements/canvas/canvasBackground';
+import { CanvasGrid } from '../../../elements/canvas/canvasGrid';
 import { Level } from '../../../utils/level';
 import { Vector2 } from '../../../utils/vector2';
 import { RPGCharacter } from '../rpgCharacter';
 import { FlatContoller } from '../flatController';
 import { CameraController } from '../../snakeMode/controllers/cameraController';
-import { CanvasPrepSprites } from '../../../elements/canvasPrepSprites';
-import { CanvasImage } from '../../../elements/canvasImage';
+import { CanvasPrepSprites } from '../../../elements/canvas/canvasPrepSprites';
+import { CanvasImage } from '../../../elements/canvas/canvasImage';
 import { PrepImage } from '../../../elements/prepImage';
 import { Collider } from '../../../utils/collider';
-import { DomText } from '../../../elements/domText';
+import { DomText } from '../../../elements/dom/domText';
 
 export class OverworldLevel extends Level {
     private scale = 6;

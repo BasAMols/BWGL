@@ -1,5 +1,5 @@
-import { CanvasAnimation } from '../../elements/canvasAnimation';
-import { CanvasPrepSprites, SpriteAnimationJSON } from '../../elements/canvasPrepSprites';
+import { CanvasAnimation } from '../../elements/canvas/canvasAnimation';
+import { CanvasPrepSprites, SpriteAnimationJSON } from '../../elements/canvas/canvasPrepSprites';
 import { PrepAnimation } from '../../elements/prepAnimation';
 import { Character } from '../../utils/character';
 import { CanvasController } from '../../utils/controller';
@@ -41,7 +41,7 @@ export class RPGCharacter extends Character {
                     position: new Vector2(-165, -80),
                     animation: new PrepAnimation({
                         urls: sprite.animation.urls,
-                        interval: 30,
+                        frameRate: 30,
                         factor: this.scale
                     }, this.game)
                 });
@@ -61,7 +61,7 @@ export class RPGCharacter extends Character {
 
         Object.entries(this.animations).forEach(([key, animation]) => {
             if (key.startsWith('walk')) {
-                animation.interval = Util.clamp(Math.floor(30 - this.movedAmount.magnitude() * 0.8), 5, 50);
+                animation.frameRate = Util.clamp(Math.floor(30 - this.movedAmount.magnitude() * 0.8), 5, 50);
             }
             animation.active = key === `${this.phase}${this.direction}`;
         });

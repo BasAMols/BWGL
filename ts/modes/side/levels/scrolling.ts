@@ -1,14 +1,18 @@
-import { CanvasImage } from '../../../elements/canvasImage';
-import { CanvasSquare } from '../../../elements/canvasSquare';
-import { CanvasWrapper } from '../../../elements/canvasWrapper';
+import { CanvasImage } from '../../../elements/canvas/canvasImage';
+import { CanvasSquare } from '../../../elements/canvas/canvasSquare';
+import { CanvasWrapper } from '../../../elements/canvas/canvasWrapper';
 import { PrepImage } from '../../../elements/prepImage';
 import { TickerReturnData } from '../../../utils/ticker';
 import { Vector2 } from '../../../utils/vector2';
+import { World } from './world';
 
 export class Scroller extends CanvasWrapper {
-    public speed: number = 6
+    public level: World;
     private layers: [CanvasImage, number, number][] = []
 
+    constructor() {
+        super();
+    }
 
     add(layer: CanvasImage, width: number, paralax: number) {
         this.layers.push([layer, width, paralax]);
@@ -122,13 +126,14 @@ export class Scroller extends CanvasWrapper {
             }, this.game),
             position: new Vector2(0,0),
             repeatX: Math.ceil(this.level.width / 64*7 + 1),
+            worldSpaceParalaxX: 0.06,
         }), 64*7, 1);
 
     }
     public tick(obj: TickerReturnData): void {
         super.tick(obj);
         this.layers.forEach(([layer, width, paralax]) => {
-            layer.x = (layer.x - (this.speed* paralax)) % width ;
+            layer.x = (layer.x - (this.level.speed*10 * paralax)) % width ;
         });
     }
 }

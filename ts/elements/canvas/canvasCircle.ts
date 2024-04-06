@@ -1,4 +1,4 @@
-import { Vector2 } from '../utils/vector2';
+import { Vector2 } from '../../utils/vector2';
 import { CanvasColor, CanvasColorAttributes } from './canvasColor';
 
 export type CanvasCircleAttributes = CanvasColorAttributes & {

@@ -1,10 +1,10 @@
 import { Vector2 } from "../../../utils/vector2";
 import { Level } from "../../../utils/level";
-import { CanvasRadialGradientBackground } from '../../../elements/canvasRadialGradientBackground';
+import { CanvasRadialGradientBackground } from '../../../elements/canvas/canvasRadialGradientBackground';
 import { Snake } from '../snake';
 import { RandomController } from '../controllers/randomController';
 import { FlatContoller } from '../../rpg/flatController';
-import { DomButton } from '../../../elements/domButton';
+import { DomButton } from '../../../elements/dom/domButton';
 
 export class DiscoLevel extends Level {
     public start = new Vector2(300, 400);

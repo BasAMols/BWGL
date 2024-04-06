@@ -1,9 +1,10 @@
-import { CanvasElement, CanvasElementAttributes, CanvasElementType } from '../elements/canvasElement';
+import { CanvasElement, CanvasElementAttributes, CanvasElementType } from '../elements/canvas/canvasElement';
 import { ElementRelativity } from './elementPosition';
 
 export type ColliderAttributes = CanvasElementAttributes & {
     cornerTolerance?: number;
     colliderType?: ColliderType,
+    condition?: () => void;
     callback?: () => void;
 }
 
@@ -15,13 +16,14 @@ export class Collider extends CanvasElement {
     public colliderType: ColliderType = 'static';
     public cornerTolerance: number;
     public callback: () => void;
+    public condition: () => void;
 
     public constructor(attr: ColliderAttributes = {}) {
         super(attr);
         this.cornerTolerance = attr.cornerTolerance || 0;
         this.colliderType = attr.colliderType || 'static';
+        this.condition = attr.condition;
         this.callback = attr.callback;
-
     }
 
     public build(): void {

@@ -1,6 +1,4 @@
-import { ElementPosition, ElementPositionAttributes } from './elementPosition';
 import { ElementSize, ElementSizeAttributes } from './elementSize';
-import { Vector2 } from './vector2';
 
 export type ElementVisibleAttributes = ElementSizeAttributes & {
     visible?: boolean,
@@ -20,6 +18,7 @@ export abstract class ElementVisible extends ElementSize{
         if (attr.visible !== undefined) {
             this.visible = attr.visible;
         }
+
     }
 
 }

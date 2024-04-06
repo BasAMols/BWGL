@@ -1,13 +1,13 @@
 
-import { ElementRelativity } from '../utils/elementPosition';
-import { TickerReturnData } from '../utils/ticker';
-import { Vector2 } from "../utils/vector2";
+import { ElementRelativity } from '../../utils/elementPosition';
+import { TickerReturnData } from '../../utils/ticker';
+import { Vector2 } from "../../utils/vector2";
 import { CanvasAnimation } from './canvasAnimation';
 import { CanvasElement, CanvasElementAttributes } from './canvasElement';
 import { CanvasImage } from './canvasImage';
 import { CanvasPrepSprites } from './canvasPrepSprites';
-import { PrepAnimation } from './prepAnimation';
-import { PrepImage } from './prepImage';
+import { PrepAnimation } from '../prepAnimation';
+import { PrepImage } from '../prepImage';
 
 export type CanvasGridAttributes = CanvasElementAttributes & {
     json: string;

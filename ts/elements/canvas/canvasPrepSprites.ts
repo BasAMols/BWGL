@@ -1,10 +1,9 @@
 
-import { Game } from '../game';
-import { CanvasController } from '../utils/controller';
-import { ElementRelativity } from '../utils/elementPosition';
-import { Vector2 } from "../utils/vector2";
-import { PrepAnimation } from './prepAnimation';
-import { PrepImage } from './prepImage';
+import { CanvasController } from '../../utils/controller';
+import { ElementRelativity } from '../../utils/elementPosition';
+import { Vector2 } from "../../utils/vector2";
+import { PrepAnimation } from '../prepAnimation';
+import { PrepImage } from '../prepImage';
 
 export type CanvasGridAttributes = {
     factor?: number;

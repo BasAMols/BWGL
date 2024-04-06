@@ -1,4 +1,4 @@
-import { CanvasAnimation } from '../../../elements/canvasAnimation';
+import { CanvasAnimation } from '../../../elements/canvas/canvasAnimation';
 import { PrepSpritesheet } from '../../../elements/spritesheet';
 import { Character } from '../../../utils/character';
 import { CanvasController } from '../../../utils/controller';
@@ -29,22 +29,22 @@ export class SideCharacter extends Character {
             size: new Vector2(15*5, 40*5),
         });
         this.specifics = [
-            ['idle', '/img/spritesheets/hat-man-idle.png', 4, 40],
-            ['walk', '/img/spritesheets/hat-man-walk.png', 6, 60],
+            ['idle', '/img/spritesheets/hat-man-idle.png', 4, 5],
+            ['walk', '/img/spritesheets/hat-man-walk.png', 6, 5],
         ];
     }
 
     build() {
         this.level.addControllers([new CameraController({ target: this })]);
 
-        this.specifics.forEach(([key, url, count, interval]) => {
+        this.specifics.forEach(([key, url, count, fps]) => {
             this.animations[key] = new CanvasAnimation({
                 animation: new PrepSpritesheet({
                     url,
                     factor: this.scale,
                     size: new Vector2(39, 52),
                     repeatX: count,
-                    interval: interval,
+                    frameRate: fps,
                 }, this.game),
             });
 
@@ -62,7 +62,7 @@ export class SideCharacter extends Character {
                 a.x = ((20*this.scale) * (this.movedAmount.x < 0 ? -1 : 1)) + (7.5*this.scale)
             }
             if (key.startsWith('walk')) {
-                a.interval = Util.clamp(Math.floor(30 - this.movedAmount.magnitude() * 0.8), 5, 50);
+                a.frameRate = Util.clamp(Math.floor(6 - this.movedAmount.magnitude() * 0.8), 5, 50);
             }
             a.active = key === `${this.phase}`;
         });

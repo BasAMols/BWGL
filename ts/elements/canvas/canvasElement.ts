@@ -1,9 +1,10 @@
-import { DomElement } from './domElement';
-import { Collider } from '../utils/collider';
-import { CanvasController } from '../utils/controller';
-import { Element, ElementAttributes } from "../utils/element";
-import { TickerReturnData } from '../utils/ticker';
-import { Vector2 } from "../utils/vector2";
+import { DomElement } from '../dom/domElement';
+import { Collider } from '../../utils/collider';
+import { CanvasController } from '../../utils/controller';
+import { Element, ElementAttributes } from "../../utils/element";
+import { TickerReturnData } from '../../utils/ticker';
+import { Vector2 } from "../../utils/vector2";
+import { GlElement } from '../gl/glElement';
 
 export type CanvasElementAttributes = ElementAttributes & {
     hasDom?: boolean,
@@ -16,10 +17,10 @@ export interface CanvasElement {
     keyDown?(e: KeyboardEvent): void;
     keyUp?(e: KeyboardEvent): void;
 }
-export type CanvasElementType = 'color' | 'image' | 'wrapper' | 'logic' | 'animation' | 'collider' ;
+export type CanvasElementType = 'color' | 'image' | 'wrapper' | 'logic' | 'animation' | 'collider';
 export abstract class CanvasElement extends Element {
     public abstract type: CanvasElementType;
-    public rendererType = 'canvas' as const;
+    public rendererType: "canvas" | "dom" | "gl" = 'canvas';
     public dom!: DomElement<any>;
     private autoReady: boolean;
     private hasDom: boolean;
@@ -77,6 +78,7 @@ export abstract class CanvasElement extends Element {
 
     public lowerChildren: CanvasElement[] = [];
     public higherChildren: CanvasElement[] = [];
+    public glElements: GlElement[] = [];
     public controllers: CanvasController[] = [];
     public anchoredPosition: Vector2 = Vector2.zero;
 
@@ -86,17 +88,19 @@ export abstract class CanvasElement extends Element {
         if (this.hasDom) {
             this.dom = new DomElement('div');
         }
+
         this.autoReady = attr.autoReady || false;
         this.composite = attr.composite || 'source-over';
         this.addControllers(attr.controllers || []);
     }
 
-    public addChild(child: CanvasElement | DomElement<any>, above: boolean = false): typeof child{
+    public addChild(child: CanvasElement | DomElement<any> | GlElement, above: boolean = false): typeof child {
         child.parent ??= this;
         child.game ??= this.game;
         child.mode ??= this.mode;
         child.level ??= this.level;
-        if (this.game.waitCount){
+        child.GLR ??= this.game.GLR;
+        if (this.game.waitCount) {
             this.game.waitCount++;
         }
 
@@ -106,9 +110,11 @@ export abstract class CanvasElement extends Element {
             if (child.dom && this.hasDom) {
                 this.dom.addChild(child.dom);
             }
+        } else if (child.rendererType === 'gl') {
+            this.glElements.push(child as GlElement);
         } else {
             if (this.hasDom) {
-                this.dom.addChild(child);
+                this.dom.addChild(child as DomElement<any>);
             } else {
                 console.log('The CanvasElement class does not have a dom element to add children to. Child:', child.constructor.name);
             }
@@ -116,10 +122,10 @@ export abstract class CanvasElement extends Element {
 
         if (!this.autoReady) {
             child.build();
-            if (this.game.waitCount){
+            if (this.game.waitCount) {
                 this.game.waitCount--;
             }
-    
+
         }
 
         if (child.rendererType === 'canvas' && child.type === 'collider' && (child as Collider).colliderType === 'static' && this.level) {
@@ -150,45 +156,67 @@ export abstract class CanvasElement extends Element {
 
     public tick(obj: TickerReturnData) {
         super.tick(obj);
-        
-        this.controllers.filter((child)=>child.active).forEach((c) => c.tick(obj));
-        this.lowerChildren.filter((child)=>child.active).forEach((c) => c.tick(obj));
-        this.higherChildren.filter((child)=>child.active).forEach((c) => c.tick(obj));
+
+        this.controllers.filter((child) => child.active).forEach((c) => c.tick(obj));
+        this.lowerChildren.filter((child) => child.active).forEach((c) => c.tick(obj));
+        this.higherChildren.filter((child) => child.active).forEach((c) => c.tick(obj));
+        this.glElements.filter((child) => child.active).forEach((c) => c.tick(obj));
+
         if (this.dom) {
             this.dom.tick(obj);
         }
     }
-    
 
-    public preRender(c: CanvasRenderingContext2D) {
+
+    public preRender(c: CanvasRenderingContext2D, gl?: WebGLRenderingContext) {
         c.save();
-        
-        if (this.relativity === 'anchor') {
+
+        if (this.relativity === 'anchor' || this.relativity === 'composite') {
             c.translate(this.x, this.y);
             c.scale(this.zoom.x, this.zoom.y);
         }
-        
-        this.lowerChildren.filter((child)=>child.visible && child.active).forEach((child) => {
-            child.preRender(c);
-            child.postRender(c);
-        });
-        
+
         c.save();
         c.globalCompositeOperation = this.composite;
+        this.renderLower(c);
         this.render(c);
         c.restore();
     }
 
-    public render(c: CanvasRenderingContext2D) {
-        //
-    }
-
-    public postRender(c: CanvasRenderingContext2D) {
-        this.higherChildren.filter((child)=>child.visible && child.active).forEach((child) => {
+    public renderLower(c: CanvasRenderingContext2D, gl?: WebGLRenderingContext) {
+        this.lowerChildren.filter((child) => child.visible && child.active).forEach((child) => {
             child.preRender(c);
             child.postRender(c);
         });
+    }
 
+    public render(c: CanvasRenderingContext2D, gl?: WebGLRenderingContext) {
+        //
+    }
+
+    public renderHigher(c: CanvasRenderingContext2D, gl?: WebGLRenderingContext) {
+        this.higherChildren.filter((child) => child.visible && child.active).forEach((child) => {
+            child.preRender(c);
+            child.postRender(c);
+        });
+        if (gl) {
+            this.glElements.filter((child) => child.visible && child.active).forEach((child) => {
+                child.preRender(gl);
+                child.postRender(gl);
+            });
+        }
+    }
+
+    public renderGl(gl: WebGLRenderingContext) {
+        this.glElements.filter((child) => child.visible && child.active).forEach((child) => {
+            child.preRender(gl);
+            child.postRender(gl);
+        });
+    }
+
+    public postRender(c: CanvasRenderingContext2D, gl?: WebGLRenderingContext) {
+        this.renderHigher(c);
+        this.renderGl(gl);
         c.restore();
     }
 

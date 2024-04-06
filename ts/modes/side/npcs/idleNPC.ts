@@ -1,4 +1,4 @@
-import { CanvasAnimation } from '../../../elements/canvasAnimation';
+import { CanvasAnimation } from '../../../elements/canvas/canvasAnimation';
 import { PrepSpritesheet } from '../../../elements/spritesheet';
 import { Character } from '../../../utils/character';
 import { ElementRelativity } from '../../../utils/elementPosition';
@@ -44,7 +44,7 @@ export abstract class IdleNPC extends Character {
                 factor: this.scale,
                 size: this.size,
                 repeatX: count,
-                interval: interval,
+                frameRate: interval,
             }, this.game),
             zoom: new Vector2(direction, 1),
             position: new Vector2(this.size.x * this.scale / 2 * direction * -1, 0),

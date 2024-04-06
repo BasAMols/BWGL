@@ -1,4 +1,4 @@
-import { DomText } from "../../elements/domText";
+import { DomText } from "../../elements/dom/domText";
 import { TickerReturnData } from '../ticker';
 import { Vector2 } from '../vector2';
 
@@ -7,7 +7,7 @@ export class FPS extends DomText {
     private tCount: number = 0;
     public constructor( ) {
         super({
-            text: FPS.getString(0),
+            text: FPS.getString(''),
             fontSize: 35,
             fontWeight: 900,
             color: 'white',
@@ -19,17 +19,13 @@ export class FPS extends DomText {
         });
     }
 
-    public tick({interval}: TickerReturnData){
-        this.fCount++;
-        this.tCount+=interval;
-        if (this.tCount > 1000){
-            this.text = FPS.getString(this.fCount);
-            this.fCount = 0;
-            this.tCount = 0;
+    public tick({frameRate, frame}: TickerReturnData){
+        if (frame % 100 === 1){
+            this.text = FPS.getString(frameRate.toFixed(0));
         }
     }
 
-    public static getString(v: number){
+    public static getString(v: string){
         return `${String(v)}<sub style="font-size:25px; top: -7px; position: relative">FPS</sub>`
     }
 }

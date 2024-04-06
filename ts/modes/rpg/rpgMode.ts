@@ -1,4 +1,4 @@
-import { CanvasColorBackground } from '../../elements/canvasBackground';
+import { CanvasColorBackground } from '../../elements/canvas/canvasBackground';
 import { Mode } from '../../utils/mode';
 import { OverworldLevel as OverworldLevel } from './levels/overworldLevel';
 

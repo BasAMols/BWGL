@@ -1,4 +1,4 @@
-import { CanvasColorBackground } from '../../../elements/canvasBackground';
+import { CanvasColorBackground } from '../../../elements/canvas/canvasBackground';
 import { Vector2 } from "../../../utils/vector2";
 import { Level } from "../../../utils/level";
 import { Snake } from '../snake';

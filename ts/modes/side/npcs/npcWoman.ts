@@ -17,7 +17,7 @@ export class NPCWoman extends IdleNPC {
             size: new Vector2(37, 46),
             idle: '/img/spritesheets/woman-idle.png',
             idleCount: 7,
-            idleInterval: 30,
+            idleInterval: 6,
             direction: direction,
         });
     }

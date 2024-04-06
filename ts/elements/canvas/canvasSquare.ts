@@ -1,4 +1,4 @@
-import { Vector2 } from '../utils/vector2';
+import { Vector2 } from '../../utils/vector2';
 import { CanvasColor, CanvasColorAttributes } from './canvasColor';
 
 export type CanvasSquareAttributes = CanvasColorAttributes & {
@@ -27,7 +27,9 @@ export class CanvasSquare extends CanvasColor {
             ctx.globalAlpha = this.opacity;
             ctx.beginPath();
             ctx.roundRect(this.position.x, this.position.y, this.width, this.height, this.rounded);
-            ctx.fill();
+            if (this.color){
+                ctx.fill();
+            }
             if (this.strokeWidth) {
                 ctx.lineWidth = this.strokeWidth;
                 ctx.strokeStyle = this.stroke || 'black';

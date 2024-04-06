@@ -1,9 +1,9 @@
 import { Game } from '../game';
-import { CanvasImage } from './canvasImage';
+import { CanvasImage } from './canvas/canvasImage';
 import { PrepImage } from './prepImage';
 
 export type PrepAnimationAttributes = {
-    interval?: number;
+    frameRate?: number;
     factor?: number;
     urls: string[];
 };
@@ -14,7 +14,7 @@ export class PrepAnimation {
     public factor: number;
     public ready: boolean = false;
     protected urls: string[];
-    public interval: number;
+    public frameRate: number;
     protected game: Game;
     public callback: ()=>void;
 
@@ -25,7 +25,7 @@ export class PrepAnimation {
     constructor(attr: PrepAnimationAttributes, game: Game) {
         this.game = game;
         this.factor = attr.factor || 1;
-        this.interval = attr.interval || 10;
+        this.frameRate = attr.frameRate || 10;
         this.urls = attr.urls;
         this.add();
     }

@@ -6,10 +6,10 @@ export interface ElementPositionAttributes {
     relativity?: ElementRelativity,
 
 }
-export type ElementRelativity = 'absolute' | 'relative' | 'anchor';
+export type ElementRelativity = 'absolute' | 'relative' | 'anchor' | 'composite';
 export abstract class ElementPosition {
     public active: boolean = true;
-    public relativity: ElementRelativity = 'relative';
+    public relativity: ElementRelativity;
     public lastPosition: Vector2 = Vector2.zero;
     public movedAmount: Vector2 = Vector2.zero;
 
@@ -38,12 +38,14 @@ export abstract class ElementPosition {
     };
 
     constructor(attr: ElementPositionAttributes = {}) {
-        this.relativity = attr.relativity;
+        this.relativity = attr.relativity || 'relative';
+
         if (attr.position) {
             this.position = attr.position;
             this._x = attr.position.x;
             this._y = attr.position.y;
         }
+
     }
 
     public tick(obj: TickerReturnData) {

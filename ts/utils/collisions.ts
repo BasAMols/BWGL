@@ -26,7 +26,9 @@ export abstract class Collisions {
         const r:(['x', number] | ['y', number])[] = [];
 
         statics.forEach((s) => {
-            r.push(...Collisions.overlapDirection(s.position.add(s.parent instanceof Level? Vector2.zero: s.parent.position ), s.size, dynamic.position, dynamic.size, velocity))
+            if (!s.condition || s.condition()){
+                r.push(...Collisions.overlapDirection(s.position.add(s.parent instanceof Level? Vector2.zero: s.parent.position ), s.size, dynamic.position, dynamic.size, velocity))
+            }
         });
 
         return r

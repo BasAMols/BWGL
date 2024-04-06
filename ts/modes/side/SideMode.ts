@@ -1,5 +1,5 @@
 import { Mode } from '../../utils/mode';
-import { Train } from './levels/train';
+import { World } from './levels/world';
 
 export class SideMode extends Mode{
     public constructor() {
@@ -9,7 +9,7 @@ export class SideMode extends Mode{
     build(){
         super.build();
         // this.addChild(new CanvasColorBackground('#272727'))
-        this.addLevel('platform', new Train());
+        this.addLevel('platform', new World());
         this.switchLevel('platform');
     }
 }

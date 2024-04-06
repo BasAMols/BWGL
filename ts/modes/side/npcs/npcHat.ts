@@ -21,10 +21,10 @@ export class NPCHat extends WalkingNPC {
             size: new Vector2(39, 52),
             idle: '/img/spritesheets/hat-man-idle.png',
             idleCount: 4,
-            idleInterval: 40,
+            idleInterval: 10,
             walk: '/img/spritesheets/hat-man-walk.png',
             walkCount: 6,
-            walkInterval: 60,            
+            walkInterval: 15,            
             width,
             waitTime: 40*4+200
         });

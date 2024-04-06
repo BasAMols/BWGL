@@ -1,6 +1,6 @@
 import { Game } from '../game';
 import { Vector2 } from '../utils/vector2';
-import { CanvasImage } from './canvasImage';
+import { CanvasImage } from './canvas/canvasImage';
 import { PrepImage } from './prepImage';
 
 export type PrepSpritesheetAttributes = {
@@ -10,7 +10,7 @@ export type PrepSpritesheetAttributes = {
     repeatY?: number,
     sectionX?: number,
     sectionY?: number,
-    interval?: number;
+    frameRate?: number;
     factor?: number;
 };
 export class PrepSpritesheet {
@@ -24,7 +24,7 @@ export class PrepSpritesheet {
     protected factor: number;
     protected game: Game;
     public ready: boolean = false;
-    public interval: number;
+    public frameRate: number;
     public frames: CanvasImage[] = [];
     public max: number = 0;
     public callback: ()=>void;
@@ -32,7 +32,7 @@ export class PrepSpritesheet {
     constructor(attr: PrepSpritesheetAttributes, game: Game) {
         this.game = game;
         this.factor = attr.factor || 1;
-        this.interval = attr.interval || 10;
+        this.frameRate = attr.frameRate || 10;
         this.url = attr.url;
         this.size = attr.size;
         this.repeatX = attr.repeatX || 1;

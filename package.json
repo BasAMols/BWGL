@@ -15,5 +15,9 @@
         "express": "^4.18.2",
         "glob": "^10.3.10",
         "typescript": "^5.3.3"
+    },
+    "dependencies": {
+        "babylonjs": "^7.0.0",
+        "gl-matrix": "^3.4.3"
     }
 }

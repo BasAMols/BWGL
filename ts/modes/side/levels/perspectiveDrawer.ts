@@ -1,13 +1,13 @@
-import { CanvasElement } from '../../../elements/canvasElement';
+import { CanvasElement } from '../../../elements/canvas/canvasElement';
 
 export class CanvasDrawer {
     public lastZ: number = 1;
     public factor = 0.05;
     public scale = 6;
     public ctx: CanvasRenderingContext2D;
-    public perspectiveSwitchFunction: (n: number, target: CanvasElement) => void;
+    public perspectiveSwitchFunction: (n: number, target: CanvasElement, c: CanvasRenderingContext2D) => void;
 
-    constructor(ctx: CanvasRenderingContext2D, perspectiveSwitchFunction: (n: number, target: CanvasElement) => void) {
+    constructor(ctx: CanvasRenderingContext2D, perspectiveSwitchFunction: (n: number, target: CanvasElement, c: CanvasRenderingContext2D) => void) {
         this.ctx = ctx;
         this.perspectiveSwitchFunction = perspectiveSwitchFunction;
     }
@@ -95,7 +95,7 @@ export class CanvasDrawer {
             this.lastZ = z;
             this.ctx.restore();
             this.ctx.save();
-            this.perspectiveSwitchFunction(z, target);
+            this.perspectiveSwitchFunction(z, target, this.ctx);
         }
     }
 

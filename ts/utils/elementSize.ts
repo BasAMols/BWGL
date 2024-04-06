@@ -35,6 +35,7 @@ export abstract class ElementSize extends ElementZoom {
             this._width = attr.size.x;
             this._height = attr.size.y;
         }
+
     }
 
 }

@@ -1,4 +1,4 @@
-import { CanvasWrapper } from './elements/canvasWrapper';
+import { CanvasWrapper } from './elements/canvas/canvasWrapper';
 import { FPS } from './utils/debug/fps';
 import { Ticker, TickerReturnData } from './utils/ticker';
 import { Event } from './utils/event';
@@ -6,9 +6,11 @@ import { Vector2 } from './utils/vector2';
 import { Input } from './utils/input';
 import { Mode } from './utils/mode';
 import { ElementRelativity } from './utils/elementPosition';
-import { DomCanvas } from './elements/domCanvas';
-import { SideMode } from './modes/side/SideMode';
+import { DomCanvas } from './elements/dom/domCanvas';
 import { Loader } from './utils/debug/loader';
+import 'babylonjs';
+import { GLR } from './utils/gl';
+import { SideMode } from './modes/side/SideMode';
 
 export class Game extends CanvasWrapper {
     public relativity: ElementRelativity = 'anchor';
@@ -18,6 +20,7 @@ export class Game extends CanvasWrapper {
     public modes: Record<string, Mode> = {};
     public game = this;
     public ctx: CanvasRenderingContext2D;
+    public gl: WebGLRenderingContext;
     public input: Input;
     public ready: boolean = false;
     private _waitCount: number = 0;
@@ -25,6 +28,10 @@ export class Game extends CanvasWrapper {
     private started: boolean = false;
     private loader: Loader;
     public total: number = 0;
+    public GLR: GLR;
+    get t(): TickerReturnData {
+        return this.renderer.tickerData;
+    }
     public get waitCount(): number {
         return this._waitCount;
     }
@@ -56,6 +63,8 @@ export class Game extends CanvasWrapper {
 
         this.renderer = new DomCanvas();
         this.addChild(this.renderer);
+
+        this.GLR = new GLR(this);
 
         this.setupModes();
         this.ticker = new Ticker();

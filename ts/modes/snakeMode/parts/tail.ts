@@ -1,5 +1,5 @@
-import { CanvasCircle } from '../../../elements/canvasCircle';
-import { ColorType } from '../../../elements/canvasColor';
+import { CanvasCircle } from '../../../elements/canvas/canvasCircle';
+import { ColorType } from '../../../elements/canvas/canvasColor';
 import { CanvasController } from '../../../utils/controller';
 import { Vector2 } from '../../../utils/vector2';
 import { SnakeColors } from '../snake';
