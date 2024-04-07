@@ -6,7 +6,6 @@ import { Collider } from '../../../utils/collider';
 import { TickerReturnData } from '../../../utils/ticker';
 import { Vector2 } from '../../../utils/vector2';
 import { SideCharacter } from '../character/SideCharacter';
-import { SideContoller } from '../character/SideController';
 import { Locomotive } from './locomotive';
 import { CanvasDrawer } from './perspectiveDrawer';
 import { Station } from './station';
@@ -34,11 +33,11 @@ export class Train extends CanvasWrapper {
 
     constructor() {
         super({
-            size: new Vector2((256 * 6) * 4, 1200),
+            size: new Vector2((256 * 6) * 2, 1200),
         });
         this.carWidth = (256 * 6);
         this.left = 0.5*this.carWidth;
-        this.right = this.left + this.carWidth*4 ;
+        this.right = this.left + this.carWidth*2 ;
     }
 
     keyDown(e: KeyboardEvent) {
@@ -88,10 +87,6 @@ export class Train extends CanvasWrapper {
         this.canvasDrawer = new CanvasDrawer(this.game.ctx, this.perpective.bind(this));
         this.start = new Vector2((256 * this.canvasDrawer.scale) * 1.5, 12 * this.canvasDrawer.scale + 90);
         this.backgroundLayer = new CanvasWrapper();
-        this.character = new SideCharacter({
-            position: this.start,
-            controllers: [new SideContoller()],
-        });
         // this.character.active = false;
         this.characterLayer = new CanvasComposite({}, (c) => {
             c.globalCompositeOperation = 'source-atop';
@@ -115,12 +110,12 @@ export class Train extends CanvasWrapper {
         this.addChild(this.characterLayer);
         this.addChild(this.foregroundLayer);
 
-        for (let index = 0.5; index < 3; index++) {
+        for (let index = 0.5; index < 2; index++) {
             const car = new TrainCar(this, this.backgroundLayer, this.characterLayer, this.foregroundLayer, this.canvasDrawer, index, this.character);
             this.cars.push(car);
             this.addChild(car);
         }
-        this.addChild(new Locomotive(this, this.backgroundLayer, this.characterLayer, this.foregroundLayer, this.canvasDrawer, 3.5, this.character));
+        this.addChild(new Locomotive(this, this.backgroundLayer, this.characterLayer, this.foregroundLayer, this.canvasDrawer, 2.5, this.character));
         this.characterLayer.addChild(this.character);
 
         (([
@@ -139,7 +134,7 @@ export class Train extends CanvasWrapper {
 
     public tick(obj: TickerReturnData): void {
         super.tick(obj);
-        this.speed = 1 / obj.frameRate * 144 * this.inputSpeed;
-        this.frame = (this.frame + 1) % (200 * Math.PI);
+        // this.speed = 1 / obj.frameRate * 144 * this.inputSpeed/2;
+        // this.frame = (this.frame + 1) % (200 * Math.PI);
     }
 }

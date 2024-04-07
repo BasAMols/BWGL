@@ -1,13 +1,16 @@
-import { bufferObject } from './gl';
+import { bufferDataInitilizers } from './gl';
+import { Vector3 } from './vector3';
 
-export function pyramidBuffer(gl: WebGLRenderingContext): bufferObject {
+export function glTetrahedronData(gl: WebGLRenderingContext): bufferDataInitilizers {
     return {
-        positionBuffer: initPositionBuffer(gl),
         indices: initIndexBuffer(gl),
-        colorBuilder: pyramidColorBuffer
-    };
+        initColor: colorBuffer,
+        initSize: positionBuffer,
+        verticesCount: 12
+    }
 }
-function pyramidColorBuffer(gl: WebGLRenderingContext, faceColors: [number,number,number,number][]) {
+
+function colorBuffer(gl: WebGLRenderingContext, faceColors: [number,number,number,number][]) {
 
     var colors: number[] = [];
 
@@ -57,7 +60,7 @@ function initIndexBuffer(gl: WebGLRenderingContext) {
 
     return indexBuffer;
 }
-function initPositionBuffer(gl: WebGLRenderingContext) {
+function positionBuffer(gl: WebGLRenderingContext, size: Vector3) {
     const positionBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     const positions = [
@@ -65,19 +68,21 @@ function initPositionBuffer(gl: WebGLRenderingContext) {
         -1.0, -1.0, -1.0,
         1.0, -1.0, -1.0,
         0.0, 0.73, 0.0,
+
         //left
         -1.0, -1.0, -1.0,
         0.0, -1.0, 0.73,
         0.0, 0.73, 0.0,
+
         //right
         1.0, -1.0, -1.0,
         0.0, -1.0, 0.73,
         0.0, 0.73, 0.0,
+
         //bottom
         -1.0, -1.0, -1.0,
         1.0, -1.0, -1.0,
         0.0, -1.0, 0.73,
-
     ];
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
     return positionBuffer;

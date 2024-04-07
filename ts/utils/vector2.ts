@@ -1,3 +1,13 @@
+export function v2(n: [number, number?] | number, y?: number) {
+	if (typeof n === 'number') {
+		return Vector2.f(n, y);
+	} else if (typeof n === 'undefined') {
+		return Vector2.f(0);
+	} else {
+		return Vector2.f(...n);
+	}
+}
+
 export class Vector2 {
 	x: number;
 	y: number;
@@ -5,6 +15,10 @@ export class Vector2 {
 	constructor(x: number, y: number) {
 		this.x = (x === undefined) ? 0 : x;
 		this.y = (y === undefined) ? 0 : y;
+	}
+
+	static f(x: number = 0, y: number = x) {
+		return new Vector2(x, y);
 	}
 
 	clone(): Vector2 {

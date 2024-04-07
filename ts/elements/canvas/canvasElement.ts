@@ -1,5 +1,4 @@
 import { DomElement } from '../dom/domElement';
-import { Collider } from '../../utils/collider';
 import { CanvasController } from '../../utils/controller';
 import { Element, ElementAttributes } from "../../utils/element";
 import { TickerReturnData } from '../../utils/ticker';
@@ -16,6 +15,8 @@ export interface CanvasElement {
     mouseMove?(e: MouseEvent): void;
     keyDown?(e: KeyboardEvent): void;
     keyUp?(e: KeyboardEvent): void;
+    click?(e: MouseEvent): void;
+    scroll?(e: WheelEvent): void;
 }
 export type CanvasElementType = 'color' | 'image' | 'wrapper' | 'logic' | 'animation' | 'collider';
 export abstract class CanvasElement extends Element {
@@ -82,6 +83,13 @@ export abstract class CanvasElement extends Element {
     public controllers: CanvasController[] = [];
     public anchoredPosition: Vector2 = Vector2.zero;
 
+    public get camera(): typeof this.mode.camera{
+        return this.mode.camera
+    }
+    public set camera(c: typeof this.mode.camera){
+        this.mode.camera = c;
+    }
+
     constructor(attr: CanvasElementAttributes = {}) {
         super(attr);
         this.hasDom = attr.hasDom || false;
@@ -128,9 +136,9 @@ export abstract class CanvasElement extends Element {
 
         }
 
-        if (child.rendererType === 'canvas' && child.type === 'collider' && (child as Collider).colliderType === 'static' && this.level) {
-            this.level.colliders.push(child as Collider);
-        }
+        // if (child.rendererType === 'canvas' && child.type === 'collider' && (child as Collider).colliderType === 'static' && this.level) {
+        //     this.level.colliders.push(child as Collider);
+        // }
 
         return child;
 
@@ -199,12 +207,12 @@ export abstract class CanvasElement extends Element {
             child.preRender(c);
             child.postRender(c);
         });
-        if (gl) {
-            this.glElements.filter((child) => child.visible && child.active).forEach((child) => {
-                child.preRender(gl);
-                child.postRender(gl);
-            });
-        }
+        // if (gl) {
+        //     this.glElements.filter((child) => child.visible && child.active).forEach((child) => {
+        //         child.preRender(gl);
+        //         child.postRender(gl);
+        //     });
+        // }
     }
 
     public renderGl(gl: WebGLRenderingContext) {
@@ -216,7 +224,7 @@ export abstract class CanvasElement extends Element {
 
     public postRender(c: CanvasRenderingContext2D, gl?: WebGLRenderingContext) {
         this.renderHigher(c);
-        this.renderGl(gl);
+        // this.renderGl(gl);
         c.restore();
     }
 

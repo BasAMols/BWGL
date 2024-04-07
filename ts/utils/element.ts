@@ -22,7 +22,9 @@ export abstract class Element extends ElementVisible {
     public mode!: Mode;
     public level!: Level;
     public GLR!: GLR;
-    public gl!: WebGLRenderingContext;
+    public get gl(): WebGLRenderingContext{
+        return this.GLR.gl
+    };
 
     public build(): void  {
         //

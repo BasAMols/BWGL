@@ -1,5 +1,7 @@
-import { CanvasElement, CanvasElementAttributes, CanvasElementType } from '../elements/canvas/canvasElement';
+import { CanvasElementAttributes } from '../elements/canvas/canvasElement';
+import { GlElement } from '../elements/gl/glElement';
 import { ElementRelativity } from './elementPosition';
+import { GlElementType } from './gl';
 
 export type ColliderAttributes = CanvasElementAttributes & {
     cornerTolerance?: number;
@@ -10,8 +12,8 @@ export type ColliderAttributes = CanvasElementAttributes & {
 
 export type ColliderType = 'static' | 'dynamic';
 
-export class Collider extends CanvasElement {
-    public type: CanvasElementType = 'collider';
+export class Collider extends GlElement {
+    public type: GlElementType = 'collider';
     public relativity: ElementRelativity = 'anchor';
     public colliderType: ColliderType = 'static';
     public cornerTolerance: number;

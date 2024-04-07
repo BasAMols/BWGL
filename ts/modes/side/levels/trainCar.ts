@@ -3,6 +3,7 @@ import { CanvasComposite } from '../../../elements/canvas/canvasComposite';
 import { CanvasCustom } from '../../../elements/canvas/canvasCustom';
 import { CanvasImage } from '../../../elements/canvas/canvasImage';
 import { CanvasWrapper } from '../../../elements/canvas/canvasWrapper';
+import { GlCube } from '../../../elements/gl/glCube';
 import { PrepImage } from '../../../elements/prepImage';
 import { PrepSpritesheet } from '../../../elements/spritesheet';
 import { Character } from '../../../utils/character';
@@ -10,6 +11,7 @@ import { Collider } from '../../../utils/collider';
 import { TickerReturnData } from '../../../utils/ticker';
 import { Util } from '../../../utils/utils';
 import { Vector2 } from '../../../utils/vector2';
+import { v3 } from '../../../utils/vector3';
 import { NPCOld } from '../npcs/npcOld';
 import { NPCWoman } from '../npcs/npcWoman';
 import { CanvasDrawer } from './perspectiveDrawer';
@@ -33,6 +35,8 @@ export class TrainCar extends CanvasWrapper {
     private siding: CanvasImage;
     bdraw: CanvasDrawer;
     fdraw: CanvasDrawer;
+    public object3: GlCube;
+
     constructor(public train: Train, public background: CanvasWrapper, public characterLayer: CanvasWrapper, public foreground: CanvasWrapper, public draw: CanvasDrawer, public count: number, public character: Character) {
         super({
             position: new Vector2(256 * draw.scale * count, 15 * draw.scale),
@@ -41,10 +45,11 @@ export class TrainCar extends CanvasWrapper {
     }
 
     build() {
+
         this.backgroundWrap = new CanvasComposite({
             position: new Vector2(256 * this.draw.scale * this.count, 15 * this.draw.scale),
             size: new Vector2(256 * this.draw.scale, 64 * this.draw.scale),
-        }, (c)=>{
+        }, (c) => {
             c.globalCompositeOperation = 'source-atop';
             c.fillStyle = 'rgba(23, 21, 11, 0.5)';
             c.fillRect(0, 0, this.level.width, this.level.height);
@@ -59,7 +64,7 @@ export class TrainCar extends CanvasWrapper {
             size: new Vector2(256 * this.draw.scale, 64 * this.draw.scale),
             relativity: 'anchor',
             zoom: new Vector2(this.draw.factor + 1, this.draw.factor + 1),
-        }, (c)=>{
+        }, (c) => {
             c.globalCompositeOperation = 'source-atop';
             c.fillStyle = 'rgba(23, 21, 11, 0.5)';
             c.fillRect(0, 0, this.level.width, this.level.height);
@@ -73,6 +78,7 @@ export class TrainCar extends CanvasWrapper {
     }
 
     buildBackground() {
+        this.addChild(new GlCube({ size3: v3(256,64,32), position3: v3(0,0,0) }));
 
         this.characterLayer.addChild(new NPCOld({
             position: new Vector2(30 * this.bdraw.scale, 14 * this.bdraw.scale).add(this.position),
@@ -90,7 +96,7 @@ export class TrainCar extends CanvasWrapper {
         });
         this.backgroundWrap.addChild(this.frame);
 
-        
+
         this.backgroundWrap.addChild(new CanvasCustom({
             relativity: 'anchor',
             position: new Vector2(0, 0),
@@ -136,7 +142,7 @@ export class TrainCar extends CanvasWrapper {
                 ], '#5d5d5d', '#381c45');
 
                 if (ce + 762 < 0) {
-                    
+
                     // Door outer right
                     this.bdraw.fill(this.backgroundWrap, [
                         [240, 16, 0],
@@ -146,7 +152,7 @@ export class TrainCar extends CanvasWrapper {
                     ], '#f3b65a');
                 }
                 if (ce - 762 >= 0) {
-                    
+
                     // Door outer left
                     this.bdraw.fill(this.backgroundWrap, [
                         [16, 16, 0],
@@ -199,7 +205,7 @@ export class TrainCar extends CanvasWrapper {
                         [239, 57, 0.25],
                         [239, 16, 0.25],
                     ], '#8f563b');
-                } 
+                }
                 if (ce - 762 < 0) {
                     // Door inner left
                     this.bdraw.fill(this.backgroundWrap, [
@@ -208,7 +214,7 @@ export class TrainCar extends CanvasWrapper {
                         [17, 57, 0.25],
                         [17, 16, 0.25],
                     ], '#8f563b');
-                } 
+                }
             }
         }), true);
 
@@ -285,8 +291,8 @@ export class TrainCar extends CanvasWrapper {
         });
         this.foregroundWrap.addChild(this.wheels4);
         this.wheels4.frame = 3 * 20;
-        
-        
+
+
         this.foregroundWrap.addChild(new CanvasCustom({
             render: (c) => {
                 const ce = ((this.width / 2 + this.x) - (this.mode.width / 2 - this.level.x));
@@ -415,7 +421,7 @@ export class TrainCar extends CanvasWrapper {
     }
 
     perspectiveTick(obj: TickerReturnData) {
-        this.foregroundWrap.x = this.backgroundWrap.x - ((this.level.center.x - (this.train.x + (this.x + this.backgroundWrap.x)/2))*this.draw.factor);
+        this.foregroundWrap.x = this.backgroundWrap.x - ((this.level.center.x - (this.train.x + (this.x + this.backgroundWrap.x) / 2)) * this.draw.factor);
     }
 
     public tick(obj: TickerReturnData): void {
@@ -440,8 +446,8 @@ export class TrainCar extends CanvasWrapper {
         this.foregroundWrap.y = ((this.animationFrame > 40 && this.animationFrame < 70) ? this.draw.scale / 3 : 0) + 50;
         this.frame.y = (this.animationFrame > 40 && this.animationFrame < 70) ? this.draw.scale / 3 : 0;
         this.interior.y = (this.animationFrame > 40 && this.animationFrame < 70) ? this.draw.scale / 3 : 0;
-        
-        if (this.character.active && this.character.y < this.y + this.height - 60){
+
+        if (this.character.active && this.character.y < this.y + this.height - 60) {
             this.siding.opacity = Util.clamp((Math.abs((this.width / 2 + this.x) - (this.character.width / 2 + this.character.x)) - (this.width / 2 - f)) / f, 0, 1);
         } else {
             this.siding.opacity = 1;

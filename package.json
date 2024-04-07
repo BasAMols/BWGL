@@ -17,7 +17,8 @@
         "typescript": "^5.3.3"
     },
     "dependencies": {
-        "babylonjs": "^7.0.0",
-        "gl-matrix": "^3.4.3"
+        "@types/obj-file-parser": "^0.5.2",
+        "gl-matrix": "^3.4.3",
+        "obj-file-parser": "^0.6.2"
     }
 }

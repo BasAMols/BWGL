@@ -1,26 +1,35 @@
-import { mat4, vec3, vec4 } from 'gl-matrix';
+import { mat4, vec4 } from 'gl-matrix';
 import { Game } from '../game';
 import { initShaderProgram } from './glInit';
 import { TickerReturnData } from './ticker';
-import { squareBuffer } from './glBufferSquare';
-import { pyramidBuffer } from './glBufferPyramid';
+import { GLMesh } from '../elements/gl/glMesh';
+import { Vector3 } from './vector3';
 
-export interface bufferObject {
-    positionBuffer: WebGLBuffer;
+export interface bufferDataInitilizers {
     indices: WebGLBuffer;
-    colorBuilder: (gl: WebGLRenderingContext, colors: vec4[]) => WebGLBuffer;
-    colorBuffer?: WebGLBuffer;
+    initColor: (gl: WebGLRenderingContext, colors: vec4[]) => WebGLBuffer;
+    initSize: (gl: WebGLRenderingContext, size: Vector3) => WebGLBuffer;
+    verticesCount: number;
+}
+export interface buffers {
+    indices: WebGLBuffer;
+    positionBuffer: WebGLBuffer;
+    colorBuffer: WebGLBuffer;
 }
 
+export type GlElementType = 'camera' | 'light' | 'mesh' | 'collider' | 'group';
+export type GLMeshType = 'cube' | 'tetrahedron' | 'plane';
+
 export interface objectData {
-    type: 'square' | 'pyramid',
-    colors: vec4[],
-    position: vec3,
-    buffer?: Omit<bufferObject, 'colorBuilder'>;
+    meshType: GLMeshType,
+    size3?: Vector3,
+    position3: Vector3,
+    buffer?: buffers;
+    verticesCount?: number;
 }
 
 export class GLR {
-    private objects: objectData[] = [];
+    private objects: (GLMesh)[] = [];
     public gl: WebGLRenderingContext;
     private frameData: {
         projectionMatrix?: mat4;
@@ -37,96 +46,51 @@ export class GLR {
             modelViewMatrix: WebGLUniformLocation;
         };
     };
-    private buffers: Record<string, bufferObject> = {};
 
     get t(): TickerReturnData {
         return this.game.t;
     }
 
     constructor(public game: Game) {
-        this.gl = this.game.gl;
-        this.init();
-    }
-
-    init() {
+        this.gl = this.game.renderer.domGl.getContext('webgl');
         this.programInfo = initShaderProgram(this.gl);
-        this.buffers.square = squareBuffer(this.gl);
-        this.buffers.pyramid = pyramidBuffer(this.gl);
 
-        for (let i = 0; i < 10; i+=1) {
-            for (let j = 0; j < 29; j+=2) {
-                this.objects.push({
-                    type: 'square',
-                    position: [i, j, 0],
-                    colors: [
-                        [1.0, 0.0, 0.0, 1.0],
-                        [1.0, 0.0, 0.0, 1.0],
-                        [0.0, 1.0, 0.0, 1.0],
-                        [0.0, 0.0, 1.0, 1.0],
-                        [1.0, 1.0, 0.0, 1.0],
-                        [1.0, 0.0, 1.0, 1.0]
-                    ]
-                });
-            }
-        }
-
-        this.objects.push({
-            type: 'pyramid',
-            position: [4, 6, -2],
-            colors: [
-                [5.0, 0.0, 0.0, 1.0],
-                [1.0, 0.0, 0.0, 1.0],
-                [3.0, 1.0, 0.0, 1.0],
-                [0.0, 0.0, 1.0, 1.0]
-            ]
-        });
-
-        this.initializeObjects();
     }
 
-    initializeObjects() {
-        this.objects.forEach((o) => {
-            o.buffer = {
-                positionBuffer: this.buffers[o.type].positionBuffer,
-                indices: this.buffers[o.type].indices,
-                colorBuffer: this.buffers[o.type].colorBuilder(this.gl, o.colors)
-            };
-        });
+    initGlMesh(mesh: GLMesh) {
+        this.objects.push(mesh);
     }
 
     setCamera() {
 
-        const fieldOfView = (60 * Math.PI) / 180;
+        const fieldOfView = (this.game.mode.camera.fov * Math.PI) / 180;
+
         const aspect = (this.gl.canvas as HTMLCanvasElement).clientWidth / (this.gl.canvas as HTMLCanvasElement).clientHeight;
-        const zNear = 0.1;
-        const zFar = 100.0;
+        const zNear = 1;
+        const zFar = 2000;
         const projectionMatrix = mat4.create();
-        mat4.perspective(projectionMatrix, fieldOfView, aspect, zNear, zFar);
         const modelViewMatrix = mat4.create();
+        mat4.perspective(projectionMatrix, fieldOfView, aspect, zNear, zFar);
+
+        mat4.translate(
+            projectionMatrix,
+            projectionMatrix,
+            this.game.mode.camera.offset.multiply(1, 1, -1).vec
+        );
+
+        this.game.mode.camera.rotation.forEach((r, i) => {
+            mat4.rotate(
+                projectionMatrix,
+                projectionMatrix,
+                r,
+                [Number(i === 0), Number(i === 1), Number(i === 2)],
+            );
+        });
 
         mat4.translate(
             modelViewMatrix,
             modelViewMatrix,
-            [(this.t.frame % 360 / 360) * 40-25, -10, -15],
-        );
-        // mat4.rotate(
-        //     modelViewMatrix,
-        //     modelViewMatrix,
-        //     (this.t.frame % 720 / 720) * Math.PI * 2,
-        //     [0, 1, 0],
-        // );
-        // mat4.rotate(
-        //     modelViewMatrix,
-        //     modelViewMatrix,
-        //     (this.t.frame % 360 / 360) * Math.PI * 2,
-        //     [0, 0, 1],
-        // );
-
-        mat4.rotate(
-            modelViewMatrix,
-            modelViewMatrix,
-            1,
-            [0, 0,0],
+            this.game.mode.camera.target.multiply(-1, 1, 1).vec
         );
 
         this.frameData.projectionMatrix = projectionMatrix;
@@ -134,7 +98,7 @@ export class GLR {
 
     }
 
-    clear(obj: TickerReturnData) {
+    clear() {
         this.gl.clearColor(0.0, 0.0, 0.0, 0.5);
         this.gl.clearDepth(1.0);
         this.gl.enable(this.gl.DEPTH_TEST);
@@ -142,30 +106,30 @@ export class GLR {
         this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
     }
 
-    draw(obj: TickerReturnData) {
-        this.clear(obj);
+    draw() {
+        this.clear();
         this.setCamera();
         this.objects.forEach((o) => {
             this.drawObject(o);
         });
-        // this.drawObject('square');
-        // this.drawObject('pyramid');
     }
 
 
-    drawObject(o: objectData) {
+    drawObject(mesh: GLMesh) {
 
-        this.setPositionAttribute(o);
-        this.setColorAttribute(o);
+
+        this.setPositionAttribute(mesh);
+        this.setColorAttribute(mesh);
 
         this.gl.useProgram(this.programInfo.program);
-        this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.buffers[o.type].indices);
+        this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, mesh.buffer.indices);
 
-        let m = mat4.clone(this.frameData.modelViewMatrix);
+        let currentModelview = mat4.clone(this.frameData.modelViewMatrix);
+        
         mat4.translate(
-            m,
-            m,
-            o.position,
+            currentModelview,
+            currentModelview,
+            mesh.position3.multiply(new Vector3(1,1,-1)).vec,
         );
 
         this.gl.uniformMatrix4fv(
@@ -176,23 +140,24 @@ export class GLR {
         this.gl.uniformMatrix4fv(
             this.programInfo.uniformLocations.modelViewMatrix,
             false,
-            m,
+            currentModelview,
         );
+
         this.gl.drawElements(
             this.gl.TRIANGLES,
-            { square: 36, pyramid: 12 }[o.type] || 1,
+            mesh.verticesCount,
             this.gl.UNSIGNED_SHORT,
             0
         );
     }
 
-    setPositionAttribute(o: objectData) {
+    setPositionAttribute(mesh: GLMesh) {
         const numComponents = 3;
         const type = this.gl.FLOAT;
         const normalize = false;
         const stride = 0;
         const offset = 0;
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, o.buffer.positionBuffer);
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, mesh.buffer.positionBuffer);
         this.gl.vertexAttribPointer(
             this.programInfo.attribLocations.vertexPosition,
             numComponents,
@@ -204,13 +169,13 @@ export class GLR {
         this.gl.enableVertexAttribArray(this.programInfo.attribLocations.vertexPosition);
     }
 
-    setColorAttribute(o: objectData) {
+    setColorAttribute(mesh: GLMesh) {
         const numComponents = 4;
         const type = this.gl.FLOAT;
         const normalize = false;
         const stride = 0;
         const offset = 0;
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, o.buffer.colorBuffer);
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, mesh.buffer.colorBuffer);
         this.gl.vertexAttribPointer(
             this.programInfo.attribLocations.vertexColor,
             numComponents,

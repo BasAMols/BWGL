@@ -8,7 +8,6 @@ import { Mode } from './utils/mode';
 import { ElementRelativity } from './utils/elementPosition';
 import { DomCanvas } from './elements/dom/domCanvas';
 import { Loader } from './utils/debug/loader';
-import 'babylonjs';
 import { GLR } from './utils/gl';
 import { SideMode } from './modes/side/SideMode';
 
@@ -20,7 +19,6 @@ export class Game extends CanvasWrapper {
     public modes: Record<string, Mode> = {};
     public game = this;
     public ctx: CanvasRenderingContext2D;
-    public gl: WebGLRenderingContext;
     public input: Input;
     public ready: boolean = false;
     private _waitCount: number = 0;
@@ -61,12 +59,12 @@ export class Game extends CanvasWrapper {
         this.loader = new Loader();
         this.addChild(this.loader);
 
-        this.renderer = new DomCanvas();
+        this.renderer = new DomCanvas(this);
         this.addChild(this.renderer);
 
         this.GLR = new GLR(this);
-
         this.setupModes();
+        
         this.ticker = new Ticker();
         this.ticker.add(this.tick.bind(this));
         this.input = new Input(this);
@@ -116,6 +114,9 @@ export class Game extends CanvasWrapper {
             mode.active = key === s;
             mode.visible = key === s;
             mode.dom ? mode.dom.visible = key === s : null;
+            if (key === s){
+                this.mode = mode;
+            }
         });
     }
 

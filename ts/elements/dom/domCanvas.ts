@@ -1,3 +1,4 @@
+import { Game } from '../../game';
 import { ElementAttributes } from "../../utils/element";
 import { Mode } from '../../utils/mode';
 import { TickerReturnData } from '../../utils/ticker';
@@ -16,11 +17,10 @@ export class DomCanvas extends DomElement<'canvas'> {
     public domGl: HTMLCanvasElement;
     public tickerData: TickerReturnData;
 
-    constructor() {
+    constructor(game: Game) {
         super('canvas');
         this.dom = document.createElement('canvas');
         this.dom.style.position = 'absolute';
-        this.dom.style.zIndex = '-2';
         this.dom.style.imageRendering = 'pixelated';
         this.dom.style.pointerEvents = 'all';
         this.dom.style.bottom = '0px';
@@ -30,7 +30,6 @@ export class DomCanvas extends DomElement<'canvas'> {
         this.domGl = document.createElement('canvas');
         this.domGl.style.position = 'absolute';
         this.domGl.style.pointerEvents = 'none';
-        this.domGl.style.zIndex = '-1';
         this.domGl.style.bottom = '0px';
 
     }
@@ -44,7 +43,6 @@ export class DomCanvas extends DomElement<'canvas'> {
         });
         this.game.resize();
 
-        this.game.gl = this.domGl.getContext("webgl");
     }
 
     public get width() {
@@ -81,7 +79,6 @@ export class DomCanvas extends DomElement<'canvas'> {
         child.mode ??= this.mode;
         child.level ??= this.level;
         child.GLR ??= this.game.GLR;
-        child.gl ??= this.game.gl;
         this.game.dom.appendChild(child.dom);
         child.registerControllers(child);
         child.build();
@@ -112,7 +109,7 @@ export class DomCanvas extends DomElement<'canvas'> {
         });
         this.ctx.restore();
 
-        this.game.GLR.draw(obj);
+        this.game.GLR.draw();
     }
 }
 

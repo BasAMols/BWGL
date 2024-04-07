@@ -77,7 +77,7 @@ export abstract class WalkingNPC extends Character {
                 loop,
             });
 
-            this.addChild(this.animations[key], true);
+            // this.addChild(this.animations[key], true);
         });
         this.size = this.size.scale(this.scale);
         this.go(this.direction);

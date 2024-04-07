@@ -1,15 +1,63 @@
+import { vec3 } from 'gl-matrix';
 import { Vector2 } from './vector2';
 
-export class Vector3 extends Vector2 {
-	z: number;
-	static Vector3: {};
-	constructor(x: number, y: number, z: number) {
-		super(x, y);
-		this.z = (y === undefined) ? 0 : z;
+export function v3(n: [number, number?, number?] | number, y?: number, z?: number) {
+	if (typeof n === 'number') {
+		return Vector3.f(n, y, z);
+	} else if (typeof n === 'undefined') {
+		return Vector3.f(0);
+	} else {
+		return Vector3.f(...n);
+	}
+}
+
+export class Vector3 {
+	public get x(): number {
+		return this.vec[0];
+	}
+	public set x(value: number) {
+		this.vec[0] = value;
+	}
+	public get y(): number {
+		return this.vec[1];
+	}
+	public set y(value: number) {
+		this.vec[1] = value;
+	}
+	public get z(): number {
+		return this.vec[2];
+	}
+	public set z(value: number) {
+		this.vec[2] = value;
+	}
+	public vec: vec3;
+
+	constructor(x: number = 0, y: number = 0, z: number = 0) {
+		this.vec = [x, y, z];
 	}
 
-	static from2(vector: Vector2, z: number) {
+	static from2(vector: Vector2, z: number = 0) {
 		return new Vector3(vector.x, vector.y, z);
+	}
+
+	static f(x: number = 0, y: number = x, z: number = x) {
+		return new Vector3(x, y, z);
+	}
+
+	get array() {
+		return [this.x, this.y, this.z];
+	}
+
+	set array(a: [number, number, number]) {
+		[this.x, this.y, this.z] = a;
+	}
+
+	forEach(callbackfn: (value: number, index: number, array: number[]) => void): void {
+		this.array.forEach(callbackfn);
+	};
+
+	get c(): Vector3 {
+		return this.clone();
 	}
 
 	clone(): Vector3 {
@@ -28,11 +76,14 @@ export class Vector3 extends Vector2 {
 		);
 	}
 
-	multiply(vector: Vector3) {
+	multiply(a: Vector3): Vector3;
+	multiply(a: number, b: number, c: number): Vector3;
+	multiply(a: Vector3 | number, b?: number, c?: number): Vector3 {
+		const [x,y,z] = (typeof a === 'number')? [a,b,c]: a.array
 		return new Vector3(
-			this.x * vector.x,
-			this.y * vector.y,
-			this.z * vector.z,
+			this.x * x,
+			this.y * y,
+			this.z * z,
 		);
 	}
 
