@@ -22,20 +22,18 @@ export class SideCharacter extends Character {
     } = {}) {
         super({
             position3,
-            size3
+            size3,
+            anchorPoint: size3.multiply(0.5,0,0.5), 
         });
         this.addControllers([new glController()])
-
     }
 
     build() {
         this.registerControllers(this)
-        this.addChild(this.mesh = new GlMesh({ anchorPoint: this.size3.multiply(0.5,0,0.5), size3: this.size3, position3: this.position3, colors: [[0.3,0.3,0.3, 1], [0.3,0.3,0.3, 1], [0.4,0.4,0.4, 1], [0.3,0.3,0.3, 1], [0.2,0.2,0.2, 1], [0.2,0.2,0.2, 1]] }));
+        this.addChild(this.mesh = new GlMesh({ size3: this.size3, colors: [[0.3,0.3,0.3, 1], [0.3,0.3,0.3, 1], [0.4,0.4,0.4, 1], [0.3,0.3,0.3, 1], [0.2,0.2,0.2, 1], [0.2,0.2,0.2, 1]] }));
     }
     public tick(o: TickerReturnData) {
         super.tick(o);
-        this.mesh.position3 = this.position3.clone();
-        this.mesh.rotation = this.rotation.clone();
-        this.camera.target = this.mesh.position3.clone().add(this.size3.multiply(0.5,0.5,0.5)).multiply(1,-1,1);
+        this.camera.target = this.position3.clone().add(this.size3.multiply(0.5,0.5,0.5)).multiply(1,-1,1);
     }
 }

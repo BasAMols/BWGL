@@ -782,6 +782,9 @@ var Input = class {
         element.higherChildren.forEach((child) => this.recursive(event, child, e));
         element.glElements.forEach((child) => this.recursive(event, child, e));
       }
+      if (element.rendererType === "gl") {
+        element.glChildren.forEach((child) => this.recursive(event, child, e));
+      }
       element.controllers.forEach((child) => this.recursive(event, child, e));
     }
   }
@@ -2486,16 +2489,14 @@ var GLR = class {
   draw() {
     this.clear();
     this.setCamera();
-    this.objects.forEach((o) => {
-      this.drawObject(o);
+    this.drawElement(this.game.level);
+  }
+  drawElement(element, currentModelview) {
+    element.glChildren.forEach((o) => {
+      this.drawObject(o, currentModelview ? mat4_exports.clone(currentModelview) : void 0);
     });
   }
-  drawObject(mesh) {
-    this.setPositionAttribute(mesh);
-    this.setTextureAttribute(mesh);
-    this.gl.useProgram(this.programInfo.program);
-    this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, mesh.buffer.indices);
-    let currentModelview = mat4_exports.clone(this.frameData.modelViewMatrix);
+  drawObject(mesh, currentModelview = mat4_exports.clone(this.frameData.modelViewMatrix)) {
     mat4_exports.translate(
       currentModelview,
       currentModelview,
@@ -2519,6 +2520,16 @@ var GLR = class {
       currentModelview,
       mesh.anchorPoint.multiply(-1, -1, 1).vec
     );
+    if (mesh.buffer) {
+      this.renderMesh(mesh, currentModelview);
+    }
+    this.drawElement(mesh, currentModelview);
+  }
+  renderMesh(mesh, currentModelview) {
+    this.gl.useProgram(this.programInfo.program);
+    this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, mesh.buffer.indices);
+    this.setPositionAttribute(mesh);
+    this.setTextureAttribute(mesh);
     this.gl.uniformMatrix4fv(
       this.programInfo.uniformLocations.projectionMatrix,
       false,
@@ -2557,23 +2568,6 @@ var GLR = class {
     );
     this.gl.enableVertexAttribArray(this.programInfo.attribLocations.vertexPosition);
   }
-  setColorAttribute(mesh) {
-    const numComponents = 4;
-    const type = this.gl.FLOAT;
-    const normalize = false;
-    const stride = 0;
-    const offset = 0;
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, mesh.buffer.colorBuffer);
-    this.gl.vertexAttribPointer(
-      this.programInfo.attribLocations.vertexColor,
-      numComponents,
-      type,
-      normalize,
-      stride,
-      offset
-    );
-    this.gl.enableVertexAttribArray(this.programInfo.attribLocations.vertexColor);
-  }
   setTextureAttribute(mesh) {
     const num = 2;
     const type = this.gl.FLOAT;
@@ -2599,12 +2593,6 @@ var Mode = class extends CanvasWrapper {
     super(...arguments);
     this.levels = {};
     this.relativity = "anchor";
-    this._camera = {
-      target: Vector3.f(0),
-      rotation: Vector3.f(0),
-      offset: Vector3.f(0),
-      fov: 60
-    };
     this.keyAliases = {
       "w": "up",
       "a": "left",
@@ -2625,10 +2613,10 @@ var Mode = class extends CanvasWrapper {
     };
   }
   get camera() {
-    return this._camera;
+    return this.level.camera;
   }
   set camera(value) {
-    this._camera = value;
+    this.level.camera = value;
   }
   build() {
     super.build();
@@ -2644,7 +2632,10 @@ var Mode = class extends CanvasWrapper {
     Object.entries(this.levels).forEach(([key, level]) => {
       level.active = key === s;
       level.visible = key === s;
-      level.dom ? level.dom.visible = key === s : null;
+      if (key === s) {
+        this.level = level;
+        this.game.level = level;
+      }
     });
   }
   keyDown(e) {
@@ -2796,7 +2787,7 @@ var GlElement = class extends Element {
     this._depth = 1;
     this.autoReady = attr.autoReady !== void 0 ? attr.autoReady : true;
     this.addControllers(attr.controllers || []);
-    this.size3 = attr.size3 || v3(0);
+    this.size3 = attr.size3 || this.parent.size3;
     this.position3 = attr.position3 || v3(0);
     this.rotation = attr.rotation || v3(0);
     this.anchorPoint = attr.anchorPoint || v3(0);
@@ -2938,7 +2929,6 @@ var GLRendable = class extends GlElement {
   build() {
     this.buffer = {
       positionBuffer: this.positionBuffer(this.size3),
-      colorBuffer: this.colorBuffer(this.colors),
       indices: this.indexBuffer(),
       textureCoord: this.textureBuffer(this.size3)
     };
@@ -2949,12 +2939,6 @@ var GLRendable = class extends GlElement {
     if (this.game.waitCount) {
       this.game.waitCount--;
     }
-  }
-  getColorBuffer(colors) {
-    const colorBuffer = this.gl.createBuffer();
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, colorBuffer);
-    this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(colors), this.gl.STATIC_DRAW);
-    return colorBuffer;
   }
   getIndexBuffer(indices) {
     const indexBuffer = this.gl.createBuffer();
@@ -3053,11 +3037,14 @@ var GlMesh = class extends GLRendable {
     this.verticesCount = 36;
     this.dimensions = 0 | 1 | 2 | 3;
     this.dimensions = attr.size3.array.filter((v) => v !== 0).length;
+    if (this.dimensions < 2) {
+      return;
+    }
+    this.verticesCount = this.dimensions === 3 ? 36 : 6;
+    this.faceCount = this.dimensions === 3 ? 6 : 1;
     this.textureUrl = attr.textureUrl;
     if (attr.colors)
       this.colors = attr.colors;
-    else if (this.dimensions === 2)
-      this.colors = [Colors.r];
     else
       this.colors = [
         Colors.r,
@@ -3066,21 +3053,11 @@ var GlMesh = class extends GLRendable {
         Colors.c,
         Colors.m,
         Colors.y
-      ];
+      ].slice(0, this.faceCount);
   }
   build() {
     super.build();
     this.texture = new GLTexture(this.game, this.textureUrl ? { url: this.textureUrl } : { color: this.colors[0] });
-  }
-  colorBuffer() {
-    while (this.colors.length < this.verticesCount / 3) {
-      this.colors.push(this.colors[0]);
-    }
-    var colors = [];
-    this.colors.forEach((f) => {
-      colors = colors.concat(f, f, f, f);
-    });
-    return this.getColorBuffer(colors);
   }
   indexBuffer() {
     let b = [
@@ -3120,11 +3097,7 @@ var GlMesh = class extends GLRendable {
       20,
       22,
       23
-    ];
-    if (this.dimensions === 2) {
-      this.verticesCount = 6;
-      b = b.slice(0, 6);
-    }
+    ].slice(0, this.faceCount * 6);
     return this.getIndexBuffer(b);
   }
   positionBuffer(size) {
@@ -3345,20 +3318,6 @@ var GLobj = class extends GLRendable {
     const data = await response.text();
     return data;
   }
-  colorBuffer() {
-    if (Object.values(this.mats).length) {
-      var colors = [];
-      this.matIndex.forEach((n) => {
-        const m = this.mats[n][2].slice(3).split(" ").map(Number);
-        colors.push(...m, 1);
-        colors.push(...m, 1);
-        colors.push(...m, 1);
-        colors.push(...m, 1);
-      });
-      return this.getColorBuffer(colors);
-    }
-    return this.getColorBuffer(this.faceColors);
-  }
   indexBuffer() {
     return this.getIndexBuffer(this.faces);
   }
@@ -3376,45 +3335,30 @@ var GLobj = class extends GLRendable {
 };
 
 // ts/utils/level.ts
-var Level = class extends CanvasWrapper {
+var Level = class extends GlElement {
   constructor(attr = {}) {
     super(attr);
+    this.type = "group";
     this.relativity = "anchor";
     this.colliders = [];
-    this._depth = 1;
+    // public get center(): Vector3 {
+    //     return Vector3.from2(this.mode.size.scale(0.5).subtract(this.position), this.depth);
+    // }
+    this._camera = {
+      target: Vector3.f(0),
+      rotation: Vector3.f(0),
+      offset: Vector3.f(0),
+      fov: 60
+    };
     this.level = this;
     this.mode = this.mode;
     this.size = this.size;
-    this.size3 = attr.size3;
   }
-  get center() {
-    return Vector3.from2(this.mode.size.scale(0.5).subtract(this.position), this.depth);
+  get camera() {
+    return this._camera;
   }
-  get width() {
-    return super.width;
-  }
-  set width(n) {
-    super.width = n;
-  }
-  get height() {
-    return super.height;
-  }
-  set height(n) {
-    super.height = n;
-  }
-  get depth() {
-    return this._depth;
-  }
-  set depth(n) {
-    this._depth = n;
-  }
-  get size3() {
-    return v3(this.width, this.height, this.depth);
-  }
-  set size3({ x, y, z }) {
-    this.width = x;
-    this.height = y;
-    this.depth = z;
+  set camera(value) {
+    this._camera = value;
   }
 };
 
@@ -3523,7 +3467,8 @@ var SideCharacter = class extends Character {
   } = {}) {
     super({
       position3,
-      size3
+      size3,
+      anchorPoint: size3.multiply(0.5, 0, 0.5)
     });
     this.relativity = "anchor";
     this.animations = {};
@@ -3533,13 +3478,11 @@ var SideCharacter = class extends Character {
   }
   build() {
     this.registerControllers(this);
-    this.addChild(this.mesh = new GlMesh({ anchorPoint: this.size3.multiply(0.5, 0, 0.5), size3: this.size3, position3: this.position3, colors: [[0.3, 0.3, 0.3, 1], [0.3, 0.3, 0.3, 1], [0.4, 0.4, 0.4, 1], [0.3, 0.3, 0.3, 1], [0.2, 0.2, 0.2, 1], [0.2, 0.2, 0.2, 1]] }));
+    this.addChild(this.mesh = new GlMesh({ size3: this.size3, colors: [[0.3, 0.3, 0.3, 1], [0.3, 0.3, 0.3, 1], [0.4, 0.4, 0.4, 1], [0.3, 0.3, 0.3, 1], [0.2, 0.2, 0.2, 1], [0.2, 0.2, 0.2, 1]] }));
   }
   tick(o) {
     super.tick(o);
-    this.mesh.position3 = this.position3.clone();
-    this.mesh.rotation = this.rotation.clone();
-    this.camera.target = this.mesh.position3.clone().add(this.size3.multiply(0.5, 0.5, 0.5)).multiply(1, -1, 1);
+    this.camera.target = this.position3.clone().add(this.size3.multiply(0.5, 0.5, 0.5)).multiply(1, -1, 1);
   }
 };
 
@@ -3590,7 +3533,6 @@ var World = class extends Level {
       size3: v3(8, 24, 8),
       position3: v3(800, 0, 250)
     }));
-    this.addChild(new GlMesh({ size3: v3(5e3, 100, 0), position3: v3(-2500, 0, 400), colors: [Colors.g] }));
     this.addChild(new GlMesh({ size3: v3(5e3, 5e3, 5e3), position3: v3(-2500, -1, -2500), colors: [[0.15, 0.15, 0.4, 1], [0.15, 0.15, 0.4, 1], [0.15, 0.15, 0.4, 1], [0.1, 0.2, 0.1, 1], [0.15, 0.15, 0.4, 1], [0.15, 0.15, 0.4, 1]] }));
     this.addChild(new GlMesh({ size3: v3(5e3, 0, 52), position3: v3(-2500, 0, 300), colors: [Colors.b] }));
     this.addChild(new GLobj({ url: "carriage.obj", size3: v3(100, 100, 100), position3: v3(0 + 50, 0, 300) }));

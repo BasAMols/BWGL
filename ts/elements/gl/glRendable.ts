@@ -21,7 +21,6 @@ export abstract class GLRendable extends GlElement {
     public build() {
         this.buffer = {
             positionBuffer: this.positionBuffer(this.size3),
-            colorBuffer: this.colorBuffer(this.colors),
             indices: this.indexBuffer(),
             textureCoord: this.textureBuffer(this.size3),
         };
@@ -36,17 +35,9 @@ export abstract class GLRendable extends GlElement {
         }
     }
 
-    protected abstract colorBuffer(faceColors: [number, number, number, number][]): WebGLBuffer;
     protected abstract indexBuffer(): WebGLBuffer;
     protected abstract positionBuffer(size: Vector3): WebGLBuffer;
     protected abstract textureBuffer(size: Vector3): WebGLBuffer;
-
-    getColorBuffer(colors: number[]) {
-        const colorBuffer = this.gl.createBuffer();
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, colorBuffer);
-        this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(colors), this.gl.STATIC_DRAW);
-        return colorBuffer;
-    }
 
     getIndexBuffer(indices: number[]) {
         const indexBuffer = this.gl.createBuffer();

@@ -115,7 +115,10 @@ export class Input {
                 element.lowerChildren.forEach((child) => this.recursive(event, child, e));
                 element.higherChildren.forEach((child) => this.recursive(event, child, e));
                 element.glElements.forEach((child) => this.recursive(event, child, e));
-            }
+            } 
+            if (element.rendererType === 'gl') {
+                (element as GlElement).glChildren.forEach((child) => this.recursive(event, child, e));
+            } 
             element.controllers.forEach((child) => this.recursive(event, child, e));
         }
     }

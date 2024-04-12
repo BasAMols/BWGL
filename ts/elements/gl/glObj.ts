@@ -98,23 +98,6 @@ export class GLobj extends GLRendable {
         return data;
     }
 
-    protected colorBuffer() {
-        if (Object.values(this.mats).length) {
-            var colors: number[] = [];
-            this.matIndex.forEach((n) => {
-                const m = this.mats[n][2].slice(3).split(' ').map(Number);
-                colors.push(...m, 1);
-                colors.push(...m, 1);
-                colors.push(...m, 1);
-                colors.push(...m, 1);
-            });
-
-            return this.getColorBuffer(colors);
-        }
-        return this.getColorBuffer(this.faceColors);
-
-    }
-
     protected indexBuffer() {
         return this.getIndexBuffer(this.faces);
     }

@@ -73,7 +73,6 @@ export class World extends Level {
         }));
 
         // this.addChild(new GLContainer({ size3: this.size3, position3: v3(0,0,0) }));
-        this.addChild(new GlMesh({ size3: v3(5000, 100, 0), position3: v3(-2500, 0, 400), colors: [Colors.g]}));
         this.addChild(new GlMesh({ size3: v3(5000, 5000, 5000), position3: v3(-2500, -1, -2500), colors: [[.15, .15, .4, 1], [.15, .15, .4, 1], [.15, .15, .4, 1], [0.1, 0.2, 0.1, 1], [.15, .15, .4, 1], [.15, .15, .4, 1]] }));
         this.addChild(new GlMesh({ size3: v3(5000, 0, 52), position3: v3(-2500, 0, 300), colors: [Colors.b] }));
         this.addChild(new GLObj({ url: 'carriage.obj', size3: v3(100, 100, 100), position3: v3(0 + 50, 0, 300) }));

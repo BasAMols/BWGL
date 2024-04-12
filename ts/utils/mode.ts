@@ -3,7 +3,6 @@ import { ElementRelativity } from './elementPosition';
 import { Level } from './level';
 import { TickerReturnData } from './ticker';
 import { Vector2 } from './vector2';
-import { Vector3 } from './vector3';
 
 export type modeAttributes = CanvasWrapperAttributes & {
 
@@ -11,23 +10,12 @@ export type modeAttributes = CanvasWrapperAttributes & {
 export abstract class Mode extends CanvasWrapper {
     public levels: Record<string, Level> = {};
     public relativity: ElementRelativity = 'anchor';
-    private _camera: {
-        target: Vector3;
-        rotation: Vector3;
-        offset: Vector3;
-        fov: number;
-    } = {
-            target: Vector3.f(0),
-            rotation: Vector3.f(0),
-            offset: Vector3.f(0),
-            fov: 60,
-        };
 
-    public get camera():typeof this._camera {
-        return this._camera;
+    public get camera():typeof this.level.camera {
+        return this.level.camera;
     }
-    public set camera(value:typeof this._camera) {
-        this._camera = value;
+    public set camera(value:typeof this.level.camera) {
+        this.level.camera = value;
     }
 
     private keyAliases = {
@@ -72,7 +60,11 @@ export abstract class Mode extends CanvasWrapper {
         Object.entries(this.levels).forEach(([key, level]) => {
             level.active = key === s;
             level.visible = key === s;
-            level.dom ? level.dom.visible = key === s : null;
+            // level.dom ? level.dom.visible = key === s : null;
+            if (key === s){
+                this.level = level;
+                this.game.level = level;
+            }
         });
     }
 

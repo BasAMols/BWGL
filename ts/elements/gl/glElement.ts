@@ -26,6 +26,7 @@ export abstract class GlElement extends Element {
     public rendererType = 'gl' as const;
     public autoReady: boolean;
     public anchorPoint: Vector3;
+    public parent: GlElement;
 
     public get renderPosition(): Vector2 {
         return this.position.add(this.anchoredPosition);
@@ -88,7 +89,7 @@ export abstract class GlElement extends Element {
         this.autoReady = attr.autoReady !== undefined ? attr.autoReady : true;
         this.addControllers(attr.controllers || []);
 
-        this.size3 = attr.size3 || v3(0);
+        this.size3 = attr.size3 || this.parent.size3;
         this.position3 = attr.position3 || v3(0);
         this.rotation = attr.rotation || v3(0);
         this.anchorPoint = attr.anchorPoint || v3(0);

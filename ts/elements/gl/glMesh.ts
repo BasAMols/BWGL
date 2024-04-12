@@ -18,14 +18,19 @@ export class GlMesh extends GLRendable {
     public verticesCount = 36;
     public dimensions = 0 | 1 | 2 | 3;
     private textureUrl: string;
+    faceCount: number;
 
     constructor(attr: GlMeshAttributes) {
         super(attr);
         this.dimensions = attr.size3.array.filter((v) => v !== 0).length;
+        if (this.dimensions < 2){
+            return;
+        }
+        this.verticesCount = this.dimensions === 3 ? 36 : 6;
+        this.faceCount = this.dimensions === 3 ? 6 : 1;
         this.textureUrl = attr.textureUrl;
 
         if (attr.colors) this.colors = attr.colors;
-        else if (this.dimensions === 2) this.colors = [Colors.r];
         else this.colors = [
             Colors.r,
             Colors.g,
@@ -33,26 +38,13 @@ export class GlMesh extends GLRendable {
             Colors.c,
             Colors.m,
             Colors.y
-        ];
+        ].slice(0, this.faceCount);
 
     }
 
     public build(): void {
         super.build();
         this.texture = new GLTexture(this.game, this.textureUrl ? { url: this.textureUrl } : { color: this.colors[0] });
-    }
-
-    protected colorBuffer() {
-        while (this.colors.length < this.verticesCount / 3) {
-            this.colors.push(this.colors[0]);
-        }
-
-        var colors: number[] = [];
-        this.colors.forEach((f) => {
-            colors = colors.concat(f, f, f, f);
-        });
-
-        return this.getColorBuffer(colors);
     }
 
     protected indexBuffer() {
@@ -63,12 +55,7 @@ export class GlMesh extends GLRendable {
             12, 13, 14, 12, 14, 15,
             16, 17, 18, 16, 18, 19,
             20, 21, 22, 20, 22, 23
-        ];
-
-        if (this.dimensions === 2) {
-            this.verticesCount = 6;
-            b = b.slice(0, 6);
-        }
+        ].slice(0, this.faceCount*6);
 
         return this.getIndexBuffer(b);
     }

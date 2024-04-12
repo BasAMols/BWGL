@@ -4,6 +4,7 @@ import { initShaderProgram } from './glInit';
 import { TickerReturnData } from './ticker';
 import { Vector3 } from './vector3';
 import { GLRendable } from '../elements/gl/glRendable';
+import { GlElement } from '../elements/gl/glElement';
 
 export interface bufferDataInitilizers {
     indices: WebGLBuffer;
@@ -14,7 +15,6 @@ export interface bufferDataInitilizers {
 export interface buffers {
     indices: WebGLBuffer;
     positionBuffer: WebGLBuffer;
-    colorBuffer: WebGLBuffer;
     textureCoord: WebGLBuffer,
 }
 
@@ -114,23 +114,16 @@ export class GLR {
     draw() {
         this.clear();
         this.setCamera();
-        this.objects.forEach((o) => {
-            this.drawObject(o);
+        this.drawElement(this.game.level);
+    }
+
+    drawElement(element: GlElement, currentModelview?: mat4) {
+        element.glChildren.forEach((o) => {
+            this.drawObject(o, currentModelview ? mat4.clone(currentModelview) : undefined);
         });
     }
 
-
-    drawObject(mesh: GLRendable) {
-
-
-        this.setPositionAttribute(mesh);
-        this.setTextureAttribute(mesh);
-
-        this.gl.useProgram(this.programInfo.program);
-        this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, mesh.buffer.indices);
-
-        let currentModelview = mat4.clone(this.frameData.modelViewMatrix);
-
+    drawObject(mesh: GlElement, currentModelview: mat4 = mat4.clone(this.frameData.modelViewMatrix)) {
 
         mat4.translate(
             currentModelview,
@@ -141,7 +134,7 @@ export class GLR {
         mat4.translate(
             currentModelview,
             currentModelview,
-            mesh.anchorPoint.multiply(1,1,-1).vec,
+            mesh.anchorPoint.multiply(1, 1, -1).vec,
         );
 
         mesh.rotation.multiply(new Vector3(1, -1, -1)).forEach((r, i) => {
@@ -156,9 +149,23 @@ export class GLR {
         mat4.translate(
             currentModelview,
             currentModelview,
-            mesh.anchorPoint.multiply(-1,-1,1).vec,
+            mesh.anchorPoint.multiply(-1, -1, 1).vec,
         );
+        
+        if ((mesh as GLRendable).buffer) {
+            this.renderMesh(mesh as GLRendable, currentModelview);
+        }
+        this.drawElement(mesh, currentModelview);
 
+    }
+
+    renderMesh(mesh: GLRendable, currentModelview: mat4) {
+
+        this.gl.useProgram(this.programInfo.program);
+        this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, mesh.buffer.indices);
+
+        this.setPositionAttribute(mesh);
+        this.setTextureAttribute(mesh);
         this.gl.uniformMatrix4fv(
             this.programInfo.uniformLocations.projectionMatrix,
             false,
@@ -174,7 +181,6 @@ export class GLR {
         this.gl.bindTexture(this.gl.TEXTURE_2D, mesh.texture.texture);
         this.gl.uniform1i(this.programInfo.uniformLocations.uSampler, 0);
         this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
-
 
         this.gl.drawElements(
             this.gl.TRIANGLES,
@@ -200,24 +206,6 @@ export class GLR {
             offset,
         );
         this.gl.enableVertexAttribArray(this.programInfo.attribLocations.vertexPosition);
-    }
-
-    setColorAttribute(mesh: GLRendable) {
-        const numComponents = 4;
-        const type = this.gl.FLOAT;
-        const normalize = false;
-        const stride = 0;
-        const offset = 0;
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, mesh.buffer.colorBuffer);
-        this.gl.vertexAttribPointer(
-            this.programInfo.attribLocations.vertexColor,
-            numComponents,
-            type,
-            normalize,
-            stride,
-            offset,
-        );
-        this.gl.enableVertexAttribArray(this.programInfo.attribLocations.vertexColor);
     }
 
     setTextureAttribute(mesh: GLRendable) {
