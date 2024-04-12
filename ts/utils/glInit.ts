@@ -15,27 +15,31 @@ function loadShader(gl: WebGLRenderingContext, type: number, source: string) {
 }
 
 export function initShaderProgram(gl: WebGLRenderingContext) {
+
     const vsSource = `
     attribute vec4 aVertexPosition;
-    attribute vec4 aVertexColor;
-
+    attribute vec2 aTextureCoord;
+  
     uniform mat4 uModelViewMatrix;
     uniform mat4 uProjectionMatrix;
-
-    varying lowp vec4 vColor;
-
+  
+    varying highp vec2 vTextureCoord;
+  
     void main(void) {
       gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
-      vColor = aVertexColor;
+      vTextureCoord = aTextureCoord;
     }
     `;
-    const fsSource = `
-    varying lowp vec4 vColor;
 
+    const fsSource = `
+    varying highp vec2 vTextureCoord;
+
+    uniform sampler2D uSampler;
+  
     void main(void) {
-      gl_FragColor = vColor;
+      gl_FragColor = texture2D(uSampler, vTextureCoord);
     }
-    `;
+  `;
     const vertexShader = loadShader(gl, gl.VERTEX_SHADER, vsSource);
     const fragmentShader = loadShader(gl, gl.FRAGMENT_SHADER, fsSource);
 
@@ -58,10 +62,12 @@ export function initShaderProgram(gl: WebGLRenderingContext) {
         attribLocations: {
             vertexPosition: gl.getAttribLocation(shaderProgram, "aVertexPosition"),
             vertexColor: gl.getAttribLocation(shaderProgram, "aVertexColor"),
+            textureCoord: gl.getAttribLocation(shaderProgram, "aTextureCoord"),
         },
         uniformLocations: {
             projectionMatrix: gl.getUniformLocation(shaderProgram, "uProjectionMatrix"),
             modelViewMatrix: gl.getUniformLocation(shaderProgram, "uModelViewMatrix"),
+            uSampler: gl.getUniformLocation(shaderProgram, "uSampler"),
         },
     };
 }

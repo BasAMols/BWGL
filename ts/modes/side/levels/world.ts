@@ -1,20 +1,15 @@
 import { CanvasColorBackground } from '../../../elements/canvas/canvasBackground';
-import { CanvasComposite } from '../../../elements/canvas/canvasComposite';
 import { CanvasImage } from '../../../elements/canvas/canvasImage';
 import { CanvasPrepSprites } from '../../../elements/canvas/canvasPrepSprites';
-import { CanvasWrapper } from '../../../elements/canvas/canvasWrapper';
 import { DomText } from '../../../elements/dom/domText';
-import { GlCube } from '../../../elements/gl/glCube';
-import { GLContainer } from '../../../elements/gl/glWorldContainer';
+import { GlMesh } from '../../../elements/gl/glMesh';
+import { GLobj as GLObj } from '../../../elements/gl/glObj';
+import { Colors } from '../../../utils/colors';
 import { Level } from '../../../utils/level';
 import { TickerReturnData } from '../../../utils/ticker';
-import { Util } from '../../../utils/utils';
 import { Vector2 } from '../../../utils/vector2';
 import { v3 } from '../../../utils/vector3';
 import { SideCharacter } from '../character/SideCharacter';
-import { Scroller } from './scrolling';
-import { Station } from './station';
-import { Train } from './train';
 
 
 export class World extends Level {
@@ -24,73 +19,72 @@ export class World extends Level {
     public sprites: CanvasPrepSprites;
     public mo: DomText;
     public ground: CanvasImage;
-    public get speed(): number {
-        if (this.inTrain) {
-            return this.train.speed;
-        } else {
-            return 0;
-        }
-    }
+    // public get speed(): number {
+    //     if (this.inTrain) {
+    //         return this.train.speed;
+    //     } else {
+    //         return 0;
+    //     }
+    // }
 
-    private _inTrain: boolean = false;
-    public get inTrain(): boolean {
-        return this._inTrain;
-    }
-    public set inTrain(value: boolean) {
-        this._inTrain = value;
-        this.character.active = !value;
-        this.train.character.active = value;
-        this.train.x = 0;
-        this.backgroundLayer.x = this.foregroundLayer.x = 0;
-        if (value) {
-            this.train.character.x = Util.clamp(this.character.x, this.train.left, this.train.right - 1);
-        } else {
-            this.character.position = this.train.character.position;
-        }
-    }
+    // private _inTrain: boolean = false;
+    // public get inTrain(): boolean {
+    //     return this._inTrain;
+    // }
+    // public set inTrain(value: boolean) {
+    //     this._inTrain = value;
+    //     this.character.active = !value;
+    //     this.train.character.active = value;
+    //     this.train.x = 0;
+    //     this.backgroundLayer.x = this.foregroundLayer.x = 0;
+    //     if (value) {
+    //         this.train.character.x = Util.clamp(this.character.x, this.train.left, this.train.right - 1);
+    //     } else {
+    //         this.character.position = this.train.character.position;
+    //     }
+    // }
 
-    public env: Scroller;
-    public frame: number = 0;
-    public backgroundLayer: CanvasWrapper;
-    public foregroundLayer: CanvasWrapper;
-    public characterLayer: CanvasComposite;
-    public station: Station;
-    public trainLayer: CanvasWrapper;
-    public train: Train;
+    // public env: Scroller;
+    // public frame: number = 0;
+    // public backgroundLayer: CanvasWrapper;
+    // public foregroundLayer: CanvasWrapper;
+    // public characterLayer: CanvasComposite;
+    // // public station: Station;
+    // public trainLayer: CanvasWrapper;
+    // public train: Train;
 
     constructor() {
         super({
-            size3: v3(700,200,400)
+            size3: v3(900, 200, 400)
         });
     }
 
     keyDown(e: KeyboardEvent): void {
-        if (e.code === 'Enter') {
-            this.inTrain = !this.inTrain;
-        }
+        // if (e.code === 'Enter') {
+        //     this.inTrain = !this.inTrain;
+        // }
     }
 
 
     build() {
-        for (let index = 0; index < 2; index++) {
-            this.addChild(new GlCube({ size3: v3(256,65/65,52), position3: v3((index*266)+50, 0, 250) }));
-            for (let x = 0; x < 256; x+=3) {
-                for (let y = 0; y < 65; y+=3) {
-                    this.addChild(new GlCube({ size3: v3(3,3,3), position3: v3((index*266)+50+x, y, 250+(y)-(((x)%2===0)?1.5:0)) }));
-                    
-                }
-            }
-        }
         this.addChild(new SideCharacter({
-            size3: v3(16,40,16),
-            position3: v3(100,0,100)
+            size3: v3(8, 24, 8),
+            position3: v3(800, 0, 250)
         }));
 
-        this.addChild(new GLContainer({ size3: this.size3, position3: v3(0,0,0) }));
-        this.camera.offset = v3(0,-10,100)
-        this.camera.rotation = v3(0.25,0,0)
-        this.camera.target = v3(150,0,250)
-        this.camera.fov = 70
+        // this.addChild(new GLContainer({ size3: this.size3, position3: v3(0,0,0) }));
+        this.addChild(new GlMesh({ size3: v3(5000, 100, 0), position3: v3(-2500, 0, 400), colors: [Colors.g]}));
+        this.addChild(new GlMesh({ size3: v3(5000, 5000, 5000), position3: v3(-2500, -1, -2500), colors: [[.15, .15, .4, 1], [.15, .15, .4, 1], [.15, .15, .4, 1], [0.1, 0.2, 0.1, 1], [.15, .15, .4, 1], [.15, .15, .4, 1]] }));
+        this.addChild(new GlMesh({ size3: v3(5000, 0, 52), position3: v3(-2500, 0, 300), colors: [Colors.b] }));
+        this.addChild(new GLObj({ url: 'carriage.obj', size3: v3(100, 100, 100), position3: v3(0 + 50, 0, 300) }));
+        this.addChild(new GLObj({ url: 'carriage.obj', size3: v3(100, 100, 100), position3: v3(0 + 50 + 256, 0, 300) }));
+        this.addChild(new GLObj({ url: 'coal.obj', size3: v3(100, 100, 100), position3: v3(256 + 50 + 256, 0, 302) }));
+        this.addChild(new GlMesh({ size3: v3(176, 65, 0), position3: v3(256 + 83 + 50 + 256, 0, 395), colors: [Colors.k], textureUrl: 'test.png'}));
+        this.addChild(new GLObj({ anchorPoint: v3(0,0,0), url: 'loco.obj', size3: v3(100, 100, 100), position3: v3(256 + 83 + 50 + 256, 0, 300)}));
+        this.camera.offset = v3(0, -5, 70);
+        this.camera.rotation = v3(0.25, -Math.PI/3, 0);
+        this.camera.target = v3(150, 0, 250);
+        this.camera.fov = 70;
 
         // this.start = new Vector2((256 * 6) * 1.5, 15 * 6 + 90);
 

@@ -1,5 +1,6 @@
 import { CanvasElement } from '../elements/canvas/canvasElement';
 import { DomCanvas } from '../elements/dom/domCanvas';
+import { DomText } from '../elements/dom/domText';
 import { GlElement } from '../elements/gl/glElement';
 import { Game } from '../game';
 
@@ -14,7 +15,15 @@ export type inputEventsData = {
 export class Input {
     private canvas: DomCanvas;
     private game: Game;
-    private locked: boolean;
+    private _locked: boolean;
+    private overlay: DomText;
+    public get locked(): boolean {
+        return this._locked;
+    }
+    public set locked(value: boolean) {
+        this._locked = value;
+        this.overlay.dom.style.display = !value? 'block': 'none';
+    }
     public constructor(game: Game) {
         this.game = game;
         this.canvas = game.renderer;
@@ -23,6 +32,30 @@ export class Input {
         this.canvas.dom.addEventListener('keyup', this.keyUp.bind(this));
         this.canvas.dom.addEventListener('click', this.mouseClick.bind(this));
         this.canvas.dom.addEventListener('wheel', this.scroll.bind(this));
+        this.overlay = new DomText({
+            text: 'Click to start',
+        });
+        this.overlay.dom.setAttribute('style', `
+            transform-origin: left bottom;
+            pointer-events: none;
+            bottom: 0px;
+            left: 0px;
+            user-select: none;
+            z-index: 999;
+            position: absolute;
+            height: 100vh;
+            width: 100vw;
+            background: #000000a6;
+            color: white !important;
+            font-family: monospace;
+            font-weight: bold;
+            font-size: 40px;
+            padding-left: 50px;
+            padding-top: 20px;
+            box-sizing: border-box;
+            text-transform: uppercase;`
+        );
+        document.body.appendChild(this.overlay.dom);
 
         document.addEventListener('pointerlockchange', () => {
             this.locked = (document.pointerLockElement === this.canvas.dom);

@@ -79,6 +79,10 @@ export class DomElement<T extends keyof HTMLElementTagNameMap> extends Element {
         this.position = attr.position || Vector2.zero;
     }
 
+    public ready() {
+        this.build();
+    }
+
     public tick(obj: TickerReturnData): void {
         super.tick(obj);
     }

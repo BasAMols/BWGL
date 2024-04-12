@@ -23,7 +23,7 @@ export abstract class CanvasElement extends Element {
     public abstract type: CanvasElementType;
     public rendererType: "canvas" | "dom" | "gl" = 'canvas';
     public dom!: DomElement<any>;
-    private autoReady: boolean;
+    public autoReady: boolean;
     private hasDom: boolean;
     public composite: GlobalCompositeOperation = 'source-over';
 
@@ -97,9 +97,16 @@ export abstract class CanvasElement extends Element {
             this.dom = new DomElement('div');
         }
 
-        this.autoReady = attr.autoReady || false;
+        this.autoReady = attr.autoReady !== undefined? attr.autoReady: true;
         this.composite = attr.composite || 'source-over';
         this.addControllers(attr.controllers || []);
+    }
+
+    public ready() {
+        this.build();
+        if (this.game.waitCount){
+            this.game.waitCount--;
+        }
     }
 
     public addChild(child: CanvasElement | DomElement<any> | GlElement, above: boolean = false): typeof child {
@@ -128,12 +135,8 @@ export abstract class CanvasElement extends Element {
             }
         }
 
-        if (!this.autoReady) {
-            child.build();
-            if (this.game.waitCount) {
-                this.game.waitCount--;
-            }
-
+        if (child.rendererType === 'dom' || child.autoReady) {
+            child.ready();
         }
 
         // if (child.rendererType === 'canvas' && child.type === 'collider' && (child as Collider).colliderType === 'static' && this.level) {

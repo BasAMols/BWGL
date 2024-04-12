@@ -1,63 +1,139 @@
-import { GLMeshType, GlElementType, buffers } from '../../utils/gl';
-import { TickerReturnData } from '../../utils/ticker';
-import { GlElement, GlElementAttributes } from './glElement';
+import { GlElementType } from '../../utils/gl';
+import { Color, Colors } from '../../utils/colors';
 import { Vector3 } from '../../utils/vector3';
+import { GlElementAttributes } from './glElement';
+import { GLRendable } from './glRendable';
+import { GLTexture } from './glTexture';
 
 export type GlMeshAttributes = GlElementAttributes & {
-
+    colors?: [Color, Color?, Color?, Color?, Color?, Color?],
+    textureUrl?: string,
+    size3: Vector3;
 };
 
-export abstract class GLMesh extends GlElement {
+export class GlMesh extends GLRendable {
+    public texture: GLTexture;
     public type: GlElementType = 'mesh';
-    protected colors: [number, number, number, number][];
-    public abstract meshType: GLMeshType;
-    public abstract verticesCount: number
-    public buffer: buffers;
+    public colors: [number, number, number, number][] = [];
+    public verticesCount = 36;
+    public dimensions = 0 | 1 | 2 | 3;
+    private textureUrl: string;
 
-    constructor(attr: GlMeshAttributes = {}) {
+    constructor(attr: GlMeshAttributes) {
         super(attr);
+        this.dimensions = attr.size3.array.filter((v) => v !== 0).length;
+        this.textureUrl = attr.textureUrl;
+
+        if (attr.colors) this.colors = attr.colors;
+        else if (this.dimensions === 2) this.colors = [Colors.r];
+        else this.colors = [
+            Colors.r,
+            Colors.g,
+            Colors.b,
+            Colors.c,
+            Colors.m,
+            Colors.y
+        ];
+
     }
 
-    public build() {
-        this.buffer = {
-            positionBuffer: this.positionBuffer(this.size3),
-            colorBuffer: this.colorBuffer(this.colors),
-            indices: this.indexBuffer(),
-        };
-        this.GLR.initGlMesh(this);
-    };
-
-    protected abstract colorBuffer(faceColors: [number, number, number, number][]): WebGLBuffer;
-    protected abstract indexBuffer(): WebGLBuffer;
-    protected abstract positionBuffer(size: Vector3): WebGLBuffer;
-
-    
-    getColorBuffer(colors: number[]) {
-        const colorBuffer = this.gl.createBuffer();
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, colorBuffer);
-        this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(colors), this.gl.STATIC_DRAW);
-        return colorBuffer;
+    public build(): void {
+        super.build();
+        this.texture = new GLTexture(this.game, this.textureUrl ? { url: this.textureUrl } : { color: this.colors[0] });
     }
 
-    getIndexBuffer(indices: number[]) {
-        const indexBuffer = this.gl.createBuffer();
-        this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-        this.gl.bufferData(
-            this.gl.ELEMENT_ARRAY_BUFFER,
-            new Uint16Array(indices),
-            this.gl.STATIC_DRAW,
-        );
-        return indexBuffer;
+    protected colorBuffer() {
+        while (this.colors.length < this.verticesCount / 3) {
+            this.colors.push(this.colors[0]);
+        }
+
+        var colors: number[] = [];
+        this.colors.forEach((f) => {
+            colors = colors.concat(f, f, f, f);
+        });
+
+        return this.getColorBuffer(colors);
     }
 
-    getPositionBuffer(positions: number[]) {
-        const positionBuffer = this.gl.createBuffer();
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
-        this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(positions), this.gl.STATIC_DRAW);
-        return positionBuffer;
+    protected indexBuffer() {
+        let b: number[] = [
+            0, 1, 2, 0, 2, 3,
+            4, 5, 6, 4, 6, 7,
+            8, 9, 10, 8, 10, 11,
+            12, 13, 14, 12, 14, 15,
+            16, 17, 18, 16, 18, 19,
+            20, 21, 22, 20, 22, 23
+        ];
+
+        if (this.dimensions === 2) {
+            this.verticesCount = 6;
+            b = b.slice(0, 6);
+        }
+
+        return this.getIndexBuffer(b);
     }
 
-    public tick(obj: TickerReturnData) {
-        super.tick(obj);
+    protected positionBuffer(size: Vector3) {
+        let b = [
+            0.0, 0.0, -1.0,
+            1.0, 0.0, -1.0,
+            1.0, 1.0, -1.0,
+            0.0, 1.0, -1.0,
+
+            0.0, 0.0, -0.0,
+            0.0, 1.0, -0.0,
+            1.0, 1.0, -0.0,
+            1.0, 0.0, -0.0,
+
+            0.0, 1.0, -0.0,
+            0.0, 1.0, -1.0,
+            1.0, 1.0, -1.0,
+            1.0, 1.0, -0.0,
+
+            0.0, 0.0, -0.0,
+            1.0, 0.0, -0.0,
+            1.0, 0.0, -1.0,
+            0.0, 0.0, -1.0,
+
+            1.0, 0.0, -0.0,
+            1.0, 1.0, -0.0,
+            1.0, 1.0, -1.0,
+            1.0, 0.0, -1.0,
+
+            0.0, 0.0, -0.0,
+            0.0, 0.0, -1.0,
+            0.0, 1.0, -1.0,
+            0.0, 1.0, -0.0
+
+        ];
+
+        if (this.dimensions === 2) {
+            if (this.depth === 0) b = b.slice(0, 24);
+            else if (this.width === 0) b = b.slice(60, 72);
+            else if (this.height === 0) b = b.slice(36, 48);
+        }
+        return this.getPositionBuffer(b.map((n, i) => n * size.array[(i % 3)]));
     }
+
+    protected textureBuffer(size: Vector3): WebGLBuffer {
+        let b = [
+            0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0,
+            0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0,
+            0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0,
+            0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0,
+            0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0,
+            0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0,
+        ];
+
+        if (this.dimensions === 2) {
+            if (this.depth === 0) b = b.slice(0, 8);
+            else if (this.width === 0) b = b.slice(40, 48);
+            else if (this.height === 0) b = b.slice(24, 32);
+        }
+
+        return this.getTextureBuffer(b);
+    }
+
+
+
 }

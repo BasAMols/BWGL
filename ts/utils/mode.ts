@@ -35,7 +35,7 @@ export abstract class Mode extends CanvasWrapper {
         'a': 'left',
         's': 'down',
         'd': 'right',
-        'space': 'space',
+        ' ': 'space',
         'ArrowUp': 'up',
         'ArrowLeft': 'left',
         'ArrowDown': 'down',

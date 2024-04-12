@@ -12,7 +12,6 @@ export abstract class Level extends CanvasWrapper{
     abstract start: Vector2;
     abstract background: CanvasSquare;
     public relativity: ElementRelativity = 'anchor';
-    public ready = false;
     public colliders: Collider[] = [];
     public get center(): Vector3 {
         return Vector3.from2(this.mode.size.scale(0.5).subtract(this.position), this.depth);

@@ -27,7 +27,7 @@ export class CanvasGrid extends CanvasElement {
 
     public factor: number;
     public json: string;
-    public ready: Boolean = false;
+    public readied: Boolean = false;
     private spritesData: CanvasPrepSprites;
     private paralax: number;
     condition: (position: Vector2, size: Vector2) => void;

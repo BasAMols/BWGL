@@ -17,7 +17,7 @@ export class DomCanvas extends DomElement<'canvas'> {
     public domGl: HTMLCanvasElement;
     public tickerData: TickerReturnData;
 
-    constructor(game: Game) {
+    constructor(public game: Game) {
         super('canvas');
         this.dom = document.createElement('canvas');
         this.dom.style.position = 'absolute';
@@ -26,7 +26,7 @@ export class DomCanvas extends DomElement<'canvas'> {
         this.dom.style.bottom = '0px';
         this.ctx = this.dom.getContext('2d');
         this.ctx.imageSmoothingEnabled = false;
-        
+
         this.domGl = document.createElement('canvas');
         this.domGl.style.position = 'absolute';
         this.domGl.style.pointerEvents = 'none';
@@ -40,6 +40,7 @@ export class DomCanvas extends DomElement<'canvas'> {
 
         this.game.getEvent('resize').subscribe(String(Math.random()), (size: Vector2) => {
             this.size = size;
+            this.game?.GLR?.resize();
         });
         this.game.resize();
 
@@ -103,6 +104,7 @@ export class DomCanvas extends DomElement<'canvas'> {
         this.ctx.translate(0, -this.height);
 
         Object.values(this.game.modes).filter((child) => child.active).forEach((mode) => mode.tick(obj));
+
         Object.values(this.game.modes).filter((child) => child.visible && child.active).forEach((mode) => {
             mode.preRender(this.ctx);
             mode.postRender(this.ctx);

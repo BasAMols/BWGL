@@ -2,8 +2,8 @@ import { mat4, vec4 } from 'gl-matrix';
 import { Game } from '../game';
 import { initShaderProgram } from './glInit';
 import { TickerReturnData } from './ticker';
-import { GLMesh } from '../elements/gl/glMesh';
 import { Vector3 } from './vector3';
+import { GLRendable } from '../elements/gl/glRendable';
 
 export interface bufferDataInitilizers {
     indices: WebGLBuffer;
@@ -15,13 +15,13 @@ export interface buffers {
     indices: WebGLBuffer;
     positionBuffer: WebGLBuffer;
     colorBuffer: WebGLBuffer;
+    textureCoord: WebGLBuffer,
 }
 
-export type GlElementType = 'camera' | 'light' | 'mesh' | 'collider' | 'group';
-export type GLMeshType = 'cube' | 'tetrahedron' | 'plane';
+export type GlElementType = 'camera' | 'obj' | 'mesh' | 'collider' | 'group';
 
 export interface objectData {
-    meshType: GLMeshType,
+    meshType: GlElementType,
     size3?: Vector3,
     position3: Vector3,
     buffer?: buffers;
@@ -29,7 +29,7 @@ export interface objectData {
 }
 
 export class GLR {
-    private objects: (GLMesh)[] = [];
+    private objects: (GLRendable)[] = [];
     public gl: WebGLRenderingContext;
     private frameData: {
         projectionMatrix?: mat4;
@@ -40,10 +40,12 @@ export class GLR {
         attribLocations: {
             vertexPosition: number;
             vertexColor: number;
+            textureCoord: number,
         };
         uniformLocations: {
             projectionMatrix: WebGLUniformLocation;
             modelViewMatrix: WebGLUniformLocation;
+            uSampler: WebGLUniformLocation;
         };
     };
 
@@ -54,10 +56,13 @@ export class GLR {
     constructor(public game: Game) {
         this.gl = this.game.renderer.domGl.getContext('webgl');
         this.programInfo = initShaderProgram(this.gl);
-
     }
 
-    initGlMesh(mesh: GLMesh) {
+    public resize() {
+        this.gl.viewport(0, 0, (this.gl.canvas as HTMLCanvasElement).width, (this.gl.canvas as HTMLCanvasElement).height);
+    }
+
+    initGlElement(mesh: GLRendable) {
         this.objects.push(mesh);
     }
 
@@ -67,7 +72,7 @@ export class GLR {
 
         const aspect = (this.gl.canvas as HTMLCanvasElement).clientWidth / (this.gl.canvas as HTMLCanvasElement).clientHeight;
         const zNear = 1;
-        const zFar = 2000;
+        const zFar = 10000;
         const projectionMatrix = mat4.create();
         const modelViewMatrix = mat4.create();
         mat4.perspective(projectionMatrix, fieldOfView, aspect, zNear, zFar);
@@ -115,21 +120,43 @@ export class GLR {
     }
 
 
-    drawObject(mesh: GLMesh) {
+    drawObject(mesh: GLRendable) {
 
 
         this.setPositionAttribute(mesh);
-        this.setColorAttribute(mesh);
+        this.setTextureAttribute(mesh);
 
         this.gl.useProgram(this.programInfo.program);
         this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, mesh.buffer.indices);
 
         let currentModelview = mat4.clone(this.frameData.modelViewMatrix);
-        
+
+
         mat4.translate(
             currentModelview,
             currentModelview,
-            mesh.position3.multiply(new Vector3(1,1,-1)).vec,
+            mesh.position3.multiply(new Vector3(1, 1, -1)).vec,
+        );
+
+        mat4.translate(
+            currentModelview,
+            currentModelview,
+            mesh.anchorPoint.multiply(1,1,-1).vec,
+        );
+
+        mesh.rotation.multiply(new Vector3(1, -1, -1)).forEach((r, i) => {
+            mat4.rotate(
+                currentModelview,
+                currentModelview,
+                r,
+                [Number(i === 0), Number(i === 1), Number(i === 2)],
+            );
+        });
+
+        mat4.translate(
+            currentModelview,
+            currentModelview,
+            mesh.anchorPoint.multiply(-1,-1,1).vec,
         );
 
         this.gl.uniformMatrix4fv(
@@ -143,6 +170,12 @@ export class GLR {
             currentModelview,
         );
 
+        this.gl.activeTexture(this.gl.TEXTURE0);
+        this.gl.bindTexture(this.gl.TEXTURE_2D, mesh.texture.texture);
+        this.gl.uniform1i(this.programInfo.uniformLocations.uSampler, 0);
+        this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
+
+
         this.gl.drawElements(
             this.gl.TRIANGLES,
             mesh.verticesCount,
@@ -151,7 +184,7 @@ export class GLR {
         );
     }
 
-    setPositionAttribute(mesh: GLMesh) {
+    setPositionAttribute(mesh: GLRendable) {
         const numComponents = 3;
         const type = this.gl.FLOAT;
         const normalize = false;
@@ -169,7 +202,7 @@ export class GLR {
         this.gl.enableVertexAttribArray(this.programInfo.attribLocations.vertexPosition);
     }
 
-    setColorAttribute(mesh: GLMesh) {
+    setColorAttribute(mesh: GLRendable) {
         const numComponents = 4;
         const type = this.gl.FLOAT;
         const normalize = false;
@@ -185,6 +218,24 @@ export class GLR {
             offset,
         );
         this.gl.enableVertexAttribArray(this.programInfo.attribLocations.vertexColor);
+    }
+
+    setTextureAttribute(mesh: GLRendable) {
+        const num = 2; // every coordinate composed of 2 values
+        const type = this.gl.FLOAT; // the data in the buffer is 32-bit float
+        const normalize = false; // don't normalize
+        const stride = 0; // how many bytes to get from one set to the next
+        const offset = 0; // how many bytes inside the buffer to start from
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, mesh.buffer.textureCoord);
+        this.gl.vertexAttribPointer(
+            this.programInfo.attribLocations.textureCoord,
+            num,
+            type,
+            normalize,
+            stride,
+            offset,
+        );
+        this.gl.enableVertexAttribArray(this.programInfo.attribLocations.textureCoord);
     }
 
 }

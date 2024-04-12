@@ -1,5 +1,5 @@
 import { CanvasAnimation } from '../../../elements/canvas/canvasAnimation';
-import { GlCube } from '../../../elements/gl/glCube';
+import { GlMesh } from '../../../elements/gl/glMesh';
 import { Character } from '../../../utils/character';
 import { ElementRelativity } from '../../../utils/elementPosition';
 import { TickerReturnData } from '../../../utils/ticker';
@@ -11,7 +11,7 @@ export class SideCharacter extends Character {
     public animations: Record<string, CanvasAnimation> = {};
     public direction: number = 1;
     public phase: 'idle' | 'walk' = 'idle';
-    public mesh: GlCube
+    public mesh: GlMesh
 
     constructor({
         position3 = Vector3.f(0),
@@ -30,13 +30,12 @@ export class SideCharacter extends Character {
 
     build() {
         this.registerControllers(this)
-        this.addChild(this.mesh = new GlCube({ size3: this.size3, position3: this.position3 }));
+        this.addChild(this.mesh = new GlMesh({ anchorPoint: this.size3.multiply(0.5,0,0.5), size3: this.size3, position3: this.position3, colors: [[0.3,0.3,0.3, 1], [0.3,0.3,0.3, 1], [0.4,0.4,0.4, 1], [0.3,0.3,0.3, 1], [0.2,0.2,0.2, 1], [0.2,0.2,0.2, 1]] }));
     }
     public tick(o: TickerReturnData) {
         super.tick(o);
-        
         this.mesh.position3 = this.position3.clone();
-        this.camera.target = this.mesh.position3.clone().add(this.size3.multiply(0.5,-0.5,0.5));
-
+        this.mesh.rotation = this.rotation.clone();
+        this.camera.target = this.mesh.position3.clone().add(this.size3.multiply(0.5,0.5,0.5)).multiply(1,-1,1);
     }
 }

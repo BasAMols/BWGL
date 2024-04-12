@@ -12,6 +12,24 @@ export function v3(n: [number, number?, number?] | number, y?: number, z?: numbe
 }
 
 export class Vector3 {
+	public get pitch(): number {
+		return this.x;
+	}
+	public set pitch(value: number) {
+		this.x = value;
+	}
+	public get yaw(): number {
+		return this.y;
+	}
+	public set yaw(value: number) {
+		this.y = value;
+	}
+	public get roll(): number {
+		return this.z;
+	}
+	public set roll(value: number) {
+		this.z = value;
+	}
 	public get x(): number {
 		return this.vec[0];
 	}

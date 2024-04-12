@@ -1,31 +1,95 @@
-import { GLMeshType } from '../../utils/gl';
-import { GLMesh, GlMeshAttributes } from './glMesh';
-import { colors } from '../../utils/colors';
+import { Color } from '../../utils/colors';
+import { GlElementType } from '../../utils/gl';
 import { Vector3 } from '../../utils/vector3';
+import { GlElementAttributes } from './glElement';
+import { GLRendable } from './glRendable';
+import { GLTexture } from './glTexture';
 
-export type glObjAttributes = GlMeshAttributes & {
-    url?: string
+export type GLobjAttributes = GlElementAttributes & {
+    url?: string;
 };
 
-export class glObj extends GLMesh {
-    meshType: GLMeshType = 'cube';
-    verticesCount = 36;
+export class GLobj extends GLRendable {
+    public texture: GLTexture;
+    public type: GlElementType = 'mesh';
+    public verticesCount: number = 0;
+    private points: number[] = [];
+    private faces: number[] = [];
+    private faceColors: number[] = [];
+    private matIndex: string[] = [];
+    private mats: Record<string, string[]> = {};
 
-    constructor(attr: glObjAttributes = {}) {
-        super({autoReady: false});
-        const OBJFile = require('obj-file-parser');
-        this.loadFile(attr.url).then((value) => {
-            console.log(value);
-        })
-        // this.obj = new OBJFile(fileContents);
-        this.colors = [
-            colors.r,
-            colors.g,
-            colors.b,
-            colors.c,
-            colors.m,
-            colors.y,
-        ];
+    constructor(attr: GLobjAttributes = {}) {
+        super({ ...attr, ...{ autoReady: false } });
+
+        this.loadFile(`${window.location.href}/obj/${attr.url}`)
+            .then(this.parseMat.bind(this))
+            .then(this.parse.bind(this))
+            .then(() => {
+                this.ready();
+            });
+
+    }
+
+    public build(): void {
+        super.build();
+    }
+
+    private async parseMat(str: string) {
+        if (/mtllib/.test(str)) {
+            await this.loadFile(`${window.location.href}obj/loco.mtl`)
+                .then((v) => {
+                    v.split('newmtl ').slice(1).forEach((s: string) => {
+                        const l = s.split('\n');
+                        this.mats[l.shift()] = l;
+                    });
+                });
+        
+            return str;
+
+        } else {
+            return str;
+        }
+    }
+
+    private async parse(str: string) {
+        let mI: string;
+
+        str.split("\n").forEach(async (line) => {
+            let command: string;
+
+            line.split(/(?: |\/)/).forEach(async (word, i, ar) => {
+                word = word.trim();
+
+                if (/mtllib/.test(word)) {
+                    await this.loadFile(`${window.location.href}/obj/${ar[i + 1]}`)
+                        .then(this.parseMat.bind(this));
+                } else if (/usemtl/.test(word)) {
+                    mI = ar[i + 1];
+                } else if (/(?:v|f)/.test(word)) {
+                    command = word;
+                    if (mI && command === 'f') {
+                        this.matIndex.push(mI);
+                    }
+                } else if (/([0-9-])/.test(word)) {
+                    if (command === 'v') {
+                        this.points.push(Number(word));
+                        return;
+                    }
+                    if (command === 'f') {
+                        this.faces.push(Number(word) - 1);
+                        return;
+                    }
+                }
+            });
+        });
+
+        const counts: Record<string, number> = {};
+        this.matIndex.forEach(function (x) { counts[x] = (counts[x] || 0) + 1; });
+
+        this.faces = this.faces.filter((v, i) => i % 3 === 0);
+        this.verticesCount = this.faces.length;
+
     }
 
     public async loadFile(url: string): Promise<any> {
@@ -35,62 +99,37 @@ export class glObj extends GLMesh {
     }
 
     protected colorBuffer() {
-        var colors: number[] = [];
-        this.colors.forEach((f) => {
-            colors = colors.concat(f, f, f, f);
-        });
+        if (Object.values(this.mats).length) {
+            var colors: number[] = [];
+            this.matIndex.forEach((n) => {
+                const m = this.mats[n][2].slice(3).split(' ').map(Number);
+                colors.push(...m, 1);
+                colors.push(...m, 1);
+                colors.push(...m, 1);
+                colors.push(...m, 1);
+            });
 
-        return this.getColorBuffer(colors);
+            return this.getColorBuffer(colors);
+        }
+        return this.getColorBuffer(this.faceColors);
+
     }
 
     protected indexBuffer() {
-        return this.getIndexBuffer([
-            0, 1, 2, 0, 2, 3,
-            4, 5, 6, 4, 6, 7,
-            8, 9, 10, 8, 10, 11,
-            12, 13, 14, 12, 14, 15,
-            16, 17, 18, 16, 18, 19,
-            20, 21, 22, 20, 22, 23,
-        ]);
+        return this.getIndexBuffer(this.faces);
     }
 
     protected positionBuffer(size: Vector3) {
-        return this.getPositionBuffer([
-            // Front face
-            -0.5, -0.5, +0.5,
-            +0.5, -0.5, +0.5,
-            +0.5, +0.5, +0.5,
-            -0.5, +0.5, +0.5,
+        return this.getPositionBuffer(this.points.map((n, i) => n * size.array[i % 3]));
+    }
 
-            // Back face
-            -0.5, -0.5, -0.5,
-            -0.5, +0.5, -0.5,
-            +0.5, +0.5, -0.5,
-            +0.5, -0.5, -0.5,
-
-            // Top face
-            -0.5, +0.5, -0.5,
-            -0.5, +0.5, +0.5,
-            +0.5, +0.5, +0.5,
-            +0.5, +0.5, -0.5,
-
-            // Bottom face
-            -0.5, -0.5, -0.5,
-            +0.5, -0.5, -0.5,
-            +0.5, -0.5, +0.5,
-            -0.5, -0.5, +0.5,
-
-            // Right face
-            +0.5, -0.5, -0.5,
-            +0.5, +0.5, -0.5,
-            +0.5, +0.5, +0.5,
-            +0.5, -0.5, +0.5,
-
-            // Left face
-            -0.5, -0.5, -0.5,
-            -0.5, -0.5, +0.5,
-            -0.5, +0.5, +0.5,
-            -0.5, +0.5, -0.5
-        ].map((n, i) => n * size.array[i % 3]));
+    protected textureBuffer(size: Vector3) {
+        if (Object.values(this.mats).length) {
+            this.texture = new GLTexture(this.game, {color: Object.values(this.mats)[0][2].slice(3).split(' ').map(Number) as Color});
+        } else {
+            this.texture = new GLTexture(this.game, {});
+        }
+        
+        return this.getTextureBuffer(this.points.map((n, i) => n * size.array[i % 3]));
     }
 }

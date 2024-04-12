@@ -6,8 +6,8 @@ import { v2 } from '../../../utils/vector2';
 import { Vector3, v3 } from '../../../utils/vector3';
 
 export class glController extends CanvasController {
-    private speed = 1;
-    private jumpHeight = 16;
+    private speed = 0.8;
+    private jumpHeight = 2;
     private velocity: Vector3 = Vector3.f(0);
     public parent: Character;
     public jumping: boolean = false;
@@ -15,14 +15,13 @@ export class glController extends CanvasController {
     jumpVelocity: number;
 
     keyDown(e: KeyboardEvent): void {
-        if (!this.jumping && this.mode.input.up) {
+        if (!this.jumping && this.mode.input.space) {
             this.jumpVelocity = 1;
         }
     }
 
     jump(m: number) {
         if (this.jumpDuration !== 0 || !this.jumping) {
-
             this.jumping = true;
             this.velocity.y += this.jumpHeight;
         }
@@ -37,7 +36,7 @@ export class glController extends CanvasController {
     mouseMove(e: MouseEvent): void {
         const r = v2(e.movementX, e.movementY).scale(0.005);
         this.camera.rotation = v3(
-            Util.clamp(this.camera.rotation.x + r.y, -0.2,Math.PI/2),
+            Util.clamp(this.camera.rotation.x + r.y, -0.1, Math.PI / 2),
             this.camera.rotation.y + r.x,
             this.camera.rotation.z
         );
@@ -46,20 +45,12 @@ export class glController extends CanvasController {
 
     scroll(e: WheelEvent): void {
         this.camera.offset.z = Util.clamp(this.camera.offset.z + e.deltaY * 0.1, 10, 300);
-
-        // const r = v2(e.movementX, e.movementY).scale(0.005);
-        // this.camera.rotation = this.camera.rotation.add(v3(
-        //     r.y,
-        //     r.x,
-        //     0
-        // ))
     }
 
     public tick(obj: TickerReturnData) {
         super.tick(obj);
 
         const m = 1 / obj.frameRate * 144;
-
         if (this.mode.input.space) {
             this.jump(m);
         } else {
@@ -68,38 +59,51 @@ export class glController extends CanvasController {
         // this.velocity.x = Util.to0(this.velocity.x * 0.9*m + ((this.mode.input.right ? 1 : (this.mode.input.left ? -1 : 0))*0.6 ), 0.1);
         this.velocity.x = (this.mode.input.right ? 1 : (this.mode.input.left ? -1 : 0)) * this.speed;
         this.velocity.z = (this.mode.input.up ? 1 : (this.mode.input.down ? -1 : 0)) * this.speed;
-        // this.velocity.y = Util.to0(this.velocity.y - (9.8 * 0.03)*m, 0.0001);
+        this.velocity.y = Util.to0(this.velocity.y - (9.8 * 0.003) * m, 0.0001);
 
-        const frameScaledVelocity = this.velocity.scale(m);
+        if (this.velocity.x || this.velocity.y || this.velocity.z) {
 
+            const frameScaledVelocity = this.velocity.scale(m);
 
-        // const r = Collisions.check(this.level.colliders, this.parent, frameScaledVelocity);
+            // const r = Collisions.check(this.level.colliders, this.parent, frameScaledVelocity);
 
-        // if (r.length !== 0) {
-        //     r.sort(function (a, b) {
-        //         return Math.abs(a[1]) - Math.abs(b[1]);
-        //     });
-        //     if (r.find((a) => a[0] === "x")) {
-        //         frameScaledVelocity.x = 0;
-        //         this.velocity.x = 0;
-        //         frameScaledVelocity.x = r.find((a) => a[0] === "x")[1];
-        //     }
-        //     if (r.find((a) => a[0] === "y")) {
-        //         this.jumping = false;
-        //         frameScaledVelocity.y = 0;
-        //         this.velocity.y = 0;
-        //         frameScaledVelocity.y = r.find((a) => a[0] === "y")[1];
-        //     }
-        // }
+            // if (r.length !== 0) {
+            //     r.sort(function (a, b) {
+            //         return Math.abs(a[1]) - Math.abs(b[1]);
+            //     });
+            //     if (r.find((a) => a[0] === "x")) {
+            //         frameScaledVelocity.x = 0;
+            //         this.velocity.x = 0;
+            //         frameScaledVelocity.x = r.find((a) => a[0] === "x")[1];
+            //     }
+            //     if (r.find((a) => a[0] === "y")) {
+            //         this.jumping = false;
+            //         frameScaledVelocity.y = 0;
+            //         this.velocity.y = 0;
+            //         frameScaledVelocity.y = r.find((a) => a[0] === "y")[1];
+            //     }
+            // }
 
-        const rotated = v2(frameScaledVelocity.x, frameScaledVelocity.z).rotate(-this.camera.rotation.y);
-        this.parent.position3 = this.parent.position3.add(v3(
-            rotated.x,
-            frameScaledVelocity.y,
-            rotated.y,
-        ));
-        // this.parent.position3 = v3(200,0,100)
+            const rotated = v2(frameScaledVelocity.x, frameScaledVelocity.z).rotate(-this.camera.rotation.y);
+            const movement = v3(
+                rotated.x,
+                frameScaledVelocity.y,
+                rotated.y,
+            );
+            const p = this.parent.position3.add(movement);
 
+            if (p.y < 0) {
+                this.velocity.y = 0;
+                p.y = 0;
+                if (this.jumping) {
+                    this.land();
+                }
+            }
+            this.parent.position3 = p;
+            if (movement.x || movement.z) {
+                this.parent.rotation = this.camera.rotation.multiply(0,1,0);
+            }
+        }
 
     }
 }

@@ -20,9 +20,8 @@ export class Game extends CanvasWrapper {
     public game = this;
     public ctx: CanvasRenderingContext2D;
     public input: Input;
-    public ready: boolean = false;
+    public readyToStart: boolean = false;
     private _waitCount: number = 0;
-    private readyToStart: boolean = false;
     private started: boolean = false;
     private loader: Loader;
     public total: number = 0;

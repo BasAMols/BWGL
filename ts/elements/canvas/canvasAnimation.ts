@@ -17,7 +17,7 @@ export type CanvasAnimationAttributes = CanvasElementAttributes & {
 export class CanvasAnimation extends CanvasElement {
     public type: CanvasElementType = 'animation';
     public relativity: ElementRelativity = 'anchor';
-    public ready: boolean = false;
+    public readied: boolean = false;
     private prepped: PrepAnimation | PrepSpritesheet;
     public frame: number = 0;
     public frameRate: number;

@@ -43,7 +43,7 @@ export class CanvasPrepSprites extends CanvasController{
     public gridWidth: number;
     public gridHeight: number;
     public jsons: string[];
-    public ready: Boolean = false;
+    public readied: Boolean = false;
     private readyCallback: () => void;
     private spritesLoaded: number = 0;
     private spritesMax: number = 0;
@@ -76,7 +76,7 @@ export class CanvasPrepSprites extends CanvasController{
 
     private checkReady() {
         if (this.spritesLoaded === this.spritesMax){
-            this.ready = true;
+            this.readied = true;
             this.game.waitCount--
             this.readyCallback();
         }
