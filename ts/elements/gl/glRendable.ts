@@ -46,7 +46,7 @@ export abstract class GLRendable extends GlElement {
         this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
         this.gl.bufferData(
             this.gl.ELEMENT_ARRAY_BUFFER,
-            new Uint16Array(indices),
+            new Uint32Array(indices),
             this.gl.STATIC_DRAW,
         );
         return indexBuffer;

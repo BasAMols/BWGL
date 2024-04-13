@@ -71,13 +71,16 @@ export class World extends Level {
         }));
 
         // this.addChild(new GLContainer({ size3: this.size3, position3: v3(0,0,0) }));
-        this.addChild(new GlMesh({ size3: v3(5000, 5000, 5000), position3: v3(-2500, -1, -2500), colors: [[0.15, 0.15, 0.4, 1], [0.15, 0.15, 0.4, 1], [0.15, 0.15, 0.4, 1], [0.1, 0.2, 0.1, 1], [0.15, 0.15, 0.4, 1], [0.15, 0.15, 0.4, 1]] }));
+        // this.addChild(new GlMesh({ size3: v3(-5000, -1000, -5000), position3: v3(2500, 999, 2500), colors: [[0.15, 0.15, 0.4, 1], [0.15, 0.15, 0.4, 1], [0.15, 0.15, 0.4, 1], [0.1, 0.2, 0.1, 1], [0.15, 0.15, 0.4, 1], [0.15, 0.15, 0.4, 1]] }));
+        this.addChild(new GlMesh({ size3: v3(5000, 0, 5000), position3: v3(-2500, -0.1, -2500), colors: [[0.15, 0.15, 0.4, 1], [0.15, 0.15, 0.4, 1], [0.15, 0.15, 0.4, 1], [0.1, 0.2, 0.1, 1], [0.15, 0.15, 0.4, 1], [0.15, 0.15, 0.4, 1]] }));
         this.addChild(new GlMesh({ size3: v3(5000, 0, 52), position3: v3(-2500, 0, 300), colors: [Colors.w] }));
-        this.addChild(new GLObj({ url: 'carriage.obj', size3: v3(100, 100, 100), position3: v3(0 + 50, 0, 300) }));
-        this.addChild(new GLObj({ url: 'carriage.obj', size3: v3(100, 100, 100), position3: v3(0 + 50 + 256, 0, 300) }));
-        this.addChild(new GLObj({ url: 'coal.obj', size3: v3(100, 100, 100), position3: v3(256 + 50 + 256, 0, 302) }));
+        this.addChild(new GLObj({ url: 'carriage.obj', size3: v3(1, 1, 1), position3: v3(0 + 50, 0, 300) }));
+        this.addChild(new GLObj({ url: 'carriage.obj', size3: v3(1, 1, 1), position3: v3(0 + 50 + 256, 0, 300) }));
+        this.addChild(new GLObj({ url: 'coal.obj', size3: v3(1, 1, 1), position3: v3(256 + 50 + 256, 0, 302) }));
         this.addChild(new GlMesh({ size3: v3(176, 65, 0), position3: v3(256 + 83 + 50 + 256, 0, 395), colors: [Colors.k], textureUrl: 'test.png' }));
         this.addChild(new GLObj({ anchorPoint: v3(0, 0, 0), url: 'loco.obj', size3: v3(100, 100, 100), position3: v3(256 + 82 + 50 + 256, 0, 300) }));
+        this.addChild(new GLObj({ anchorPoint: v3(0, 0, 0), url: 'GearPump3.obj', size3: v3(10, 10, 10), position3: v3(600, 60, 200) }));
+        this.addChild(new GLObj({ anchorPoint: v3(0, 0, 0), url: 'testobj.obj', size3: v3(10, 10, 10), position3: v3(800, 10, 200) }));
         this.camera.offset = v3(0, -5, 70);
         this.camera.rotation = v3(0.25, -Math.PI / 3, 0);
         this.camera.target = v3(150, 0, 250);

@@ -44,22 +44,22 @@ export class GlMesh extends GLRendable {
 
     public build(): void {
         super.build();
-        this.texture = new GLTexture(this.game, this.textureUrl ? { url: this.textureUrl } : { color: this.colors[0] });
+        this.texture = new GLTexture(this.game, this.textureUrl ? { url: this.textureUrl } : { color: this.colors });
     }
 
     protected indexBuffer() {
         let b: number[] = [
-            0, 1, 2, 
+            0, 1, 2,
             0, 2, 3,
-            4, 5, 6, 
+            4, 5, 6,
             4, 6, 7,
-            8, 9, 10, 
+            8, 9, 10,
             8, 10, 11,
-            12, 13, 14, 
+            12, 13, 14,
             12, 14, 15,
-            16, 17, 18, 
+            16, 17, 18,
             16, 18, 19,
-            20, 21, 22, 
+            20, 21, 22,
             20, 22, 23
         ].slice(0, this.faceCount * 6);
 
@@ -70,39 +70,37 @@ export class GlMesh extends GLRendable {
         let b = [
             0.0, 0.0, -1.0,
             1.0, 0.0, -1.0,
+
             1.0, 1.0, -1.0,
             0.0, 1.0, -1.0,
+
             0.0, 0.0, -0.0,
             0.0, 1.0, -0.0,
-            
+
             1.0, 1.0, -0.0,
             1.0, 0.0, -0.0,
 
-
             0.0, 1.0, -0.0,
             0.0, 1.0, -1.0,
-            
+
             1.0, 1.0, -1.0,
             1.0, 1.0, -0.0,
 
-
             0.0, 0.0, -0.0,
             1.0, 0.0, -0.0,
-            
+
             1.0, 0.0, -1.0,
             0.0, 0.0, -1.0,
 
-
             1.0, 0.0, -0.0,
             1.0, 1.0, -0.0,
-            
+
             1.0, 1.0, -1.0,
             1.0, 0.0, -1.0,
 
-            
             0.0, 0.0, -0.0,
             0.0, 0.0, -1.0,
-            
+
             0.0, 1.0, -1.0,
             0.0, 1.0, -0.0
 
@@ -118,9 +116,9 @@ export class GlMesh extends GLRendable {
     protected normalBuffer() {
         let b = [
             // Front
-            0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0,
-            // Back
             0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0,
+            // Back
+            0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0,
             // Top
             0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0,
             // Bottom
@@ -133,7 +131,7 @@ export class GlMesh extends GLRendable {
         ];
 
         if (this.dimensions === 2) {
-            if (this.depth === 0) b = b.slice(0, 24);
+            if (this.depth === 0) b = b.slice(12, 24);
             else if (this.width === 0) b = b.slice(60, 72);
             else if (this.height === 0) b = b.slice(36, 48);
         }
@@ -141,24 +139,40 @@ export class GlMesh extends GLRendable {
     }
 
     protected textureBuffer(size: Vector3): WebGLBuffer {
-        let b = [
-            0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0,
-            0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0,
-            0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0,
-            0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0,
-            0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0,
-            0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0,
-        ];
-
-        if (this.dimensions === 2) {
-            if (this.depth === 0) b = b.slice(0, 8);
-            else if (this.width === 0) b = b.slice(40, 48);
-            else if (this.height === 0) b = b.slice(24, 32);
+        let b: number[] = [];
+        if (this.textureUrl) {
+            b = [
+                0.0, 0.0, 1.0, 0.0,
+                1.0, 1.0, 0.0, 1.0,
+                0.0, 0.0, 1.0, 0.0,
+                1.0, 1.0, 0.0, 1.0,
+                0.0, 0.0, 1.0, 0.0,
+                1.0, 1.0, 0.0, 1.0,
+                0.0, 0.0, 1.0, 0.0,
+                1.0, 1.0, 0.0, 1.0,
+                0.0, 0.0, 1.0, 0.0,
+                1.0, 1.0, 0.0, 1.0,
+                0.0, 0.0, 1.0, 0.0,
+                1.0, 1.0, 0.0, 1.0,
+            ];
+            if (this.dimensions === 2) {
+                if (this.depth === 0) b = b.slice(0, 8);
+                else if (this.width === 0) b = b.slice(40, 48);
+                else if (this.height === 0) b = b.slice(24, 32);
+            }
+        } else {
+            const inc = 1 / this.faceCount;
+            
+            for (let index = 0; index < this.faceCount; index++) {
+                b.push(
+                    index * inc + (inc / 3), 0,
+                    index * inc + (inc / 3), 1,
+                    (index + 1) * inc - (inc / 3), 0,
+                    (index + 1) * inc - (inc / 3), 0
+                );
+            }
         }
-
         return this.getTextureBuffer(b);
+
     }
-
-
-
 }

@@ -54,7 +54,7 @@ function initIndexBuffer(gl: WebGLRenderingContext) {
     // Now send the element array to GL
     gl.bufferData(
         gl.ELEMENT_ARRAY_BUFFER,
-        new Uint16Array(indices),
+        new Uint32Array(indices),
         gl.STATIC_DRAW,
     );
 

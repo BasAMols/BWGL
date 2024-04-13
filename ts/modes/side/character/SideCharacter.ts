@@ -30,7 +30,7 @@ export class SideCharacter extends Character {
 
     build() {
         this.registerControllers(this)
-        this.addChild(this.mesh = new GlMesh({ size3: this.size3, colors: [[0.3,0.3,0.3, 1], [0.3,0.3,0.3, 1], [0.4,0.4,0.4, 1], [0.3,0.3,0.3, 1], [0.2,0.2,0.2, 1], [0.2,0.2,0.2, 1]] }));
+        this.addChild(this.mesh = new GlMesh({ size3: this.size3, colors: [[1,0.3,0.3, 1], [0.3,1,0.3, 1], [0.4,0.4,1, 1], [1,1,0.3, 1], [0.2,1,1, 1], [1,0.2,1, 1]] }));
     }
     public tick(o: TickerReturnData) {
         super.tick(o);

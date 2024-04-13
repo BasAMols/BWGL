@@ -33,7 +33,7 @@ export class Input {
         this.canvas.dom.addEventListener('click', this.mouseClick.bind(this));
         this.canvas.dom.addEventListener('wheel', this.scroll.bind(this));
         this.overlay = new DomText({
-            text: 'Click to start',
+            text: 'Pauzed',
         });
         this.overlay.dom.setAttribute('style', `
             transform-origin: left bottom;
@@ -45,7 +45,6 @@ export class Input {
             position: absolute;
             height: 100vh;
             width: 100vw;
-            background: #000000a6;
             color: white !important;
             font-family: monospace;
             font-weight: bold;

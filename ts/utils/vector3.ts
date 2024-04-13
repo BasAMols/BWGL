@@ -1,5 +1,5 @@
 import { vec3 } from 'gl-matrix';
-import { Vector2 } from './vector2';
+import { Vector2, v2 } from './vector2';
 
 export function v3(n: [number, number?, number?] | number, y?: number, z?: number) {
 	if (typeof n === 'number') {
@@ -12,42 +12,33 @@ export function v3(n: [number, number?, number?] | number, y?: number, z?: numbe
 }
 
 export class Vector3 {
-	public get pitch(): number {
-		return this.x;
-	}
-	public set pitch(value: number) {
-		this.x = value;
-	}
-	public get yaw(): number {
-		return this.y;
-	}
-	public set yaw(value: number) {
-		this.y = value;
-	}
-	public get roll(): number {
-		return this.z;
-	}
-	public set roll(value: number) {
-		this.z = value;
-	}
-	public get x(): number {
-		return this.vec[0];
-	}
-	public set x(value: number) {
-		this.vec[0] = value;
-	}
-	public get y(): number {
-		return this.vec[1];
-	}
-	public set y(value: number) {
-		this.vec[1] = value;
-	}
-	public get z(): number {
-		return this.vec[2];
-	}
-	public set z(value: number) {
-		this.vec[2] = value;
-	}
+	public get pitch(): number {return this.x}
+	public set pitch(value: number) {this.x = value}
+
+	public get yaw(): number {return this.y}
+	public set yaw(value: number) {this.y = value}
+
+	public get roll(): number {return this.z}
+	public set roll(value: number) {this.z = value}
+
+	public get x(): number {return this.vec[0]}
+	public set x(value: number) {this.vec[0] = value}
+
+	public get y(): number {return this.vec[1]}
+	public set y(value: number) {this.vec[1] = value}
+
+	public get z(): number {return this.vec[2]}
+	public set z(value: number) {this.vec[2] = value}
+
+	public get xy(){return v2(this.x, this.y)}
+	public get xz(){return v2(this.x, this.z)}
+
+	public get yx(){return v2(this.y, this.x)}
+	public get yz(){return v2(this.y, this.z)}
+	
+	public get zx(){return v2(this.z, this.x)}
+	public get zy(){return v2(this.z, this.y)}
+
 	public vec: vec3;
 
 	constructor(x: number = 0, y: number = 0, z: number = 0) {

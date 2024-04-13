@@ -725,11 +725,11 @@ var Input = class {
     this.canvas.dom.addEventListener("click", this.mouseClick.bind(this));
     this.canvas.dom.addEventListener("wheel", this.scroll.bind(this));
     this.overlay = new DomText({
-      text: "Click to start"
+      text: "Pauzed"
     });
     this.overlay.dom.setAttribute(
       "style",
-      "\n            transform-origin: left bottom;\n            pointer-events: none;\n            bottom: 0px;\n            left: 0px;\n            user-select: none;\n            z-index: 999;\n            position: absolute;\n            height: 100vh;\n            width: 100vw;\n            background: #000000a6;\n            color: white !important;\n            font-family: monospace;\n            font-weight: bold;\n            font-size: 40px;\n            padding-left: 50px;\n            padding-top: 20px;\n            box-sizing: border-box;\n            text-transform: uppercase;"
+      "\n            transform-origin: left bottom;\n            pointer-events: none;\n            bottom: 0px;\n            left: 0px;\n            user-select: none;\n            z-index: 999;\n            position: absolute;\n            height: 100vh;\n            width: 100vw;\n            color: white !important;\n            font-family: monospace;\n            font-weight: bold;\n            font-size: 40px;\n            padding-left: 50px;\n            padding-top: 20px;\n            box-sizing: border-box;\n            text-transform: uppercase;"
     );
     document.body.appendChild(this.overlay.dom);
     document.addEventListener("pointerlockchange", () => {
@@ -2187,7 +2187,7 @@ function loadShader(gl, type, source) {
   return shader;
 }
 function initShaderProgram(gl) {
-  const vsSource = "\n    attribute vec4 aVertexPosition;\n    attribute vec3 aVertexNormal;\n    attribute vec2 aTextureCoord;\n\n    uniform mat4 uNormalMatrix;\n    uniform mat4 uModelViewMatrix;\n    uniform mat4 uProjectionMatrix;\n\n    varying highp vec2 vTextureCoord;\n    varying highp vec3 vLighting;\n\n    void main(void) {\n      gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;\n      vTextureCoord = aTextureCoord;\n\n      // Apply lighting effect\n\n      highp vec3 ambientLight = vec3(0.3, 0.3, 0.3);\n      highp vec3 directionalLightColor = vec3(1, 1, 1);\n      highp vec3 directionalVector = normalize(vec3(0.85, 0.1, 0.75));\n\n      highp vec4 transformedNormal = uNormalMatrix * vec4(aVertexNormal, 1.0);\n\n      highp float directional = max(dot(transformedNormal.xyz, directionalVector), 0.0);\n      vLighting = ambientLight + (directionalLightColor * directional);\n    }\n    ";
+  const vsSource = "\n    attribute vec4 aVertexPosition;\n    attribute vec3 aVertexNormal;\n    attribute vec2 aTextureCoord;\n\n    uniform mat4 uNormalMatrix;\n    uniform mat4 uModelViewMatrix;\n    uniform mat4 uProjectionMatrix;\n\n    varying highp vec2 vTextureCoord;\n    varying highp vec3 vLighting;\n\n    void main(void) {\n      gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;\n      vTextureCoord = aTextureCoord;\n\n      // Apply lighting effect\n\n      highp vec3 ambientLight = vec3(0.3, 0.3, 0.3);\n      highp vec3 directionalLightColor = vec3(1, 1, 1);\n      highp vec3 directionalVector = normalize(vec3(0.2, 0.9, 0.75));\n\n      highp vec4 transformedNormal = uNormalMatrix * vec4(aVertexNormal, 1.0);\n\n      highp float directional = max(dot(transformedNormal.xyz, directionalVector), 0.0);\n      vLighting = ambientLight + (directionalLightColor * directional);\n    }\n    ";
   const fsSource = "\n    varying highp vec2 vTextureCoord;\n    varying highp vec3 vLighting;\n\n    uniform sampler2D uSampler;\n\n    void main(void) {\n      highp vec4 texelColor = texture2D(uSampler, vTextureCoord);\n\n      gl_FragColor = vec4(texelColor.rgb * vLighting, texelColor.a);\n    }\n  ";
   const vertexShader = loadShader(gl, gl.VERTEX_SHADER, vsSource);
   const fragmentShader = loadShader(gl, gl.FRAGMENT_SHADER, fsSource);
@@ -2265,6 +2265,24 @@ var Vector3 = class _Vector3 {
   }
   set z(value) {
     this.vec[2] = value;
+  }
+  get xy() {
+    return v2(this.x, this.y);
+  }
+  get xz() {
+    return v2(this.x, this.z);
+  }
+  get yx() {
+    return v2(this.y, this.x);
+  }
+  get yz() {
+    return v2(this.y, this.z);
+  }
+  get zx() {
+    return v2(this.z, this.x);
+  }
+  get zy() {
+    return v2(this.z, this.y);
   }
   constructor(x = 0, y = 0, z = 0) {
     this.vec = [x, y, z];
@@ -2440,6 +2458,7 @@ var GLR = class {
     this.objects = [];
     this.frameData = {};
     this.gl = this.game.renderer.domGl.getContext("webgl");
+    const ext = this.gl.getExtension("OES_element_index_uint");
     this.programInfo = initShaderProgram(this.gl);
   }
   get t() {
@@ -2514,24 +2533,6 @@ var GLR = class {
       currentModelview,
       mesh.position3.multiply(new Vector3(1, 1, -1)).vec
     );
-    mat4_exports.translate(
-      currentModelview,
-      currentModelview,
-      mesh.anchorPoint.multiply(1, 1, -1).vec
-    );
-    mesh.rotation.multiply(new Vector3(1, -1, -1)).forEach((r, i) => {
-      mat4_exports.rotate(
-        currentModelview,
-        currentModelview,
-        r,
-        [Number(i === 0), Number(i === 1), Number(i === 2)]
-      );
-    });
-    mat4_exports.translate(
-      currentModelview,
-      currentModelview,
-      mesh.anchorPoint.multiply(-1, -1, 1).vec
-    );
     if (mesh.buffer) {
       this.renderMesh(mesh, currentModelview);
     }
@@ -2558,7 +2559,7 @@ var GLR = class {
     this.gl.drawElements(
       this.gl.TRIANGLES,
       mesh.verticesCount,
-      this.gl.UNSIGNED_SHORT,
+      this.gl.UNSIGNED_INT,
       0
     );
   }
@@ -2974,7 +2975,7 @@ var GLRendable = class extends GlElement {
     this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
     this.gl.bufferData(
       this.gl.ELEMENT_ARRAY_BUFFER,
-      new Uint16Array(indices),
+      new Uint32Array(indices),
       this.gl.STATIC_DRAW
     );
     return indexBuffer;
@@ -3016,31 +3017,42 @@ var GLTexture = class {
       this.game.waitCount++;
       this.image.onload = () => {
         this.game.waitCount--;
-        this.loadTexture();
+        this.loadTexture(this.image);
       };
       this.image.src = "".concat(window.location.href, "/tex/").concat(attr.url);
     } else {
-      this.loadColor(attr.color || [0.2, 0.2, 0.3, 0.5]);
+      this.loadColor(attr.color || [[0.8, 0.8, 0.7, 1]]);
     }
   }
-  loadColor([r, g, b, a]) {
-    const gl = this.game.gl;
-    const texture = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, texture);
-    gl.texImage2D(
-      gl.TEXTURE_2D,
+  static textureOffset(index, total) {
+    const inc = 1 / total;
+    return [
+      index * inc + inc / 3,
       0,
-      gl.RGBA,
+      index * inc + inc / 3,
       1,
-      1,
-      0,
-      gl.RGBA,
-      gl.UNSIGNED_BYTE,
-      new Uint8Array([r * 255, g * 255, b * 255, a * 255])
-    );
-    this.texture = texture;
+      (index + 1) * inc - inc / 3,
+      0
+    ];
   }
-  loadTexture() {
+  loadColor(colors) {
+    const ss = document.createElement("canvas");
+    ss.width = colors.length;
+    ss.height = 1;
+    const ssCTX = ss.getContext("2d");
+    for (let x = 0; x < colors.length; x++) {
+      const color = colors[x];
+      ssCTX.fillStyle = "rgba(".concat(color[0] * 255, ", ").concat(color[1] * 255, ", ").concat(color[2] * 255, ", ").concat(color[3], ")");
+      ssCTX.fillRect(
+        x,
+        0,
+        1,
+        1
+      );
+    }
+    this.loadTexture(ss);
+  }
+  loadTexture(img) {
     const gl = this.game.gl;
     const texture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -3050,10 +3062,10 @@ var GLTexture = class {
       gl.RGBA,
       gl.RGBA,
       gl.UNSIGNED_BYTE,
-      this.image
+      img
     );
     gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-    if (this.isPowerOf2(this.image.width) && this.isPowerOf2(this.image.height)) {
+    if (this.isPowerOf2(img.width) && this.isPowerOf2(img.height)) {
       gl.generateMipmap(gl.TEXTURE_2D);
     } else {
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -3096,7 +3108,7 @@ var GlMesh = class extends GLRendable {
   }
   build() {
     super.build();
-    this.texture = new GLTexture(this.game, this.textureUrl ? { url: this.textureUrl } : { color: this.colors[0] });
+    this.texture = new GLTexture(this.game, this.textureUrl ? { url: this.textureUrl } : { color: this.colors });
   }
   indexBuffer() {
     let b = [
@@ -3229,29 +3241,29 @@ var GlMesh = class extends GLRendable {
       // Front
       0,
       0,
-      1,
+      -1,
       0,
       0,
-      1,
+      -1,
       0,
       0,
-      1,
+      -1,
       0,
       0,
-      1,
+      -1,
       // Back
       0,
       0,
-      -1,
+      1,
       0,
       0,
-      -1,
+      1,
       0,
       0,
-      -1,
+      1,
       0,
       0,
-      -1,
+      1,
       // Top
       0,
       1,
@@ -3307,7 +3319,7 @@ var GlMesh = class extends GLRendable {
     ];
     if (this.dimensions === 2) {
       if (this.depth === 0)
-        b = b.slice(0, 24);
+        b = b.slice(12, 24);
       else if (this.width === 0)
         b = b.slice(60, 72);
       else if (this.height === 0)
@@ -3316,63 +3328,80 @@ var GlMesh = class extends GLRendable {
     return this.getNormalBuffer(b);
   }
   textureBuffer(size) {
-    let b = [
-      0,
-      0,
-      1,
-      0,
-      1,
-      1,
-      0,
-      1,
-      0,
-      0,
-      1,
-      0,
-      1,
-      1,
-      0,
-      1,
-      0,
-      0,
-      1,
-      0,
-      1,
-      1,
-      0,
-      1,
-      0,
-      0,
-      1,
-      0,
-      1,
-      1,
-      0,
-      1,
-      0,
-      0,
-      1,
-      0,
-      1,
-      1,
-      0,
-      1,
-      0,
-      0,
-      1,
-      0,
-      1,
-      1,
-      0,
-      1
-    ];
-    if (this.dimensions === 2) {
-      if (this.depth === 0)
-        b = b.slice(0, 8);
-      else if (this.width === 0)
-        b = b.slice(40, 48);
-      else if (this.height === 0)
-        b = b.slice(24, 32);
+    let b = [];
+    if (this.textureUrl) {
+      b = [
+        0,
+        0,
+        1,
+        0,
+        1,
+        1,
+        0,
+        1,
+        0,
+        0,
+        1,
+        0,
+        1,
+        1,
+        0,
+        1,
+        0,
+        0,
+        1,
+        0,
+        1,
+        1,
+        0,
+        1,
+        0,
+        0,
+        1,
+        0,
+        1,
+        1,
+        0,
+        1,
+        0,
+        0,
+        1,
+        0,
+        1,
+        1,
+        0,
+        1,
+        0,
+        0,
+        1,
+        0,
+        1,
+        1,
+        0,
+        1
+      ];
+      if (this.dimensions === 2) {
+        if (this.depth === 0)
+          b = b.slice(0, 8);
+        else if (this.width === 0)
+          b = b.slice(40, 48);
+        else if (this.height === 0)
+          b = b.slice(24, 32);
+      }
+    } else {
+      const inc = 1 / this.faceCount;
+      for (let index = 0; index < this.faceCount; index++) {
+        b.push(
+          index * inc + inc / 3,
+          0,
+          index * inc + inc / 3,
+          1,
+          (index + 1) * inc - inc / 3,
+          0,
+          (index + 1) * inc - inc / 3,
+          0
+        );
+      }
     }
     return this.getTextureBuffer(b);
   }
@@ -3384,10 +3413,8 @@ var GLobj = class extends GLRendable {
     super(__spreadValues(__spreadValues({}, attr), { autoReady: false }));
     this.type = "mesh";
     this.verticesCount = 0;
-    this.points = [];
-    this.matIndex = [];
+    this.matIndeces = [];
     this.mats = {};
-    this.normals = [];
     this.positionIndeces = [];
     this.indexIndeces = [];
     this.normalIndeces = [];
@@ -3402,7 +3429,7 @@ var GLobj = class extends GLRendable {
   }
   async parseMtl(str2) {
     if (/mtllib/.test(str2)) {
-      await this.loadFile("".concat(window.location.href, "obj/loco.mtl")).then((v) => {
+      await this.loadFile("".concat(window.location.href, "obj/").concat(str2.split(/mtllib/)[1].split(/(?: |\n)/)[1])).then((v) => {
         v.split("newmtl ").slice(1).forEach((s) => {
           const l = s.split("\n");
           this.mats[l.shift()] = l;
@@ -3413,57 +3440,70 @@ var GLobj = class extends GLRendable {
       return str2;
     }
   }
-  parseLine(lineArray, lastMat) {
+  parseFaces(lineArray, mat, points, normals, tCoords) {
     const textRemainder = lineArray.slice(1);
     const numbRemainder = textRemainder.map(Number);
-    let mat = lastMat;
-    const f = {
+    ({
       usemtl: () => {
         mat = textRemainder[0];
       },
-      v: () => {
-        this.points.push([numbRemainder[0], numbRemainder[1], numbRemainder[2]]);
-      },
-      vn: () => {
-        this.normals.push([numbRemainder[0], numbRemainder[1], numbRemainder[2]]);
-      },
       f: () => {
-        this.matIndex.push(mat);
-        const a = [
-          [this.points[numbRemainder[0] - 1], numbRemainder[2], this.normals[numbRemainder[2] - 1], mat],
-          [this.points[numbRemainder[3] - 1], numbRemainder[5], this.normals[numbRemainder[5] - 1], mat],
-          [this.points[numbRemainder[6] - 1], numbRemainder[8], this.normals[numbRemainder[8] - 1], mat]
-        ];
-        if (this.faces) {
-          this.faces.push(a);
+        if (numbRemainder.length === 3) {
+          this.positionIndeces.push(...points[numbRemainder[0] - 1]);
+          this.positionIndeces.push(...points[numbRemainder[1] - 1]);
+          this.positionIndeces.push(...points[numbRemainder[2] - 1]);
+        } else if (numbRemainder.length === 6) {
+          this.positionIndeces.push(...points[numbRemainder[0] - 1]);
+          this.positionIndeces.push(...points[numbRemainder[2] - 1]);
+          this.positionIndeces.push(...points[numbRemainder[4] - 1]);
+          this.textureIndeces.push(numbRemainder[1] - 1);
+          this.textureIndeces.push(numbRemainder[3] - 1);
+          this.textureIndeces.push(numbRemainder[5] - 1);
         } else {
-          this.faces = [a];
+          this.positionIndeces.push(...points[numbRemainder[0] - 1]);
+          this.positionIndeces.push(...points[numbRemainder[3] - 1]);
+          this.positionIndeces.push(...points[numbRemainder[6] - 1]);
+          this.textureIndeces.push(
+            ...GLTexture.textureOffset(Object.keys(this.mats).indexOf(mat), Object.keys(this.mats).length)
+          );
+          this.normalIndeces.push(...normals[numbRemainder[2] - 1]);
+          this.normalIndeces.push(...normals[numbRemainder[5] - 1]);
+          this.normalIndeces.push(...normals[numbRemainder[8] - 1]);
         }
-      },
-      "#": () => {
-        console.log(textRemainder);
+        this.indexIndeces.push(this.indexIndeces.length);
+        this.indexIndeces.push(this.indexIndeces.length);
+        this.indexIndeces.push(this.indexIndeces.length);
+        this.matIndeces.push(mat);
+        this.matIndeces.push(mat);
+        this.matIndeces.push(mat);
       }
-    }[lineArray[0]];
-    if (f) {
-      f();
-    }
+    }[lineArray[0]] || (() => {
+    }))();
     return mat;
   }
   parseObj(str2) {
     let mat = "none";
-    str2.split("\n").forEach(async (line) => {
-      mat = this.parseLine(line.split(/(?: |\/)/), mat);
+    const lines = str2.split("\n");
+    const nonVertex = [];
+    const points = [];
+    const normals = [];
+    const tCoords = [];
+    lines.forEach(async (line) => {
+      const words = line.split(/(?: |\/)/);
+      const command = words[0];
+      const numbers = words.slice(1).map(Number);
+      if (command === "v") {
+        points.push([numbers[0], numbers[1], numbers[2]]);
+      } else if (command === "vn") {
+        normals.push([numbers[0], numbers[1], numbers[2]]);
+      } else if (command === "vt") {
+        tCoords.push([numbers[0], numbers[1]]);
+      } else {
+        nonVertex.push(words);
+      }
     });
-    let index = 0;
-    this.faces.forEach((f) => {
-      f.forEach((v) => {
-        this.positionIndeces.push(v[0][0], v[0][1], v[0][2]);
-        this.textureIndeces.push(v[1] - 1);
-        this.normalIndeces.push(v[2][0], v[2][1], v[2][2]);
-        this.indexIndeces.push(index);
-        index++;
-      });
-      this.texturePositionIndeces.push(0, 0, 1, 0, 1, 1, 0, 1);
+    nonVertex.forEach((words) => {
+      mat = this.parseFaces(words, mat, points, normals, tCoords);
     });
     this.verticesCount = this.indexIndeces.length;
   }
@@ -3483,11 +3523,11 @@ var GLobj = class extends GLRendable {
   }
   textureBuffer(size) {
     if (Object.values(this.mats).length) {
-      this.texture = new GLTexture(this.game, { color: Object.values(this.mats)[0][2].slice(3).split(" ").map(Number) });
+      this.texture = new GLTexture(this.game, { color: Object.values(this.mats).map((s) => [...s[2].slice(3).split(" ").map(Number), Number(s[6].slice(2))]) });
     } else {
       this.texture = new GLTexture(this.game, {});
     }
-    return this.getTextureBuffer(this.texturePositionIndeces);
+    return this.getTextureBuffer(this.textureIndeces);
   }
 };
 
@@ -3635,7 +3675,7 @@ var SideCharacter = class extends Character {
   }
   build() {
     this.registerControllers(this);
-    this.addChild(this.mesh = new GlMesh({ size3: this.size3, colors: [[0.3, 0.3, 0.3, 1], [0.3, 0.3, 0.3, 1], [0.4, 0.4, 0.4, 1], [0.3, 0.3, 0.3, 1], [0.2, 0.2, 0.2, 1], [0.2, 0.2, 0.2, 1]] }));
+    this.addChild(this.mesh = new GlMesh({ size3: this.size3, colors: [[1, 0.3, 0.3, 1], [0.3, 1, 0.3, 1], [0.4, 0.4, 1, 1], [1, 1, 0.3, 1], [0.2, 1, 1, 1], [1, 0.2, 1, 1]] }));
   }
   tick(o) {
     super.tick(o);
@@ -3690,13 +3730,15 @@ var World = class extends Level {
       size3: v3(8, 24, 8),
       position3: v3(800, 0, 250)
     }));
-    this.addChild(new GlMesh({ size3: v3(5e3, 5e3, 5e3), position3: v3(-2500, -1, -2500), colors: [[0.15, 0.15, 0.4, 1], [0.15, 0.15, 0.4, 1], [0.15, 0.15, 0.4, 1], [0.1, 0.2, 0.1, 1], [0.15, 0.15, 0.4, 1], [0.15, 0.15, 0.4, 1]] }));
+    this.addChild(new GlMesh({ size3: v3(5e3, 0, 5e3), position3: v3(-2500, -0.1, -2500), colors: [[0.15, 0.15, 0.4, 1], [0.15, 0.15, 0.4, 1], [0.15, 0.15, 0.4, 1], [0.1, 0.2, 0.1, 1], [0.15, 0.15, 0.4, 1], [0.15, 0.15, 0.4, 1]] }));
     this.addChild(new GlMesh({ size3: v3(5e3, 0, 52), position3: v3(-2500, 0, 300), colors: [Colors.w] }));
-    this.addChild(new GLobj({ url: "carriage.obj", size3: v3(100, 100, 100), position3: v3(0 + 50, 0, 300) }));
-    this.addChild(new GLobj({ url: "carriage.obj", size3: v3(100, 100, 100), position3: v3(0 + 50 + 256, 0, 300) }));
-    this.addChild(new GLobj({ url: "coal.obj", size3: v3(100, 100, 100), position3: v3(256 + 50 + 256, 0, 302) }));
+    this.addChild(new GLobj({ url: "carriage.obj", size3: v3(1, 1, 1), position3: v3(0 + 50, 0, 300) }));
+    this.addChild(new GLobj({ url: "carriage.obj", size3: v3(1, 1, 1), position3: v3(0 + 50 + 256, 0, 300) }));
+    this.addChild(new GLobj({ url: "coal.obj", size3: v3(1, 1, 1), position3: v3(256 + 50 + 256, 0, 302) }));
     this.addChild(new GlMesh({ size3: v3(176, 65, 0), position3: v3(256 + 83 + 50 + 256, 0, 395), colors: [Colors.k], textureUrl: "test.png" }));
     this.addChild(new GLobj({ anchorPoint: v3(0, 0, 0), url: "loco.obj", size3: v3(100, 100, 100), position3: v3(256 + 82 + 50 + 256, 0, 300) }));
+    this.addChild(new GLobj({ anchorPoint: v3(0, 0, 0), url: "GearPump3.obj", size3: v3(10, 10, 10), position3: v3(600, 60, 200) }));
+    this.addChild(new GLobj({ anchorPoint: v3(0, 0, 0), url: "testobj.obj", size3: v3(10, 10, 10), position3: v3(800, 10, 200) }));
     this.camera.offset = v3(0, -5, 70);
     this.camera.rotation = v3(0.25, -Math.PI / 3, 0);
     this.camera.target = v3(150, 0, 250);

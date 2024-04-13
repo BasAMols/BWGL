@@ -58,6 +58,7 @@ export class GLR {
 
     constructor(public game: Game) {
         this.gl = this.game.renderer.domGl.getContext('webgl');
+        const ext = this.gl.getExtension("OES_element_index_uint");
         this.programInfo = initShaderProgram(this.gl);
     }
 
@@ -149,26 +150,26 @@ export class GLR {
             mesh.position3.multiply(new Vector3(1, 1, -1)).vec,
         );
 
-        mat4.translate(
-            currentModelview,
-            currentModelview,
-            mesh.anchorPoint.multiply(1, 1, -1).vec,
-        );
+        // mat4.translate(
+        //     currentModelview,
+        //     currentModelview,
+        //     mesh.anchorPoint.multiply(1, 1, -1).vec,
+        // );
 
-        mesh.rotation.multiply(new Vector3(1, -1, -1)).forEach((r, i) => {
-            mat4.rotate(
-                currentModelview,
-                currentModelview,
-                r,
-                [Number(i === 0), Number(i === 1), Number(i === 2)],
-            );
-        });
+        // // mesh.rotation.multiply(new Vector3(1, -1, -1)).forEach((r, i) => {
+        // //     mat4.rotate(
+        // //         currentModelview,
+        // //         currentModelview,
+        // //         r,
+        // //         [Number(i === 0), Number(i === 1), Number(i === 2)],
+        // //     );
+        // // });
 
-        mat4.translate(
-            currentModelview,
-            currentModelview,
-            mesh.anchorPoint.multiply(-1, -1, 1).vec,
-        );
+        // mat4.translate(
+        //     currentModelview,
+        //     currentModelview,
+        //     mesh.anchorPoint.multiply(-1, -1, 1).vec,
+        // );
 
         if ((mesh as GLRendable).buffer) {
             this.renderMesh(mesh as GLRendable, currentModelview);
@@ -204,7 +205,7 @@ export class GLR {
         this.gl.drawElements(
             this.gl.TRIANGLES,
             mesh.verticesCount,
-            this.gl.UNSIGNED_SHORT,
+            this.gl.UNSIGNED_INT,
             0
         );
     }
@@ -216,6 +217,7 @@ export class GLR {
         const stride = 0;
         const offset = 0;
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, mesh.buffer.positionBuffer);
+
         this.gl.vertexAttribPointer(
             this.programInfo.attribLocations.vertexPosition,
             numComponents,
