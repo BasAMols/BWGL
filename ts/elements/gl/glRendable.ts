@@ -23,6 +23,7 @@ export abstract class GLRendable extends GlElement {
             positionBuffer: this.positionBuffer(this.size3),
             indices: this.indexBuffer(),
             textureCoord: this.textureBuffer(this.size3),
+            normalBuffer: this.normalBuffer(),
         };
         this.GLR.initGlElement(this);
         // this.texture = new GLTexture(this.game, { url: 'cubetexture.png' });
@@ -38,6 +39,7 @@ export abstract class GLRendable extends GlElement {
     protected abstract indexBuffer(): WebGLBuffer;
     protected abstract positionBuffer(size: Vector3): WebGLBuffer;
     protected abstract textureBuffer(size: Vector3): WebGLBuffer;
+    protected abstract normalBuffer(): WebGLBuffer;
 
     getIndexBuffer(indices: number[]) {
         const indexBuffer = this.gl.createBuffer();
@@ -67,6 +69,21 @@ export abstract class GLRendable extends GlElement {
         );
         return textureCoordBuffer;
     }
+
+    getNormalBuffer(coordinates: number[]) {
+
+        const normalBuffer = this.gl.createBuffer();
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, normalBuffer);
+
+        this.gl.bufferData(
+            this.gl.ARRAY_BUFFER,
+            new Float32Array(coordinates),
+            this.gl.STATIC_DRAW,
+        );
+        
+        return normalBuffer;
+    }
+
 
 }
 

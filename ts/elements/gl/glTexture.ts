@@ -18,7 +18,7 @@ export class GLTexture {
             };
             this.image.src = `${window.location.href}/tex/${attr.url}`;
         } else {
-            this.loadColor(attr.color || [0,0,1,0.5]);
+            this.loadColor(attr.color || [0.2,0.2,0.3,.5]);
         }
     }
     loadColor([r,g,b,a]: [number,number,number,number]) {

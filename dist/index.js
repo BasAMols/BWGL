@@ -2187,8 +2187,8 @@ function loadShader(gl, type, source) {
   return shader;
 }
 function initShaderProgram(gl) {
-  const vsSource = "\n    attribute vec4 aVertexPosition;\n    attribute vec2 aTextureCoord;\n  \n    uniform mat4 uModelViewMatrix;\n    uniform mat4 uProjectionMatrix;\n  \n    varying highp vec2 vTextureCoord;\n  \n    void main(void) {\n      gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;\n      vTextureCoord = aTextureCoord;\n    }\n    ";
-  const fsSource = "\n    varying highp vec2 vTextureCoord;\n\n    uniform sampler2D uSampler;\n  \n    void main(void) {\n      gl_FragColor = texture2D(uSampler, vTextureCoord);\n    }\n  ";
+  const vsSource = "\n    attribute vec4 aVertexPosition;\n    attribute vec3 aVertexNormal;\n    attribute vec2 aTextureCoord;\n\n    uniform mat4 uNormalMatrix;\n    uniform mat4 uModelViewMatrix;\n    uniform mat4 uProjectionMatrix;\n\n    varying highp vec2 vTextureCoord;\n    varying highp vec3 vLighting;\n\n    void main(void) {\n      gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;\n      vTextureCoord = aTextureCoord;\n\n      // Apply lighting effect\n\n      highp vec3 ambientLight = vec3(0.3, 0.3, 0.3);\n      highp vec3 directionalLightColor = vec3(1, 1, 1);\n      highp vec3 directionalVector = normalize(vec3(0.85, 0.1, 0.75));\n\n      highp vec4 transformedNormal = uNormalMatrix * vec4(aVertexNormal, 1.0);\n\n      highp float directional = max(dot(transformedNormal.xyz, directionalVector), 0.0);\n      vLighting = ambientLight + (directionalLightColor * directional);\n    }\n    ";
+  const fsSource = "\n    varying highp vec2 vTextureCoord;\n    varying highp vec3 vLighting;\n\n    uniform sampler2D uSampler;\n\n    void main(void) {\n      highp vec4 texelColor = texture2D(uSampler, vTextureCoord);\n\n      gl_FragColor = vec4(texelColor.rgb * vLighting, texelColor.a);\n    }\n  ";
   const vertexShader = loadShader(gl, gl.VERTEX_SHADER, vsSource);
   const fragmentShader = loadShader(gl, gl.FRAGMENT_SHADER, fsSource);
   const shaderProgram = gl.createProgram();
@@ -2207,12 +2207,13 @@ function initShaderProgram(gl) {
     program: shaderProgram,
     attribLocations: {
       vertexPosition: gl.getAttribLocation(shaderProgram, "aVertexPosition"),
-      vertexColor: gl.getAttribLocation(shaderProgram, "aVertexColor"),
+      vertexNormal: gl.getAttribLocation(shaderProgram, "aVertexNormal"),
       textureCoord: gl.getAttribLocation(shaderProgram, "aTextureCoord")
     },
     uniformLocations: {
       projectionMatrix: gl.getUniformLocation(shaderProgram, "uProjectionMatrix"),
       modelViewMatrix: gl.getUniformLocation(shaderProgram, "uModelViewMatrix"),
+      normalMatrix: gl.getUniformLocation(shaderProgram, "uNormalMatrix"),
       uSampler: gl.getUniformLocation(shaderProgram, "uSampler")
     }
   };
@@ -2457,6 +2458,7 @@ var GLR = class {
     const zFar = 1e4;
     const projectionMatrix = mat4_exports.create();
     const modelViewMatrix = mat4_exports.create();
+    const normalMatrix = mat4_exports.create();
     mat4_exports.perspective(projectionMatrix, fieldOfView, aspect, zNear, zFar);
     mat4_exports.translate(
       projectionMatrix,
@@ -2476,8 +2478,16 @@ var GLR = class {
       modelViewMatrix,
       this.game.mode.camera.target.multiply(-1, 1, 1).vec
     );
+    mat4_exports.invert(normalMatrix, modelViewMatrix);
+    mat4_exports.transpose(normalMatrix, normalMatrix);
+    this.gl.uniformMatrix4fv(
+      this.programInfo.uniformLocations.normalMatrix,
+      false,
+      normalMatrix
+    );
     this.frameData.projectionMatrix = projectionMatrix;
     this.frameData.modelViewMatrix = modelViewMatrix;
+    this.frameData.normalMatrix = normalMatrix;
   }
   clear() {
     this.gl.clearColor(0, 0, 0, 0.5);
@@ -2485,9 +2495,11 @@ var GLR = class {
     this.gl.enable(this.gl.DEPTH_TEST);
     this.gl.depthFunc(this.gl.LEQUAL);
     this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+    this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
   }
   draw() {
     this.clear();
+    this.gl.useProgram(this.programInfo.program);
     this.setCamera();
     this.drawElement(this.game.level);
   }
@@ -2526,10 +2538,10 @@ var GLR = class {
     this.drawElement(mesh, currentModelview);
   }
   renderMesh(mesh, currentModelview) {
-    this.gl.useProgram(this.programInfo.program);
     this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, mesh.buffer.indices);
     this.setPositionAttribute(mesh);
     this.setTextureAttribute(mesh);
+    this.setNormalAttribute(mesh);
     this.gl.uniformMatrix4fv(
       this.programInfo.uniformLocations.projectionMatrix,
       false,
@@ -2543,7 +2555,6 @@ var GLR = class {
     this.gl.activeTexture(this.gl.TEXTURE0);
     this.gl.bindTexture(this.gl.TEXTURE_2D, mesh.texture.texture);
     this.gl.uniform1i(this.programInfo.uniformLocations.uSampler, 0);
-    this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
     this.gl.drawElements(
       this.gl.TRIANGLES,
       mesh.verticesCount,
@@ -2584,6 +2595,23 @@ var GLR = class {
       offset
     );
     this.gl.enableVertexAttribArray(this.programInfo.attribLocations.textureCoord);
+  }
+  setNormalAttribute(mesh) {
+    const numComponents = 3;
+    const type = this.gl.FLOAT;
+    const normalize = false;
+    const stride = 0;
+    const offset = 0;
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, mesh.buffer.normalBuffer);
+    this.gl.vertexAttribPointer(
+      this.programInfo.attribLocations.vertexNormal,
+      numComponents,
+      type,
+      normalize,
+      stride,
+      offset
+    );
+    this.gl.enableVertexAttribArray(this.programInfo.attribLocations.vertexNormal);
   }
 };
 
@@ -2930,7 +2958,8 @@ var GLRendable = class extends GlElement {
     this.buffer = {
       positionBuffer: this.positionBuffer(this.size3),
       indices: this.indexBuffer(),
-      textureCoord: this.textureBuffer(this.size3)
+      textureCoord: this.textureBuffer(this.size3),
+      normalBuffer: this.normalBuffer()
     };
     this.GLR.initGlElement(this);
   }
@@ -2966,6 +2995,16 @@ var GLRendable = class extends GlElement {
     );
     return textureCoordBuffer;
   }
+  getNormalBuffer(coordinates) {
+    const normalBuffer = this.gl.createBuffer();
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, normalBuffer);
+    this.gl.bufferData(
+      this.gl.ARRAY_BUFFER,
+      new Float32Array(coordinates),
+      this.gl.STATIC_DRAW
+    );
+    return normalBuffer;
+  }
 };
 
 // ts/elements/gl/glTexture.ts
@@ -2981,7 +3020,7 @@ var GLTexture = class {
       };
       this.image.src = "".concat(window.location.href, "/tex/").concat(attr.url);
     } else {
-      this.loadColor(attr.color || [0, 0, 1, 0.5]);
+      this.loadColor(attr.color || [0.2, 0.2, 0.3, 0.5]);
     }
   }
   loadColor([r, g, b, a]) {
@@ -3185,6 +3224,97 @@ var GlMesh = class extends GLRendable {
     }
     return this.getPositionBuffer(b.map((n, i) => n * size.array[i % 3]));
   }
+  normalBuffer() {
+    let b = [
+      // Front
+      0,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      0,
+      1,
+      // Back
+      0,
+      0,
+      -1,
+      0,
+      0,
+      -1,
+      0,
+      0,
+      -1,
+      0,
+      0,
+      -1,
+      // Top
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      // Bottom
+      0,
+      -1,
+      0,
+      0,
+      -1,
+      0,
+      0,
+      -1,
+      0,
+      0,
+      -1,
+      0,
+      // Right
+      1,
+      0,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      0,
+      // Left
+      -1,
+      0,
+      0,
+      -1,
+      0,
+      0,
+      -1,
+      0,
+      0,
+      -1,
+      0,
+      0
+    ];
+    if (this.dimensions === 2) {
+      if (this.depth === 0)
+        b = b.slice(0, 24);
+      else if (this.width === 0)
+        b = b.slice(60, 72);
+      else if (this.height === 0)
+        b = b.slice(36, 48);
+    }
+    return this.getNormalBuffer(b);
+  }
   textureBuffer(size) {
     let b = [
       0,
@@ -3255,18 +3385,22 @@ var GLobj = class extends GLRendable {
     this.type = "mesh";
     this.verticesCount = 0;
     this.points = [];
-    this.faces = [];
-    this.faceColors = [];
     this.matIndex = [];
     this.mats = {};
-    this.loadFile("".concat(window.location.href, "/obj/").concat(attr.url)).then(this.parseMat.bind(this)).then(this.parse.bind(this)).then(() => {
+    this.normals = [];
+    this.positionIndeces = [];
+    this.indexIndeces = [];
+    this.normalIndeces = [];
+    this.textureIndeces = [];
+    this.texturePositionIndeces = [];
+    this.loadFile("".concat(window.location.href, "/obj/").concat(attr.url)).then(this.parseMtl.bind(this)).then(this.parseObj.bind(this)).then(() => {
       this.ready();
     });
   }
   build() {
     super.build();
   }
-  async parseMat(str2) {
+  async parseMtl(str2) {
     if (/mtllib/.test(str2)) {
       await this.loadFile("".concat(window.location.href, "obj/loco.mtl")).then((v) => {
         v.split("newmtl ").slice(1).forEach((s) => {
@@ -3279,39 +3413,59 @@ var GLobj = class extends GLRendable {
       return str2;
     }
   }
-  async parse(str2) {
-    let mI;
-    str2.split("\n").forEach(async (line) => {
-      let command;
-      line.split(/(?: |\/)/).forEach(async (word, i, ar) => {
-        word = word.trim();
-        if (/mtllib/.test(word)) {
-          await this.loadFile("".concat(window.location.href, "/obj/").concat(ar[i + 1])).then(this.parseMat.bind(this));
-        } else if (/usemtl/.test(word)) {
-          mI = ar[i + 1];
-        } else if (/(?:v|f)/.test(word)) {
-          command = word;
-          if (mI && command === "f") {
-            this.matIndex.push(mI);
-          }
-        } else if (/([0-9-])/.test(word)) {
-          if (command === "v") {
-            this.points.push(Number(word));
-            return;
-          }
-          if (command === "f") {
-            this.faces.push(Number(word) - 1);
-            return;
-          }
+  parseLine(lineArray, lastMat) {
+    const textRemainder = lineArray.slice(1);
+    const numbRemainder = textRemainder.map(Number);
+    let mat = lastMat;
+    const f = {
+      usemtl: () => {
+        mat = textRemainder[0];
+      },
+      v: () => {
+        this.points.push([numbRemainder[0], numbRemainder[1], numbRemainder[2]]);
+      },
+      vn: () => {
+        this.normals.push([numbRemainder[0], numbRemainder[1], numbRemainder[2]]);
+      },
+      f: () => {
+        this.matIndex.push(mat);
+        const a = [
+          [this.points[numbRemainder[0] - 1], numbRemainder[2], this.normals[numbRemainder[2] - 1], mat],
+          [this.points[numbRemainder[3] - 1], numbRemainder[5], this.normals[numbRemainder[5] - 1], mat],
+          [this.points[numbRemainder[6] - 1], numbRemainder[8], this.normals[numbRemainder[8] - 1], mat]
+        ];
+        if (this.faces) {
+          this.faces.push(a);
+        } else {
+          this.faces = [a];
         }
+      },
+      "#": () => {
+        console.log(textRemainder);
+      }
+    }[lineArray[0]];
+    if (f) {
+      f();
+    }
+    return mat;
+  }
+  parseObj(str2) {
+    let mat = "none";
+    str2.split("\n").forEach(async (line) => {
+      mat = this.parseLine(line.split(/(?: |\/)/), mat);
+    });
+    let index = 0;
+    this.faces.forEach((f) => {
+      f.forEach((v) => {
+        this.positionIndeces.push(v[0][0], v[0][1], v[0][2]);
+        this.textureIndeces.push(v[1] - 1);
+        this.normalIndeces.push(v[2][0], v[2][1], v[2][2]);
+        this.indexIndeces.push(index);
+        index++;
       });
+      this.texturePositionIndeces.push(0, 0, 1, 0, 1, 1, 0, 1);
     });
-    const counts = {};
-    this.matIndex.forEach(function(x) {
-      counts[x] = (counts[x] || 0) + 1;
-    });
-    this.faces = this.faces.filter((v, i) => i % 3 === 0);
-    this.verticesCount = this.faces.length;
+    this.verticesCount = this.indexIndeces.length;
   }
   async loadFile(url) {
     const response = await fetch(url);
@@ -3319,10 +3473,13 @@ var GLobj = class extends GLRendable {
     return data;
   }
   indexBuffer() {
-    return this.getIndexBuffer(this.faces);
+    return this.getIndexBuffer(this.indexIndeces);
   }
   positionBuffer(size) {
-    return this.getPositionBuffer(this.points.map((n, i) => n * size.array[i % 3]));
+    return this.getPositionBuffer(this.positionIndeces.map((n, i) => n * size.array[i % 3]));
+  }
+  normalBuffer() {
+    return this.getNormalBuffer(this.normalIndeces);
   }
   textureBuffer(size) {
     if (Object.values(this.mats).length) {
@@ -3330,7 +3487,7 @@ var GLobj = class extends GLRendable {
     } else {
       this.texture = new GLTexture(this.game, {});
     }
-    return this.getTextureBuffer(this.points.map((n, i) => n * size.array[i % 3]));
+    return this.getTextureBuffer(this.texturePositionIndeces);
   }
 };
 
@@ -3534,12 +3691,12 @@ var World = class extends Level {
       position3: v3(800, 0, 250)
     }));
     this.addChild(new GlMesh({ size3: v3(5e3, 5e3, 5e3), position3: v3(-2500, -1, -2500), colors: [[0.15, 0.15, 0.4, 1], [0.15, 0.15, 0.4, 1], [0.15, 0.15, 0.4, 1], [0.1, 0.2, 0.1, 1], [0.15, 0.15, 0.4, 1], [0.15, 0.15, 0.4, 1]] }));
-    this.addChild(new GlMesh({ size3: v3(5e3, 0, 52), position3: v3(-2500, 0, 300), colors: [Colors.b] }));
+    this.addChild(new GlMesh({ size3: v3(5e3, 0, 52), position3: v3(-2500, 0, 300), colors: [Colors.w] }));
     this.addChild(new GLobj({ url: "carriage.obj", size3: v3(100, 100, 100), position3: v3(0 + 50, 0, 300) }));
     this.addChild(new GLobj({ url: "carriage.obj", size3: v3(100, 100, 100), position3: v3(0 + 50 + 256, 0, 300) }));
     this.addChild(new GLobj({ url: "coal.obj", size3: v3(100, 100, 100), position3: v3(256 + 50 + 256, 0, 302) }));
     this.addChild(new GlMesh({ size3: v3(176, 65, 0), position3: v3(256 + 83 + 50 + 256, 0, 395), colors: [Colors.k], textureUrl: "test.png" }));
-    this.addChild(new GLobj({ anchorPoint: v3(0, 0, 0), url: "loco.obj", size3: v3(100, 100, 100), position3: v3(256 + 83 + 50 + 256, 0, 300) }));
+    this.addChild(new GLobj({ anchorPoint: v3(0, 0, 0), url: "loco.obj", size3: v3(100, 100, 100), position3: v3(256 + 82 + 50 + 256, 0, 300) }));
     this.camera.offset = v3(0, -5, 70);
     this.camera.rotation = v3(0.25, -Math.PI / 3, 0);
     this.camera.target = v3(150, 0, 250);

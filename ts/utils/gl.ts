@@ -16,6 +16,7 @@ export interface buffers {
     indices: WebGLBuffer;
     positionBuffer: WebGLBuffer;
     textureCoord: WebGLBuffer,
+    normalBuffer: WebGLBuffer,
 }
 
 export type GlElementType = 'camera' | 'obj' | 'mesh' | 'collider' | 'group';
@@ -34,17 +35,19 @@ export class GLR {
     private frameData: {
         projectionMatrix?: mat4;
         modelViewMatrix?: mat4;
+        normalMatrix?: mat4;
     } = {};
     private programInfo: {
         program: WebGLProgram;
         attribLocations: {
             vertexPosition: number;
-            vertexColor: number;
+            vertexNormal: number;
             textureCoord: number,
         };
         uniformLocations: {
             projectionMatrix: WebGLUniformLocation;
             modelViewMatrix: WebGLUniformLocation;
+            normalMatrix: WebGLUniformLocation,
             uSampler: WebGLUniformLocation;
         };
     };
@@ -75,6 +78,8 @@ export class GLR {
         const zFar = 10000;
         const projectionMatrix = mat4.create();
         const modelViewMatrix = mat4.create();
+        const normalMatrix = mat4.create();
+
         mat4.perspective(projectionMatrix, fieldOfView, aspect, zNear, zFar);
 
         mat4.translate(
@@ -98,8 +103,18 @@ export class GLR {
             this.game.mode.camera.target.multiply(-1, 1, 1).vec
         );
 
+        mat4.invert(normalMatrix, modelViewMatrix);
+        mat4.transpose(normalMatrix, normalMatrix);
+
+        this.gl.uniformMatrix4fv(
+            this.programInfo.uniformLocations.normalMatrix,
+            false,
+            normalMatrix,
+          );
+
         this.frameData.projectionMatrix = projectionMatrix;
         this.frameData.modelViewMatrix = modelViewMatrix;
+        this.frameData.normalMatrix = normalMatrix;
 
     }
 
@@ -109,12 +124,15 @@ export class GLR {
         this.gl.enable(this.gl.DEPTH_TEST);
         this.gl.depthFunc(this.gl.LEQUAL);
         this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+        this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
     }
 
     draw() {
         this.clear();
+        this.gl.useProgram(this.programInfo.program);
         this.setCamera();
         this.drawElement(this.game.level);
+
     }
 
     drawElement(element: GlElement, currentModelview?: mat4) {
@@ -151,21 +169,23 @@ export class GLR {
             currentModelview,
             mesh.anchorPoint.multiply(-1, -1, 1).vec,
         );
-        
+
         if ((mesh as GLRendable).buffer) {
             this.renderMesh(mesh as GLRendable, currentModelview);
         }
+
         this.drawElement(mesh, currentModelview);
 
     }
 
     renderMesh(mesh: GLRendable, currentModelview: mat4) {
 
-        this.gl.useProgram(this.programInfo.program);
         this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, mesh.buffer.indices);
 
         this.setPositionAttribute(mesh);
         this.setTextureAttribute(mesh);
+        this.setNormalAttribute(mesh);
+
         this.gl.uniformMatrix4fv(
             this.programInfo.uniformLocations.projectionMatrix,
             false,
@@ -180,7 +200,6 @@ export class GLR {
         this.gl.activeTexture(this.gl.TEXTURE0);
         this.gl.bindTexture(this.gl.TEXTURE_2D, mesh.texture.texture);
         this.gl.uniform1i(this.programInfo.uniformLocations.uSampler, 0);
-        this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
 
         this.gl.drawElements(
             this.gl.TRIANGLES,
@@ -224,6 +243,24 @@ export class GLR {
             offset,
         );
         this.gl.enableVertexAttribArray(this.programInfo.attribLocations.textureCoord);
+    }
+
+    setNormalAttribute(mesh: GLRendable) {
+        const numComponents = 3;
+        const type = this.gl.FLOAT;
+        const normalize = false;
+        const stride = 0;
+        const offset = 0;
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, mesh.buffer.normalBuffer);
+        this.gl.vertexAttribPointer(
+            this.programInfo.attribLocations.vertexNormal,
+            numComponents,
+            type,
+            normalize,
+            stride,
+            offset,
+        );
+        this.gl.enableVertexAttribArray(this.programInfo.attribLocations.vertexNormal);
     }
 
 }
