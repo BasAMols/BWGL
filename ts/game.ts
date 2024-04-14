@@ -6,7 +6,7 @@ import { Renderer } from './dom/renderer';
 import { Loader } from './utils/debug/loader';
 import { GLR } from './gl/glr';
 import { Level } from './utils/level';
-import { SideMode } from './modes/side/SideMode';
+import { SideMode } from './modes/side/sideMode';
 
 export class Game {
     public ticker: Ticker;

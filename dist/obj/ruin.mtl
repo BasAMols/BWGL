@@ -1,0 +1,32 @@
+# Blender 4.1.0 MTL File: 'ruin.blend'
+# www.blender.org
+
+newmtl Accent_colour
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.038642 0.017083 0.015144
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+
+newmtl Stone
+Ka 1.000000 1.000000 1.000000
+Kd 0.465733 0.438052 0.592576
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Ns -s 10 10 10 C:/Users/basmo/Documents/Blender/Tower/Textures/Stone/Rock041_4K_Roughness.png
+
+newmtl Wood
+Ka 1.000000 1.000000 1.000000
+Kd 0.465733 0.438052 0.592576
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Ns -s 10 10 10 C:/Users/basmo/Documents/Blender/Tower/Textures/Wood/Wood062_4K_Roughness.png

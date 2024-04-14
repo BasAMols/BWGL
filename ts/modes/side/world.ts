@@ -70,14 +70,18 @@ export class World extends Level {
 
         // this.addChild(new GlMesh({ size3: v3(176, 65, 0), position3: v3(256 + 83 + 50 + 256, 0, 600), colors: [Colors.k], textureUrl: 'test.png' }));
         // this.addChild(new GlMesh({ size3: v3(-5000, -1000, -5000), position3: v3(2500, 999, 2500), colors: [[0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1], [0.1, 0.1, 0.1, 1], [0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1]] }));
-        this.addChild(new GLMesh({ size: v3(10000, 1, 600), position: v3(-5000, -1, -300), colors: [[0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1], [0.1, 0.1, 0.1, 1], [0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1]] }));
+        this.addChild(new GLMesh({ size: v3(10000, 1, 4000), position: v3(-5000, -1, -2000), colors: [[0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1], [0.05, 0.05, 0.05, 1], [0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1]] }));
         this.addChild(new GLMesh({ size: v3(10000, 4, 52), position: v3(-5000, 0, 300), colors: [[0.15, 0.15, 0.15, 1], [0.1, 0.1, 0.1, 1], [0.15, 0.15, 0.15, 1], [0.1, 0.1, 0.1, 1], [0.1, 0.1, 0.1, 1], [0.1, 0.1, 0.1, 1]] }));
         this.addChild(new GLObj({ url: 'carriage.obj', size: v3(1, 1, 1), position: v3(-512, 4, 300) }));
         this.addChild(new GLObj({ url: 'carriage.obj', size: v3(1, 1, 1), position: v3(-256, 4, 300) }));
         this.addChild(new GLObj({ url: 'carriage.obj', size: v3(1, 1, 1), position: v3(4, 4, 300) }));
         this.addChild(new GLObj({ url: 'carriage.obj', size: v3(1, 1, 1), position: v3(256, 4, 300) }));
         this.addChild(new GLObj({ url: 'coal.obj', size: v3(1, 1, 1), position: v3(513, 4, 302) }));
-        this.addChild(new GLObj({ url: 'loco.obj', size: v3(100, 100, 100), position: v3(595, 4, 300) }));
+        this.addChild(new GLObj({ url: 'loco.obj', size: v3(1, 1, 1), position: v3(595, 4, 300) }));
+        this.addChild(new GLObj({ url: 'GearPump3.obj', size: v3(10, 10, 10), position: v3(-1500, 60, 0) }));
+        // this.addChild(new GLObj({ url: 'village.obj', size: v3(10, 10, 10), rotation: v3(0,-0.5,0), position: v3(200, 0, 400) }));
+        this.addChild(new GLObj({ url: 'farm.obj', size: v3(30, 30, 30), position: v3(-1500, 0, 700) }));
+        this.addChild(new GLObj({ url: 'subway.obj', size: v3(25, 25, 25), position: v3(-1500, 0,328), rotation: v3(0,Math.PI/2,0) }));
 
         // this.start = new Vector2((256 * 6) * 1.5, 15 * 6 + 90);
         // this.backgroundLayer = new CanvasWrapper();

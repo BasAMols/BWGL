@@ -84,7 +84,6 @@ export class GLR {
         const zFar = 10000;
         const projectionMatrix = mat4.create();
         const modelViewMatrix = mat4.create();
-        const normalMatrix = mat4.create();
 
         mat4.perspective(projectionMatrix, fieldOfView, aspect, zNear, zFar);
 
@@ -109,18 +108,8 @@ export class GLR {
             this.game.mode.camera.target.multiply(-1, 1, 1).vec
         );
 
-        mat4.invert(normalMatrix, modelViewMatrix);
-        mat4.transpose(normalMatrix, normalMatrix);
-
-        this.gl.uniformMatrix4fv(
-            this.programInfo.uniformLocations.normalMatrix,
-            false,
-            normalMatrix,
-        );
-
         this.frameData.projectionMatrix = projectionMatrix;
         this.frameData.modelViewMatrix = modelViewMatrix;
-        this.frameData.normalMatrix = normalMatrix;
 
     }
 
@@ -138,11 +127,10 @@ export class GLR {
         this.gl.useProgram(this.programInfo.program);
         this.gl.uniform1i(this.programInfo.uniformLocations.uSampler, 0);
         this.setCamera();
-        this.drawElement(this.game.level);
-
+        this.drawChildren(this.game.level);
     }
 
-    drawElement(element: GlElement, currentModelview?: mat4) {
+    drawChildren(element: GlElement, currentModelview?: mat4) {
         element.children.forEach((o) => {
             this.drawObject(o, currentModelview ? mat4.clone(currentModelview) : undefined);
         });
@@ -150,39 +138,59 @@ export class GLR {
 
     drawObject(mesh: GlElement, currentModelview: mat4 = mat4.clone(this.frameData.modelViewMatrix)) {
 
-        mat4.translate(
-            currentModelview,
-            currentModelview,
-            mesh.position.multiply(new Vector3(1, 1, -1)).vec,
-        );
-
-        // mat4.translate(
-        //     currentModelview,
-        //     currentModelview,
-        //     mesh.anchorPoint.multiply(1, 1, -1).vec,
-        // );
-
-        // // mesh.rotation.multiply(new Vector3(1, -1, -1)).forEach((r, i) => {
-        // //     mat4.rotate(
-        // //         currentModelview,
-        // //         currentModelview,
-        // //         r,
-        // //         [Number(i === 0), Number(i === 1), Number(i === 2)],
-        // //     );
-        // // });
-
-        // mat4.translate(
-        //     currentModelview,
-        //     currentModelview,
-        //     mesh.anchorPoint.multiply(-1, -1, 1).vec,
-        // );
+        this.positionObject(currentModelview, mesh);
+        this.rotateObject(currentModelview, mesh);
+        this.setObjectNormals(currentModelview);
 
         if ((mesh as GLRendable).buffer) {
             this.renderMesh(mesh as GLRendable, currentModelview);
         }
 
-        this.drawElement(mesh, currentModelview);
+        this.drawChildren(mesh, currentModelview);
 
+    }
+
+    private positionObject(currentModelview: mat4, mesh: GlElement) {
+        mat4.translate(
+            currentModelview,
+            currentModelview,
+            mesh.position.multiply(new Vector3(1, 1, -1)).vec
+        );
+    }
+
+    private rotateObject(currentModelview: mat4, mesh: GlElement) {
+        mat4.translate(
+            currentModelview,
+            currentModelview,
+            mesh.anchorPoint.multiply(1, 1, -1).vec
+        );
+
+        mesh.rotation.multiply(new Vector3(1, -1, -1)).forEach((r, i) => {
+            mat4.rotate(
+                currentModelview,
+                currentModelview,
+                r,
+                [Number(i === 0), Number(i === 1), Number(i === 2)]
+            );
+        });
+
+        mat4.translate(
+            currentModelview,
+            currentModelview,
+            mesh.anchorPoint.multiply(-1, -1, 1).vec
+        );
+    }
+
+    private setObjectNormals(currentModelview: mat4) {
+        const normalMatrix = mat4.create();
+        mat4.invert(normalMatrix, currentModelview);
+        mat4.transpose(normalMatrix, normalMatrix);
+
+        this.gl.uniformMatrix4fv(
+            this.programInfo.uniformLocations.normalMatrix,
+            false,
+            normalMatrix
+        );
     }
 
     renderMesh(mesh: GLRendable, currentModelview: mat4) {

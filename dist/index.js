@@ -1843,25 +1843,27 @@ function equals(a, b) {
 var mul = multiply;
 var sub = subtract;
 
+// ts/gl/shaders/vertexShader.ts
+var vertexShader_default = "\nattribute vec4 aVertexPosition;\nattribute vec3 aVertexNormal;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uNormalMatrix;\nuniform mat4 uModelViewMatrix;\nuniform mat4 uProjectionMatrix;\n\nvarying highp vec2 vTextureCoord;\nvarying highp vec3 vLighting;\n\nvoid main(void) {\n  gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;\n  vTextureCoord = aTextureCoord;\n\n      // Apply lighting effect\n\n  highp vec3 ambientLight = vec3(0.4, 0.4, 0.4);\n  highp vec3 directionalLightColor = vec3(1, 1, 1);\n  highp vec3 directionalVector = normalize(vec3(-0.7, .7, 0.3));\n\n  highp vec4 transformedNormal = uNormalMatrix * vec4(aVertexNormal, 1.0);\n\n  highp float directional = max(dot(transformedNormal.xyz, directionalVector), 0.0);\n  vLighting = ambientLight + (directionalLightColor * directional);\n}";
+
+// ts/gl/shaders/fragmentShader.ts
+var fragmentShader_default = "\nvarying highp vec2 vTextureCoord;\nvarying highp vec3 vLighting;\n\nuniform sampler2D uSampler;\n\nvoid main(void) {\n    highp vec4 texelColor = texture2D(uSampler, vTextureCoord);\n\n    gl_FragColor = vec4(texelColor.rgb * vLighting, texelColor.a);\n}\n";
+
 // ts/gl/glrInit.ts
 function loadShader(gl, type, source) {
   const shader = gl.createShader(type);
   gl.shaderSource(shader, source);
   gl.compileShader(shader);
   if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    alert(
-      "An error occurred compiling the shaders: ".concat(gl.getShaderInfoLog(shader))
-    );
+    console.error("An error occurred compiling the shaders: ".concat(gl.getShaderInfoLog(shader)));
     gl.deleteShader(shader);
     return null;
   }
   return shader;
 }
 function initShaderProgram(gl) {
-  const vsSource = "\n    attribute vec4 aVertexPosition;\n    attribute vec3 aVertexNormal;\n    attribute vec2 aTextureCoord;\n\n    uniform mat4 uNormalMatrix;\n    uniform mat4 uModelViewMatrix;\n    uniform mat4 uProjectionMatrix;\n\n    varying highp vec2 vTextureCoord;\n    varying highp vec3 vLighting;\n\n    void main(void) {\n      gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;\n      vTextureCoord = aTextureCoord;\n\n      // Apply lighting effect\n\n      highp vec3 ambientLight = vec3(0.3, 0.3, 0.3);\n      highp vec3 directionalLightColor = vec3(1, 1, 1);\n      highp vec3 directionalVector = normalize(vec3(0.2, 0.9, 0.75));\n\n      highp vec4 transformedNormal = uNormalMatrix * vec4(aVertexNormal, 1.0);\n\n      highp float directional = max(dot(transformedNormal.xyz, directionalVector), 0.0);\n      vLighting = ambientLight + (directionalLightColor * directional);\n    }\n    ";
-  const fsSource = "\n    varying highp vec2 vTextureCoord;\n    varying highp vec3 vLighting;\n\n    uniform sampler2D uSampler;\n\n    void main(void) {\n      highp vec4 texelColor = texture2D(uSampler, vTextureCoord);\n\n      gl_FragColor = vec4(texelColor.rgb * vLighting, texelColor.a);\n    }\n  ";
-  const vertexShader = loadShader(gl, gl.VERTEX_SHADER, vsSource);
-  const fragmentShader = loadShader(gl, gl.FRAGMENT_SHADER, fsSource);
+  const vertexShader = loadShader(gl, gl.VERTEX_SHADER, vertexShader_default);
+  const fragmentShader = loadShader(gl, gl.FRAGMENT_SHADER, fragmentShader_default);
   const shaderProgram = gl.createProgram();
   gl.attachShader(shaderProgram, vertexShader);
   gl.attachShader(shaderProgram, fragmentShader);
@@ -2151,7 +2153,6 @@ var GLR = class {
     const zFar = 1e4;
     const projectionMatrix = mat4_exports.create();
     const modelViewMatrix = mat4_exports.create();
-    const normalMatrix = mat4_exports.create();
     mat4_exports.perspective(projectionMatrix, fieldOfView, aspect, zNear, zFar);
     mat4_exports.translate(
       projectionMatrix,
@@ -2171,16 +2172,8 @@ var GLR = class {
       modelViewMatrix,
       this.game.mode.camera.target.multiply(-1, 1, 1).vec
     );
-    mat4_exports.invert(normalMatrix, modelViewMatrix);
-    mat4_exports.transpose(normalMatrix, normalMatrix);
-    this.gl.uniformMatrix4fv(
-      this.programInfo.uniformLocations.normalMatrix,
-      false,
-      normalMatrix
-    );
     this.frameData.projectionMatrix = projectionMatrix;
     this.frameData.modelViewMatrix = modelViewMatrix;
-    this.frameData.normalMatrix = normalMatrix;
   }
   clear() {
     this.gl.clearColor(...this.game.level.background);
@@ -2195,23 +2188,58 @@ var GLR = class {
     this.gl.useProgram(this.programInfo.program);
     this.gl.uniform1i(this.programInfo.uniformLocations.uSampler, 0);
     this.setCamera();
-    this.drawElement(this.game.level);
+    this.drawChildren(this.game.level);
   }
-  drawElement(element, currentModelview) {
+  drawChildren(element, currentModelview) {
     element.children.forEach((o) => {
       this.drawObject(o, currentModelview ? mat4_exports.clone(currentModelview) : void 0);
     });
   }
   drawObject(mesh, currentModelview = mat4_exports.clone(this.frameData.modelViewMatrix)) {
+    this.positionObject(currentModelview, mesh);
+    this.rotateObject(currentModelview, mesh);
+    this.setObjectNormals(currentModelview);
+    if (mesh.buffer) {
+      this.renderMesh(mesh, currentModelview);
+    }
+    this.drawChildren(mesh, currentModelview);
+  }
+  positionObject(currentModelview, mesh) {
     mat4_exports.translate(
       currentModelview,
       currentModelview,
       mesh.position.multiply(new Vector3(1, 1, -1)).vec
     );
-    if (mesh.buffer) {
-      this.renderMesh(mesh, currentModelview);
-    }
-    this.drawElement(mesh, currentModelview);
+  }
+  rotateObject(currentModelview, mesh) {
+    mat4_exports.translate(
+      currentModelview,
+      currentModelview,
+      mesh.anchorPoint.multiply(1, 1, -1).vec
+    );
+    mesh.rotation.multiply(new Vector3(1, -1, -1)).forEach((r, i) => {
+      mat4_exports.rotate(
+        currentModelview,
+        currentModelview,
+        r,
+        [Number(i === 0), Number(i === 1), Number(i === 2)]
+      );
+    });
+    mat4_exports.translate(
+      currentModelview,
+      currentModelview,
+      mesh.anchorPoint.multiply(-1, -1, 1).vec
+    );
+  }
+  setObjectNormals(currentModelview) {
+    const normalMatrix = mat4_exports.create();
+    mat4_exports.invert(normalMatrix, currentModelview);
+    mat4_exports.transpose(normalMatrix, normalMatrix);
+    this.gl.uniformMatrix4fv(
+      this.programInfo.uniformLocations.normalMatrix,
+      false,
+      normalMatrix
+    );
   }
   renderMesh(mesh, currentModelview) {
     this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, mesh.buffer.indices);
@@ -3413,14 +3441,17 @@ var World = class extends Level {
       size: v3(8, 24, 8),
       position: v3(0, 0, 250)
     }));
-    this.addChild(new GlMesh({ size: v3(1e4, 1, 600), position: v3(-5e3, -1, -300), colors: [[0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.1, 0.1, 0.1, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1]] }));
+    this.addChild(new GlMesh({ size: v3(1e4, 1, 4e3), position: v3(-5e3, -1, -2e3), colors: [[0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.05, 0.05, 0.05, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1]] }));
     this.addChild(new GlMesh({ size: v3(1e4, 4, 52), position: v3(-5e3, 0, 300), colors: [[0.15, 0.15, 0.15, 1], [0.1, 0.1, 0.1, 1], [0.15, 0.15, 0.15, 1], [0.1, 0.1, 0.1, 1], [0.1, 0.1, 0.1, 1], [0.1, 0.1, 0.1, 1]] }));
     this.addChild(new GLobj({ url: "carriage.obj", size: v3(1, 1, 1), position: v3(-512, 4, 300) }));
     this.addChild(new GLobj({ url: "carriage.obj", size: v3(1, 1, 1), position: v3(-256, 4, 300) }));
     this.addChild(new GLobj({ url: "carriage.obj", size: v3(1, 1, 1), position: v3(4, 4, 300) }));
     this.addChild(new GLobj({ url: "carriage.obj", size: v3(1, 1, 1), position: v3(256, 4, 300) }));
     this.addChild(new GLobj({ url: "coal.obj", size: v3(1, 1, 1), position: v3(513, 4, 302) }));
-    this.addChild(new GLobj({ url: "loco.obj", size: v3(100, 100, 100), position: v3(595, 4, 300) }));
+    this.addChild(new GLobj({ url: "loco.obj", size: v3(1, 1, 1), position: v3(595, 4, 300) }));
+    this.addChild(new GLobj({ url: "GearPump3.obj", size: v3(10, 10, 10), position: v3(-1500, 60, 0) }));
+    this.addChild(new GLobj({ url: "farm.obj", size: v3(30, 30, 30), position: v3(-1500, 0, 700) }));
+    this.addChild(new GLobj({ url: "subway.obj", size: v3(25, 25, 25), position: v3(-1500, 0, 328), rotation: v3(0, Math.PI / 2, 0) }));
     this.env = new Scroller();
     this.addChild(this.env);
   }
@@ -3429,7 +3460,7 @@ var World = class extends Level {
   }
 };
 
-// ts/modes/side/SideMode.ts
+// ts/modes/side/sideMode.ts
 var SideMode = class extends Mode {
   build() {
     super.build();

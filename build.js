@@ -101,7 +101,6 @@ function fsCopyFile(source, destPath, destFile) {
 }
 
 
-// Resolve all paths to index.ts and index.css files that hold to this pattern "src/0000-test/foo/index.ts".
 const entryPoints = await glob('./ts/index.ts');
 
 // Check if Glob was able to pickup any entry points.

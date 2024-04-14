@@ -10,5 +10,6 @@
     "moduleResolution": "node",
     "noEmit": true
   },
-  "include": ["./ts", "sideCamera copy.ts"]
+  "include": ["./ts"],
+  "exclude": ["./modes/side/bu"]
 }
