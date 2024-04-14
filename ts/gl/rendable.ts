@@ -1,21 +1,22 @@
-import { ElementAttributes } from "../utils/element";
 import { buffers } from './glr';
 import { Vector3 } from '../utils/vector3';
-import { GlElement } from './elementBase';
+import { GlElement, GlElementAttributes } from './elementBase';
 import { GLTexture } from './texture';
 
-export type GLRendableAttributes = ElementAttributes & {
-
+export type GLRendableAttributes = GlElementAttributes & {
+    opacity?: number
 };
 
 export abstract class GLRendable extends GlElement {
     public buffer: buffers;
+    public opacity: number = 1;
     public colors: [number, number, number, number][] = [];
     public abstract verticesCount: number;
     public abstract texture: GLTexture;
 
     constructor(attr: GLRendableAttributes = {}) {
         super(attr);
+        this.opacity = attr.opacity !== undefined? attr.opacity:1
     }
 
     public build() {

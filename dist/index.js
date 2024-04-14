@@ -1844,10 +1844,10 @@ var mul = multiply;
 var sub = subtract;
 
 // ts/gl/shaders/vertexShader.ts
-var vertexShader_default = "\nattribute vec4 aVertexPosition;\nattribute vec3 aVertexNormal;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uNormalMatrix;\nuniform mat4 uModelViewMatrix;\nuniform mat4 uProjectionMatrix;\n\nvarying highp vec2 vTextureCoord;\nvarying highp vec3 vLighting;\n\nvoid main(void) {\n  gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;\n  vTextureCoord = aTextureCoord;\n\n      // Apply lighting effect\n\n  highp vec3 ambientLight = vec3(0.4, 0.4, 0.4);\n  highp vec3 directionalLightColor = vec3(1, 1, 1);\n  highp vec3 directionalVector = normalize(vec3(-0.7, .7, 0.3));\n\n  highp vec4 transformedNormal = uNormalMatrix * vec4(aVertexNormal, 1.0);\n\n  highp float directional = max(dot(transformedNormal.xyz, directionalVector), 0.0);\n  vLighting = ambientLight + (directionalLightColor * directional);\n}";
+var vertexShader_default = "\nattribute vec4 aVertexPosition;\nattribute vec3 aVertexNormal;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uNormalMatrix;\nuniform mat4 uModelViewMatrix;\nuniform mat4 uProjectionMatrix;\n\nvarying highp vec2 vTextureCoord;\nvarying highp vec3 vLighting;\n\nvoid main(void) {\n  gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;\n  vTextureCoord = aTextureCoord;\n\n      // Apply lighting effect\n\n  highp vec3 ambientLight = vec3(0.6, 0.6, 0.6);\n  highp vec3 directionalLightColor = vec3(1, 1, 1);\n  highp vec3 directionalVector = normalize(vec3(-0.7, .7, 0.3));\n\n  highp vec4 transformedNormal = uNormalMatrix * vec4(aVertexNormal, 1.0);\n\n  highp float directional = max(dot(transformedNormal.xyz, directionalVector), 0.0);\n  vLighting = ambientLight + (directionalLightColor * directional);\n}";
 
 // ts/gl/shaders/fragmentShader.ts
-var fragmentShader_default = "\nvarying highp vec2 vTextureCoord;\nvarying highp vec3 vLighting;\n\nuniform sampler2D uSampler;\n\nvoid main(void) {\n    highp vec4 texelColor = texture2D(uSampler, vTextureCoord);\n\n    gl_FragColor = vec4(texelColor.rgb * vLighting, texelColor.a);\n}\n";
+var fragmentShader_default = "\nvarying highp vec2 vTextureCoord;\nvarying highp vec3 vLighting;\n\nuniform sampler2D uSampler;\nuniform lowp float uOpacity;\n\nvoid main(void) {\n    highp vec4 texelColor = texture2D(uSampler, vTextureCoord);\n    gl_FragColor = vec4(texelColor.rgb * vLighting, texelColor.a*uOpacity);\n}\n";
 
 // ts/gl/glrInit.ts
 function loadShader(gl, type, source) {
@@ -2256,6 +2256,10 @@ var GLR = class {
       false,
       currentModelview
     );
+    this.gl.uniform1f(
+      this.gl.getUniformLocation(this.programInfo.program, "uOpacity"),
+      mesh.opacity
+    );
     this.gl.activeTexture(this.gl.TEXTURE0);
     this.gl.bindTexture(this.gl.TEXTURE_2D, mesh.texture.texture);
     this.gl.drawElements(
@@ -2463,7 +2467,9 @@ var Mode = class extends GLGroup {
 var GLRendable = class extends GlElement {
   constructor(attr = {}) {
     super(attr);
+    this.opacity = 1;
     this.colors = [];
+    this.opacity = attr.opacity !== void 0 ? attr.opacity : 1;
   }
   build() {
     this.buffer = {
@@ -3210,9 +3216,9 @@ var SideCamera = class extends GlController {
   set active(value) {
     super.active = value;
     if (value) {
-      this.camera.target = v3(0, -75, 170);
+      this.camera.target = v3(0, -80, 175);
       this.camera.offset = v3(0);
-      this.camera.rotation = v3(0.15, 0, 0);
+      this.camera.rotation = v3(0.05, 0, 0);
       this.camera.fov = 70;
     }
   }
@@ -3379,18 +3385,21 @@ var Scroller = class extends GLGroup {
       textureUrl: "img/dusk/far-clouds.png",
       position: v3(-4e3, -200, 3500),
       size: v3(128, 240, 0).scale(10),
+      opacity: 0.4,
       repeatX: 10
     }));
     this.addChild(new GlImage({
       textureUrl: "img/dusk/far-clouds.png",
       position: v3(-4e3, -200, 3500),
       repeatX: 10,
+      opacity: 0.4,
       size: v3(128, 240, 0).scale(10)
     }));
     this.addChild(new GlImage({
       textureUrl: "img/dusk/near-clouds.png",
       position: v3(-4e3, -300, 3200),
       repeatX: 10,
+      opacity: 0.4,
       size: v3(144, 240, 0).scale(10)
     }));
     this.addChild(new GlImage({
@@ -3404,6 +3413,13 @@ var Scroller = class extends GLGroup {
       position: v3(-4e3, -700, 2e3),
       repeatX: 10,
       size: v3(160, 240, 0).scale(10)
+    }));
+    this.addChild(new GlImage({
+      textureUrl: "img/dusk/near-clouds.png",
+      position: v3(-2e3, -300, 1750),
+      repeatX: 20,
+      opacity: 0.5,
+      size: v3(144, 240, 0).scale(6)
     }));
     this.addChild(new GlImage({
       textureUrl: "img/dusk/mountains.png",

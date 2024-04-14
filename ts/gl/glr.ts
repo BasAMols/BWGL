@@ -141,11 +141,9 @@ export class GLR {
         this.positionObject(currentModelview, mesh);
         this.rotateObject(currentModelview, mesh);
         this.setObjectNormals(currentModelview);
-
         if ((mesh as GLRendable).buffer) {
             this.renderMesh(mesh as GLRendable, currentModelview);
         }
-
         this.drawChildren(mesh, currentModelview);
 
     }
@@ -206,10 +204,16 @@ export class GLR {
             false,
             this.frameData.projectionMatrix,
         );
+
         this.gl.uniformMatrix4fv(
             this.programInfo.uniformLocations.modelViewMatrix,
             false,
             currentModelview,
+        );
+
+        this.gl.uniform1f(
+            this.gl.getUniformLocation(this.programInfo.program, "uOpacity"),
+            mesh.opacity,
         );
 
         this.gl.activeTexture(this.gl.TEXTURE0);
@@ -230,7 +234,6 @@ export class GLR {
         const stride = 0;
         const offset = 0;
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, mesh.buffer.positionBuffer);
-
         this.gl.vertexAttribPointer(
             this.programInfo.attribLocations.vertexPosition,
             numComponents,

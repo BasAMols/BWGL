@@ -13,9 +13,9 @@ export class SideCamera extends GlController {
     public set active(value: boolean) {
         super.active = value;
         if (value) {
-            this.camera.target = v3(0, -75, 170);
+            this.camera.target = v3(0, -80, 175);
             this.camera.offset = v3(0);
-            this.camera.rotation = v3(0.15, 0, 0);
+            this.camera.rotation = v3(0.05, 0, 0);
             this.camera.fov = 70;
         }
     }

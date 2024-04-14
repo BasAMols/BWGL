@@ -8,18 +8,20 @@ export class Scroller extends GLGroup {
             textureUrl: 'img/dusk/far-clouds.png',
             position: v3(-4000, -200, 3500),
             size: v3(128, 240, 0).scale(10),
+            opacity: 0.4, 
             repeatX: 10
         }));
         this.addChild(new GlImage({
             textureUrl: 'img/dusk/far-clouds.png',
             position: v3(-4000, -200, 3500),
             repeatX: 10,
+            opacity: 0.4, 
             size: v3(128, 240, 0).scale(10),
         }));
         this.addChild(new GlImage({
             textureUrl: 'img/dusk/near-clouds.png',
             position: v3(-4000, -300, 3200),
-            repeatX: 10,
+            repeatX: 10,opacity: 0.4, 
             size: v3(144, 240, 0).scale(10),
         }));
         this.addChild(new GlImage({
@@ -33,6 +35,13 @@ export class Scroller extends GLGroup {
             position: v3(-4000, -700, 2000),
             repeatX: 10,
             size: v3(160, 240, 0).scale(10),
+        }));
+        this.addChild(new GlImage({
+            textureUrl: 'img/dusk/near-clouds.png',
+            position: v3(-2000, -300, 1750),
+            repeatX: 20,
+            opacity: 0.5,
+            size: v3(144, 240, 0).scale(6),
         }));
         this.addChild(new GlImage({
             textureUrl: 'img/dusk/mountains.png',
@@ -68,7 +77,7 @@ export class Scroller extends GLGroup {
             textureUrl: 'img/dusk/trees.png',
             position: v3(-2000, 0, 410),
             repeatX: 20,
-            size: v3(240, 240, 0)
+            size: v3(240, 240, 0),
         }));
     }
 }

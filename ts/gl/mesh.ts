@@ -1,11 +1,10 @@
 import { GlElementType } from './glr';
 import { Color, Colors } from '../utils/colors';
 import { Vector3 } from '../utils/vector3';
-import { GlElementAttributes } from './elementBase';
-import { GLRendable } from './rendable';
+import { GLRendable, GLRendableAttributes } from './rendable';
 import { GLTexture } from './texture';
 
-export type GlMeshAttributes = GlElementAttributes & {
+export type GlMeshAttributes = GLRendableAttributes & {
     colors?: [Color, Color?, Color?, Color?, Color?, Color?],
     textureUrl?: string,
     size: Vector3;
