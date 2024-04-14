@@ -3,11 +3,12 @@ import { Color } from '../utils/colors';
 
 export type GLTextureAttributes = {
     url?: string;
+    image?: HTMLImageElement | HTMLCanvasElement;
     color?: Color[];
 };
 
 export class GLTexture {
-    static textureOffset(index:number, total:number): number[] {
+    static textureOffset(index: number, total: number): number[] {
         const inc = 1 / total;
         return [
             index * inc + (inc / 3), 0,
@@ -19,9 +20,11 @@ export class GLTexture {
     public texture: WebGLTexture;
     private image: HTMLImageElement;
     constructor(public game: Game, attr: GLTextureAttributes) {
-        this.image = new Image();
-        if (attr.url) {
+        if (attr.image) {
+            this.loadTexture(attr.image);
+        } else if (attr.url) {
             this.game.waitCount++;
+            this.image = new Image();
             this.image.onload = () => {
                 this.game.waitCount--;
                 this.loadTexture(this.image);
@@ -32,20 +35,6 @@ export class GLTexture {
         }
     }
     loadColor(colors: Color[]) {
-        // gl.bindTexture(gl.TEXTURE_2D, texture);
-        // gl.texImage2D(
-        //     gl.TEXTURE_2D,
-        //     0,
-        //     gl.RGBA,
-        //     1,
-        //     1,
-        //     0,
-        //     gl.RGBA,
-        //     gl.UNSIGNED_BYTE,
-        //     new Uint8Array([...first.map((n)=>n*255)])
-        // );
-        // this.texture = texture;
-
 
         const ss = document.createElement('canvas');
         ss.width = colors.length;

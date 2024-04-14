@@ -126,7 +126,6 @@ export class World extends Level {
     public tick(obj: TickerReturnData): void {
         super.tick(obj);
         // this.camera.target[0] = (this.camera.target[0]+1)%this.width
-        // this.camera.rotation.y = (this.t.frame/360%Math.PI*2)
         // if (this.inTrain) {
         //     this.backgroundLayer.x = this.foregroundLayer.x = this.backgroundLayer.x - (this.train.speed*10);
         // } else {

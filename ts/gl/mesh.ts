@@ -11,13 +11,20 @@ export type GlMeshAttributes = GlElementAttributes & {
     size: Vector3;
 };
 
+export type bufferData = {
+    index: number[],
+    position: number[],
+    normal: number[],
+    texture: number[],
+};
+
 export class GlMesh extends GLRendable {
     public texture: GLTexture;
     public type: GlElementType = 'mesh';
     public colors: [number, number, number, number][] = [];
     public verticesCount = 36;
     public dimensions = 0 | 1 | 2 | 3;
-    private textureUrl: string;
+    public textureUrl: string;
     private faceCount: number;
 
     constructor(attr: GlMeshAttributes) {
@@ -40,6 +47,7 @@ export class GlMesh extends GLRendable {
             Colors.y
         ].slice(0, this.faceCount);
 
+
     }
 
     public build(): void {
@@ -48,7 +56,62 @@ export class GlMesh extends GLRendable {
     }
 
     protected indexBuffer() {
-        let b: number[] = [
+        let b: number[] = this.getBufferData().index.slice(0, this.faceCount * 6);
+        return this.getIndexBuffer(b);
+    }
+
+    protected positionBuffer(size: Vector3) {
+        return this.getPositionBuffer(
+            GlMesh.scale(
+                GlMesh.sliceToDimension(
+                    this.getBufferData().position,
+                    this.size,
+                    72
+                ),
+                size
+            )
+        );
+    }
+
+    protected normalBuffer() {
+        return this.getNormalBuffer(
+            GlMesh.sliceToDimension(
+                this.getBufferData().normal,
+                this.size,
+                72
+            )
+        );
+    }
+
+    protected textureBuffer(size: Vector3): WebGLBuffer {
+        let b: number[] = [];
+        if (this.textureUrl) {
+            return this.getTextureBuffer(
+                GlMesh.sliceToDimension(
+                    this.getBufferData().texture,
+                    this.size,
+                    48
+                )
+            );
+        } else {
+            const inc = 1 / this.faceCount;
+
+            for (let index = 0; index < this.faceCount; index++) {
+                b.push(
+                    index * inc + (inc / 3), 0,
+                    index * inc + (inc / 3), 1,
+                    (index + 1) * inc - (inc / 3), 0,
+                    (index + 1) * inc - (inc / 3), 0
+                );
+            }
+        }
+
+        return this.getTextureBuffer(b);
+    }
+
+
+    protected getIndexBufferData(): number[] {
+        return [
             0, 1, 2,
             0, 2, 3,
             4, 5, 6,
@@ -61,13 +124,10 @@ export class GlMesh extends GLRendable {
             16, 18, 19,
             20, 21, 22,
             20, 22, 23
-        ].slice(0, this.faceCount * 6);
-
-        return this.getIndexBuffer(b);
+        ];
     }
-
-    protected positionBuffer(size: Vector3) {
-        let b = [
+    protected getPositionBufferData(): number[] {
+        return [
             0.0, 0.0, -1.0,
             1.0, 0.0, -1.0,
 
@@ -103,18 +163,10 @@ export class GlMesh extends GLRendable {
 
             0.0, 1.0, -1.0,
             0.0, 1.0, -0.0
-
         ];
-
-        if (this.dimensions === 2) {
-            if (this.size.z === 0) b = b.slice(0, 24);
-            else if (this.size.x === 0) b = b.slice(60, 72);
-            else if (this.size.y === 0) b = b.slice(36, 48);
-        }
-        return this.getPositionBuffer(b.map((n, i) => n * size.array[(i % 3)]));
     }
-    protected normalBuffer() {
-        let b = [
+    protected getNormalBufferData(): number[] {
+        return [
             0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0,
             0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0,
             0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0,
@@ -122,51 +174,42 @@ export class GlMesh extends GLRendable {
             1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0,
             -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0,
         ];
-
-        if (this.dimensions === 2) {
-            if (this.size.z === 0) b = b.slice(12, 24);
-            else if (this.size.x === 0) b = b.slice(60, 72);
-            else if (this.size.y === 0) b = b.slice(36, 48);
-        }
-        return this.getNormalBuffer(b);
+    }
+    protected getTextureBufferData(): number[] {
+        return [
+            0.0, 0.0, 1.0, 0.0,
+            1.0, 1.0, 0.0, 1.0,
+            0.0, 0.0, 1.0, 0.0,
+            1.0, 1.0, 0.0, 1.0,
+            0.0, 0.0, 1.0, 0.0,
+            1.0, 1.0, 0.0, 1.0,
+            0.0, 0.0, 1.0, 0.0,
+            1.0, 1.0, 0.0, 1.0,
+            0.0, 0.0, 1.0, 0.0,
+            1.0, 1.0, 0.0, 1.0,
+            0.0, 0.0, 1.0, 0.0,
+            1.0, 1.0, 0.0, 1.0,
+        ];
+    }
+    protected getBufferData(): bufferData {
+        return {
+            index: this.getIndexBufferData(),
+            position: this.getPositionBufferData(),
+            normal: this.getNormalBufferData(),
+            texture: this.getTextureBufferData(),
+        };
     }
 
-    protected textureBuffer(size: Vector3): WebGLBuffer {
-        let b: number[] = [];
-        if (this.textureUrl) {
-            b = [
-                0.0, 0.0, 1.0, 0.0,
-                1.0, 1.0, 0.0, 1.0,
-                0.0, 0.0, 1.0, 0.0,
-                1.0, 1.0, 0.0, 1.0,
-                0.0, 0.0, 1.0, 0.0,
-                1.0, 1.0, 0.0, 1.0,
-                0.0, 0.0, 1.0, 0.0,
-                1.0, 1.0, 0.0, 1.0,
-                0.0, 0.0, 1.0, 0.0,
-                1.0, 1.0, 0.0, 1.0,
-                0.0, 0.0, 1.0, 0.0,
-                1.0, 1.0, 0.0, 1.0,
-            ];
-            if (this.dimensions === 2) {
-                if (this.size.z === 0) b = b.slice(0, 8);
-                else if (this.size.x === 0) b = b.slice(40, 48);
-                else if (this.size.y === 0) b = b.slice(24, 32);
-            }
-        } else {
-            const inc = 1 / this.faceCount;
-            
-            for (let index = 0; index < this.faceCount; index++) {
-                b.push(
-                    index * inc + (inc / 3), 0,
-                    index * inc + (inc / 3), 1,
-                    (index + 1) * inc - (inc / 3), 0,
-                    (index + 1) * inc - (inc / 3), 0
-                );
-            }
-        }
-        
-        return this.getTextureBuffer(b);
-
+    public static sliceToDimension(array: number[], size: Vector3, total: number): number[] {
+        const s = total / 6;
+        if (size.z === 0) array = array.slice(0, s * 1);
+        else if (size.x === 0) array = array.slice(s * 5, s * 6);
+        else if (size.y === 0) array = array.slice(s * 3, s * 4);
+        return array;
     }
+
+    public static scale(array: number[], size?: Vector3): number[] {
+        return size ? array.map((n, i) => n * size.array[(i % 3)]) : array;
+    }
+
 }

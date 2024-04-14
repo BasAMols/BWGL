@@ -2522,9 +2522,11 @@ var GLRendable = class extends GlElement {
 var GLTexture = class {
   constructor(game, attr) {
     this.game = game;
-    this.image = new Image();
-    if (attr.url) {
+    if (attr.image) {
+      this.loadTexture(attr.image);
+    } else if (attr.url) {
       this.game.waitCount++;
+      this.image = new Image();
       this.image.onload = () => {
         this.game.waitCount--;
         this.loadTexture(this.image);
@@ -2751,7 +2753,7 @@ Colors.m = [1, 0, 1, 1];
 Colors.w = [1, 1, 1, 1];
 
 // ts/gl/mesh.ts
-var GlMesh = class extends GLRendable {
+var GlMesh = class _GlMesh extends GLRendable {
   constructor(attr) {
     super(attr);
     this.type = "mesh";
@@ -2782,7 +2784,59 @@ var GlMesh = class extends GLRendable {
     this.texture = new GLTexture(this.game, this.textureUrl ? { url: this.textureUrl } : { color: this.colors });
   }
   indexBuffer() {
-    let b = [
+    let b = this.getBufferData().index.slice(0, this.faceCount * 6);
+    return this.getIndexBuffer(b);
+  }
+  positionBuffer(size) {
+    return this.getPositionBuffer(
+      _GlMesh.scale(
+        _GlMesh.sliceToDimension(
+          this.getBufferData().position,
+          this.size,
+          72
+        ),
+        size
+      )
+    );
+  }
+  normalBuffer() {
+    return this.getNormalBuffer(
+      _GlMesh.sliceToDimension(
+        this.getBufferData().normal,
+        this.size,
+        72
+      )
+    );
+  }
+  textureBuffer(size) {
+    let b = [];
+    if (this.textureUrl) {
+      return this.getTextureBuffer(
+        _GlMesh.sliceToDimension(
+          this.getBufferData().texture,
+          this.size,
+          48
+        )
+      );
+    } else {
+      const inc = 1 / this.faceCount;
+      for (let index = 0; index < this.faceCount; index++) {
+        b.push(
+          index * inc + inc / 3,
+          0,
+          index * inc + inc / 3,
+          1,
+          (index + 1) * inc - inc / 3,
+          0,
+          (index + 1) * inc - inc / 3,
+          0
+        );
+      }
+    }
+    return this.getTextureBuffer(b);
+  }
+  getIndexBufferData() {
+    return [
       0,
       1,
       2,
@@ -2819,11 +2873,10 @@ var GlMesh = class extends GLRendable {
       20,
       22,
       23
-    ].slice(0, this.faceCount * 6);
-    return this.getIndexBuffer(b);
+    ];
   }
-  positionBuffer(size) {
-    let b = [
+  getPositionBufferData() {
+    return [
       0,
       0,
       -1,
@@ -2897,18 +2950,9 @@ var GlMesh = class extends GLRendable {
       1,
       -0
     ];
-    if (this.dimensions === 2) {
-      if (this.size.z === 0)
-        b = b.slice(0, 24);
-      else if (this.size.x === 0)
-        b = b.slice(60, 72);
-      else if (this.size.y === 0)
-        b = b.slice(36, 48);
-    }
-    return this.getPositionBuffer(b.map((n, i) => n * size.array[i % 3]));
   }
-  normalBuffer() {
-    let b = [
+  getNormalBufferData() {
+    return [
       0,
       0,
       -1,
@@ -2982,93 +3026,79 @@ var GlMesh = class extends GLRendable {
       0,
       0
     ];
-    if (this.dimensions === 2) {
-      if (this.size.z === 0)
-        b = b.slice(12, 24);
-      else if (this.size.x === 0)
-        b = b.slice(60, 72);
-      else if (this.size.y === 0)
-        b = b.slice(36, 48);
-    }
-    return this.getNormalBuffer(b);
   }
-  textureBuffer(size) {
-    let b = [];
-    if (this.textureUrl) {
-      b = [
-        0,
-        0,
-        1,
-        0,
-        1,
-        1,
-        0,
-        1,
-        0,
-        0,
-        1,
-        0,
-        1,
-        1,
-        0,
-        1,
-        0,
-        0,
-        1,
-        0,
-        1,
-        1,
-        0,
-        1,
-        0,
-        0,
-        1,
-        0,
-        1,
-        1,
-        0,
-        1,
-        0,
-        0,
-        1,
-        0,
-        1,
-        1,
-        0,
-        1,
-        0,
-        0,
-        1,
-        0,
-        1,
-        1,
-        0,
-        1
-      ];
-      if (this.dimensions === 2) {
-        if (this.size.z === 0)
-          b = b.slice(0, 8);
-        else if (this.size.x === 0)
-          b = b.slice(40, 48);
-        else if (this.size.y === 0)
-          b = b.slice(24, 32);
-      }
-    } else {
-      const inc = 1 / this.faceCount;
-      for (let index = 0; index < this.faceCount; index++) {
-        b.push(
-          index * inc + inc / 3,
-          0,
-          index * inc + inc / 3,
-          1,
-          (index + 1) * inc - inc / 3,
-          0,
-          (index + 1) * inc - inc / 3,
-          0
-        );
-      }
-    }
-    return this.getTextureBuffer(b);
+  getTextureBufferData() {
+    return [
+      0,
+      0,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1
+    ];
+  }
+  getBufferData() {
+    return {
+      index: this.getIndexBufferData(),
+      position: this.getPositionBufferData(),
+      normal: this.getNormalBufferData(),
+      texture: this.getTextureBufferData()
+    };
+  }
+  static sliceToDimension(array, size, total) {
+    const s = total / 6;
+    if (size.z === 0)
+      array = array.slice(0, s * 1);
+    else if (size.x === 0)
+      array = array.slice(s * 5, s * 6);
+    else if (size.y === 0)
+      array = array.slice(s * 3, s * 4);
+    return array;
+  }
+  static scale(array, size) {
+    return size ? array.map((n, i) => n * size.array[i % 3]) : array;
   }
 };
 
@@ -3284,8 +3314,35 @@ var SideCharacter = class extends Character {
 var GlImage = class extends GlMesh {
   constructor(attr) {
     super(__spreadProps(__spreadValues({}, attr), {
-      textureUrl: attr.url
+      size: attr.size.multiply(v3(attr.repeatX || 1, attr.repeatY || 1, 1))
     }));
+    this.repeatX = attr.repeatX || 1;
+    this.repeatY = attr.repeatY || 1;
+  }
+  build() {
+    super.build();
+    if (this.repeatX !== 1 || this.repeatY !== 1) {
+      const img = new Image();
+      img.src = "".concat(window.location.href).concat(this.textureUrl);
+      img.onload = () => {
+        const repeater = document.createElement("canvas");
+        repeater.width = img.width * this.repeatX;
+        repeater.height = img.height * this.repeatY;
+        const repeaterContext = repeater.getContext("2d");
+        for (let x = 0; x < this.repeatX; x++) {
+          for (let y = 0; y < 1; y++) {
+            repeaterContext.drawImage(
+              img,
+              x * img.width,
+              y * img.height,
+              img.width,
+              img.height
+            );
+          }
+        }
+        this.texture = new GLTexture(this.game, { image: repeater });
+      };
+    }
   }
   // public render(ctx: CanvasRenderingContext2D) {        
   //     if (this.prepped.ready && (!this.condition || this.condition(this.position.add(this.parent.position), this.prepped.size))) {            
@@ -3318,79 +3375,73 @@ var GlImage = class extends GlMesh {
 // ts/modes/side/scrolling.ts
 var Scroller = class extends GLGroup {
   build() {
-    for (let index = 0; index < 10; index++) {
-      this.addChild(new GlImage({
-        url: "img/dusk/far-clouds.png",
-        position: v3(-4e3 + 128 * 10 * index, -200, 3500),
-        size: v3(128, 240, 0).scale(10)
-      }));
-    }
-    for (let index = 0; index < 10; index++) {
-      this.addChild(new GlImage({
-        url: "img/dusk/near-clouds.png",
-        position: v3(-4e3 + 144 * 10 * index, -300, 3200),
-        size: v3(144, 240, 0).scale(10)
-      }));
-    }
-    for (let index = 0; index < 10; index++) {
-      this.addChild(new GlImage({
-        url: "img/dusk/mountains.png",
-        position: v3(-3500 + 320 * 8 * index, -500, 2500),
-        size: v3(320, 240, 0).scale(8)
-      }));
-    }
-    for (let index = 0; index < 8; index++) {
-      this.addChild(new GlImage({
-        url: "img/dusk/far-mountains.png",
-        position: v3(-4e3 + 160 * 10 * index, -700, 2e3),
-        size: v3(160, 240, 0).scale(10)
-      }));
-    }
-    for (let index = 0; index < 3; index++) {
-      this.addChild(new GlImage({
-        url: "img/dusk/mountains.png",
-        position: v3(-4e3 + 320 * 6 * index, -300, 1500),
-        size: v3(320, 240, 0).scale(6)
-      }));
-    }
-    for (let index = 0; index < 13; index++) {
-      this.addChild(new GlImage({
-        url: "img/dusk/trees.png",
-        position: v3(-4e3 + 240 * 3 * index, -100, 1e3),
-        size: v3(240, 240, 0).scale(3)
-      }));
-    }
-    for (let index = 0; index < 20; index++) {
-      this.addChild(new GlImage({
-        url: "img/dusk/trees.png",
-        position: v3(-4e3 + 240 * 2 * index, -100, 600),
-        size: v3(240, 240, 0).scale(2)
-      }));
-      this.addChild(new GlImage({
-        url: "img/dusk/trees.png",
-        position: v3(-4e3 + 120 + 240 * 2 * index, -100, 500),
-        size: v3(240, 240, 0).scale(2)
-      }));
-    }
-    for (let index = 0; index < 40; index++) {
-      this.addChild(new GlImage({
-        url: "img/dusk/trees.png",
-        position: v3(-4e3 + 120 + 240 * index, -50, 420),
-        size: v3(240, 240, 0)
-      }));
-      this.addChild(new GlImage({
-        url: "img/dusk/trees.png",
-        position: v3(-4e3 + 240 * index, 0, 410),
-        size: v3(240, 240, 0)
-      }));
-    }
+    this.addChild(new GlImage({
+      textureUrl: "img/dusk/far-clouds.png",
+      position: v3(-4e3, -200, 3500),
+      size: v3(128, 240, 0).scale(10),
+      repeatX: 10
+    }));
+    this.addChild(new GlImage({
+      textureUrl: "img/dusk/far-clouds.png",
+      position: v3(-4e3, -200, 3500),
+      repeatX: 10,
+      size: v3(128, 240, 0).scale(10)
+    }));
+    this.addChild(new GlImage({
+      textureUrl: "img/dusk/near-clouds.png",
+      position: v3(-4e3, -300, 3200),
+      repeatX: 10,
+      size: v3(144, 240, 0).scale(10)
+    }));
+    this.addChild(new GlImage({
+      textureUrl: "img/dusk/mountains.png",
+      position: v3(-3500, -500, 2500),
+      repeatX: 10,
+      size: v3(320, 240, 0).scale(8)
+    }));
+    this.addChild(new GlImage({
+      textureUrl: "img/dusk/far-mountains.png",
+      position: v3(-4e3, -700, 2e3),
+      repeatX: 10,
+      size: v3(160, 240, 0).scale(10)
+    }));
+    this.addChild(new GlImage({
+      textureUrl: "img/dusk/mountains.png",
+      position: v3(-4e3, -300, 1500),
+      repeatX: 4,
+      size: v3(320, 240, 0).scale(6)
+    }));
+    this.addChild(new GlImage({
+      textureUrl: "img/dusk/trees.png",
+      position: v3(-2e3, -100, 720),
+      repeatX: 20,
+      size: v3(240, 240, 0).scale(3)
+    }));
+    this.addChild(new GlImage({
+      textureUrl: "img/dusk/trees.png",
+      position: v3(-2e3, 0, 650),
+      repeatX: 20,
+      size: v3(240, 240, 0).scale(2)
+    }));
+    this.addChild(new GlImage({
+      textureUrl: "img/dusk/trees.png",
+      position: v3(-2e3, 0, 570),
+      repeatX: 20,
+      size: v3(240, 240, 0).scale(1.5)
+    }));
+    this.addChild(new GlImage({
+      textureUrl: "img/dusk/trees.png",
+      position: v3(-2e3, 0, 490),
+      repeatX: 20,
+      size: v3(240, 240, 0)
+    }));
+    this.addChild(new GlImage({
+      textureUrl: "img/dusk/trees.png",
+      position: v3(-2e3, 0, 410),
+      repeatX: 20,
+      size: v3(240, 240, 0)
+    }));
   }
-  // public tick(obj: TickerReturnData): void {
-  //     super.tick(obj);
-  //     this.layers.forEach(([layer, width, paralax]) => {
-  //         layer.x = (layer.x - (this.level.speed*10 * paralax)) % width ;
-  //     });
-  // }
 };
 
 // ts/modes/side/world.ts

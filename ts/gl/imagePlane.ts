@@ -1,19 +1,21 @@
 import { Vector2 } from '../utils/vector2';
+import { v3 } from '../utils/vector3';
 import { GlMesh, GlMeshAttributes } from './mesh';
+import { GLTexture } from './texture';
 
 export type CanvasImageAttributes = GlMeshAttributes & {
-    url:string,
-    condition?: (position: Vector2, size: Vector2)=>void,
-    screenSpaceParalaxX? : number,
-    screenSpaceParalaxY? : number,
+    textureUrl: string,
+    // condition?: (position: Vector2, size: Vector2) => void,
+    // screenSpaceParalaxX?: number,
+    // screenSpaceParalaxY?: number,
     repeatX?: number,
     repeatY?: number,
-    repeatGapX?: number,
-    repeatGapY?: number,
-    renderOffsetX?: number,
-    renderOffsetY?: number,
-    opacity?: number,
-    shadow?: [string, number, number, number],
+    // repeatGapX?: number,
+    // repeatGapY?: number,
+    // renderOffsetX?: number,
+    // renderOffsetY?: number,
+    // opacity?: number,
+    // shadow?: [string, number, number, number],
 };
 export class GlImage extends GlMesh {
     public condition: (position: Vector2, size: Vector2) => void;
@@ -31,19 +33,52 @@ export class GlImage extends GlMesh {
     constructor(attr: CanvasImageAttributes) {
         super({
             ...attr,
-            textureUrl: attr.url
+            size: attr.size.multiply(v3(attr.repeatX || 1, attr.repeatY || 1, 1)),
         });
+
         // this.condition = attr.condition;
         // this.screenSpaceParalaxX = attr.screenSpaceParalaxX || 0;
         // this.screenSpaceParalaxY = attr.screenSpaceParalaxY || 0;
-        // this.repeatX = attr.repeatX || 1;
-        // this.repeatY = attr.repeatY || 1;
+        this.repeatX = attr.repeatX || 1;
+        this.repeatY = attr.repeatY || 1;
         // this.repeatGapX = attr.repeatGapX || 0;
         // this.repeatGapY = attr.repeatGapY || 0;
         // this.renderOffsetX = attr.renderOffsetX || 0;
         // this.renderOffsetY = attr.renderOffsetY || 0;
         // this.opacity = attr.opacity || 1;
         // this.shadow = attr.shadow;
+    }
+
+    public build(): void {
+        super.build();
+        if (this.repeatX !== 1 || this.repeatY !== 1) {
+
+            const img = new Image();
+            img.src = `${window.location.href}${this.textureUrl}`;
+            img.onload = () => {
+
+                const repeater = document.createElement('canvas');
+                repeater.width = img.width * this.repeatX;
+                repeater.height = img.height * this.repeatY;
+                const repeaterContext = repeater.getContext('2d');
+
+                for (let x = 0; x < this.repeatX; x++) {
+                    for (let y = 0; y < 1; y++) {
+                        repeaterContext.drawImage(
+                            img,
+                            x * img.width,
+                            y * img.height,
+                            img.width,
+                            img.height
+                        );
+                    }
+                }
+                this.texture = new GLTexture(this.game, { image: repeater });
+
+            };
+
+        }
+
     }
 
     // public render(ctx: CanvasRenderingContext2D) {        
