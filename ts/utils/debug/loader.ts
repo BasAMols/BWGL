@@ -1,5 +1,5 @@
-import { DomElement } from '../../elements/dom/domElement';
-import { DomText } from "../../elements/dom/domText";
+import { DomElement } from '../../dom/domElement';
+import { DomText } from "../../dom/domText";
 import { Vector2 } from '../vector2';
 
 export class Loader extends DomElement<'div'> {

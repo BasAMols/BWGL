@@ -1,15 +1,16 @@
 import { Game } from '../game';
-import { ElementVisible, ElementVisibleAttributes } from './elementVisible';
 import { Event } from "./event";
-import { GLR } from './gl';
+import { GLR } from '../gl/glr';
 import { Level } from './level';
 import { Mode } from './mode';
 import { TickerReturnData } from './ticker';
 
-export type ElementAttributes = ElementVisibleAttributes;
+export type ElementAttributes = {
+    
+};
 
-export abstract class Element extends ElementVisible {
-    public abstract rendererType: 'dom' | 'canvas' | 'gl';
+export abstract class Element {
+    public abstract rendererType: 'dom' | 'gl';
 
     private events: Event<unknown>[] = [];
 
@@ -19,11 +20,18 @@ export abstract class Element extends ElementVisible {
 
     public parent!: Element;
     public game!: Game;
-    public mode!: Mode;
-    public level!: Level;
-    public GLR!: GLR;
+    
+    public get mode(): Mode {
+        return this.game.mode;
+    }
+    public get level(): Level {
+        return this.game.level;
+    }
+    public get GLR(): GLR {
+        return this.game.GLR;
+    }
     public get gl(): WebGLRenderingContext{
-        return this.GLR.gl
+        return this.game.gl
     };
 
     public build(): void  {

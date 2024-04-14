@@ -1,4 +1,6 @@
 var __defProp = Object.defineProperty;
+var __defProps = Object.defineProperties;
+var __getOwnPropDescs = Object.getOwnPropertyDescriptors;
 var __getOwnPropSymbols = Object.getOwnPropertySymbols;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
 var __propIsEnum = Object.prototype.propertyIsEnumerable;
@@ -14,9 +16,40 @@ var __spreadValues = (a, b) => {
     }
   return a;
 };
+var __spreadProps = (a, b) => __defProps(a, __getOwnPropDescs(b));
 var __export = (target, all) => {
   for (var name in all)
     __defProp(target, name, { get: all[name], enumerable: true });
+};
+
+// ts/utils/element.ts
+var Element = class {
+  constructor() {
+    this.events = [];
+  }
+  get t() {
+    return this.game.t;
+  }
+  get mode() {
+    return this.game.mode;
+  }
+  get level() {
+    return this.game.level;
+  }
+  get GLR() {
+    return this.game.GLR;
+  }
+  get gl() {
+    return this.game.gl;
+  }
+  build() {
+  }
+  addEvent(e) {
+    this.events.push(e);
+  }
+  getEvent(id) {
+    return this.events.find((e) => id === e.id);
+  }
 };
 
 // ts/utils/vector2.ts
@@ -155,157 +188,14 @@ var Vector2 = class _Vector2 {
   }
 };
 
-// ts/utils/elementPosition.ts
-var ElementPosition = class {
-  constructor(attr = {}) {
-    this.active = true;
-    this.lastPosition = Vector2.zero;
-    this.movedAmount = Vector2.zero;
-    this._x = 0;
-    this._y = 0;
-    this.relativity = attr.relativity || "relative";
-    if (attr.position) {
-      this.position = attr.position;
-      this._x = attr.position.x;
-      this._y = attr.position.y;
-    }
-  }
-  get x() {
-    return this._x;
-  }
-  set x(n) {
-    this._x = n;
-  }
-  get y() {
-    return this._y;
-  }
-  set y(n) {
-    this._y = n;
-  }
-  get position() {
-    return new Vector2(this.x, this.y);
-  }
-  set position(value) {
-    this.x = value.x;
-    this.y = value.y;
-  }
-  tick(obj) {
-    if (this.active) {
-      this.movedAmount = this.lastPosition.subtract(this.position);
-      this.lastPosition = this.position;
-    }
-  }
-};
-
-// ts/utils/elementZoom.ts
-var ElementZoom = class extends ElementPosition {
-  constructor(attr = {}) {
-    super(attr);
-    this._zoomX = 1;
-    this._zoomY = 1;
-    if (attr.zoom) {
-      this._zoomX = attr.zoom.x;
-      this._zoomY = attr.zoom.y;
-    }
-  }
-  get zoomX() {
-    return this._zoomX;
-  }
-  set zoomX(n) {
-    this._zoomX = n;
-  }
-  get zoomY() {
-    return this._zoomY;
-  }
-  set zoomY(n) {
-    this._zoomY = n;
-  }
-  get zoom() {
-    return new Vector2(this.zoomX, this.zoomY);
-  }
-  set zoom(value) {
-    this.zoomX = value.x;
-    this.zoomY = value.y;
-  }
-};
-
-// ts/utils/elementSize.ts
-var ElementSize = class extends ElementZoom {
-  constructor(attr = {}) {
-    super(attr);
-    this._width = 0;
-    this._height = 0;
-    if (attr.size) {
-      this._width = attr.size.x;
-      this._height = attr.size.y;
-    }
-  }
-  get width() {
-    return this._width;
-  }
-  set width(n) {
-    this._width = n;
-  }
-  get height() {
-    return this._height;
-  }
-  set height(n) {
-    this._height = n;
-  }
-  get size() {
-    return new Vector2(this.width, this.height);
-  }
-  set size(value) {
-    this.width = value.x;
-    this.height = value.y;
-  }
-};
-
-// ts/utils/elementVisible.ts
-var ElementVisible = class extends ElementSize {
-  constructor(attr = {}) {
-    super(attr);
-    this._visible = true;
-    if (attr.visible !== void 0) {
-      this.visible = attr.visible;
-    }
-  }
-  get visible() {
-    return this._visible;
-  }
-  set visible(v) {
-    this._visible = v;
-  }
-};
-
-// ts/utils/element.ts
-var Element = class extends ElementVisible {
-  constructor() {
-    super(...arguments);
-    this.events = [];
-  }
-  get t() {
-    return this.game.t;
-  }
-  get gl() {
-    return this.GLR.gl;
-  }
-  build() {
-  }
-  addEvent(e) {
-    this.events.push(e);
-  }
-  getEvent(id) {
-    return this.events.find((e) => id === e.id);
-  }
-};
-
-// ts/elements/dom/domElement.ts
+// ts/dom/domElement.ts
 var DomElement = class extends Element {
   constructor(type, attr = {}) {
-    super(attr);
+    super();
     this.children = [];
     this.rendererType = "dom";
+    this.position = v2(0);
+    this.size = v2(0);
     this.dom = document.createElement(type);
     this.dom.style.position = "absolute";
     this.dom.style.transformOrigin = "bottom left";
@@ -341,7 +231,6 @@ var DomElement = class extends Element {
     }
   }
   set visible(value) {
-    super.visible = value;
     this.dom ? this.dom.style.display = value ? "block" : "none" : null;
   }
   set background(v) {
@@ -369,7 +258,9 @@ var DomElement = class extends Element {
     this.build();
   }
   tick(obj) {
-    super.tick(obj);
+    this.children.forEach((c) => {
+      c.tick(obj);
+    });
   }
   appendChild(e) {
     this.dom.appendChild(e.dom);
@@ -386,189 +277,7 @@ var DomElement = class extends Element {
   }
 };
 
-// ts/elements/canvas/canvasElement.ts
-var CanvasElement = class extends Element {
-  constructor(attr = {}) {
-    super(attr);
-    this.rendererType = "canvas";
-    this.composite = "source-over";
-    this.lowerChildren = [];
-    this.higherChildren = [];
-    this.glElements = [];
-    this.controllers = [];
-    this.anchoredPosition = Vector2.zero;
-    this.hasDom = attr.hasDom || false;
-    if (this.hasDom) {
-      this.dom = new DomElement("div");
-    }
-    this.autoReady = attr.autoReady !== void 0 ? attr.autoReady : true;
-    this.composite = attr.composite || "source-over";
-    this.addControllers(attr.controllers || []);
-  }
-  get x() {
-    return super.x;
-  }
-  set x(n) {
-    super.x = n;
-    if (this.dom) {
-      this.dom.x = n;
-    }
-  }
-  get y() {
-    return super.y;
-  }
-  set y(n) {
-    super.y = n;
-    if (this.dom) {
-      this.dom.y = n;
-    }
-  }
-  get width() {
-    return super.width;
-  }
-  set width(n) {
-    super.width = n;
-    if (this.dom) {
-      this.dom.width = n;
-    }
-  }
-  get height() {
-    return super.height;
-  }
-  set height(n) {
-    super.height = n;
-    if (this.dom) {
-      this.dom.height = n;
-    }
-  }
-  get renderPosition() {
-    return this.position.add(this.anchoredPosition);
-  }
-  get renderX() {
-    return this.renderPosition.x;
-  }
-  get renderY() {
-    return this.renderPosition.y;
-  }
-  get camera() {
-    return this.mode.camera;
-  }
-  set camera(c) {
-    this.mode.camera = c;
-  }
-  ready() {
-    this.build();
-    if (this.game.waitCount) {
-      this.game.waitCount--;
-    }
-  }
-  addChild(child, above = false) {
-    var _a, _b, _c, _d, _e;
-    (_a = child.parent) != null ? _a : child.parent = this;
-    (_b = child.game) != null ? _b : child.game = this.game;
-    (_c = child.mode) != null ? _c : child.mode = this.mode;
-    (_d = child.level) != null ? _d : child.level = this.level;
-    (_e = child.GLR) != null ? _e : child.GLR = this.game.GLR;
-    if (this.game.waitCount) {
-      this.game.waitCount++;
-    }
-    if (child.rendererType === "canvas") {
-      this[above ? "higherChildren" : "lowerChildren"].push(child);
-      child.registerControllers(child);
-      if (child.dom && this.hasDom) {
-        this.dom.addChild(child.dom);
-      }
-    } else if (child.rendererType === "gl") {
-      this.glElements.push(child);
-    } else {
-      if (this.hasDom) {
-        this.dom.addChild(child);
-      } else {
-        console.log("The CanvasElement class does not have a dom element to add children to. Child:", child.constructor.name);
-      }
-    }
-    if (child.rendererType === "dom" || child.autoReady) {
-      child.ready();
-    }
-    return child;
-  }
-  addControllers(c) {
-    if (c.length > 0) {
-      this.controllers.push(...c);
-    }
-  }
-  registerControllers(child) {
-    child.controllers.forEach((controller) => {
-      var _a, _b, _c, _d;
-      if (controller.parent === void 0) {
-        (_a = controller.parent) != null ? _a : controller.parent = child;
-        (_b = controller.game) != null ? _b : controller.game = child.game;
-        (_c = controller.mode) != null ? _c : controller.mode = child.mode;
-        (_d = controller.level) != null ? _d : controller.level = child.level;
-        controller.build();
-      }
-    });
-  }
-  tick(obj) {
-    super.tick(obj);
-    this.controllers.filter((child) => child.active).forEach((c) => c.tick(obj));
-    this.lowerChildren.filter((child) => child.active).forEach((c) => c.tick(obj));
-    this.higherChildren.filter((child) => child.active).forEach((c) => c.tick(obj));
-    this.glElements.filter((child) => child.active).forEach((c) => c.tick(obj));
-    if (this.dom) {
-      this.dom.tick(obj);
-    }
-  }
-  preRender(c, gl) {
-    c.save();
-    if (this.relativity === "anchor" || this.relativity === "composite") {
-      c.translate(this.x, this.y);
-      c.scale(this.zoom.x, this.zoom.y);
-    }
-    c.save();
-    c.globalCompositeOperation = this.composite;
-    this.renderLower(c);
-    this.render(c);
-    c.restore();
-  }
-  renderLower(c, gl) {
-    this.lowerChildren.filter((child) => child.visible && child.active).forEach((child) => {
-      child.preRender(c);
-      child.postRender(c);
-    });
-  }
-  render(c, gl) {
-  }
-  renderHigher(c, gl) {
-    this.higherChildren.filter((child) => child.visible && child.active).forEach((child) => {
-      child.preRender(c);
-      child.postRender(c);
-    });
-  }
-  renderGl(gl) {
-    this.glElements.filter((child) => child.visible && child.active).forEach((child) => {
-      child.preRender(gl);
-      child.postRender(gl);
-    });
-  }
-  postRender(c, gl) {
-    this.renderHigher(c);
-    c.restore();
-  }
-};
-
-// ts/elements/canvas/canvasWrapper.ts
-var CanvasWrapper = class extends CanvasElement {
-  constructor(attr = {}) {
-    super(attr);
-    this.type = "wrapper";
-    if (!attr.relativity) {
-      this.relativity = "anchor";
-    }
-  }
-};
-
-// ts/elements/dom/domText.ts
+// ts/dom/domText.ts
 var DomText = class extends DomElement {
   set color(v) {
     this.dom.style.color = v;
@@ -691,22 +400,6 @@ var Ticker = class {
   }
 };
 
-// ts/utils/event.ts
-var Event = class {
-  constructor(id) {
-    this.subscribers = {};
-    this.id = id;
-  }
-  subscribe(key, func) {
-    this.subscribers[key] = func;
-  }
-  alert(v) {
-    Object.values(this.subscribers).forEach((s) => {
-      s(v);
-    });
-  }
-};
-
 // ts/utils/input.ts
 var Input = class {
   get locked() {
@@ -764,7 +457,7 @@ var Input = class {
     }
   }
   send(event, e) {
-    Object.values(this.game.modes).forEach((mode) => this.recursive(event, mode, e));
+    this.recursive(event, this.game.mode, e);
   }
   recursive(event, element, e) {
     if (element.active) {
@@ -777,81 +470,68 @@ var Input = class {
           element[event](e);
         }
       }
-      if (element.rendererType !== "gl") {
-        element.lowerChildren.forEach((child) => this.recursive(event, child, e));
-        element.higherChildren.forEach((child) => this.recursive(event, child, e));
-        element.glElements.forEach((child) => this.recursive(event, child, e));
-      }
-      if (element.rendererType === "gl") {
-        element.glChildren.forEach((child) => this.recursive(event, child, e));
-      }
       element.controllers.forEach((child) => this.recursive(event, child, e));
+      element.children.forEach((child) => this.recursive(event, child, e));
     }
   }
 };
 
-// ts/elements/dom/domCanvas.ts
-var DomCanvas = class extends DomElement {
+// ts/utils/event.ts
+var Event = class {
+  constructor(id) {
+    this.subscribers = {};
+    this.id = id;
+  }
+  subscribe(key, func) {
+    this.subscribers[key] = func;
+  }
+  alert(v) {
+    Object.values(this.subscribers).forEach((s) => {
+      s(v);
+    });
+  }
+};
+
+// ts/dom/renderer.ts
+var Renderer = class extends DomElement {
   constructor(game) {
     super("canvas");
     this.game = game;
-    this.dom = document.createElement("canvas");
     this.dom.style.position = "absolute";
-    this.dom.style.imageRendering = "pixelated";
     this.dom.style.pointerEvents = "all";
     this.dom.style.bottom = "0px";
-    this.ctx = this.dom.getContext("2d");
-    this.ctx.imageSmoothingEnabled = false;
-    this.domGl = document.createElement("canvas");
-    this.domGl.style.position = "absolute";
-    this.domGl.style.pointerEvents = "none";
-    this.domGl.style.bottom = "0px";
-  }
-  build() {
-    this.game.ctx = this.ctx;
     this.dom.tabIndex = 1;
-    this.game.getEvent("resize").subscribe(String(Math.random()), (size) => {
-      var _a, _b;
-      this.size = size;
-      (_b = (_a = this.game) == null ? void 0 : _a.GLR) == null ? void 0 : _b.resize();
+    window.addEventListener("resize", () => {
+      this.resize();
     });
-    this.game.resize();
+    this.addEvent(new Event("resize"));
+    this.resize();
+  }
+  resize() {
+    this.size = v2(document.body.clientWidth, document.body.clientHeight);
+    this.dom.style.width = "".concat(this.size.x, "px");
+    this.dom.setAttribute("width", String(this.size.x));
+    this.dom.style.height = "".concat(this.size.y, "px");
+    this.dom.setAttribute("height", String(this.size.y));
+    this.getEvent("resize").alert(this.size);
   }
   get width() {
     return Math.round(Number(this.dom.style.width.replace(/\D/g, "")));
   }
   set width(value) {
-    if (this.dom) {
-      this.dom.style.width = "".concat(value, "px");
-      this.dom.setAttribute("width", String(value));
-    }
-    if (this.domGl) {
-      this.domGl.style.width = "".concat(value, "px");
-      this.domGl.setAttribute("width", String(value));
-    }
+    this.dom.style.width = "".concat(value, "px");
+    this.dom.setAttribute("width", String(value));
   }
   get height() {
     return Math.round(Number(this.dom.style.height.replace(/\D/g, "")));
   }
   set height(value) {
-    if (this.dom) {
-      this.dom.style.height = "".concat(value, "px");
-      this.dom.setAttribute("height", String(value));
-    }
-    if (this.domGl) {
-      this.domGl.style.height = "".concat(value, "px");
-      this.domGl.setAttribute("height", String(value));
-    }
+    this.dom.style.height = "".concat(value, "px");
+    this.dom.setAttribute("height", String(value));
   }
   addMode(child) {
-    var _a, _b, _c, _d, _e;
-    (_a = child.parent) != null ? _a : child.parent = this.game;
-    (_b = child.game) != null ? _b : child.game = this.game;
-    (_c = child.mode) != null ? _c : child.mode = this.mode;
-    (_d = child.level) != null ? _d : child.level = this.level;
-    (_e = child.GLR) != null ? _e : child.GLR = this.game.GLR;
-    this.game.dom.appendChild(child.dom);
-    child.registerControllers(child);
+    var _a;
+    (_a = child.game) != null ? _a : child.game = this.game;
     child.build();
   }
   get context() {
@@ -863,17 +543,8 @@ var DomCanvas = class extends DomElement {
   tick(obj) {
     super.tick(obj);
     this.tickerData = obj;
-    this.ctx.clearRect(0, 0, this.width, this.height);
-    this.ctx.save();
-    this.ctx.scale(1, -1);
-    this.ctx.translate(0, -this.height);
-    Object.values(this.game.modes).filter((child) => child.active).forEach((mode) => mode.tick(obj));
-    Object.values(this.game.modes).filter((child) => child.visible && child.active).forEach((mode) => {
-      mode.preRender(this.ctx);
-      mode.postRender(this.ctx);
-    });
-    this.ctx.restore();
     this.game.GLR.draw();
+    this.game.mode.tick(obj);
   }
 };
 
@@ -2172,7 +1843,7 @@ function equals(a, b) {
 var mul = multiply;
 var sub = subtract;
 
-// ts/utils/glInit.ts
+// ts/gl/glrInit.ts
 function loadShader(gl, type, source) {
   const shader = gl.createShader(type);
   gl.shaderSource(shader, source);
@@ -2451,21 +2122,24 @@ var Vector3 = class _Vector3 {
   // }
 };
 
-// ts/utils/gl.ts
+// ts/gl/glr.ts
 var GLR = class {
   constructor(game) {
     this.game = game;
     this.objects = [];
     this.frameData = {};
-    this.gl = this.game.renderer.domGl.getContext("webgl");
-    const ext = this.gl.getExtension("OES_element_index_uint");
+    this.gl = this.game.renderer.dom.getContext("webgl");
+    this.gl.getExtension("OES_element_index_uint");
+    this.gl.enable(this.gl.BLEND);
+    this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
     this.programInfo = initShaderProgram(this.gl);
+    this.game.renderer.getEvent("resize").subscribe("glr", this.resize.bind(this));
   }
   get t() {
     return this.game.t;
   }
-  resize() {
-    this.gl.viewport(0, 0, this.gl.canvas.width, this.gl.canvas.height);
+  resize(size) {
+    this.gl.viewport(0, 0, size.x, size.y);
   }
   initGlElement(mesh) {
     this.objects.push(mesh);
@@ -2509,7 +2183,7 @@ var GLR = class {
     this.frameData.normalMatrix = normalMatrix;
   }
   clear() {
-    this.gl.clearColor(0, 0, 0, 0.5);
+    this.gl.clearColor(...this.game.level.background);
     this.gl.clearDepth(1);
     this.gl.enable(this.gl.DEPTH_TEST);
     this.gl.depthFunc(this.gl.LEQUAL);
@@ -2519,11 +2193,12 @@ var GLR = class {
   draw() {
     this.clear();
     this.gl.useProgram(this.programInfo.program);
+    this.gl.uniform1i(this.programInfo.uniformLocations.uSampler, 0);
     this.setCamera();
     this.drawElement(this.game.level);
   }
   drawElement(element, currentModelview) {
-    element.glChildren.forEach((o) => {
+    element.children.forEach((o) => {
       this.drawObject(o, currentModelview ? mat4_exports.clone(currentModelview) : void 0);
     });
   }
@@ -2531,7 +2206,7 @@ var GLR = class {
     mat4_exports.translate(
       currentModelview,
       currentModelview,
-      mesh.position3.multiply(new Vector3(1, 1, -1)).vec
+      mesh.position.multiply(new Vector3(1, 1, -1)).vec
     );
     if (mesh.buffer) {
       this.renderMesh(mesh, currentModelview);
@@ -2555,7 +2230,6 @@ var GLR = class {
     );
     this.gl.activeTexture(this.gl.TEXTURE0);
     this.gl.bindTexture(this.gl.TEXTURE_2D, mesh.texture.texture);
-    this.gl.uniform1i(this.programInfo.uniformLocations.uSampler, 0);
     this.gl.drawElements(
       this.gl.TRIANGLES,
       mesh.verticesCount,
@@ -2616,12 +2290,92 @@ var GLR = class {
   }
 };
 
-// ts/utils/mode.ts
-var Mode = class extends CanvasWrapper {
+// ts/gl/elementBase.ts
+var GlElement = class _GlElement extends Element {
+  constructor(attr = {}) {
+    var _a;
+    super();
+    this.rendererType = "gl";
+    this.position = v3(0);
+    this.size = v3(0);
+    this.rotation = v3(0);
+    this._active = true;
+    this.children = [];
+    this.controllers = [];
+    this.anchoredPosition = Vector2.zero;
+    this.autoReady = attr.autoReady !== void 0 ? attr.autoReady : true;
+    this.addControllers(attr.controllers || []);
+    this.size = attr.size || ((_a = this.parent) == null ? void 0 : _a.size) || v3(0);
+    this.position = attr.position || v3(0);
+    this.rotation = attr.rotation || v3(0);
+    this.anchorPoint = attr.anchorPoint || v3(0);
+  }
+  get active() {
+    return this._active;
+  }
+  set active(value) {
+    this._active = value;
+  }
+  get camera() {
+    return this.mode.camera;
+  }
+  set camera(c) {
+    this.mode.camera = c;
+  }
+  ready() {
+    this.build();
+    if (this.game.waitCount) {
+      this.game.waitCount--;
+    }
+  }
+  addChild(child) {
+    var _a, _b;
+    (_a = child.parent) != null ? _a : child.parent = this;
+    (_b = child.game) != null ? _b : child.game = this.game;
+    if (this.game.waitCount) {
+      this.game.waitCount++;
+    }
+    this.children.push(child);
+    if (child.autoReady) {
+      child.ready();
+    }
+    _GlElement.registerControllers(child);
+    return child;
+  }
+  addControllers(c) {
+    if (c.length > 0) {
+      this.controllers.push(...c);
+    }
+  }
+  static registerControllers(child) {
+    child.controllers.forEach((controller) => {
+      var _a, _b;
+      if (controller.parent === void 0) {
+        (_a = controller.parent) != null ? _a : controller.parent = child;
+        (_b = controller.game) != null ? _b : controller.game = child.game;
+        controller.build();
+      }
+    });
+  }
+  tick(obj) {
+    this.controllers.filter((child) => child.active).forEach((c) => c.tick(obj));
+    this.children.filter((child) => child.active).forEach((c) => c.tick(obj));
+  }
+};
+
+// ts/gl/group.ts
+var GLGroup = class extends GlElement {
   constructor() {
     super(...arguments);
+    this.type = "group";
+  }
+};
+
+// ts/utils/mode.ts
+var Mode = class extends GLGroup {
+  constructor(attr = {}) {
+    super(attr);
     this.levels = {};
-    this.relativity = "anchor";
     this.keyAliases = {
       "w": "up",
       "a": "left",
@@ -2648,10 +2402,8 @@ var Mode = class extends CanvasWrapper {
     this.level.camera = value;
   }
   build() {
-    super.build();
-    this.game.getEvent("resize").subscribe(String(Math.random()), (size) => {
-      this.size = size;
-    });
+    this.game.active.mode = this;
+    this.switchLevel(Object.keys(this.levels)[0]);
   }
   addLevel(s, level) {
     this.levels[s] = level;
@@ -2660,11 +2412,6 @@ var Mode = class extends CanvasWrapper {
   switchLevel(s) {
     Object.entries(this.levels).forEach(([key, level]) => {
       level.active = key === s;
-      level.visible = key === s;
-      if (key === s) {
-        this.level = level;
-        this.game.level = level;
-      }
     });
   }
   keyDown(e) {
@@ -2680,276 +2427,11 @@ var Mode = class extends CanvasWrapper {
   tick(obj) {
     super.tick(obj);
     this.controllers.filter((child) => child.active).forEach((c) => c.tick(obj));
-    this.lowerChildren.filter((child) => child.active).forEach((c) => c.tick(obj));
-    this.higherChildren.filter((child) => child.active).forEach((c) => c.tick(obj));
-    this.glElements.filter((child) => child.active).forEach((c) => c.tick(obj));
-    if (this.dom) {
-      this.dom.tick(obj);
-    }
+    this.children.filter((child) => child.active).forEach((c) => c.tick(obj));
   }
 };
 
-// ts/elements/canvas/canvasColor.ts
-var CanvasColor = class extends CanvasElement {
-  constructor(attr = {}) {
-    super(attr);
-    this.type = "color";
-    this.colorType = "color";
-    this.strokeWidth = 0;
-    this.color = attr.color;
-    this.stroke = attr.stroke;
-    this.strokeWidth = attr.strokeWidth | 0;
-    this.linearGradient = attr.linearGradient;
-    this.radialGradient = attr.radialGradient;
-  }
-  getColor() {
-    if (this.colorType === "color") {
-      return this.color;
-    }
-    if (this.colorType === "linearGradient") {
-      return this.getLiniarGradient();
-    }
-    if (this.colorType === "radialGradient") {
-      return this.getRadialGradient();
-    }
-  }
-};
-
-// ts/elements/canvas/canvasSquare.ts
-var CanvasSquare = class extends CanvasColor {
-  constructor(attr = {}) {
-    super(attr);
-    this.shape = "square";
-    this.color = attr.color;
-    this.rounded = attr.rounded || 3;
-    this.condition = attr.condition;
-    this.opacity = attr.opacity || 1;
-  }
-  render(ctx) {
-    if (!this.condition || this.condition(this.position.add(this.parent.position), this.size)) {
-      ctx.fillStyle = this.getColor();
-      ctx.globalAlpha = this.opacity;
-      ctx.beginPath();
-      ctx.roundRect(this.position.x, this.position.y, this.width, this.height, this.rounded);
-      if (this.color) {
-        ctx.fill();
-      }
-      if (this.strokeWidth) {
-        ctx.lineWidth = this.strokeWidth;
-        ctx.strokeStyle = this.stroke || "black";
-        ctx.stroke();
-      }
-      ctx.closePath();
-    }
-  }
-  getLiniarGradient() {
-    if (this.linearGradient) {
-      const grd = this.game.renderer.ctx.createLinearGradient(
-        this.position.x + this.anchoredPosition.x,
-        this.position.y + this.anchoredPosition.y,
-        this.position.x + this.anchoredPosition.x + this.width,
-        this.position.y + this.anchoredPosition.y + this.height
-      );
-      this.linearGradient.stops.forEach(([number, color]) => {
-        grd.addColorStop(number, color);
-      });
-      return grd;
-    }
-    return "";
-  }
-  getRadialGradient() {
-    if (this.radialGradient) {
-      const grd = this.game.renderer.ctx.createRadialGradient(
-        this.position.x + this.width / 2,
-        this.position.y + this.height / 2,
-        0,
-        this.position.x + this.width / 2,
-        this.position.y + this.height / 2,
-        this.width
-      );
-      this.radialGradient.stops.forEach(([number, color]) => {
-        grd.addColorStop(number, color);
-      });
-      return grd;
-    }
-    return "";
-  }
-};
-
-// ts/elements/canvas/canvasBackground.ts
-var CanvasColorBackground = class extends CanvasSquare {
-  constructor(color) {
-    super({
-      position: Vector2.zero,
-      color
-    });
-  }
-  build() {
-    this.game.getEvent("resize").subscribe(String(Math.random()), (size) => {
-      this.size = this.parent.size;
-    });
-  }
-};
-
-// ts/utils/colors.ts
-var Colors = class {
-};
-Colors.k = [0, 0, 0, 1];
-Colors.r = [1, 0, 0, 1];
-Colors.g = [0, 1, 0, 1];
-Colors.b = [0, 0, 1, 1];
-Colors.y = [1, 1, 0, 1];
-Colors.c = [0, 1, 1, 1];
-Colors.m = [1, 0, 1, 1];
-Colors.w = [1, 1, 1, 1];
-
-// ts/elements/gl/glElement.ts
-var GlElement = class extends Element {
-  constructor(attr = {}) {
-    super(attr);
-    this.rendererType = "gl";
-    this.glChildren = [];
-    this.controllers = [];
-    this.anchoredPosition = Vector2.zero;
-    this.z = 0;
-    this._rotation = v3(0);
-    this._depth = 1;
-    this.autoReady = attr.autoReady !== void 0 ? attr.autoReady : true;
-    this.addControllers(attr.controllers || []);
-    this.size3 = attr.size3 || this.parent.size3;
-    this.position3 = attr.position3 || v3(0);
-    this.rotation = attr.rotation || v3(0);
-    this.anchorPoint = attr.anchorPoint || v3(0);
-  }
-  get renderPosition() {
-    return this.position.add(this.anchoredPosition);
-  }
-  get renderX() {
-    return this.renderPosition.x;
-  }
-  get renderY() {
-    return this.renderPosition.y;
-  }
-  get x() {
-    return super.x;
-  }
-  set x(n) {
-    super.x = n;
-  }
-  get y() {
-    return super.y;
-  }
-  set y(n) {
-    super.y = n;
-  }
-  get position3() {
-    return v3(this.x, this.y, this.z);
-  }
-  set position3({ x, y, z }) {
-    this.x = x;
-    this.y = y;
-    this.z = z;
-  }
-  get rotation() {
-    return this._rotation;
-  }
-  set rotation(r) {
-    this._rotation = r;
-  }
-  get width() {
-    return super.width;
-  }
-  set width(n) {
-    super.width = n;
-  }
-  get height() {
-    return super.height;
-  }
-  set height(n) {
-    super.height = n;
-  }
-  get depth() {
-    return this._depth;
-  }
-  set depth(n) {
-    this._depth = n;
-  }
-  get size3() {
-    return v3(this.width, this.height, this.depth);
-  }
-  set size3({ x, y, z }) {
-    this.width = x;
-    this.height = y;
-    this.depth = z;
-  }
-  get camera() {
-    return this.mode.camera;
-  }
-  set camera(c) {
-    this.mode.camera = c;
-  }
-  ready() {
-    this.build();
-    if (this.game.waitCount) {
-      this.game.waitCount--;
-    }
-  }
-  addChild(child) {
-    var _a, _b, _c, _d, _e;
-    (_a = child.parent) != null ? _a : child.parent = this;
-    (_b = child.game) != null ? _b : child.game = this.game;
-    (_c = child.mode) != null ? _c : child.mode = this.mode;
-    (_d = child.level) != null ? _d : child.level = this.level;
-    (_e = child.GLR) != null ? _e : child.GLR = this.game.GLR;
-    if (this.game.waitCount) {
-      this.game.waitCount++;
-    }
-    this.glChildren.push(child);
-    child.registerControllers(child);
-    if (child.autoReady) {
-      child.ready();
-    }
-    return child;
-  }
-  addControllers(c) {
-    if (c.length > 0) {
-      this.controllers.push(...c);
-    }
-  }
-  registerControllers(child) {
-    child.controllers.forEach((controller) => {
-      var _a, _b, _c, _d;
-      if (controller.parent === void 0) {
-        (_a = controller.parent) != null ? _a : controller.parent = child;
-        (_b = controller.game) != null ? _b : controller.game = child.game;
-        (_c = controller.mode) != null ? _c : controller.mode = child.mode;
-        (_d = controller.level) != null ? _d : controller.level = child.level;
-        controller.build();
-      }
-    });
-  }
-  tick(obj) {
-    super.tick(obj);
-    this.controllers.filter((child) => child.active).forEach((c) => c.tick(obj));
-    this.glChildren.filter((child) => child.active).forEach((c) => c.tick(obj));
-  }
-  preRender(c) {
-    this.renderLower(c);
-    this.render(c);
-  }
-  renderLower(c) {
-    this.glChildren.filter((child) => child.visible && child.active).forEach((child) => {
-      child.preRender(c);
-      child.postRender(c);
-    });
-  }
-  render(c) {
-  }
-  postRender(c) {
-  }
-};
-
-// ts/elements/gl/glRendable.ts
+// ts/gl/rendable.ts
 var GLRendable = class extends GlElement {
   constructor(attr = {}) {
     super(attr);
@@ -2957,9 +2439,9 @@ var GLRendable = class extends GlElement {
   }
   build() {
     this.buffer = {
-      positionBuffer: this.positionBuffer(this.size3),
+      positionBuffer: this.positionBuffer(this.size),
       indices: this.indexBuffer(),
-      textureCoord: this.textureBuffer(this.size3),
+      textureCoord: this.textureBuffer(this.size),
       normalBuffer: this.normalBuffer()
     };
     this.GLR.initGlElement(this);
@@ -3008,7 +2490,7 @@ var GLRendable = class extends GlElement {
   }
 };
 
-// ts/elements/gl/glTexture.ts
+// ts/gl/texture.ts
 var GLTexture = class {
   constructor(game, attr) {
     this.game = game;
@@ -3019,7 +2501,7 @@ var GLTexture = class {
         this.game.waitCount--;
         this.loadTexture(this.image);
       };
-      this.image.src = "".concat(window.location.href, "/tex/").concat(attr.url);
+      this.image.src = "".concat(window.location.href, "/").concat(attr.url);
     } else {
       this.loadColor(attr.color || [[0.8, 0.8, 0.7, 1]]);
     }
@@ -3079,7 +2561,168 @@ var GLTexture = class {
   }
 };
 
-// ts/elements/gl/glMesh.ts
+// ts/gl/obj.ts
+var GLobj = class extends GLRendable {
+  constructor(attr = {}) {
+    super(__spreadValues(__spreadValues({}, attr), { autoReady: false }));
+    this.type = "mesh";
+    this.verticesCount = 0;
+    this.matIndeces = [];
+    this.mats = {};
+    this.positionIndeces = [];
+    this.indexIndeces = [];
+    this.normalIndeces = [];
+    this.textureIndeces = [];
+    this.texturePositionIndeces = [];
+    this.loadFile("".concat(window.location.href, "/obj/").concat(attr.url)).then(this.parseMtl.bind(this)).then(this.parseObj.bind(this)).then(() => {
+      this.ready();
+    });
+  }
+  build() {
+    super.build();
+  }
+  async parseMtl(str2) {
+    if (/mtllib/.test(str2)) {
+      await this.loadFile("".concat(window.location.href, "obj/").concat(str2.split(/mtllib/)[1].split(/(?: |\n)/)[1])).then((v) => {
+        v.split("newmtl ").slice(1).forEach((s) => {
+          const l = s.split("\n");
+          this.mats[l.shift()] = l;
+        });
+      });
+      return str2;
+    } else {
+      return str2;
+    }
+  }
+  parseFaces(lineArray, mat, points, normals, tCoords) {
+    const textRemainder = lineArray.slice(1);
+    const numbRemainder = textRemainder.map(Number);
+    ({
+      usemtl: () => {
+        mat = textRemainder[0];
+      },
+      f: () => {
+        if (numbRemainder.length === 3) {
+          this.positionIndeces.push(...points[numbRemainder[0] - 1]);
+          this.positionIndeces.push(...points[numbRemainder[1] - 1]);
+          this.positionIndeces.push(...points[numbRemainder[2] - 1]);
+        } else if (numbRemainder.length === 6) {
+          this.positionIndeces.push(...points[numbRemainder[0] - 1]);
+          this.positionIndeces.push(...points[numbRemainder[2] - 1]);
+          this.positionIndeces.push(...points[numbRemainder[4] - 1]);
+          this.textureIndeces.push(numbRemainder[1] - 1);
+          this.textureIndeces.push(numbRemainder[3] - 1);
+          this.textureIndeces.push(numbRemainder[5] - 1);
+        } else {
+          this.positionIndeces.push(...points[numbRemainder[0] - 1]);
+          this.positionIndeces.push(...points[numbRemainder[3] - 1]);
+          this.positionIndeces.push(...points[numbRemainder[6] - 1]);
+          this.textureIndeces.push(
+            ...GLTexture.textureOffset(Object.keys(this.mats).indexOf(mat), Object.keys(this.mats).length)
+          );
+          this.normalIndeces.push(...normals[numbRemainder[2] - 1]);
+          this.normalIndeces.push(...normals[numbRemainder[5] - 1]);
+          this.normalIndeces.push(...normals[numbRemainder[8] - 1]);
+        }
+        this.indexIndeces.push(this.indexIndeces.length);
+        this.indexIndeces.push(this.indexIndeces.length);
+        this.indexIndeces.push(this.indexIndeces.length);
+        this.matIndeces.push(mat);
+        this.matIndeces.push(mat);
+        this.matIndeces.push(mat);
+      }
+    }[lineArray[0]] || (() => {
+    }))();
+    return mat;
+  }
+  parseObj(str2) {
+    let mat = "none";
+    const lines = str2.split("\n");
+    const nonVertex = [];
+    const points = [];
+    const normals = [];
+    const tCoords = [];
+    lines.forEach(async (line) => {
+      const words = line.split(/(?: |\/)/);
+      const command = words[0];
+      const numbers = words.slice(1).map(Number);
+      if (command === "v") {
+        points.push([numbers[0], numbers[1], numbers[2]]);
+      } else if (command === "vn") {
+        normals.push([numbers[0], numbers[1], numbers[2]]);
+      } else if (command === "vt") {
+        tCoords.push([numbers[0], numbers[1]]);
+      } else {
+        nonVertex.push(words);
+      }
+    });
+    nonVertex.forEach((words) => {
+      mat = this.parseFaces(words, mat, points, normals, tCoords);
+    });
+    this.verticesCount = this.indexIndeces.length;
+  }
+  async loadFile(url) {
+    const response = await fetch(url);
+    const data = await response.text();
+    return data;
+  }
+  indexBuffer() {
+    return this.getIndexBuffer(this.indexIndeces);
+  }
+  positionBuffer(size) {
+    return this.getPositionBuffer(this.positionIndeces.map((n, i) => n * size.array[i % 3]));
+  }
+  normalBuffer() {
+    return this.getNormalBuffer(this.normalIndeces);
+  }
+  textureBuffer(size) {
+    if (Object.values(this.mats).length) {
+      this.texture = new GLTexture(this.game, { color: Object.values(this.mats).map((s) => [...s[2].slice(3).split(" ").map(Number), Number(s[6].slice(2))]) });
+    } else {
+      this.texture = new GLTexture(this.game, {});
+    }
+    return this.getTextureBuffer(this.textureIndeces);
+  }
+};
+
+// ts/utils/level.ts
+var Level = class extends GlElement {
+  constructor(attr = {}) {
+    super(attr);
+    this.type = "group";
+    // public colliders: Collider[] = [];
+    this._camera = {
+      target: Vector3.f(0),
+      rotation: Vector3.f(0),
+      offset: Vector3.f(0),
+      fov: 60
+    };
+    this.size = this.size;
+  }
+  get camera() {
+    return this._camera;
+  }
+  set camera(value) {
+    this._camera = value;
+  }
+  build() {
+    this.game.active.level = this;
+  }
+};
+
+// ts/utils/colors.ts
+var Colors = class {
+};
+Colors.k = [0, 0, 0, 1];
+Colors.r = [1, 0, 0, 1];
+Colors.g = [0, 1, 0, 1];
+Colors.b = [0, 0, 1, 1];
+Colors.y = [1, 1, 0, 1];
+Colors.c = [0, 1, 1, 1];
+Colors.m = [1, 0, 1, 1];
+Colors.w = [1, 1, 1, 1];
+
+// ts/gl/mesh.ts
 var GlMesh = class extends GLRendable {
   constructor(attr) {
     super(attr);
@@ -3087,7 +2730,7 @@ var GlMesh = class extends GLRendable {
     this.colors = [];
     this.verticesCount = 36;
     this.dimensions = 0 | 1 | 2 | 3;
-    this.dimensions = attr.size3.array.filter((v) => v !== 0).length;
+    this.dimensions = attr.size.array.filter((v) => v !== 0).length;
     if (this.dimensions < 2) {
       return;
     }
@@ -3227,18 +2870,17 @@ var GlMesh = class extends GLRendable {
       -0
     ];
     if (this.dimensions === 2) {
-      if (this.depth === 0)
+      if (this.size.z === 0)
         b = b.slice(0, 24);
-      else if (this.width === 0)
+      else if (this.size.x === 0)
         b = b.slice(60, 72);
-      else if (this.height === 0)
+      else if (this.size.y === 0)
         b = b.slice(36, 48);
     }
     return this.getPositionBuffer(b.map((n, i) => n * size.array[i % 3]));
   }
   normalBuffer() {
     let b = [
-      // Front
       0,
       0,
       -1,
@@ -3251,7 +2893,6 @@ var GlMesh = class extends GLRendable {
       0,
       0,
       -1,
-      // Back
       0,
       0,
       1,
@@ -3264,7 +2905,6 @@ var GlMesh = class extends GLRendable {
       0,
       0,
       1,
-      // Top
       0,
       1,
       0,
@@ -3277,7 +2917,6 @@ var GlMesh = class extends GLRendable {
       0,
       1,
       0,
-      // Bottom
       0,
       -1,
       0,
@@ -3290,7 +2929,6 @@ var GlMesh = class extends GLRendable {
       0,
       -1,
       0,
-      // Right
       1,
       0,
       0,
@@ -3303,7 +2941,6 @@ var GlMesh = class extends GLRendable {
       1,
       0,
       0,
-      // Left
       -1,
       0,
       0,
@@ -3318,11 +2955,11 @@ var GlMesh = class extends GLRendable {
       0
     ];
     if (this.dimensions === 2) {
-      if (this.depth === 0)
+      if (this.size.z === 0)
         b = b.slice(12, 24);
-      else if (this.width === 0)
+      else if (this.size.x === 0)
         b = b.slice(60, 72);
-      else if (this.height === 0)
+      else if (this.size.y === 0)
         b = b.slice(36, 48);
     }
     return this.getNormalBuffer(b);
@@ -3381,11 +3018,11 @@ var GlMesh = class extends GLRendable {
         1
       ];
       if (this.dimensions === 2) {
-        if (this.depth === 0)
+        if (this.size.z === 0)
           b = b.slice(0, 8);
-        else if (this.width === 0)
+        else if (this.size.x === 0)
           b = b.slice(40, 48);
-        else if (this.height === 0)
+        else if (this.size.y === 0)
           b = b.slice(24, 32);
       }
     } else {
@@ -3407,171 +3044,11 @@ var GlMesh = class extends GLRendable {
   }
 };
 
-// ts/elements/gl/glObj.ts
-var GLobj = class extends GLRendable {
-  constructor(attr = {}) {
-    super(__spreadValues(__spreadValues({}, attr), { autoReady: false }));
-    this.type = "mesh";
-    this.verticesCount = 0;
-    this.matIndeces = [];
-    this.mats = {};
-    this.positionIndeces = [];
-    this.indexIndeces = [];
-    this.normalIndeces = [];
-    this.textureIndeces = [];
-    this.texturePositionIndeces = [];
-    this.loadFile("".concat(window.location.href, "/obj/").concat(attr.url)).then(this.parseMtl.bind(this)).then(this.parseObj.bind(this)).then(() => {
-      this.ready();
-    });
-  }
-  build() {
-    super.build();
-  }
-  async parseMtl(str2) {
-    if (/mtllib/.test(str2)) {
-      await this.loadFile("".concat(window.location.href, "obj/").concat(str2.split(/mtllib/)[1].split(/(?: |\n)/)[1])).then((v) => {
-        v.split("newmtl ").slice(1).forEach((s) => {
-          const l = s.split("\n");
-          this.mats[l.shift()] = l;
-        });
-      });
-      return str2;
-    } else {
-      return str2;
-    }
-  }
-  parseFaces(lineArray, mat, points, normals, tCoords) {
-    const textRemainder = lineArray.slice(1);
-    const numbRemainder = textRemainder.map(Number);
-    ({
-      usemtl: () => {
-        mat = textRemainder[0];
-      },
-      f: () => {
-        if (numbRemainder.length === 3) {
-          this.positionIndeces.push(...points[numbRemainder[0] - 1]);
-          this.positionIndeces.push(...points[numbRemainder[1] - 1]);
-          this.positionIndeces.push(...points[numbRemainder[2] - 1]);
-        } else if (numbRemainder.length === 6) {
-          this.positionIndeces.push(...points[numbRemainder[0] - 1]);
-          this.positionIndeces.push(...points[numbRemainder[2] - 1]);
-          this.positionIndeces.push(...points[numbRemainder[4] - 1]);
-          this.textureIndeces.push(numbRemainder[1] - 1);
-          this.textureIndeces.push(numbRemainder[3] - 1);
-          this.textureIndeces.push(numbRemainder[5] - 1);
-        } else {
-          this.positionIndeces.push(...points[numbRemainder[0] - 1]);
-          this.positionIndeces.push(...points[numbRemainder[3] - 1]);
-          this.positionIndeces.push(...points[numbRemainder[6] - 1]);
-          this.textureIndeces.push(
-            ...GLTexture.textureOffset(Object.keys(this.mats).indexOf(mat), Object.keys(this.mats).length)
-          );
-          this.normalIndeces.push(...normals[numbRemainder[2] - 1]);
-          this.normalIndeces.push(...normals[numbRemainder[5] - 1]);
-          this.normalIndeces.push(...normals[numbRemainder[8] - 1]);
-        }
-        this.indexIndeces.push(this.indexIndeces.length);
-        this.indexIndeces.push(this.indexIndeces.length);
-        this.indexIndeces.push(this.indexIndeces.length);
-        this.matIndeces.push(mat);
-        this.matIndeces.push(mat);
-        this.matIndeces.push(mat);
-      }
-    }[lineArray[0]] || (() => {
-    }))();
-    return mat;
-  }
-  parseObj(str2) {
-    let mat = "none";
-    const lines = str2.split("\n");
-    const nonVertex = [];
-    const points = [];
-    const normals = [];
-    const tCoords = [];
-    lines.forEach(async (line) => {
-      const words = line.split(/(?: |\/)/);
-      const command = words[0];
-      const numbers = words.slice(1).map(Number);
-      if (command === "v") {
-        points.push([numbers[0], numbers[1], numbers[2]]);
-      } else if (command === "vn") {
-        normals.push([numbers[0], numbers[1], numbers[2]]);
-      } else if (command === "vt") {
-        tCoords.push([numbers[0], numbers[1]]);
-      } else {
-        nonVertex.push(words);
-      }
-    });
-    nonVertex.forEach((words) => {
-      mat = this.parseFaces(words, mat, points, normals, tCoords);
-    });
-    this.verticesCount = this.indexIndeces.length;
-  }
-  async loadFile(url) {
-    const response = await fetch(url);
-    const data = await response.text();
-    return data;
-  }
-  indexBuffer() {
-    return this.getIndexBuffer(this.indexIndeces);
-  }
-  positionBuffer(size) {
-    return this.getPositionBuffer(this.positionIndeces.map((n, i) => n * size.array[i % 3]));
-  }
-  normalBuffer() {
-    return this.getNormalBuffer(this.normalIndeces);
-  }
-  textureBuffer(size) {
-    if (Object.values(this.mats).length) {
-      this.texture = new GLTexture(this.game, { color: Object.values(this.mats).map((s) => [...s[2].slice(3).split(" ").map(Number), Number(s[6].slice(2))]) });
-    } else {
-      this.texture = new GLTexture(this.game, {});
-    }
-    return this.getTextureBuffer(this.textureIndeces);
-  }
-};
-
-// ts/utils/level.ts
-var Level = class extends GlElement {
-  constructor(attr = {}) {
-    super(attr);
-    this.type = "group";
-    this.relativity = "anchor";
-    this.colliders = [];
-    // public get center(): Vector3 {
-    //     return Vector3.from2(this.mode.size.scale(0.5).subtract(this.position), this.depth);
-    // }
-    this._camera = {
-      target: Vector3.f(0),
-      rotation: Vector3.f(0),
-      offset: Vector3.f(0),
-      fov: 60
-    };
-    this.level = this;
-    this.mode = this.mode;
-    this.size = this.size;
-  }
-  get camera() {
-    return this._camera;
-  }
-  set camera(value) {
-    this._camera = value;
-  }
-};
-
-// ts/utils/character.ts
+// ts/gl/character.ts
 var Character = class extends GlElement {
   constructor(attr) {
     super(attr);
     this.type = "group";
-  }
-};
-
-// ts/utils/controller.ts
-var CanvasController = class extends CanvasElement {
-  constructor() {
-    super(...arguments);
-    this.type = "logic";
   }
 };
 
@@ -3585,12 +3062,20 @@ var Util = class {
   }
 };
 
-// ts/modes/side/character/SideController.ts
-var glController = class extends CanvasController {
+// ts/gl/controller.ts
+var GlController = class extends GlElement {
+  constructor() {
+    super(...arguments);
+    this.type = "controller";
+  }
+};
+
+// ts/modes/side/movementController.ts
+var MovementController = class extends GlController {
   constructor() {
     super(...arguments);
     this.speed = 0.8;
-    this.jumpHeight = 2;
+    this.jumpHeight = 1.4;
     this.velocity = Vector3.f(0);
     this.jumping = false;
     this.jumpDuration = 0;
@@ -3609,17 +3094,6 @@ var glController = class extends CanvasController {
   land() {
     this.jumpDuration = 0;
     this.jumping = false;
-  }
-  mouseMove(e) {
-    const r = v2(e.movementX, e.movementY).scale(5e-3);
-    this.camera.rotation = v3(
-      Util.clamp(this.camera.rotation.x + r.y, -0.1, Math.PI / 2),
-      this.camera.rotation.y + r.x,
-      this.camera.rotation.z
-    );
-  }
-  scroll(e) {
-    this.camera.offset.z = Util.clamp(this.camera.offset.z + e.deltaY * 0.1, 10, 300);
   }
   tick(obj) {
     super.tick(obj);
@@ -3640,7 +3114,7 @@ var glController = class extends CanvasController {
         frameScaledVelocity.y,
         rotated.y
       );
-      const p = this.parent.position3.add(movement);
+      const p = this.parent.position.add(movement);
       if (p.y < 0) {
         this.velocity.y = 0;
         p.y = 0;
@@ -3648,7 +3122,7 @@ var glController = class extends CanvasController {
           this.land();
         }
       }
-      this.parent.position3 = p;
+      this.parent.position = p;
       if (movement.x || movement.z) {
         this.parent.rotation = this.camera.rotation.multiply(0, 1, 0);
       }
@@ -3656,34 +3130,242 @@ var glController = class extends CanvasController {
   }
 };
 
-// ts/modes/side/character/SideCharacter.ts
-var SideCharacter = class extends Character {
-  constructor({
-    position3 = Vector3.f(0),
-    size3 = Vector3.f(0)
-  } = {}) {
-    super({
-      position3,
-      size3,
-      anchorPoint: size3.multiply(0.5, 0, 0.5)
-    });
-    this.relativity = "anchor";
-    this.animations = {};
-    this.direction = 1;
-    this.phase = "idle";
-    this.addControllers([new glController()]);
-  }
-  build() {
-    this.registerControllers(this);
-    this.addChild(this.mesh = new GlMesh({ size3: this.size3, colors: [[1, 0.3, 0.3, 1], [0.3, 1, 0.3, 1], [0.4, 0.4, 1, 1], [1, 1, 0.3, 1], [0.2, 1, 1, 1], [1, 0.2, 1, 1]] }));
-  }
-  tick(o) {
-    super.tick(o);
-    this.camera.target = this.position3.clone().add(this.size3.multiply(0.5, 0.5, 0.5)).multiply(1, -1, 1);
+// ts/modes/side/sideController.ts
+var SideController = class extends MovementController {
+  tick(obj) {
+    super.tick(obj);
+    this.parent.position.x = Util.clamp(this.parent.position.x, -600, 1e3);
+    this.parent.position.z = Util.clamp(this.parent.position.z, 260, 340);
   }
 };
 
-// ts/modes/side/levels/world.ts
+// ts/modes/side/sideCamera.ts
+var SideCamera = class extends GlController {
+  constructor(target) {
+    super({ autoReady: false });
+    this.target = target;
+    this.type = "controller";
+  }
+  get active() {
+    return super.active;
+  }
+  set active(value) {
+    super.active = value;
+    if (value) {
+      this.camera.target = v3(0, -75, 170);
+      this.camera.offset = v3(0);
+      this.camera.rotation = v3(0.15, 0, 0);
+      this.camera.fov = 70;
+    }
+  }
+  // mouseMove(e: MouseEvent): void {
+  //     const r = v2(e.movementX, e.movementY).scale(0.005);
+  //     this.camera.rotation = v3(
+  //         Util.clamp(this.camera.rotation.x + r.y, -0.1, Math.PI / 2),
+  //         this.camera.rotation.y + r.x,
+  //         this.camera.rotation.z
+  //     );
+  // }
+  // scroll(e: WheelEvent): void {
+  //     this.camera.offset.z = Util.clamp(this.camera.offset.z + e.deltaY * 0.1, 10, 300);
+  // }
+  tick(o) {
+    super.tick(o);
+    this.camera.target = v3(
+      this.target.position.x + this.target.size.x / 2,
+      this.camera.target.y,
+      this.camera.target.z
+    );
+  }
+};
+
+// ts/modes/side/freeCamera.ts
+var FreeCamera = class extends GlController {
+  constructor(target) {
+    super({ autoReady: false });
+    this.target = target;
+    this.type = "controller";
+  }
+  get active() {
+    return super.active;
+  }
+  set active(value) {
+    super.active = value;
+    if (value) {
+      this.camera.offset = v3(0, -15, 100);
+      this.camera.rotation = v3(0.15, 0, 0);
+      this.camera.fov = 70;
+    }
+  }
+  mouseMove(e) {
+    const r = v2(e.movementX, e.movementY).scale(5e-3);
+    this.camera.rotation = v3(
+      Util.clamp(this.camera.rotation.x + r.y, -0.1, Math.PI / 2),
+      this.camera.rotation.y + r.x,
+      this.camera.rotation.z
+    );
+  }
+  scroll(e) {
+    this.camera.offset.z = Util.clamp(this.camera.offset.z + e.deltaY * 0.1, 10, 300);
+  }
+  tick(o) {
+    super.tick(o);
+    this.camera.target = this.target.position.add(this.target.size.multiply(0.5, 0.5, 0.5)).multiply(1, -1, 1);
+  }
+};
+
+// ts/modes/side/sideCharacter.ts
+var SideCharacter = class extends Character {
+  constructor({
+    position = Vector3.f(0),
+    size = Vector3.f(0)
+  } = {}) {
+    super({
+      position,
+      size,
+      anchorPoint: size.multiply(0.5, 0, 0.5)
+    });
+    this.addControllers([new SideController(), new SideCamera(this), new FreeCamera(this), new MovementController(this)]);
+  }
+  keyDown(e) {
+    if (e.key === "Enter") {
+      if (this.controllers[0].active) {
+        this.controllers[0].active = false;
+        this.controllers[1].active = false;
+        this.controllers[2].active = true;
+        this.controllers[3].active = true;
+      } else {
+        this.controllers[0].active = true;
+        this.controllers[1].active = true;
+        this.controllers[2].active = false;
+        this.controllers[3].active = false;
+      }
+    }
+  }
+  build() {
+    this.addChild(this.mesh = new GlMesh({ size: this.size, colors: [[0.3, 0.4, 0.2, 1], [0.3, 0.4, 0.2, 1], [0.3, 0.4, 0.2, 1], [0.3, 0.4, 0.2, 1], [0.3, 0.4, 0.2, 1], [0.3, 0.4, 0.2, 1]] }));
+    GlElement.registerControllers(this);
+    this.controllers[0].active = true;
+    this.controllers[1].active = true;
+    this.controllers[2].active = false;
+    this.controllers[3].active = false;
+  }
+};
+
+// ts/gl/imagePlane.ts
+var GlImage = class extends GlMesh {
+  constructor(attr) {
+    super(__spreadProps(__spreadValues({}, attr), {
+      textureUrl: attr.url
+    }));
+  }
+  // public render(ctx: CanvasRenderingContext2D) {        
+  //     if (this.prepped.ready && (!this.condition || this.condition(this.position.add(this.parent.position), this.prepped.size))) {            
+  //         for (let i = 0; i < this.repeatX; i++) {
+  //             for (let j = 0; j < this.repeatY; j++) {
+  //                 if (this.opacity !== 1){
+  //                     ctx.globalAlpha = this.opacity;
+  //                 }
+  //                 if (this.shadow){
+  //                     ctx.shadowColor = this.shadow[0];
+  //                     ctx.shadowOffsetX = this.shadow[1];
+  //                     ctx.shadowOffsetY = this.shadow[2];
+  //                     ctx.shadowBlur = this.shadow[3];
+  //                 }
+  //                 ctx.drawImage(
+  //                     this.prepped.image,
+  //                     this.x + (this.worldSpaceParalaxX * this.level.x) + ((this.width / 2 + this.x) - (this.mode.width / 2 - this.level.x)) * this.screenSpaceParalaxX + (i * this.prepped.width)+ (i * this.repeatGapX)+this.renderOffsetX,
+  //                     this.y + (j * this.prepped.height)+ (j * this.repeatGapY)+this.renderOffsetY,
+  //                     this.prepped.width,
+  //                     this.prepped.height,
+  //                 );
+  //             }
+  //         }     
+  //     }
+  //     // this.level.x + this.x + (this.prepped.width/2); // center of image
+  //     // this.level.x + this.x + (this.prepped.width/2);
+  // }
+};
+
+// ts/modes/side/scrolling.ts
+var Scroller = class extends GLGroup {
+  build() {
+    for (let index = 0; index < 10; index++) {
+      this.addChild(new GlImage({
+        url: "img/dusk/far-clouds.png",
+        position: v3(-4e3 + 128 * 10 * index, -200, 3500),
+        size: v3(128, 240, 0).scale(10)
+      }));
+    }
+    for (let index = 0; index < 10; index++) {
+      this.addChild(new GlImage({
+        url: "img/dusk/near-clouds.png",
+        position: v3(-4e3 + 144 * 10 * index, -300, 3200),
+        size: v3(144, 240, 0).scale(10)
+      }));
+    }
+    for (let index = 0; index < 10; index++) {
+      this.addChild(new GlImage({
+        url: "img/dusk/mountains.png",
+        position: v3(-3500 + 320 * 8 * index, -500, 2500),
+        size: v3(320, 240, 0).scale(8)
+      }));
+    }
+    for (let index = 0; index < 8; index++) {
+      this.addChild(new GlImage({
+        url: "img/dusk/far-mountains.png",
+        position: v3(-4e3 + 160 * 10 * index, -700, 2e3),
+        size: v3(160, 240, 0).scale(10)
+      }));
+    }
+    for (let index = 0; index < 3; index++) {
+      this.addChild(new GlImage({
+        url: "img/dusk/mountains.png",
+        position: v3(-4e3 + 320 * 6 * index, -300, 1500),
+        size: v3(320, 240, 0).scale(6)
+      }));
+    }
+    for (let index = 0; index < 13; index++) {
+      this.addChild(new GlImage({
+        url: "img/dusk/trees.png",
+        position: v3(-4e3 + 240 * 3 * index, -100, 1e3),
+        size: v3(240, 240, 0).scale(3)
+      }));
+    }
+    for (let index = 0; index < 20; index++) {
+      this.addChild(new GlImage({
+        url: "img/dusk/trees.png",
+        position: v3(-4e3 + 240 * 2 * index, -100, 600),
+        size: v3(240, 240, 0).scale(2)
+      }));
+      this.addChild(new GlImage({
+        url: "img/dusk/trees.png",
+        position: v3(-4e3 + 120 + 240 * 2 * index, -100, 500),
+        size: v3(240, 240, 0).scale(2)
+      }));
+    }
+    for (let index = 0; index < 40; index++) {
+      this.addChild(new GlImage({
+        url: "img/dusk/trees.png",
+        position: v3(-4e3 + 120 + 240 * index, -50, 420),
+        size: v3(240, 240, 0)
+      }));
+      this.addChild(new GlImage({
+        url: "img/dusk/trees.png",
+        position: v3(-4e3 + 240 * index, 0, 410),
+        size: v3(240, 240, 0)
+      }));
+    }
+  }
+  // public tick(obj: TickerReturnData): void {
+  //     super.tick(obj);
+  //     this.layers.forEach(([layer, width, paralax]) => {
+  //         layer.x = (layer.x - (this.level.speed*10 * paralax)) % width ;
+  //     });
+  // }
+};
+
+// ts/modes/side/world.ts
 var World = class extends Level {
   // public get speed(): number {
   //     if (this.inTrain) {
@@ -3718,31 +3400,29 @@ var World = class extends Level {
   // public train: Train;
   constructor() {
     super({
-      size3: v3(900, 200, 400)
+      size: v3(900, 200, 400)
     });
     this.start = Vector2.zero;
-    this.background = new CanvasColorBackground("#46345E");
+    this.background = [0.27451, 0.203922, 0.368627, 1];
   }
   keyDown(e) {
   }
   build() {
+    super.build();
     this.addChild(new SideCharacter({
-      size3: v3(8, 24, 8),
-      position3: v3(800, 0, 250)
+      size: v3(8, 24, 8),
+      position: v3(0, 0, 250)
     }));
-    this.addChild(new GlMesh({ size3: v3(5e3, 0, 5e3), position3: v3(-2500, -0.1, -2500), colors: [[0.15, 0.15, 0.4, 1], [0.15, 0.15, 0.4, 1], [0.15, 0.15, 0.4, 1], [0.1, 0.2, 0.1, 1], [0.15, 0.15, 0.4, 1], [0.15, 0.15, 0.4, 1]] }));
-    this.addChild(new GlMesh({ size3: v3(5e3, 0, 52), position3: v3(-2500, 0, 300), colors: [Colors.w] }));
-    this.addChild(new GLobj({ url: "carriage.obj", size3: v3(1, 1, 1), position3: v3(0 + 50, 0, 300) }));
-    this.addChild(new GLobj({ url: "carriage.obj", size3: v3(1, 1, 1), position3: v3(0 + 50 + 256, 0, 300) }));
-    this.addChild(new GLobj({ url: "coal.obj", size3: v3(1, 1, 1), position3: v3(256 + 50 + 256, 0, 302) }));
-    this.addChild(new GlMesh({ size3: v3(176, 65, 0), position3: v3(256 + 83 + 50 + 256, 0, 395), colors: [Colors.k], textureUrl: "test.png" }));
-    this.addChild(new GLobj({ anchorPoint: v3(0, 0, 0), url: "loco.obj", size3: v3(100, 100, 100), position3: v3(256 + 82 + 50 + 256, 0, 300) }));
-    this.addChild(new GLobj({ anchorPoint: v3(0, 0, 0), url: "GearPump3.obj", size3: v3(10, 10, 10), position3: v3(600, 60, 200) }));
-    this.addChild(new GLobj({ anchorPoint: v3(0, 0, 0), url: "testobj.obj", size3: v3(10, 10, 10), position3: v3(800, 10, 200) }));
-    this.camera.offset = v3(0, -5, 70);
-    this.camera.rotation = v3(0.25, -Math.PI / 3, 0);
-    this.camera.target = v3(150, 0, 250);
-    this.camera.fov = 70;
+    this.addChild(new GlMesh({ size: v3(1e4, 1, 600), position: v3(-5e3, -1, -300), colors: [[0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.1, 0.1, 0.1, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1]] }));
+    this.addChild(new GlMesh({ size: v3(1e4, 4, 52), position: v3(-5e3, 0, 300), colors: [[0.15, 0.15, 0.15, 1], [0.1, 0.1, 0.1, 1], [0.15, 0.15, 0.15, 1], [0.1, 0.1, 0.1, 1], [0.1, 0.1, 0.1, 1], [0.1, 0.1, 0.1, 1]] }));
+    this.addChild(new GLobj({ url: "carriage.obj", size: v3(1, 1, 1), position: v3(-512, 4, 300) }));
+    this.addChild(new GLobj({ url: "carriage.obj", size: v3(1, 1, 1), position: v3(-256, 4, 300) }));
+    this.addChild(new GLobj({ url: "carriage.obj", size: v3(1, 1, 1), position: v3(4, 4, 300) }));
+    this.addChild(new GLobj({ url: "carriage.obj", size: v3(1, 1, 1), position: v3(256, 4, 300) }));
+    this.addChild(new GLobj({ url: "coal.obj", size: v3(1, 1, 1), position: v3(513, 4, 302) }));
+    this.addChild(new GLobj({ url: "loco.obj", size: v3(100, 100, 100), position: v3(595, 4, 300) }));
+    this.env = new Scroller();
+    this.addChild(this.env);
   }
   tick(obj) {
     super.tick(obj);
@@ -3751,9 +3431,6 @@ var World = class extends Level {
 
 // ts/modes/side/SideMode.ts
 var SideMode = class extends Mode {
-  constructor() {
-    super({ hasDom: true });
-  }
   build() {
     super.build();
     this.addLevel("platform", new World());
@@ -3762,21 +3439,17 @@ var SideMode = class extends Mode {
 };
 
 // ts/game.ts
-var Game = class extends CanvasWrapper {
+var Game = class {
   constructor() {
-    super({ hasDom: true });
-    this.relativity = "anchor";
     this.modes = {};
-    this.game = this;
     this.readyToStart = false;
     this._waitCount = 0;
     this.started = false;
     this.total = 0;
-    this.game = this;
-    this.addEvent(new Event("resize"));
-    window.addEventListener("resize", () => {
-      this.resize();
-    });
+    this.active = {
+      mode: void 0,
+      level: void 0
+    };
     this.build();
   }
   get t() {
@@ -3799,10 +3472,9 @@ var Game = class extends CanvasWrapper {
     this._waitCount = value;
   }
   build() {
+    this.renderer = new Renderer(this);
     this.loader = new Loader();
-    this.addChild(this.loader);
-    this.renderer = new DomCanvas(this);
-    this.addChild(this.renderer);
+    this.renderer.addChild(this.loader);
     this.GLR = new GLR(this);
     this.setupModes();
     this.ticker = new Ticker();
@@ -3815,7 +3487,6 @@ var Game = class extends CanvasWrapper {
     } else {
       this.readyToStart = true;
     }
-    this.resize();
   }
   tick(obj) {
     this.renderer.tick(obj);
@@ -3824,30 +3495,30 @@ var Game = class extends CanvasWrapper {
     this.addMode("side", new SideMode());
     this.switchMode("side");
   }
-  resize() {
-    this.game.getEvent("resize").alert(new Vector2(document.body.clientWidth, document.body.clientHeight));
-  }
   debug() {
     this.fps = new FPS();
-    this.dom.appendChild(this.fps);
+    this.renderer.appendChild(this.fps);
     this.ticker.add(this.fps.tick.bind(this.fps));
   }
   addMode(s, mode) {
     this.modes[s] = mode;
-    mode.parent = this;
-    mode.mode = mode;
     this.renderer.addMode(mode);
   }
   switchMode(s) {
     document.title = s;
+    this.active.mode = this.modes[s];
     Object.entries(this.modes).forEach(([key, mode]) => {
       mode.active = key === s;
-      mode.visible = key === s;
-      mode.dom ? mode.dom.visible = key === s : null;
-      if (key === s) {
-        this.mode = mode;
-      }
     });
+  }
+  get mode() {
+    return this.active.mode;
+  }
+  get level() {
+    return this.active.level;
+  }
+  get gl() {
+    return this.GLR.gl;
   }
   start() {
     this.started = true;
@@ -3860,7 +3531,6 @@ var Game = class extends CanvasWrapper {
 // ts/index.ts
 document.addEventListener("DOMContentLoaded", () => {
   const g = new Game();
-  document.body.appendChild(g.dom.dom);
-  g.dom.dom.appendChild(g.renderer.domGl);
+  document.body.appendChild(g.renderer.dom);
 });
 //# sourceMappingURL=index.js.map

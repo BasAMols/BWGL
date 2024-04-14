@@ -1,2 +1,4 @@
 node_modules
 .vscode
+/dist/favicon
+/dist/index.js

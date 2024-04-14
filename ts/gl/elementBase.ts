@@ -1,0 +1,111 @@
+import { Element, ElementAttributes } from "../utils/element";
+import { GlElementType } from './glr';
+import { TickerReturnData } from '../utils/ticker';
+import { Vector2 } from "../utils/vector2";
+import { Vector3, v3 } from '../utils/vector3';
+import { GlController } from './controller';
+
+export type GlElementAttributes = ElementAttributes & {
+    autoReady?: boolean,
+    controllers?: GlController[];
+    composite?: GlobalCompositeOperation;
+    size?: Vector3;
+    position?: Vector3;
+    rotation?: Vector3;
+    anchorPoint?: Vector3;
+};
+export interface GlElement {
+    mouseMove?(e: MouseEvent): void;
+    keyDown?(e: KeyboardEvent): void;
+    keyUp?(e: KeyboardEvent): void;
+    click?(e: MouseEvent): void;
+    scroll?(e: WheelEvent): void;
+}
+export abstract class GlElement extends Element {
+    public abstract type: GlElementType;
+    public rendererType = 'gl' as const;
+    public autoReady: boolean;
+    public anchorPoint: Vector3;
+    public parent: GlElement;
+    public position: Vector3 = v3(0);
+    public size: Vector3 = v3(0);
+    public rotation: Vector3 = v3(0);
+    private _active: boolean = true;
+    public get active(): boolean {
+        return this._active;
+    }
+    public set active(value: boolean) {
+        this._active = value;
+    }
+
+    public children: GlElement[] = [];
+    public controllers: GlController[] = [];
+    public anchoredPosition: Vector2 = Vector2.zero;
+
+    public get camera(): typeof this.mode.camera {
+        return this.mode.camera;
+    }
+    public set camera(c: typeof this.mode.camera) {
+        this.mode.camera = c;
+    }
+
+    constructor(attr: GlElementAttributes = {}) {
+        super();
+        this.autoReady = attr.autoReady !== undefined ? attr.autoReady : true;
+        this.addControllers(attr.controllers || []);
+
+        this.size = attr.size || this.parent?.size || v3(0);
+        this.position = attr.position || v3(0);
+        this.rotation = attr.rotation || v3(0);
+        this.anchorPoint = attr.anchorPoint || v3(0);
+    }
+
+    public ready() {
+        this.build();
+        if (this.game.waitCount) {
+            this.game.waitCount--;
+        }
+    }
+
+    public addChild(child: GlElement): typeof child {
+        child.parent ??= this;
+        child.game ??= this.game;
+        if (this.game.waitCount) {
+            this.game.waitCount++;
+        }
+        this.children.push(child);
+        if (child.autoReady) {
+            child.ready();
+        }
+        GlElement.registerControllers(child);
+
+        // if (child.rendererType === 'canvas' && child.type === 'collider' && (child as Collider).colliderType === 'static' && this.level) {
+        //     this.level.colliders.push(child as Collider);
+        // }
+
+        return child;
+
+    }
+
+    public addControllers(c: GlController[]) {
+        if (c.length > 0) {
+            this.controllers.push(...c);
+        }
+    }
+
+    public static registerControllers(child: GlElement) {
+        child.controllers.forEach((controller) => {
+            if (controller.parent === undefined) {
+                controller.parent ??= child;
+                controller.game ??= child.game;
+                controller.build();
+            }
+        });
+    }
+
+    public tick(obj: TickerReturnData) {
+        
+        this.controllers.filter((child) => child.active).forEach((c) => c.tick(obj));
+        this.children.filter((child) => child.active).forEach((c) => c.tick(obj));
+    }
+}

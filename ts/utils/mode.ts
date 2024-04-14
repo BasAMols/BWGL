@@ -1,21 +1,28 @@
-import { CanvasWrapper, CanvasWrapperAttributes } from '../elements/canvas/canvasWrapper';
-import { ElementRelativity } from './elementPosition';
+import { GlElementAttributes } from '../gl/elementBase';
+import { GLGroup } from '../gl/group';
 import { Level } from './level';
 import { TickerReturnData } from './ticker';
-import { Vector2 } from './vector2';
 
-export type modeAttributes = CanvasWrapperAttributes & {
+export type modeAttributes = GlElementAttributes & {
 
 };
-export abstract class Mode extends CanvasWrapper {
+export abstract class Mode extends GLGroup {
     public levels: Record<string, Level> = {};
-    public relativity: ElementRelativity = 'anchor';
 
     public get camera():typeof this.level.camera {
         return this.level.camera;
     }
     public set camera(value:typeof this.level.camera) {
         this.level.camera = value;
+    }
+
+    constructor(attr: modeAttributes = {}) {
+        super(attr);
+    }
+
+    public build(): void {
+        this.game.active.mode = this;
+        this.switchLevel(Object.keys(this.levels)[0])
     }
 
     private keyAliases = {
@@ -44,13 +51,6 @@ export abstract class Mode extends CanvasWrapper {
             'space': false,
         };
 
-    build(): void {
-        super.build();
-        this.game.getEvent('resize').subscribe(String(Math.random()), (size: Vector2) => {
-            this.size = size;
-        });
-    }
-
     protected addLevel(s: string, level: Level) {
         this.levels[s] = level;
         this.addChild(level);
@@ -59,17 +59,10 @@ export abstract class Mode extends CanvasWrapper {
     public switchLevel(s: string) {
         Object.entries(this.levels).forEach(([key, level]) => {
             level.active = key === s;
-            level.visible = key === s;
-            // level.dom ? level.dom.visible = key === s : null;
-            if (key === s){
-                this.level = level;
-                this.game.level = level;
-            }
         });
     }
 
     public keyDown(e: KeyboardEvent) {
-        
         if (Object.keys(this.keyAliases).includes(e.key)) {
             this.input[this.keyAliases[e.key as keyof typeof this.keyAliases]] = true;
         }
@@ -84,13 +77,7 @@ export abstract class Mode extends CanvasWrapper {
 
     public tick(obj: TickerReturnData) {
         super.tick(obj);
-
         this.controllers.filter((child) => child.active).forEach((c) => c.tick(obj));
-        this.lowerChildren.filter((child) => child.active).forEach((c) => c.tick(obj));
-        this.higherChildren.filter((child) => child.active).forEach((c) => c.tick(obj));
-        this.glElements.filter((child) => child.active).forEach((c) => c.tick(obj));
-        if (this.dom) {
-            this.dom.tick(obj);
-        }
+        this.children.filter((child) => child.active).forEach((c) => c.tick(obj));
     }
 }

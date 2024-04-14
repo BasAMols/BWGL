@@ -1,24 +1,18 @@
-import { CanvasWrapper } from './elements/canvas/canvasWrapper';
 import { FPS } from './utils/debug/fps';
 import { Ticker, TickerReturnData } from './utils/ticker';
-import { Event } from './utils/event';
-import { Vector2 } from './utils/vector2';
 import { Input } from './utils/input';
 import { Mode } from './utils/mode';
-import { ElementRelativity } from './utils/elementPosition';
-import { DomCanvas } from './elements/dom/domCanvas';
+import { Renderer } from './dom/renderer';
 import { Loader } from './utils/debug/loader';
-import { GLR } from './utils/gl';
+import { GLR } from './gl/glr';
+import { Level } from './utils/level';
 import { SideMode } from './modes/side/SideMode';
 
-export class Game extends CanvasWrapper {
-    public relativity: ElementRelativity = 'anchor';
+export class Game {
     public ticker: Ticker;
-    public renderer: DomCanvas;
+    public renderer: Renderer;
     private fps: FPS;
     public modes: Record<string, Mode> = {};
-    public game = this;
-    public ctx: CanvasRenderingContext2D;
     public input: Input;
     public readyToStart: boolean = false;
     private _waitCount: number = 0;
@@ -26,6 +20,13 @@ export class Game extends CanvasWrapper {
     private loader: Loader;
     public total: number = 0;
     public GLR: GLR;
+    public active: {
+        mode: Mode,
+        level: Level,
+    } = {
+        mode: undefined,
+        level: undefined,
+    };
     get t(): TickerReturnData {
         return this.renderer.tickerData;
     }
@@ -33,10 +34,10 @@ export class Game extends CanvasWrapper {
         return this._waitCount;
     }
     public set waitCount(value: number) {
-        if (value > this._waitCount){
+        if (value > this._waitCount) {
             this.total++;
         }
-        if (!this.started){
+        if (!this.started) {
             if (value === 0 && this.readyToStart) {
                 this.start();
             } else {
@@ -48,22 +49,17 @@ export class Game extends CanvasWrapper {
     }
 
     public constructor() {
-        super({ hasDom: true });
-        this.game = this;
-        this.addEvent(new Event('resize'));
-        window.addEventListener("resize", () => { this.resize(); });
         this.build();
     }
     build() {
-        this.loader = new Loader();
-        this.addChild(this.loader);
+        this.renderer = new Renderer(this);
 
-        this.renderer = new DomCanvas(this);
-        this.addChild(this.renderer);
+        this.loader = new Loader();
+        this.renderer.addChild(this.loader);
 
         this.GLR = new GLR(this);
         this.setupModes();
-        
+
         this.ticker = new Ticker();
         this.ticker.add(this.tick.bind(this));
         this.input = new Input(this);
@@ -75,7 +71,6 @@ export class Game extends CanvasWrapper {
         } else {
             this.readyToStart = true;
         }
-        this.resize();
     }
 
     public tick(obj: TickerReturnData) {
@@ -86,37 +81,36 @@ export class Game extends CanvasWrapper {
         // this.addMode('snakes', new SnakeMode());
         // this.addMode('rpg', new RPGMode());
         this.addMode('side', new SideMode());
-
         this.switchMode('side');
-    }
-
-    resize() {
-        this.game.getEvent('resize').alert(new Vector2(document.body.clientWidth, document.body.clientHeight));
     }
 
     private debug() {
         this.fps = new FPS();
-        this.dom.appendChild(this.fps);
+        this.renderer.appendChild(this.fps);
         this.ticker.add(this.fps.tick.bind(this.fps));
     }
 
     protected addMode(s: string, mode: Mode) {
         this.modes[s] = mode;
-        mode.parent = this;
-        mode.mode = mode;
         this.renderer.addMode(mode);
     }
 
     public switchMode(s: string) {
         document.title = s;
+        this.active.mode = this.modes[s];
         Object.entries(this.modes).forEach(([key, mode]) => {
             mode.active = key === s;
-            mode.visible = key === s;
-            mode.dom ? mode.dom.visible = key === s : null;
-            if (key === s){
-                this.mode = mode;
-            }
         });
+    }
+
+    public get mode(): Mode {
+        return this.active.mode;
+    }
+    public get level(): Level {
+        return this.active.level;
+    }
+    public get gl(): WebGLRenderingContext {
+        return this.GLR.gl;
     }
 
     public start() {

@@ -10,5 +10,5 @@
     "moduleResolution": "node",
     "noEmit": true
   },
-  "include": ["./ts"]
+  "include": ["./ts", "sideCamera copy.ts"]
 }

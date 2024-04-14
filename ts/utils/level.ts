@@ -1,8 +1,6 @@
-import { CanvasSquare } from '../elements/canvas/canvasSquare';
-import { GlElement, GlElementAttributes } from '../elements/gl/glElement';
-import { Collider } from './collider';
-import { ElementRelativity } from './elementPosition';
-import { GlElementType } from './gl';
+import { GlElement, GlElementAttributes } from '../gl/elementBase';
+import { Color } from './colors';
+import { GlElementType } from '../gl/glr';
 import { Vector2 } from "./vector2";
 import { Vector3 } from './vector3';
 
@@ -11,13 +9,9 @@ export type levelAttributes = GlElementAttributes & {
 };
 export abstract class Level extends GlElement {
     abstract start: Vector2;
-    abstract background: CanvasSquare;
+    abstract background: Color;
     public type: GlElementType = 'group';
-    public relativity: ElementRelativity = 'anchor';
-    public colliders: Collider[] = [];
-    // public get center(): Vector3 {
-    //     return Vector3.from2(this.mode.size.scale(0.5).subtract(this.position), this.depth);
-    // }
+    // public colliders: Collider[] = [];
 
     private _camera: {
         target: Vector3;
@@ -40,8 +34,11 @@ export abstract class Level extends GlElement {
 
     constructor(attr: levelAttributes = {}) {
         super(attr);
-        this.level = this;
-        this.mode = this.mode;
         this.size = this.size;
     }
+
+    public build(): void {
+        this.game.active.level = this;
+    }
+
 }
