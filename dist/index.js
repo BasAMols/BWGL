@@ -1,4 +1,22 @@
 var __defProp = Object.defineProperty;
+var __defProps = Object.defineProperties;
+var __getOwnPropDescs = Object.getOwnPropertyDescriptors;
+var __getOwnPropSymbols = Object.getOwnPropertySymbols;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __propIsEnum = Object.prototype.propertyIsEnumerable;
+var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues = (a, b) => {
+  for (var prop in b || (b = {}))
+    if (__hasOwnProp.call(b, prop))
+      __defNormalProp(a, prop, b[prop]);
+  if (__getOwnPropSymbols)
+    for (var prop of __getOwnPropSymbols(b)) {
+      if (__propIsEnum.call(b, prop))
+        __defNormalProp(a, prop, b[prop]);
+    }
+  return a;
+};
+var __spreadProps = (a, b) => __defProps(a, __getOwnPropDescs(b));
 var __export = (target, all) => {
   for (var name in all)
     __defProp(target, name, { get: all[name], enumerable: true });
@@ -793,10 +811,10 @@ var Vector3 = class _Vector3 {
 };
 
 // ts/gl/shaders/vertexShader.ts
-var vertexShader_default = "\nattribute vec4 aVertexPosition;\nattribute vec3 aVertexNormal;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uNormalMatrix;\nuniform mat4 uModelViewMatrix;\nuniform mat4 uProjectionMatrix;\n\nvarying highp vec2 vTextureCoord;\nvarying highp vec3 vLighting;\n\nvoid main(void) {\n  gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;\n  vTextureCoord = aTextureCoord;\n\n      // Apply lighting effect\n\n  highp vec3 ambientLight = vec3(0.6, 0.6, 0.6);\n  highp vec3 directionalLightColor = vec3(1, 1, 1);\n  highp vec3 directionalVector = normalize(vec3(-0.7, .7, 0.3));\n\n  highp vec4 transformedNormal = uNormalMatrix * vec4(aVertexNormal, 1.0);\n\n  highp float directional = max(dot(transformedNormal.xyz, directionalVector), 0.0);\n  vLighting = ambientLight + (directionalLightColor * directional);\n}";
+var vertexShader_default = "\nattribute vec4 aVertexPosition;\nattribute vec3 aVertexNormal;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uModelViewMatrix;\nuniform mat4 uProjectionMatrix;\nuniform mat4 uNormalMatrix;\n\nvarying highp vec2 vTextureCoord;\nvarying highp vec3 vLighting;\n\nvoid main(void) {\n  gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;\n  vTextureCoord = aTextureCoord;\n\n  highp vec3 ambientLight = vec3(0.6, 0.6, 0.6);\n  highp vec3 directionalLightColor = vec3(1, 1, 1);\n  highp vec3 directionalVector = normalize(vec3(-0.7, .7, 0.3));\n\n  highp vec4 transformedNormal = uNormalMatrix * vec4(aVertexNormal, 1.0);\n\n  highp float directional = max(dot(transformedNormal.xyz, directionalVector), 0.0);\n  vLighting = ambientLight + (directionalLightColor * directional);\n}";
 
 // ts/gl/shaders/fragmentShader.ts
-var fragmentShader_default = "\nvarying highp vec2 vTextureCoord;\nvarying highp vec3 vLighting;\n\nuniform sampler2D uSampler;\nuniform lowp float uOpacity;\n\nvoid main(void) {\n    highp vec4 texelColor = texture2D(uSampler, vTextureCoord);\n    gl_FragColor = vec4(texelColor.rgb * vLighting, texelColor.a*uOpacity);\n}\n";
+var fragmentShader_default = "\nvarying highp vec2 vTextureCoord;\nvarying highp vec3 vLighting;\n\nuniform sampler2D uSampler;\nuniform lowp float uOpacity;\n\nvoid main(void) {\n    highp vec4 texelColor = texture2D(uSampler, vTextureCoord);\n    gl_FragColor = vec4(texelColor.rgb * vLighting, texelColor.a * vLighting*uOpacity);\n}\n";
 
 // ts/gl/glrInit.ts
 function loadShader(gl, type, source) {
@@ -828,37 +846,37 @@ function initShaderProgram(gl) {
   return [
     shaderProgram,
     {
-      "projection": {
+      "uProjectionMatrix": {
         pointer: gl.getUniformLocation(shaderProgram, "uProjectionMatrix"),
         type: "matrix4"
       },
-      "modelView": {
+      "uModelViewMatrix": {
         pointer: gl.getUniformLocation(shaderProgram, "uModelViewMatrix"),
         type: "matrix4"
       },
-      "normal": {
+      "uNormalMatrix": {
         pointer: gl.getUniformLocation(shaderProgram, "uNormalMatrix"),
         type: "matrix4"
       },
-      "opacity": {
+      "uOpacity": {
         pointer: gl.getUniformLocation(shaderProgram, "uOpacity"),
         type: "float"
       },
-      "sampler": {
+      "uSampler": {
         pointer: gl.getUniformLocation(shaderProgram, "uSampler"),
         type: "int"
       }
     },
     {
-      "position": {
+      "aVertexPosition": {
         pointer: gl.getAttribLocation(shaderProgram, "aVertexPosition"),
         count: 3
       },
-      "normal": {
+      "aVertexNormal": {
         pointer: gl.getAttribLocation(shaderProgram, "aVertexNormal"),
         count: 3
       },
-      "texture": {
+      "aTextureCoord": {
         pointer: gl.getAttribLocation(shaderProgram, "aTextureCoord"),
         count: 2
       }
@@ -2293,9 +2311,9 @@ var GLR = class {
   draw() {
     this.clear();
     this.gl.useProgram(this.glt.program);
-    this.glt.sendUniform("sampler", 0);
+    this.glt.sendUniform("uSampler", 0);
     this.glt.sendUniform(
-      "projection",
+      "uProjectionMatrix",
       new Matrix4().perspective(
         this.game.mode.camera.fov * Math.PI / 180,
         this.gl.canvas.clientWidth / this.gl.canvas.clientHeight
@@ -2321,13 +2339,13 @@ var GLR = class {
   }
   renderMesh(mesh, currentModelview) {
     this.glt.sendBuffer(mesh.buffer.indices, "element");
-    this.glt.sendAttribute("position", mesh.buffer.positionBuffer);
-    this.glt.sendAttribute("texture", mesh.buffer.textureCoord);
-    this.glt.sendAttribute("normal", mesh.buffer.normalBuffer);
-    this.glt.sendUniform("modelView", currentModelview.mat4);
-    this.glt.sendUniform("opacity", mesh.opacity);
+    this.glt.sendAttribute("aVertexPosition", mesh.buffer.positionBuffer);
+    this.glt.sendAttribute("aVertexNormal", mesh.buffer.normalBuffer);
+    this.glt.sendAttribute("aTextureCoord", mesh.buffer.textureCoord);
+    this.glt.sendUniform("uModelViewMatrix", currentModelview.mat4);
+    this.glt.sendUniform("uOpacity", mesh.opacity);
     this.glt.sendUniform(
-      "normal",
+      "uNormalMatrix",
       new Matrix4().invert(currentModelview).transpose().mat4
     );
     this.glt.sendTexture(mesh.texture.texture);
@@ -3208,6 +3226,150 @@ var SideCharacter = class extends Character {
   }
 };
 
+// ts/gl/imagePlane.ts
+var GlImage = class extends GlMesh {
+  constructor(attr) {
+    super(__spreadProps(__spreadValues({}, attr), {
+      size: attr.size.multiply(v3(attr.repeatX || 1, attr.repeatY || 1, 1))
+    }));
+    this.repeatX = attr.repeatX || 1;
+    this.repeatY = attr.repeatY || 1;
+  }
+  build() {
+    super.build();
+    if (this.repeatX !== 1 || this.repeatY !== 1) {
+      const img = new Image();
+      img.src = "".concat(window.location.href).concat(this.textureUrl);
+      img.onload = () => {
+        const repeater = document.createElement("canvas");
+        repeater.width = img.width * this.repeatX;
+        repeater.height = img.height * this.repeatY;
+        const repeaterContext = repeater.getContext("2d");
+        for (let x = 0; x < this.repeatX; x++) {
+          for (let y = 0; y < 1; y++) {
+            repeaterContext.drawImage(
+              img,
+              x * img.width,
+              y * img.height,
+              img.width,
+              img.height
+            );
+          }
+        }
+        this.texture = new GLTexture(this.game, { image: repeater });
+      };
+    }
+  }
+  // public render(ctx: CanvasRenderingContext2D) {        
+  //     if (this.prepped.ready && (!this.condition || this.condition(this.position.add(this.parent.position), this.prepped.size))) {            
+  //         for (let i = 0; i < this.repeatX; i++) {
+  //             for (let j = 0; j < this.repeatY; j++) {
+  //                 if (this.opacity !== 1){
+  //                     ctx.globalAlpha = this.opacity;
+  //                 }
+  //                 if (this.shadow){
+  //                     ctx.shadowColor = this.shadow[0];
+  //                     ctx.shadowOffsetX = this.shadow[1];
+  //                     ctx.shadowOffsetY = this.shadow[2];
+  //                     ctx.shadowBlur = this.shadow[3];
+  //                 }
+  //                 ctx.drawImage(
+  //                     this.prepped.image,
+  //                     this.x + (this.worldSpaceParalaxX * this.level.x) + ((this.width / 2 + this.x) - (this.mode.width / 2 - this.level.x)) * this.screenSpaceParalaxX + (i * this.prepped.width)+ (i * this.repeatGapX)+this.renderOffsetX,
+  //                     this.y + (j * this.prepped.height)+ (j * this.repeatGapY)+this.renderOffsetY,
+  //                     this.prepped.width,
+  //                     this.prepped.height,
+  //                 );
+  //             }
+  //         }     
+  //     }
+  //     // this.level.x + this.x + (this.prepped.width/2); // center of image
+  //     // this.level.x + this.x + (this.prepped.width/2);
+  // }
+};
+
+// ts/modes/side/scrolling.ts
+var Scroller = class extends GLGroup {
+  build() {
+    this.addChild(new GlImage({
+      textureUrl: "img/dusk/far-clouds.png",
+      position: v3(-4e3, -200, 3500),
+      size: v3(128, 240, 0).scale(10),
+      opacity: 0.4,
+      repeatX: 10
+    }));
+    this.addChild(new GlImage({
+      textureUrl: "img/dusk/far-clouds.png",
+      position: v3(-4e3, -200, 3500),
+      repeatX: 10,
+      opacity: 0.4,
+      size: v3(128, 240, 0).scale(10)
+    }));
+    this.addChild(new GlImage({
+      textureUrl: "img/dusk/near-clouds.png",
+      position: v3(-4e3, -300, 3200),
+      repeatX: 10,
+      opacity: 0.4,
+      size: v3(144, 240, 0).scale(10)
+    }));
+    this.addChild(new GlImage({
+      textureUrl: "img/dusk/mountains.png",
+      position: v3(-3500, -500, 2500),
+      repeatX: 10,
+      size: v3(320, 240, 0).scale(8)
+    }));
+    this.addChild(new GlImage({
+      textureUrl: "img/dusk/far-mountains.png",
+      position: v3(-4e3, -700, 2e3),
+      repeatX: 10,
+      size: v3(160, 240, 0).scale(10)
+    }));
+    this.addChild(new GlImage({
+      textureUrl: "img/dusk/near-clouds.png",
+      position: v3(-2e3, -300, 1750),
+      repeatX: 20,
+      opacity: 0.5,
+      size: v3(144, 240, 0).scale(6)
+    }));
+    this.addChild(new GlImage({
+      textureUrl: "img/dusk/mountains.png",
+      position: v3(-4e3, -300, 1500),
+      repeatX: 4,
+      size: v3(320, 240, 0).scale(6)
+    }));
+    this.addChild(new GlImage({
+      textureUrl: "img/dusk/trees.png",
+      position: v3(-2e3, -100, 720),
+      repeatX: 20,
+      size: v3(240, 240, 0).scale(3)
+    }));
+    this.addChild(new GlImage({
+      textureUrl: "img/dusk/trees.png",
+      position: v3(-2e3, 0, 650),
+      repeatX: 20,
+      size: v3(240, 240, 0).scale(2)
+    }));
+    this.addChild(new GlImage({
+      textureUrl: "img/dusk/trees.png",
+      position: v3(-2e3, 0, 570),
+      repeatX: 20,
+      size: v3(240, 240, 0).scale(1.5)
+    }));
+    this.addChild(new GlImage({
+      textureUrl: "img/dusk/trees.png",
+      position: v3(-2e3, 0, 490),
+      repeatX: 20,
+      size: v3(240, 240, 0)
+    }));
+    this.addChild(new GlImage({
+      textureUrl: "img/dusk/trees.png",
+      position: v3(-2e3, 0, 410),
+      repeatX: 20,
+      size: v3(240, 240, 0)
+    }));
+  }
+};
+
 // ts/utils/collider.ts
 var Collider = class extends GlElement {
   constructor(attr) {
@@ -3276,6 +3438,8 @@ var World = class extends Level {
       position: v3(0, 0, 250)
     }));
     this.addChild(new GlMesh({ size: v3(1e4, 1, 4e3), position: v3(-5e3, -1, -2e3), colors: [[0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.05, 0.05, 0.05, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1]] }));
+    this.env = new Scroller();
+    this.addChild(this.env);
     [
       [v3(10, 0, 100), v3(50, 50, 50), v3(1, 1, 0)]
     ].forEach(([position, size, direction]) => {

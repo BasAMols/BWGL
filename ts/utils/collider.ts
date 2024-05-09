@@ -28,7 +28,7 @@ export class Collider extends GlElement {
             position: this.direction.multiply(this.size).scale(0.5),
             size: this.direction.multiply(v3(10,10,10)).scale(0.5), 
             colors: [Colors.r], 
-            rotation: this.direction.scale(Math.PI) 
+            rotation: this.direction.scale(Math.PI),
         }));
     }
 }

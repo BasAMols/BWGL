@@ -40,8 +40,6 @@ export class GLR {
         return this.game.t;
     }
 
-    private projectionMatrix: Matrix4;
-
     constructor(public game: Game) {
         this.gl = this.game.renderer.dom.getContext('webgl');
         this.gl.getExtension("OES_element_index_uint");
@@ -72,9 +70,9 @@ export class GLR {
         this.clear();
         
         this.gl.useProgram(this.glt.program);
-        this.glt.sendUniform('sampler', 0);
+        this.glt.sendUniform('uSampler', 0);
 
-        this.glt.sendUniform('projection', new Matrix4()
+        this.glt.sendUniform('uProjectionMatrix', new Matrix4()
             .perspective(
                 (this.game.mode.camera.fov * Math.PI) / 180,
                 (this.gl.canvas as HTMLCanvasElement).clientWidth / (this.gl.canvas as HTMLCanvasElement).clientHeight
@@ -118,13 +116,13 @@ export class GLR {
     renderMesh(mesh: GLRendable, currentModelview: Matrix4) {
         this.glt.sendBuffer(mesh.buffer.indices, 'element');
 
-        this.glt.sendAttribute('position', mesh.buffer.positionBuffer);
-        this.glt.sendAttribute('texture', mesh.buffer.textureCoord);
-        this.glt.sendAttribute('normal', mesh.buffer.normalBuffer);
+        this.glt.sendAttribute('aVertexPosition', mesh.buffer.positionBuffer);
+        this.glt.sendAttribute('aVertexNormal', mesh.buffer.normalBuffer);
+        this.glt.sendAttribute('aTextureCoord', mesh.buffer.textureCoord);
 
-        this.glt.sendUniform('modelView', currentModelview.mat4);
-        this.glt.sendUniform('opacity', mesh.opacity);
-        this.glt.sendUniform('normal', new Matrix4()
+        this.glt.sendUniform('uModelViewMatrix', currentModelview.mat4);
+        this.glt.sendUniform('uOpacity', mesh.opacity);
+        this.glt.sendUniform('uNormalMatrix', new Matrix4()
             .invert(currentModelview)
             .transpose()
             .mat4

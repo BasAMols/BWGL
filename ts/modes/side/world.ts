@@ -69,7 +69,7 @@ export class World extends Level {
         }));
 
         // this.addChild(new GlMesh({ size3: v3(176, 65, 0), position3: v3(256 + 83 + 50 + 256, 0, 600), colors: [Colors.k], textureUrl: 'test.png' }));
-        this.addChild(new GlMesh({ size: v3(10000, 1, 4000), position: v3(-5000, -1, -2000), colors: [[0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1], [0.05, 0.05, 0.05, 1], [0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1]] }));
+        this.addChild(new GlMesh({ size: v3(10000, 1, 4000), position: v3(-5000, -1, -2000), colors: [[0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1], [0.05, 0.05, 0.05, 1], [0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1]]}));
         // this.addChild(new GLMesh({ size: v3(10000, 4, 52), position: v3(-5000, 0, 300), colors: [[0.15, 0.15, 0.15, 1], [0.1, 0.1, 0.1, 1], [0.15, 0.15, 0.15, 1], [0.1, 0.1, 0.1, 1], [0.1, 0.1, 0.1, 1], [0.1, 0.1, 0.1, 1]] }));
         // this.addChild(new GLObj({ url: 'carriage.obj', size: v3(1, 1, 1), position: v3(-512, 4, 300) }));
         // this.addChild(new GLObj({ url: 'carriage.obj', size: v3(1, 1, 1), position: v3(-256, 4, 300) }));
@@ -92,9 +92,9 @@ export class World extends Level {
         //     c.fillRect(0, 0, this.level.width, this.level.height);
         //     c.globalCompositeOperation = 'source-over';
         // });
-        // this.env = new Scroller();
+        this.env = new Scroller();
         // this.addChild(this.background);
-        // this.addChild(this.env);
+        this.addChild(this.env);
         // this.addChild(this.backgroundLayer);
         // this.addChild(this.trainLayer);
         // this.addChild(this.foregroundLayer);

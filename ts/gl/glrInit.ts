@@ -47,37 +47,37 @@ export function initShaderProgram(gl: WebGLRenderingContext): [WebGLProgram, uni
     return [
         shaderProgram, 
         {
-            'projection':{
+            'uProjectionMatrix':{
                 pointer: gl.getUniformLocation(shaderProgram, "uProjectionMatrix"),
                 type: 'matrix4'
             },
-            'modelView':{
+            'uModelViewMatrix':{
                 pointer: gl.getUniformLocation(shaderProgram, "uModelViewMatrix"),
                 type: 'matrix4'
             },
-            'normal':{
+            'uNormalMatrix':{
                 pointer: gl.getUniformLocation(shaderProgram, "uNormalMatrix"),
                 type: 'matrix4'
             },
-            'opacity':{
+            'uOpacity':{
                 pointer: gl.getUniformLocation(shaderProgram, "uOpacity"),
                 type: 'float'
             },
-            'sampler':{
+            'uSampler':{
                 pointer: gl.getUniformLocation(shaderProgram, "uSampler"),
                 type: 'int'
             },
         },
         {
-            'position':{
+            'aVertexPosition':{
                 pointer: gl.getAttribLocation(shaderProgram, "aVertexPosition"),
                 count: 3,
             },
-            'normal':{
+            'aVertexNormal':{
                 pointer: gl.getAttribLocation(shaderProgram, "aVertexNormal"),
                 count: 3,
             },
-            'texture':{
+            'aTextureCoord':{
                 pointer: gl.getAttribLocation(shaderProgram, "aTextureCoord"),
                 count: 2,
             },
