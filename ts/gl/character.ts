@@ -1,5 +1,5 @@
 import { GlElement, GlElementAttributes } from './elementBase';
-import { GlElementType } from './glr';
+import { GlElementType } from './glRenderer';
 
 export type CharacterAttributes = GlElementAttributes & {
 }

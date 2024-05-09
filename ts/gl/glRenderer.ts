@@ -1,11 +1,11 @@
 import { mat4, vec4 } from 'gl-matrix';
 import { Game } from '../game';
-import { initShaderProgram } from './glrInit';
 import { TickerReturnData } from '../utils/ticker';
 import { Vector3 } from '../utils/vector3';
 import { GLRendable } from './rendable';
 import { GlElement } from './elementBase';
 import { Vector2 } from '../utils/vector2';
+import { GLTranslator } from './glTranslator';
 
 export interface bufferDataInitilizers {
     indices: WebGLBuffer;
@@ -33,29 +33,18 @@ export interface objectData {
 export class GLR {
     private objects: (GLRendable)[] = [];
     public gl: WebGLRenderingContext;
+
+    private GLT: GLTranslator;
+
+    get t(): TickerReturnData {
+        return this.game.t;
+    }
+
     private frameData: {
         projectionMatrix?: mat4;
         modelViewMatrix?: mat4;
         normalMatrix?: mat4;
     } = {};
-    private programInfo: {
-        program: WebGLProgram;
-        attribLocations: {
-            vertexPosition: number;
-            vertexNormal: number;
-            textureCoord: number,
-        };
-        uniformLocations: {
-            projectionMatrix: WebGLUniformLocation;
-            modelViewMatrix: WebGLUniformLocation;
-            normalMatrix: WebGLUniformLocation,
-            uSampler: WebGLUniformLocation;
-        };
-    };
-
-    get t(): TickerReturnData {
-        return this.game.t;
-    }
 
     constructor(public game: Game) {
         this.gl = this.game.renderer.dom.getContext('webgl');
@@ -63,8 +52,9 @@ export class GLR {
         this.gl.enable(this.gl.BLEND);
         this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
 
-        this.programInfo = initShaderProgram(this.gl);
-        this.game.renderer.getEvent('resize').subscribe('glr', this.resize.bind(this))
+        this.GLT = new GLTranslator(this.game, this);
+
+        this.game.renderer.getEvent('resize').subscribe('glr', this.resize.bind(this));
     }
 
     public resize(size: Vector2) {
@@ -123,8 +113,8 @@ export class GLR {
 
     draw() {
         this.clear();
-        this.gl.useProgram(this.programInfo.program);
-        this.gl.uniform1i(this.programInfo.uniformLocations.uSampler, 0);
+        this.gl.useProgram(this.GLT.programInfo.program);
+        this.GLT.sendUniform('sampler', 0);
         this.setCamera();
         this.drawChildren(this.game.level);
         this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
@@ -184,102 +174,22 @@ export class GLR {
         const normalMatrix = mat4.create();
         mat4.invert(normalMatrix, currentModelview);
         mat4.transpose(normalMatrix, normalMatrix);
-
-        this.gl.uniformMatrix4fv(
-            this.programInfo.uniformLocations.normalMatrix,
-            false,
-            normalMatrix
-        );
+        this.GLT.sendUniform('normal', normalMatrix);
     }
 
     renderMesh(mesh: GLRendable, currentModelview: mat4) {
+        this.GLT.sendBuffer(mesh.buffer.indices, 'element');
 
-        this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, mesh.buffer.indices);
+        this.GLT.sendAttribute('position', mesh.buffer.positionBuffer);
+        this.GLT.sendAttribute('texture', mesh.buffer.textureCoord);
+        this.GLT.sendAttribute('normal', mesh.buffer.normalBuffer);
 
-        this.setPositionAttribute(mesh);
-        this.setTextureAttribute(mesh);
-        this.setNormalAttribute(mesh);
+        this.GLT.sendUniform('projection', this.frameData.projectionMatrix);
+        this.GLT.sendUniform('modelView', currentModelview);
+        this.GLT.sendUniform('opacity', mesh.opacity);
 
-        this.gl.uniformMatrix4fv(
-            this.programInfo.uniformLocations.projectionMatrix,
-            false,
-            this.frameData.projectionMatrix,
-        );
-
-        this.gl.uniformMatrix4fv(
-            this.programInfo.uniformLocations.modelViewMatrix,
-            false,
-            currentModelview,
-        );
-
-        this.gl.uniform1f(
-            this.gl.getUniformLocation(this.programInfo.program, "uOpacity"),
-            mesh.opacity,
-        );
-
-        this.gl.activeTexture(this.gl.TEXTURE0);
-        this.gl.bindTexture(this.gl.TEXTURE_2D, mesh.texture.texture);
-
-        this.gl.drawElements(
-            this.gl.TRIANGLES,
-            mesh.verticesCount,
-            this.gl.UNSIGNED_INT,
-            0
-        );
-    }
-
-    setPositionAttribute(mesh: GLRendable) {
-        const numComponents = 3;
-        const type = this.gl.FLOAT;
-        const normalize = false;
-        const stride = 0;
-        const offset = 0;
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, mesh.buffer.positionBuffer);
-        this.gl.vertexAttribPointer(
-            this.programInfo.attribLocations.vertexPosition,
-            numComponents,
-            type,
-            normalize,
-            stride,
-            offset,
-        );
-        this.gl.enableVertexAttribArray(this.programInfo.attribLocations.vertexPosition);
-    }
-
-    setTextureAttribute(mesh: GLRendable) {
-        const num = 2; // every coordinate composed of 2 values
-        const type = this.gl.FLOAT; // the data in the buffer is 32-bit float
-        const normalize = false; // don't normalize
-        const stride = 0; // how many bytes to get from one set to the next
-        const offset = 0; // how many bytes inside the buffer to start from
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, mesh.buffer.textureCoord);
-        this.gl.vertexAttribPointer(
-            this.programInfo.attribLocations.textureCoord,
-            num,
-            type,
-            normalize,
-            stride,
-            offset,
-        );
-        this.gl.enableVertexAttribArray(this.programInfo.attribLocations.textureCoord);
-    }
-
-    setNormalAttribute(mesh: GLRendable) {
-        const numComponents = 3;
-        const type = this.gl.FLOAT;
-        const normalize = false;
-        const stride = 0;
-        const offset = 0;
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, mesh.buffer.normalBuffer);
-        this.gl.vertexAttribPointer(
-            this.programInfo.attribLocations.vertexNormal,
-            numComponents,
-            type,
-            normalize,
-            stride,
-            offset,
-        );
-        this.gl.enableVertexAttribArray(this.programInfo.attribLocations.vertexNormal);
+        this.GLT.sendTexture(mesh.texture.texture);
+        this.GLT.drawElements(mesh.verticesCount);
     }
 
 }

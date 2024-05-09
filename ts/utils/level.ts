@@ -1,6 +1,6 @@
 import { GlElement, GlElementAttributes } from '../gl/elementBase';
 import { Color } from './colors';
-import { GlElementType } from '../gl/glr';
+import { GlElementType } from '../gl/glRenderer';
 import { Vector2 } from "./vector2";
 import { Vector3 } from './vector3';
 import { Collider } from './collider';

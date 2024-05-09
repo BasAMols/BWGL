@@ -1,5 +1,5 @@
 import { Color } from '../utils/colors';
-import { GlElementType } from './glr';
+import { GlElementType } from './glRenderer';
 import { Vector3 } from '../utils/vector3';
 import { GlElementAttributes } from './elementBase';
 import { GLRendable } from './rendable';

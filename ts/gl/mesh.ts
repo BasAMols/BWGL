@@ -1,4 +1,4 @@
-import { GlElementType } from './glr';
+import { GlElementType } from './glRenderer';
 import { Color, Colors } from '../utils/colors';
 import { Vector3 } from '../utils/vector3';
 import { GLRendable, GLRendableAttributes } from './rendable';

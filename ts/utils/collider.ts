@@ -1,5 +1,5 @@
 import { GlElement, GlElementAttributes } from '../gl/elementBase';
-import { GlElementType } from '../gl/glr';
+import { GlElementType } from '../gl/glRenderer';
 import { GlMesh } from '../gl/mesh';
 import { Colors } from './colors';
 import { Vector3, v3 } from './vector3';

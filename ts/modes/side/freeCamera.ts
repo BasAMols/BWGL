@@ -1,6 +1,6 @@
 import { TickerReturnData } from '../../utils/ticker';
 import { Character } from '../../gl/character';
-import { GlElementType } from '../../gl/glr';
+import { GlElementType } from '../../gl/glRenderer';
 import { v3 } from '../../utils/vector3';
 import { GlController } from '../../gl/controller';
 import { Util } from '../../utils/utils';

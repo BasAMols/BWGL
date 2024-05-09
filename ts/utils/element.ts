@@ -1,6 +1,6 @@
 import { Game } from '../game';
 import { Event } from "./event";
-import { GLR } from '../gl/glr';
+import { GLR } from '../gl/glRenderer';
 import { Level } from './level';
 import { Mode } from './mode';
 import { TickerReturnData } from './ticker';

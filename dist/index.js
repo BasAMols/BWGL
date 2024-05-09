@@ -1825,55 +1825,6 @@ function equals(a, b) {
 var mul = multiply;
 var sub = subtract;
 
-// ts/gl/shaders/vertexShader.ts
-var vertexShader_default = "\nattribute vec4 aVertexPosition;\nattribute vec3 aVertexNormal;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uNormalMatrix;\nuniform mat4 uModelViewMatrix;\nuniform mat4 uProjectionMatrix;\n\nvarying highp vec2 vTextureCoord;\nvarying highp vec3 vLighting;\n\nvoid main(void) {\n  gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;\n  vTextureCoord = aTextureCoord;\n\n      // Apply lighting effect\n\n  highp vec3 ambientLight = vec3(0.6, 0.6, 0.6);\n  highp vec3 directionalLightColor = vec3(1, 1, 1);\n  highp vec3 directionalVector = normalize(vec3(-0.7, .7, 0.3));\n\n  highp vec4 transformedNormal = uNormalMatrix * vec4(aVertexNormal, 1.0);\n\n  highp float directional = max(dot(transformedNormal.xyz, directionalVector), 0.0);\n  vLighting = ambientLight + (directionalLightColor * directional);\n}";
-
-// ts/gl/shaders/fragmentShader.ts
-var fragmentShader_default = "\nvarying highp vec2 vTextureCoord;\nvarying highp vec3 vLighting;\n\nuniform sampler2D uSampler;\nuniform lowp float uOpacity;\n\nvoid main(void) {\n    highp vec4 texelColor = texture2D(uSampler, vTextureCoord);\n    gl_FragColor = vec4(texelColor.rgb * vLighting, texelColor.a*uOpacity);\n}\n";
-
-// ts/gl/glrInit.ts
-function loadShader(gl, type, source) {
-  const shader = gl.createShader(type);
-  gl.shaderSource(shader, source);
-  gl.compileShader(shader);
-  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    console.error("An error occurred compiling the shaders: ".concat(gl.getShaderInfoLog(shader)));
-    gl.deleteShader(shader);
-    return null;
-  }
-  return shader;
-}
-function initShaderProgram(gl) {
-  const vertexShader = loadShader(gl, gl.VERTEX_SHADER, vertexShader_default);
-  const fragmentShader = loadShader(gl, gl.FRAGMENT_SHADER, fragmentShader_default);
-  const shaderProgram = gl.createProgram();
-  gl.attachShader(shaderProgram, vertexShader);
-  gl.attachShader(shaderProgram, fragmentShader);
-  gl.linkProgram(shaderProgram);
-  if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-    alert(
-      "Unable to initialize the shader program: ".concat(gl.getProgramInfoLog(
-        shaderProgram
-      ))
-    );
-    return;
-  }
-  return {
-    program: shaderProgram,
-    attribLocations: {
-      vertexPosition: gl.getAttribLocation(shaderProgram, "aVertexPosition"),
-      vertexNormal: gl.getAttribLocation(shaderProgram, "aVertexNormal"),
-      textureCoord: gl.getAttribLocation(shaderProgram, "aTextureCoord")
-    },
-    uniformLocations: {
-      projectionMatrix: gl.getUniformLocation(shaderProgram, "uProjectionMatrix"),
-      modelViewMatrix: gl.getUniformLocation(shaderProgram, "uModelViewMatrix"),
-      normalMatrix: gl.getUniformLocation(shaderProgram, "uNormalMatrix"),
-      uSampler: gl.getUniformLocation(shaderProgram, "uSampler")
-    }
-  };
-}
-
 // ts/utils/vector3.ts
 function v3(n, y, z) {
   if (typeof n === "number") {
@@ -2106,7 +2057,166 @@ var Vector3 = class _Vector3 {
   // }
 };
 
-// ts/gl/glr.ts
+// ts/gl/shaders/vertexShader.ts
+var vertexShader_default = "\nattribute vec4 aVertexPosition;\nattribute vec3 aVertexNormal;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uNormalMatrix;\nuniform mat4 uModelViewMatrix;\nuniform mat4 uProjectionMatrix;\n\nvarying highp vec2 vTextureCoord;\nvarying highp vec3 vLighting;\n\nvoid main(void) {\n  gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;\n  vTextureCoord = aTextureCoord;\n\n      // Apply lighting effect\n\n  highp vec3 ambientLight = vec3(0.6, 0.6, 0.6);\n  highp vec3 directionalLightColor = vec3(1, 1, 1);\n  highp vec3 directionalVector = normalize(vec3(-0.7, .7, 0.3));\n\n  highp vec4 transformedNormal = uNormalMatrix * vec4(aVertexNormal, 1.0);\n\n  highp float directional = max(dot(transformedNormal.xyz, directionalVector), 0.0);\n  vLighting = ambientLight + (directionalLightColor * directional);\n}";
+
+// ts/gl/shaders/fragmentShader.ts
+var fragmentShader_default = "\nvarying highp vec2 vTextureCoord;\nvarying highp vec3 vLighting;\n\nuniform sampler2D uSampler;\nuniform lowp float uOpacity;\n\nvoid main(void) {\n    highp vec4 texelColor = texture2D(uSampler, vTextureCoord);\n    gl_FragColor = vec4(texelColor.rgb * vLighting, texelColor.a*uOpacity);\n}\n";
+
+// ts/gl/glrInit.ts
+function loadShader(gl, type, source) {
+  const shader = gl.createShader(type);
+  gl.shaderSource(shader, source);
+  gl.compileShader(shader);
+  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+    console.error("An error occurred compiling the shaders: ".concat(gl.getShaderInfoLog(shader)));
+    gl.deleteShader(shader);
+    return null;
+  }
+  return shader;
+}
+function initShaderProgram(gl) {
+  const vertexShader = loadShader(gl, gl.VERTEX_SHADER, vertexShader_default);
+  const fragmentShader = loadShader(gl, gl.FRAGMENT_SHADER, fragmentShader_default);
+  const shaderProgram = gl.createProgram();
+  gl.attachShader(shaderProgram, vertexShader);
+  gl.attachShader(shaderProgram, fragmentShader);
+  gl.linkProgram(shaderProgram);
+  if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+    alert(
+      "Unable to initialize the shader program: ".concat(gl.getProgramInfoLog(
+        shaderProgram
+      ))
+    );
+    return;
+  }
+  return {
+    program: shaderProgram,
+    attribLocations: {
+      vertexPosition: gl.getAttribLocation(shaderProgram, "aVertexPosition"),
+      vertexNormal: gl.getAttribLocation(shaderProgram, "aVertexNormal"),
+      textureCoord: gl.getAttribLocation(shaderProgram, "aTextureCoord")
+    },
+    uniformLocations: {
+      projectionMatrix: gl.getUniformLocation(shaderProgram, "uProjectionMatrix"),
+      modelViewMatrix: gl.getUniformLocation(shaderProgram, "uModelViewMatrix"),
+      normalMatrix: gl.getUniformLocation(shaderProgram, "uNormalMatrix"),
+      uSampler: gl.getUniformLocation(shaderProgram, "uSampler")
+    }
+  };
+}
+
+// ts/gl/glTranslator.ts
+var GLTranslator = class {
+  constructor(game, glr) {
+    this.game = game;
+    this.glr = glr;
+    this.gl = this.glr.gl;
+    this.programInfo = initShaderProgram(this.gl);
+    this.uniforms = {
+      "projection": {
+        pointer: this.programInfo.uniformLocations.projectionMatrix,
+        type: "matrix4"
+      },
+      "modelView": {
+        pointer: this.programInfo.uniformLocations.modelViewMatrix,
+        type: "matrix4"
+      },
+      "normal": {
+        pointer: this.programInfo.uniformLocations.normalMatrix,
+        type: "matrix4"
+      },
+      "opacity": {
+        pointer: this.gl.getUniformLocation(this.programInfo.program, "uOpacity"),
+        type: "float"
+      },
+      "sampler": {
+        pointer: this.programInfo.uniformLocations.uSampler,
+        type: "int"
+      }
+    };
+    this.attributes = {
+      "position": {
+        pointer: this.programInfo.attribLocations.vertexPosition,
+        count: 3
+      },
+      "normal": {
+        pointer: this.programInfo.attribLocations.vertexNormal,
+        count: 3
+      },
+      "texture": {
+        pointer: this.programInfo.attribLocations.textureCoord,
+        count: 2
+      }
+    };
+  }
+  sendAttribute(pointer, buffer) {
+    const at = this.attributes[pointer];
+    if (at) {
+      this.sendBuffer(buffer);
+      this.gl.vertexAttribPointer(
+        at.pointer,
+        at.count,
+        this.gl.FLOAT,
+        false,
+        0,
+        0
+      );
+      this.gl.enableVertexAttribArray(at.pointer);
+    } else {
+      throw new Error("".concat(pointer, " attribute doesnt exist"));
+    }
+  }
+  sendTexture(texture) {
+    this.gl.activeTexture(this.gl.TEXTURE0);
+    this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
+  }
+  sendBuffer(buffer, type = "normal") {
+    this.gl.bindBuffer(type === "element" ? this.gl.ELEMENT_ARRAY_BUFFER : this.gl.ARRAY_BUFFER, buffer);
+  }
+  sendUniform(pointer, data) {
+    const un = this.uniforms[pointer];
+    if (un) {
+      if (un.type === "matrix4")
+        this.sendMat4(un.pointer, data);
+      if (un.type === "float")
+        this.sendFloat(un.pointer, data);
+      if (un.type === "int")
+        this.sendInt(un.pointer, data);
+    } else {
+      throw new Error("unform doesnt exist");
+    }
+  }
+  drawElements(n) {
+    this.gl.drawElements(
+      this.gl.TRIANGLES,
+      n,
+      this.gl.UNSIGNED_INT,
+      0
+    );
+  }
+  sendMat4(pointer, data) {
+    this.gl.uniformMatrix4fv(
+      pointer,
+      false,
+      data
+    );
+  }
+  sendFloat(pointer, data) {
+    this.gl.uniform1f(
+      pointer,
+      data
+    );
+  }
+  sendInt(pointer, data) {
+    this.gl.uniform1i(
+      pointer,
+      data
+    );
+  }
+};
+
+// ts/gl/glRenderer.ts
 var GLR = class {
   constructor(game) {
     this.game = game;
@@ -2116,7 +2226,7 @@ var GLR = class {
     this.gl.getExtension("OES_element_index_uint");
     this.gl.enable(this.gl.BLEND);
     this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
-    this.programInfo = initShaderProgram(this.gl);
+    this.GLT = new GLTranslator(this.game, this);
     this.game.renderer.getEvent("resize").subscribe("glr", this.resize.bind(this));
   }
   get t() {
@@ -2166,8 +2276,8 @@ var GLR = class {
   }
   draw() {
     this.clear();
-    this.gl.useProgram(this.programInfo.program);
-    this.gl.uniform1i(this.programInfo.uniformLocations.uSampler, 0);
+    this.gl.useProgram(this.GLT.programInfo.program);
+    this.GLT.sendUniform("sampler", 0);
     this.setCamera();
     this.drawChildren(this.game.level);
     this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
@@ -2217,90 +2327,18 @@ var GLR = class {
     const normalMatrix = mat4_exports.create();
     mat4_exports.invert(normalMatrix, currentModelview);
     mat4_exports.transpose(normalMatrix, normalMatrix);
-    this.gl.uniformMatrix4fv(
-      this.programInfo.uniformLocations.normalMatrix,
-      false,
-      normalMatrix
-    );
+    this.GLT.sendUniform("normal", normalMatrix);
   }
   renderMesh(mesh, currentModelview) {
-    this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, mesh.buffer.indices);
-    this.setPositionAttribute(mesh);
-    this.setTextureAttribute(mesh);
-    this.setNormalAttribute(mesh);
-    this.gl.uniformMatrix4fv(
-      this.programInfo.uniformLocations.projectionMatrix,
-      false,
-      this.frameData.projectionMatrix
-    );
-    this.gl.uniformMatrix4fv(
-      this.programInfo.uniformLocations.modelViewMatrix,
-      false,
-      currentModelview
-    );
-    this.gl.uniform1f(
-      this.gl.getUniformLocation(this.programInfo.program, "uOpacity"),
-      mesh.opacity
-    );
-    this.gl.activeTexture(this.gl.TEXTURE0);
-    this.gl.bindTexture(this.gl.TEXTURE_2D, mesh.texture.texture);
-    this.gl.drawElements(
-      this.gl.TRIANGLES,
-      mesh.verticesCount,
-      this.gl.UNSIGNED_INT,
-      0
-    );
-  }
-  setPositionAttribute(mesh) {
-    const numComponents = 3;
-    const type = this.gl.FLOAT;
-    const normalize = false;
-    const stride = 0;
-    const offset = 0;
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, mesh.buffer.positionBuffer);
-    this.gl.vertexAttribPointer(
-      this.programInfo.attribLocations.vertexPosition,
-      numComponents,
-      type,
-      normalize,
-      stride,
-      offset
-    );
-    this.gl.enableVertexAttribArray(this.programInfo.attribLocations.vertexPosition);
-  }
-  setTextureAttribute(mesh) {
-    const num = 2;
-    const type = this.gl.FLOAT;
-    const normalize = false;
-    const stride = 0;
-    const offset = 0;
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, mesh.buffer.textureCoord);
-    this.gl.vertexAttribPointer(
-      this.programInfo.attribLocations.textureCoord,
-      num,
-      type,
-      normalize,
-      stride,
-      offset
-    );
-    this.gl.enableVertexAttribArray(this.programInfo.attribLocations.textureCoord);
-  }
-  setNormalAttribute(mesh) {
-    const numComponents = 3;
-    const type = this.gl.FLOAT;
-    const normalize = false;
-    const stride = 0;
-    const offset = 0;
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, mesh.buffer.normalBuffer);
-    this.gl.vertexAttribPointer(
-      this.programInfo.attribLocations.vertexNormal,
-      numComponents,
-      type,
-      normalize,
-      stride,
-      offset
-    );
-    this.gl.enableVertexAttribArray(this.programInfo.attribLocations.vertexNormal);
+    this.GLT.sendBuffer(mesh.buffer.indices, "element");
+    this.GLT.sendAttribute("position", mesh.buffer.positionBuffer);
+    this.GLT.sendAttribute("texture", mesh.buffer.textureCoord);
+    this.GLT.sendAttribute("normal", mesh.buffer.normalBuffer);
+    this.GLT.sendUniform("projection", this.frameData.projectionMatrix);
+    this.GLT.sendUniform("modelView", currentModelview);
+    this.GLT.sendUniform("opacity", mesh.opacity);
+    this.GLT.sendTexture(mesh.texture.texture);
+    this.GLT.drawElements(mesh.verticesCount);
   }
 };
 

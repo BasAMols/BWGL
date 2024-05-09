@@ -1,4 +1,4 @@
-import { bufferDataInitilizers } from '../../../gl/glr';
+import { bufferDataInitilizers } from '../../../gl/glRenderer';
 import { Vector3 } from '../../../utils/vector3';
 
 export function glTetrahedronData(gl: WebGLRenderingContext): bufferDataInitilizers {

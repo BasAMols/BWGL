@@ -4,7 +4,7 @@ import { Input } from './utils/input';
 import { Mode } from './utils/mode';
 import { Renderer } from './dom/renderer';
 import { Loader } from './utils/debug/loader';
-import { GLR } from './gl/glr';
+import { GLR } from './gl/glRenderer';
 import { Level } from './utils/level';
 import { SideMode } from './modes/side/sideMode';
 
