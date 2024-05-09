@@ -3,7 +3,6 @@ import { Game } from '../game';
 import { GLR } from './glRenderer';
 import { attributes, initShaderProgram, uniforms } from './glrInit';
 
-
 export class GLTranslator {
 
     public program: WebGLProgram;
@@ -14,6 +13,17 @@ export class GLTranslator {
     constructor(public game: Game, public glr: GLR) {
         this.gl = this.glr.gl;
         [this.program, this.uniforms, this.attributes] = initShaderProgram(this.gl) as [WebGLProgram, uniforms, attributes];
+    }
+
+    public createBuffer(data: number[], type: 'normal'|'element' = 'normal', dataType: typeof Float32Array|typeof Uint32Array = Float32Array) {
+        const buffer = this.gl.createBuffer();
+        this.gl.bindBuffer(type === 'element'?this.gl.ELEMENT_ARRAY_BUFFER:this.gl.ARRAY_BUFFER, buffer);
+        this.gl.bufferData(
+            type === 'element'?this.gl.ELEMENT_ARRAY_BUFFER:this.gl.ARRAY_BUFFER,
+            new dataType(data),
+            this.gl.STATIC_DRAW
+        );
+        return buffer;
     }
 
     public sendAttribute(pointer: string, buffer: WebGLBuffer) {
@@ -39,6 +49,7 @@ export class GLTranslator {
     public sendTexture(texture: WebGLTexture): void {
         this.gl.activeTexture(this.gl.TEXTURE0);
         this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
+        this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
     }
 
     public sendBuffer(buffer: WebGLBuffer, type: 'normal'|'element' = 'normal'): void {

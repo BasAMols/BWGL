@@ -4,7 +4,7 @@ import { GlElement, GlElementAttributes } from './elementBase';
 import { GLTexture } from './texture';
 
 export type GLRendableAttributes = GlElementAttributes & {
-    opacity?: number
+    opacity?: number;
 };
 
 export abstract class GLRendable extends GlElement {
@@ -16,15 +16,15 @@ export abstract class GLRendable extends GlElement {
 
     constructor(attr: GLRendableAttributes = {}) {
         super(attr);
-        this.opacity = attr.opacity !== undefined? attr.opacity:1
+        this.opacity = attr.opacity !== undefined ? attr.opacity : 1;
     }
 
     public build() {
         this.buffer = {
-            positionBuffer: this.positionBuffer(this.size),
-            indices: this.indexBuffer(),
-            textureCoord: this.textureBuffer(this.size),
-            normalBuffer: this.normalBuffer(),
+            positionBuffer: this.GLT.createBuffer(this.positionBuffer(this.size)),
+            indices: this.GLT.createBuffer(this.indexBuffer(), 'element', Uint32Array),
+            textureCoord: this.GLT.createBuffer(this.textureBuffer(this.size)),
+            normalBuffer: this.GLT.createBuffer(this.normalBuffer()),
         };
         this.GLR.initGlElement(this);
         // this.texture = new GLTexture(this.game, { url: 'cubetexture.png' });
@@ -37,55 +37,10 @@ export abstract class GLRendable extends GlElement {
         }
     }
 
-    protected abstract indexBuffer(): WebGLBuffer;
-    protected abstract positionBuffer(size: Vector3): WebGLBuffer;
-    protected abstract textureBuffer(size: Vector3): WebGLBuffer;
-    protected abstract normalBuffer(): WebGLBuffer;
-
-    getIndexBuffer(indices: number[]) {
-        const indexBuffer = this.gl.createBuffer();
-        this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-        this.gl.bufferData(
-            this.gl.ELEMENT_ARRAY_BUFFER,
-            new Uint32Array(indices),
-            this.gl.STATIC_DRAW,
-        );
-        return indexBuffer;
-    }
-
-    getPositionBuffer(positions: number[]) {
-        const positionBuffer = this.gl.createBuffer();
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
-        this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(positions), this.gl.STATIC_DRAW);
-        return positionBuffer;
-    }
-
-    getTextureBuffer(coordinates: number[]) {
-        const textureCoordBuffer = this.gl.createBuffer();
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, textureCoordBuffer);
-        this.gl.bufferData(
-            this.gl.ARRAY_BUFFER,
-            new Float32Array(coordinates),
-            this.gl.STATIC_DRAW,
-        );
-        return textureCoordBuffer;
-    }
-
-    getNormalBuffer(coordinates: number[]) {
-
-        const normalBuffer = this.gl.createBuffer();
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, normalBuffer);
-
-        this.gl.bufferData(
-            this.gl.ARRAY_BUFFER,
-            new Float32Array(coordinates),
-            this.gl.STATIC_DRAW,
-        );
-        
-        return normalBuffer;
-    }
-
-
+    protected abstract indexBuffer(): number[];
+    protected abstract positionBuffer(size: Vector3): number[];
+    protected abstract textureBuffer(size: Vector3): number[];
+    protected abstract normalBuffer(): number[];
 }
 
 

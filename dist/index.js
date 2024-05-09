@@ -36,6 +36,9 @@ var Element = class {
   get level() {
     return this.game.level;
   }
+  get GLT() {
+    return this.game.GLR.glt;
+  }
   get GLR() {
     return this.game.GLR;
   }
@@ -892,6 +895,16 @@ var GLTranslator = class {
     this.gl = this.glr.gl;
     [this.program, this.uniforms, this.attributes] = initShaderProgram(this.gl);
   }
+  createBuffer(data, type = "normal", dataType = Float32Array) {
+    const buffer = this.gl.createBuffer();
+    this.gl.bindBuffer(type === "element" ? this.gl.ELEMENT_ARRAY_BUFFER : this.gl.ARRAY_BUFFER, buffer);
+    this.gl.bufferData(
+      type === "element" ? this.gl.ELEMENT_ARRAY_BUFFER : this.gl.ARRAY_BUFFER,
+      new dataType(data),
+      this.gl.STATIC_DRAW
+    );
+    return buffer;
+  }
   sendAttribute(pointer, buffer) {
     const at = this.attributes[pointer];
     if (at) {
@@ -912,6 +925,7 @@ var GLTranslator = class {
   sendTexture(texture) {
     this.gl.activeTexture(this.gl.TEXTURE0);
     this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
+    this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
   }
   sendBuffer(buffer, type = "normal") {
     this.gl.bindBuffer(type === "element" ? this.gl.ELEMENT_ARRAY_BUFFER : this.gl.ARRAY_BUFFER, buffer);
@@ -2320,7 +2334,6 @@ var GLR = class {
       ).translate(this.game.mode.camera.offset.multiply(1, 1, -1)).rotate(this.game.mode.camera.rotation).mat4
     );
     this.drawChildren(this.game.level, new Matrix4().translate(this.game.mode.camera.target.multiply(-1, 1, 1)));
-    this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
   }
   drawChildren(element, currentModelview) {
     element.children.forEach((o) => {
@@ -2544,10 +2557,10 @@ var GLRendable = class extends GlElement {
   }
   build() {
     this.buffer = {
-      positionBuffer: this.positionBuffer(this.size),
-      indices: this.indexBuffer(),
-      textureCoord: this.textureBuffer(this.size),
-      normalBuffer: this.normalBuffer()
+      positionBuffer: this.GLT.createBuffer(this.positionBuffer(this.size)),
+      indices: this.GLT.createBuffer(this.indexBuffer(), "element", Uint32Array),
+      textureCoord: this.GLT.createBuffer(this.textureBuffer(this.size)),
+      normalBuffer: this.GLT.createBuffer(this.normalBuffer())
     };
     this.GLR.initGlElement(this);
   }
@@ -2556,42 +2569,6 @@ var GLRendable = class extends GlElement {
     if (this.game.waitCount) {
       this.game.waitCount--;
     }
-  }
-  getIndexBuffer(indices) {
-    const indexBuffer = this.gl.createBuffer();
-    this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-    this.gl.bufferData(
-      this.gl.ELEMENT_ARRAY_BUFFER,
-      new Uint32Array(indices),
-      this.gl.STATIC_DRAW
-    );
-    return indexBuffer;
-  }
-  getPositionBuffer(positions) {
-    const positionBuffer = this.gl.createBuffer();
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
-    this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(positions), this.gl.STATIC_DRAW);
-    return positionBuffer;
-  }
-  getTextureBuffer(coordinates) {
-    const textureCoordBuffer = this.gl.createBuffer();
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, textureCoordBuffer);
-    this.gl.bufferData(
-      this.gl.ARRAY_BUFFER,
-      new Float32Array(coordinates),
-      this.gl.STATIC_DRAW
-    );
-    return textureCoordBuffer;
-  }
-  getNormalBuffer(coordinates) {
-    const normalBuffer = this.gl.createBuffer();
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, normalBuffer);
-    this.gl.bufferData(
-      this.gl.ARRAY_BUFFER,
-      new Float32Array(coordinates),
-      this.gl.STATIC_DRAW
-    );
-    return normalBuffer;
   }
 };
 
@@ -2701,38 +2678,32 @@ var GlMesh = class _GlMesh extends GLRendable {
   }
   indexBuffer() {
     let b = this.getBufferData().index.slice(0, this.faceCount * 6);
-    return this.getIndexBuffer(b);
+    return b;
   }
   positionBuffer(size) {
-    return this.getPositionBuffer(
-      _GlMesh.scale(
-        _GlMesh.sliceToDimension(
-          this.getBufferData().position,
-          this.size,
-          72
-        ),
-        size
-      )
+    return _GlMesh.scale(
+      _GlMesh.sliceToDimension(
+        this.getBufferData().position,
+        this.size,
+        72
+      ),
+      size
     );
   }
   normalBuffer() {
-    return this.getNormalBuffer(
-      _GlMesh.sliceToDimension(
-        this.getBufferData().normal,
-        this.size,
-        72
-      )
+    return _GlMesh.sliceToDimension(
+      this.getBufferData().normal,
+      this.size,
+      72
     );
   }
-  textureBuffer(size) {
+  textureBuffer() {
     let b = [];
     if (this.textureUrl) {
-      return this.getTextureBuffer(
-        _GlMesh.sliceToDimension(
-          this.getBufferData().texture,
-          this.size,
-          48
-        )
+      return _GlMesh.sliceToDimension(
+        this.getBufferData().texture,
+        this.size,
+        48
       );
     } else {
       const inc = 1 / this.faceCount;
@@ -2749,7 +2720,7 @@ var GlMesh = class _GlMesh extends GLRendable {
         );
       }
     }
-    return this.getTextureBuffer(b);
+    return b;
   }
   getIndexBufferData() {
     return [

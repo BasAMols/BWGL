@@ -56,41 +56,35 @@ export class GlMesh extends GLRendable {
 
     protected indexBuffer() {
         let b: number[] = this.getBufferData().index.slice(0, this.faceCount * 6);
-        return this.getIndexBuffer(b);
+        return b;
     }
 
     protected positionBuffer(size: Vector3) {
-        return this.getPositionBuffer(
-            GlMesh.scale(
-                GlMesh.sliceToDimension(
-                    this.getBufferData().position,
-                    this.size,
-                    72
-                ),
-                size
-            )
+        return GlMesh.scale(
+            GlMesh.sliceToDimension(
+                this.getBufferData().position,
+                this.size,
+                72
+            ),
+            size
         );
     }
 
     protected normalBuffer() {
-        return this.getNormalBuffer(
-            GlMesh.sliceToDimension(
-                this.getBufferData().normal,
-                this.size,
-                72
-            )
+        return GlMesh.sliceToDimension(
+            this.getBufferData().normal,
+            this.size,
+            72
         );
     }
 
-    protected textureBuffer(size: Vector3): WebGLBuffer {
+    protected textureBuffer() {
         let b: number[] = [];
         if (this.textureUrl) {
-            return this.getTextureBuffer(
-                GlMesh.sliceToDimension(
-                    this.getBufferData().texture,
-                    this.size,
-                    48
-                )
+            return GlMesh.sliceToDimension(
+                this.getBufferData().texture,
+                this.size,
+                48
             );
         } else {
             const inc = 1 / this.faceCount;
@@ -105,7 +99,7 @@ export class GlMesh extends GLRendable {
             }
         }
 
-        return this.getTextureBuffer(b);
+        return b;
     }
 
 

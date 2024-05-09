@@ -145,15 +145,15 @@ export class GLobj extends GLRendable {
     }
 
     protected indexBuffer() {
-        return this.getIndexBuffer(this.indexIndeces);
+        return this.indexIndeces;
     }
 
     protected positionBuffer(size: Vector3) {
-        return this.getPositionBuffer(this.positionIndeces.map((n, i) => n * size.array[i % 3]));
+        return this.positionIndeces.map((n, i) => n * size.array[i % 3]);
     }
 
     protected normalBuffer() {
-        return this.getNormalBuffer(this.normalIndeces);
+        return this.normalIndeces;
     }
 
     protected textureBuffer(size: Vector3) {
@@ -162,50 +162,6 @@ export class GLobj extends GLRendable {
         } else {
             this.texture = new GLTexture(this.game, {});
         }
-        // this.textureIndeces = [
-        //     // select the top left image
-        //     0, 0,
-        //     0, 1,
-        //     0.166666, 0,
-        //     0, 1,
-        //     0.166666, 0,
-        //     0.166666, 1,
-        //     // select the top middle image
-        //     0.166666, 0,
-        //     0.166666, 1,
-        //     0.333333, 0,
-        //     0.166666, 1,
-        //     0.333333, 0,
-        //     0.333333, 1,
-        //     // select to top right image
-        //     0.333333, 0,
-        //     0.333333, 1,
-        //     0.50, 0,
-        //     0.333333, 1,
-        //     0.50, 0,
-        //     0.50, 1,
-        //     // select the bottom left image
-        //     0.50, 0,
-        //     0.50, 1,
-        //     0.666666, 0,
-        //     0.50, 1,
-        //     0.666666, 0,
-        //     0.666666, 1,
-        //     // select the bottom middle image
-        //     0.666666, 0,
-        //     0.666666, 1,
-        //     0.833333, 0,
-        //     0.666666, 1,
-        //     0.833333, 0,
-        //     0.833333, 1,
-        //     // select the bottom right image
-        //     0.833333, 0,
-        //     0.833333, 1,
-        //     1.00, 0,
-        //     0.833333, 1,
-        //     1.00, 0,
-        //     1.00, 1,
-        // ];
-        return this.getTextureBuffer(this.textureIndeces);
+        return this.textureIndeces;
     }
 }

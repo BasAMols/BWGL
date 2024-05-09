@@ -4,6 +4,7 @@ import { GLR } from '../gl/glRenderer';
 import { Level } from './level';
 import { Mode } from './mode';
 import { TickerReturnData } from './ticker';
+import { GLTranslator } from '../gl/glTranslator';
 
 export type ElementAttributes = {
     
@@ -26,6 +27,9 @@ export abstract class Element {
     }
     public get level(): Level {
         return this.game.level;
+    }
+    public get GLT(): GLTranslator {
+        return this.game.GLR.glt;
     }
     public get GLR(): GLR {
         return this.game.GLR;

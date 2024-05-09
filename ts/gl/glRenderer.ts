@@ -34,7 +34,7 @@ export interface objectData {
 export class GLR {
     private objects: (GLRendable)[] = [];
     public gl: WebGLRenderingContext;
-    private glt: GLTranslator;
+    public glt: GLTranslator;
 
     get t(): TickerReturnData {
         return this.game.t;
@@ -71,7 +71,6 @@ export class GLR {
         
         this.gl.useProgram(this.glt.program);
         this.glt.sendUniform('uSampler', 0);
-
         this.glt.sendUniform('uProjectionMatrix', new Matrix4()
             .perspective(
                 (this.game.mode.camera.fov * Math.PI) / 180,
@@ -82,12 +81,7 @@ export class GLR {
             .mat4
         );
 
-        // Children
         this.drawChildren(this.game.level, new Matrix4().translate(this.game.mode.camera.target.multiply(-1, 1, 1)));
-
-        // Flip pixel
-        this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
-
     }
 
     drawChildren(element: GlElement, currentModelview: Matrix4) {
@@ -131,5 +125,4 @@ export class GLR {
         this.glt.sendTexture(mesh.texture.texture);
         this.glt.drawElements(mesh.verticesCount);
     }
-
 }
