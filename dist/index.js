@@ -560,6 +560,386 @@ var Loader = class extends DomElement {
   }
 };
 
+// ts/utils/vector3.ts
+function v3(n, y, z) {
+  if (typeof n === "number") {
+    return Vector3.f(n, y, z);
+  } else if (typeof n === "undefined") {
+    return Vector3.f(0);
+  } else {
+    return Vector3.f(...n);
+  }
+}
+var Vector3 = class _Vector3 {
+  get pitch() {
+    return this.x;
+  }
+  set pitch(value) {
+    this.x = value;
+  }
+  get yaw() {
+    return this.y;
+  }
+  set yaw(value) {
+    this.y = value;
+  }
+  get roll() {
+    return this.z;
+  }
+  set roll(value) {
+    this.z = value;
+  }
+  get x() {
+    return this.vec[0];
+  }
+  set x(value) {
+    this.vec[0] = value;
+  }
+  get y() {
+    return this.vec[1];
+  }
+  set y(value) {
+    this.vec[1] = value;
+  }
+  get z() {
+    return this.vec[2];
+  }
+  set z(value) {
+    this.vec[2] = value;
+  }
+  get xy() {
+    return v2(this.x, this.y);
+  }
+  get xz() {
+    return v2(this.x, this.z);
+  }
+  get yx() {
+    return v2(this.y, this.x);
+  }
+  get yz() {
+    return v2(this.y, this.z);
+  }
+  get zx() {
+    return v2(this.z, this.x);
+  }
+  get zy() {
+    return v2(this.z, this.y);
+  }
+  constructor(x = 0, y = 0, z = 0) {
+    this.vec = [x, y, z];
+  }
+  static from2(vector, z = 0) {
+    return new _Vector3(vector.x, vector.y, z);
+  }
+  static f(x = 0, y = x, z = x) {
+    return new _Vector3(x, y, z);
+  }
+  get array() {
+    return [this.x, this.y, this.z];
+  }
+  set array(a) {
+    [this.x, this.y, this.z] = a;
+  }
+  forEach(callbackfn) {
+    this.array.forEach(callbackfn);
+  }
+  get c() {
+    return this.clone();
+  }
+  clone() {
+    return new _Vector3(
+      this.x,
+      this.y,
+      this.z
+    );
+  }
+  add(vector) {
+    return new _Vector3(
+      this.x + vector.x,
+      this.y + vector.y,
+      this.z + vector.z
+    );
+  }
+  multiply(a, b, c) {
+    const [x, y, z] = typeof a === "number" ? [a, b, c] : a.array;
+    return new _Vector3(
+      this.x * x,
+      this.y * y,
+      this.z * z
+    );
+  }
+  subtract(vector) {
+    return new _Vector3(
+      this.x - vector.x,
+      this.y - vector.y,
+      this.z - vector.z
+    );
+  }
+  scale(scalar) {
+    return new _Vector3(
+      this.x * scalar,
+      this.y * scalar,
+      this.z * scalar
+    );
+  }
+  divide(vector) {
+    return new _Vector3(
+      this.x / vector.x,
+      this.y / vector.y,
+      this.z / vector.z
+    );
+  }
+  // dot(vector: Vector2) {
+  // 	return (this.x * vector.x + this.y + vector.y);
+  // }
+  // moveTowards(vector: Vector2, t: number) {
+  // 	t = Math.min(t, 1); // still allow negative t
+  // 	var diff = vector.subtract(this);
+  // 	return this.add(diff.scale(t));
+  // }
+  // magnitude() {
+  // 	return Math.sqrt(this.magnitudeSqr());
+  // }
+  // magnitudeSqr() {
+  // 	return (this.x * this.x + this.y * this.y);
+  // }
+  // distance(vector: Vector2) {
+  // 	return Math.sqrt(this.distanceSqr(vector));
+  // }
+  // distanceSqr(vector: Vector2) {
+  // 	var deltaX = this.x - vector.x;
+  // 	var deltaY = this.y - vector.y;
+  // 	return (deltaX * deltaX + deltaY * deltaY);
+  // }
+  // normalize() {
+  // 	var mag = this.magnitude();
+  // 	var vector = this.clone();
+  // 	if (Math.abs(mag) < 1e-9) {
+  // 		vector.x = 0;
+  // 		vector.y = 0;
+  // 	} else {
+  // 		vector.x /= mag;
+  // 		vector.y /= mag;
+  // 	}
+  // 	return vector;
+  // }
+  // angleDegrees() {
+  // 	return this.angle() * (180 / Math.PI);
+  // }
+  // angle() {
+  // 	return Math.atan2(this.y, this.x);
+  // }
+  // rotate(rad: number) {
+  // 	var cos = Math.cos(rad);
+  // 	var sin = Math.sin(rad);
+  // 	return new Vector2(
+  // 		this.x * cos - this.y * sin,
+  // 		this.x * sin + this.y * cos
+  // 	);
+  // }
+  // toPrecision(precision: number) {
+  // 	var vector = this.clone();
+  // 	vector.x = +vector.x.toFixed(precision);
+  // 	vector.y = +vector.y.toFixed(precision);
+  // 	return vector;
+  // }
+  // toString() {
+  // 	var vector = this.toPrecision(1);
+  // 	return ("[" + vector.x + "; " + vector.y + "]");
+  // }
+  // public clamp(min: Vector2, max: Vector2) {
+  // 	return Vector2.clamp(this, min, max);
+  // }
+  // public static min(a: Vector2, b: Vector2) {
+  // 	return new Vector2(
+  // 		Math.min(a.x, b.x),
+  // 		Math.min(a.y, b.y),
+  // 	);
+  // }
+  // public static max(a: Vector2, b: Vector2) {
+  // 	return new Vector2(
+  // 		Math.max(a.x, b.x),
+  // 		Math.max(a.y, b.y),
+  // 	);
+  // }
+  // public static clamp(value: Vector2, min: Vector2, max: Vector2) {
+  // 	return Vector2.max(Vector2.min(value, min), max);
+  // }
+  // public clampMagnitute(mag: number) {
+  // 	return Vector2.clampMagnitute(this, mag);
+  // }
+  // public static clampMagnitute(value: Vector2, mag: number) {
+  // 	var ratio = value.magnitude() / mag;
+  // 	return new Vector2(value.x / ratio, value.y / ratio);
+  // }
+  // static get zero() {
+  // 	return new Vector2(0, 0);
+  // }
+  // static get down() {
+  // 	return new Vector2(0, -1);
+  // }
+  // static get up() {
+  // 	return new Vector2(0, 1);
+  // }
+  // static get right() {
+  // 	return new Vector2(1, 0);
+  // }
+  // static get left() {
+  // 	return new Vector2(-1, 0);
+  // }
+  // static get fromDegree() {
+  // 	return new Vector2(0, 0);
+  // }
+};
+
+// ts/gl/shaders/vertexShader.ts
+var vertexShader_default = "\nattribute vec4 aVertexPosition;\nattribute vec3 aVertexNormal;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uNormalMatrix;\nuniform mat4 uModelViewMatrix;\nuniform mat4 uProjectionMatrix;\n\nvarying highp vec2 vTextureCoord;\nvarying highp vec3 vLighting;\n\nvoid main(void) {\n  gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;\n  vTextureCoord = aTextureCoord;\n\n      // Apply lighting effect\n\n  highp vec3 ambientLight = vec3(0.6, 0.6, 0.6);\n  highp vec3 directionalLightColor = vec3(1, 1, 1);\n  highp vec3 directionalVector = normalize(vec3(-0.7, .7, 0.3));\n\n  highp vec4 transformedNormal = uNormalMatrix * vec4(aVertexNormal, 1.0);\n\n  highp float directional = max(dot(transformedNormal.xyz, directionalVector), 0.0);\n  vLighting = ambientLight + (directionalLightColor * directional);\n}";
+
+// ts/gl/shaders/fragmentShader.ts
+var fragmentShader_default = "\nvarying highp vec2 vTextureCoord;\nvarying highp vec3 vLighting;\n\nuniform sampler2D uSampler;\nuniform lowp float uOpacity;\n\nvoid main(void) {\n    highp vec4 texelColor = texture2D(uSampler, vTextureCoord);\n    gl_FragColor = vec4(texelColor.rgb * vLighting, texelColor.a*uOpacity);\n}\n";
+
+// ts/gl/glrInit.ts
+function loadShader(gl, type, source) {
+  const shader = gl.createShader(type);
+  gl.shaderSource(shader, source);
+  gl.compileShader(shader);
+  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+    console.error("An error occurred compiling the shaders: ".concat(gl.getShaderInfoLog(shader)));
+    gl.deleteShader(shader);
+    return null;
+  }
+  return shader;
+}
+function initShaderProgram(gl) {
+  const vertexShader = loadShader(gl, gl.VERTEX_SHADER, vertexShader_default);
+  const fragmentShader = loadShader(gl, gl.FRAGMENT_SHADER, fragmentShader_default);
+  const shaderProgram = gl.createProgram();
+  gl.attachShader(shaderProgram, vertexShader);
+  gl.attachShader(shaderProgram, fragmentShader);
+  gl.linkProgram(shaderProgram);
+  if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+    alert(
+      "Unable to initialize the shader program: ".concat(gl.getProgramInfoLog(
+        shaderProgram
+      ))
+    );
+    return;
+  }
+  return [
+    shaderProgram,
+    {
+      "projection": {
+        pointer: gl.getUniformLocation(shaderProgram, "uProjectionMatrix"),
+        type: "matrix4"
+      },
+      "modelView": {
+        pointer: gl.getUniformLocation(shaderProgram, "uModelViewMatrix"),
+        type: "matrix4"
+      },
+      "normal": {
+        pointer: gl.getUniformLocation(shaderProgram, "uNormalMatrix"),
+        type: "matrix4"
+      },
+      "opacity": {
+        pointer: gl.getUniformLocation(shaderProgram, "uOpacity"),
+        type: "float"
+      },
+      "sampler": {
+        pointer: gl.getUniformLocation(shaderProgram, "uSampler"),
+        type: "int"
+      }
+    },
+    {
+      "position": {
+        pointer: gl.getAttribLocation(shaderProgram, "aVertexPosition"),
+        count: 3
+      },
+      "normal": {
+        pointer: gl.getAttribLocation(shaderProgram, "aVertexNormal"),
+        count: 3
+      },
+      "texture": {
+        pointer: gl.getAttribLocation(shaderProgram, "aTextureCoord"),
+        count: 2
+      }
+    }
+  ];
+}
+
+// ts/gl/glTranslator.ts
+var GLTranslator = class {
+  constructor(game, glr) {
+    this.game = game;
+    this.glr = glr;
+    this.gl = this.glr.gl;
+    [this.program, this.uniforms, this.attributes] = initShaderProgram(this.gl);
+  }
+  sendAttribute(pointer, buffer) {
+    const at = this.attributes[pointer];
+    if (at) {
+      this.sendBuffer(buffer);
+      this.gl.vertexAttribPointer(
+        at.pointer,
+        at.count,
+        this.gl.FLOAT,
+        false,
+        0,
+        0
+      );
+      this.gl.enableVertexAttribArray(at.pointer);
+    } else {
+      throw new Error("".concat(pointer, " attribute doesnt exist"));
+    }
+  }
+  sendTexture(texture) {
+    this.gl.activeTexture(this.gl.TEXTURE0);
+    this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
+  }
+  sendBuffer(buffer, type = "normal") {
+    this.gl.bindBuffer(type === "element" ? this.gl.ELEMENT_ARRAY_BUFFER : this.gl.ARRAY_BUFFER, buffer);
+  }
+  sendUniform(pointer, data) {
+    const un = this.uniforms[pointer];
+    if (un) {
+      if (un.type === "matrix4")
+        this.sendMat4(un.pointer, data);
+      if (un.type === "float")
+        this.sendFloat(un.pointer, data);
+      if (un.type === "int")
+        this.sendInt(un.pointer, data);
+    } else {
+      throw new Error("unform doesnt exist");
+    }
+  }
+  drawElements(n) {
+    this.gl.drawElements(
+      this.gl.TRIANGLES,
+      n,
+      this.gl.UNSIGNED_INT,
+      0
+    );
+  }
+  sendMat4(pointer, data) {
+    this.gl.uniformMatrix4fv(
+      pointer,
+      false,
+      data
+    );
+  }
+  sendFloat(pointer, data) {
+    this.gl.uniform1f(
+      pointer,
+      data
+    );
+  }
+  sendInt(pointer, data) {
+    this.gl.uniform1i(
+      pointer,
+      data
+    );
+  }
+};
+
 // node_modules/gl-matrix/esm/common.js
 var EPSILON = 1e-6;
 var ARRAY_TYPE = typeof Float32Array !== "undefined" ? Float32Array : Array;
@@ -1825,394 +2205,61 @@ function equals(a, b) {
 var mul = multiply;
 var sub = subtract;
 
-// ts/utils/vector3.ts
-function v3(n, y, z) {
-  if (typeof n === "number") {
-    return Vector3.f(n, y, z);
-  } else if (typeof n === "undefined") {
-    return Vector3.f(0);
-  } else {
-    return Vector3.f(...n);
+// ts/utils/matrix4.ts
+var Matrix4 = class _Matrix4 {
+  constructor(source) {
+    this.mat4 = source ? mat4_exports.clone(source) : mat4_exports.create();
+    return this;
   }
-}
-var Vector3 = class _Vector3 {
-  get pitch() {
-    return this.x;
+  translate(vector) {
+    mat4_exports.translate(
+      this.mat4,
+      this.mat4,
+      vector.vec
+    );
+    return this;
   }
-  set pitch(value) {
-    this.x = value;
+  invert(mat) {
+    mat4_exports.invert(
+      this.mat4,
+      mat.mat4
+    );
+    return this;
   }
-  get yaw() {
-    return this.y;
+  transpose(mat) {
+    mat4_exports.transpose(
+      this.mat4,
+      mat ? mat.mat4 : this.mat4
+    );
+    return this;
   }
-  set yaw(value) {
-    this.y = value;
+  rotateAxis(angle, axis) {
+    mat4_exports.rotate(
+      this.mat4,
+      this.mat4,
+      angle,
+      [[1, 0, 0], [0, 1, 0], [0, 0, 1]][axis]
+    );
+    return this;
   }
-  get roll() {
-    return this.z;
+  rotate(rotation) {
+    rotation.forEach((r, i) => {
+      this.rotateAxis(r, i);
+    });
+    return this;
   }
-  set roll(value) {
-    this.z = value;
-  }
-  get x() {
-    return this.vec[0];
-  }
-  set x(value) {
-    this.vec[0] = value;
-  }
-  get y() {
-    return this.vec[1];
-  }
-  set y(value) {
-    this.vec[1] = value;
-  }
-  get z() {
-    return this.vec[2];
-  }
-  set z(value) {
-    this.vec[2] = value;
-  }
-  get xy() {
-    return v2(this.x, this.y);
-  }
-  get xz() {
-    return v2(this.x, this.z);
-  }
-  get yx() {
-    return v2(this.y, this.x);
-  }
-  get yz() {
-    return v2(this.y, this.z);
-  }
-  get zx() {
-    return v2(this.z, this.x);
-  }
-  get zy() {
-    return v2(this.z, this.y);
-  }
-  constructor(x = 0, y = 0, z = 0) {
-    this.vec = [x, y, z];
-  }
-  static from2(vector, z = 0) {
-    return new _Vector3(vector.x, vector.y, z);
-  }
-  static f(x = 0, y = x, z = x) {
-    return new _Vector3(x, y, z);
-  }
-  get array() {
-    return [this.x, this.y, this.z];
-  }
-  set array(a) {
-    [this.x, this.y, this.z] = a;
-  }
-  forEach(callbackfn) {
-    this.array.forEach(callbackfn);
-  }
-  get c() {
-    return this.clone();
+  perspective(fov, aspect, near = 1, far = 1e4) {
+    mat4_exports.perspective(
+      this.mat4,
+      fov,
+      aspect,
+      near,
+      far
+    );
+    return this;
   }
   clone() {
-    return new _Vector3(
-      this.x,
-      this.y,
-      this.z
-    );
-  }
-  add(vector) {
-    return new _Vector3(
-      this.x + vector.x,
-      this.y + vector.y,
-      this.z + vector.z
-    );
-  }
-  multiply(a, b, c) {
-    const [x, y, z] = typeof a === "number" ? [a, b, c] : a.array;
-    return new _Vector3(
-      this.x * x,
-      this.y * y,
-      this.z * z
-    );
-  }
-  subtract(vector) {
-    return new _Vector3(
-      this.x - vector.x,
-      this.y - vector.y,
-      this.z - vector.z
-    );
-  }
-  scale(scalar) {
-    return new _Vector3(
-      this.x * scalar,
-      this.y * scalar,
-      this.z * scalar
-    );
-  }
-  divide(vector) {
-    return new _Vector3(
-      this.x / vector.x,
-      this.y / vector.y,
-      this.z / vector.z
-    );
-  }
-  // dot(vector: Vector2) {
-  // 	return (this.x * vector.x + this.y + vector.y);
-  // }
-  // moveTowards(vector: Vector2, t: number) {
-  // 	t = Math.min(t, 1); // still allow negative t
-  // 	var diff = vector.subtract(this);
-  // 	return this.add(diff.scale(t));
-  // }
-  // magnitude() {
-  // 	return Math.sqrt(this.magnitudeSqr());
-  // }
-  // magnitudeSqr() {
-  // 	return (this.x * this.x + this.y * this.y);
-  // }
-  // distance(vector: Vector2) {
-  // 	return Math.sqrt(this.distanceSqr(vector));
-  // }
-  // distanceSqr(vector: Vector2) {
-  // 	var deltaX = this.x - vector.x;
-  // 	var deltaY = this.y - vector.y;
-  // 	return (deltaX * deltaX + deltaY * deltaY);
-  // }
-  // normalize() {
-  // 	var mag = this.magnitude();
-  // 	var vector = this.clone();
-  // 	if (Math.abs(mag) < 1e-9) {
-  // 		vector.x = 0;
-  // 		vector.y = 0;
-  // 	} else {
-  // 		vector.x /= mag;
-  // 		vector.y /= mag;
-  // 	}
-  // 	return vector;
-  // }
-  // angleDegrees() {
-  // 	return this.angle() * (180 / Math.PI);
-  // }
-  // angle() {
-  // 	return Math.atan2(this.y, this.x);
-  // }
-  // rotate(rad: number) {
-  // 	var cos = Math.cos(rad);
-  // 	var sin = Math.sin(rad);
-  // 	return new Vector2(
-  // 		this.x * cos - this.y * sin,
-  // 		this.x * sin + this.y * cos
-  // 	);
-  // }
-  // toPrecision(precision: number) {
-  // 	var vector = this.clone();
-  // 	vector.x = +vector.x.toFixed(precision);
-  // 	vector.y = +vector.y.toFixed(precision);
-  // 	return vector;
-  // }
-  // toString() {
-  // 	var vector = this.toPrecision(1);
-  // 	return ("[" + vector.x + "; " + vector.y + "]");
-  // }
-  // public clamp(min: Vector2, max: Vector2) {
-  // 	return Vector2.clamp(this, min, max);
-  // }
-  // public static min(a: Vector2, b: Vector2) {
-  // 	return new Vector2(
-  // 		Math.min(a.x, b.x),
-  // 		Math.min(a.y, b.y),
-  // 	);
-  // }
-  // public static max(a: Vector2, b: Vector2) {
-  // 	return new Vector2(
-  // 		Math.max(a.x, b.x),
-  // 		Math.max(a.y, b.y),
-  // 	);
-  // }
-  // public static clamp(value: Vector2, min: Vector2, max: Vector2) {
-  // 	return Vector2.max(Vector2.min(value, min), max);
-  // }
-  // public clampMagnitute(mag: number) {
-  // 	return Vector2.clampMagnitute(this, mag);
-  // }
-  // public static clampMagnitute(value: Vector2, mag: number) {
-  // 	var ratio = value.magnitude() / mag;
-  // 	return new Vector2(value.x / ratio, value.y / ratio);
-  // }
-  // static get zero() {
-  // 	return new Vector2(0, 0);
-  // }
-  // static get down() {
-  // 	return new Vector2(0, -1);
-  // }
-  // static get up() {
-  // 	return new Vector2(0, 1);
-  // }
-  // static get right() {
-  // 	return new Vector2(1, 0);
-  // }
-  // static get left() {
-  // 	return new Vector2(-1, 0);
-  // }
-  // static get fromDegree() {
-  // 	return new Vector2(0, 0);
-  // }
-};
-
-// ts/gl/shaders/vertexShader.ts
-var vertexShader_default = "\nattribute vec4 aVertexPosition;\nattribute vec3 aVertexNormal;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uNormalMatrix;\nuniform mat4 uModelViewMatrix;\nuniform mat4 uProjectionMatrix;\n\nvarying highp vec2 vTextureCoord;\nvarying highp vec3 vLighting;\n\nvoid main(void) {\n  gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;\n  vTextureCoord = aTextureCoord;\n\n      // Apply lighting effect\n\n  highp vec3 ambientLight = vec3(0.6, 0.6, 0.6);\n  highp vec3 directionalLightColor = vec3(1, 1, 1);\n  highp vec3 directionalVector = normalize(vec3(-0.7, .7, 0.3));\n\n  highp vec4 transformedNormal = uNormalMatrix * vec4(aVertexNormal, 1.0);\n\n  highp float directional = max(dot(transformedNormal.xyz, directionalVector), 0.0);\n  vLighting = ambientLight + (directionalLightColor * directional);\n}";
-
-// ts/gl/shaders/fragmentShader.ts
-var fragmentShader_default = "\nvarying highp vec2 vTextureCoord;\nvarying highp vec3 vLighting;\n\nuniform sampler2D uSampler;\nuniform lowp float uOpacity;\n\nvoid main(void) {\n    highp vec4 texelColor = texture2D(uSampler, vTextureCoord);\n    gl_FragColor = vec4(texelColor.rgb * vLighting, texelColor.a*uOpacity);\n}\n";
-
-// ts/gl/glrInit.ts
-function loadShader(gl, type, source) {
-  const shader = gl.createShader(type);
-  gl.shaderSource(shader, source);
-  gl.compileShader(shader);
-  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    console.error("An error occurred compiling the shaders: ".concat(gl.getShaderInfoLog(shader)));
-    gl.deleteShader(shader);
-    return null;
-  }
-  return shader;
-}
-function initShaderProgram(gl) {
-  const vertexShader = loadShader(gl, gl.VERTEX_SHADER, vertexShader_default);
-  const fragmentShader = loadShader(gl, gl.FRAGMENT_SHADER, fragmentShader_default);
-  const shaderProgram = gl.createProgram();
-  gl.attachShader(shaderProgram, vertexShader);
-  gl.attachShader(shaderProgram, fragmentShader);
-  gl.linkProgram(shaderProgram);
-  if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-    alert(
-      "Unable to initialize the shader program: ".concat(gl.getProgramInfoLog(
-        shaderProgram
-      ))
-    );
-    return;
-  }
-  return {
-    program: shaderProgram,
-    attribLocations: {
-      vertexPosition: gl.getAttribLocation(shaderProgram, "aVertexPosition"),
-      vertexNormal: gl.getAttribLocation(shaderProgram, "aVertexNormal"),
-      textureCoord: gl.getAttribLocation(shaderProgram, "aTextureCoord")
-    },
-    uniformLocations: {
-      projectionMatrix: gl.getUniformLocation(shaderProgram, "uProjectionMatrix"),
-      modelViewMatrix: gl.getUniformLocation(shaderProgram, "uModelViewMatrix"),
-      normalMatrix: gl.getUniformLocation(shaderProgram, "uNormalMatrix"),
-      uSampler: gl.getUniformLocation(shaderProgram, "uSampler")
-    }
-  };
-}
-
-// ts/gl/glTranslator.ts
-var GLTranslator = class {
-  constructor(game, glr) {
-    this.game = game;
-    this.glr = glr;
-    this.gl = this.glr.gl;
-    this.programInfo = initShaderProgram(this.gl);
-    this.uniforms = {
-      "projection": {
-        pointer: this.programInfo.uniformLocations.projectionMatrix,
-        type: "matrix4"
-      },
-      "modelView": {
-        pointer: this.programInfo.uniformLocations.modelViewMatrix,
-        type: "matrix4"
-      },
-      "normal": {
-        pointer: this.programInfo.uniformLocations.normalMatrix,
-        type: "matrix4"
-      },
-      "opacity": {
-        pointer: this.gl.getUniformLocation(this.programInfo.program, "uOpacity"),
-        type: "float"
-      },
-      "sampler": {
-        pointer: this.programInfo.uniformLocations.uSampler,
-        type: "int"
-      }
-    };
-    this.attributes = {
-      "position": {
-        pointer: this.programInfo.attribLocations.vertexPosition,
-        count: 3
-      },
-      "normal": {
-        pointer: this.programInfo.attribLocations.vertexNormal,
-        count: 3
-      },
-      "texture": {
-        pointer: this.programInfo.attribLocations.textureCoord,
-        count: 2
-      }
-    };
-  }
-  sendAttribute(pointer, buffer) {
-    const at = this.attributes[pointer];
-    if (at) {
-      this.sendBuffer(buffer);
-      this.gl.vertexAttribPointer(
-        at.pointer,
-        at.count,
-        this.gl.FLOAT,
-        false,
-        0,
-        0
-      );
-      this.gl.enableVertexAttribArray(at.pointer);
-    } else {
-      throw new Error("".concat(pointer, " attribute doesnt exist"));
-    }
-  }
-  sendTexture(texture) {
-    this.gl.activeTexture(this.gl.TEXTURE0);
-    this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
-  }
-  sendBuffer(buffer, type = "normal") {
-    this.gl.bindBuffer(type === "element" ? this.gl.ELEMENT_ARRAY_BUFFER : this.gl.ARRAY_BUFFER, buffer);
-  }
-  sendUniform(pointer, data) {
-    const un = this.uniforms[pointer];
-    if (un) {
-      if (un.type === "matrix4")
-        this.sendMat4(un.pointer, data);
-      if (un.type === "float")
-        this.sendFloat(un.pointer, data);
-      if (un.type === "int")
-        this.sendInt(un.pointer, data);
-    } else {
-      throw new Error("unform doesnt exist");
-    }
-  }
-  drawElements(n) {
-    this.gl.drawElements(
-      this.gl.TRIANGLES,
-      n,
-      this.gl.UNSIGNED_INT,
-      0
-    );
-  }
-  sendMat4(pointer, data) {
-    this.gl.uniformMatrix4fv(
-      pointer,
-      false,
-      data
-    );
-  }
-  sendFloat(pointer, data) {
-    this.gl.uniform1f(
-      pointer,
-      data
-    );
-  }
-  sendInt(pointer, data) {
-    this.gl.uniform1i(
-      pointer,
-      data
-    );
+    return new _Matrix4(this.mat4);
   }
 };
 
@@ -2221,51 +2268,20 @@ var GLR = class {
   constructor(game) {
     this.game = game;
     this.objects = [];
-    this.frameData = {};
     this.gl = this.game.renderer.dom.getContext("webgl");
     this.gl.getExtension("OES_element_index_uint");
     this.gl.enable(this.gl.BLEND);
     this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
-    this.GLT = new GLTranslator(this.game, this);
-    this.game.renderer.getEvent("resize").subscribe("glr", this.resize.bind(this));
+    this.glt = new GLTranslator(this.game, this);
+    this.game.renderer.getEvent("resize").subscribe("glr", (size) => {
+      this.gl.viewport(0, 0, size.x, size.y);
+    });
   }
   get t() {
     return this.game.t;
   }
-  resize(size) {
-    this.gl.viewport(0, 0, size.x, size.y);
-  }
   initGlElement(mesh) {
     this.objects.push(mesh);
-  }
-  setCamera() {
-    const fieldOfView = this.game.mode.camera.fov * Math.PI / 180;
-    const aspect = this.gl.canvas.clientWidth / this.gl.canvas.clientHeight;
-    const zNear = 1;
-    const zFar = 1e4;
-    const projectionMatrix = mat4_exports.create();
-    const modelViewMatrix = mat4_exports.create();
-    mat4_exports.perspective(projectionMatrix, fieldOfView, aspect, zNear, zFar);
-    mat4_exports.translate(
-      projectionMatrix,
-      projectionMatrix,
-      this.game.mode.camera.offset.multiply(1, 1, -1).vec
-    );
-    this.game.mode.camera.rotation.forEach((r, i) => {
-      mat4_exports.rotate(
-        projectionMatrix,
-        projectionMatrix,
-        r,
-        [Number(i === 0), Number(i === 1), Number(i === 2)]
-      );
-    });
-    mat4_exports.translate(
-      modelViewMatrix,
-      modelViewMatrix,
-      this.game.mode.camera.target.multiply(-1, 1, 1).vec
-    );
-    this.frameData.projectionMatrix = projectionMatrix;
-    this.frameData.modelViewMatrix = modelViewMatrix;
   }
   clear() {
     this.gl.clearColor(...this.game.level.background);
@@ -2276,69 +2292,46 @@ var GLR = class {
   }
   draw() {
     this.clear();
-    this.gl.useProgram(this.GLT.programInfo.program);
-    this.GLT.sendUniform("sampler", 0);
-    this.setCamera();
-    this.drawChildren(this.game.level);
+    this.gl.useProgram(this.glt.program);
+    this.glt.sendUniform("sampler", 0);
+    this.glt.sendUniform(
+      "projection",
+      new Matrix4().perspective(
+        this.game.mode.camera.fov * Math.PI / 180,
+        this.gl.canvas.clientWidth / this.gl.canvas.clientHeight
+      ).translate(this.game.mode.camera.offset.multiply(1, 1, -1)).rotate(this.game.mode.camera.rotation).mat4
+    );
+    this.drawChildren(this.game.level, new Matrix4().translate(this.game.mode.camera.target.multiply(-1, 1, 1)));
     this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
   }
   drawChildren(element, currentModelview) {
     element.children.forEach((o) => {
-      this.drawObject(o, currentModelview ? mat4_exports.clone(currentModelview) : void 0);
+      this.drawObject(o, currentModelview.clone());
     });
   }
-  drawObject(mesh, currentModelview = mat4_exports.clone(this.frameData.modelViewMatrix)) {
-    this.positionObject(currentModelview, mesh);
-    this.rotateObject(currentModelview, mesh);
-    this.setObjectNormals(currentModelview);
+  drawObject(mesh, currentModelview) {
+    currentModelview.translate(mesh.position.multiply(new Vector3(1, 1, -1)));
+    currentModelview.translate(mesh.anchorPoint.multiply(1, 1, -1));
+    currentModelview.rotate(mesh.rotation.multiply(new Vector3(1, -1, -1)));
+    currentModelview.translate(mesh.anchorPoint.multiply(-1, -1, 1));
     if (mesh.buffer) {
       this.renderMesh(mesh, currentModelview);
     }
     this.drawChildren(mesh, currentModelview);
   }
-  positionObject(currentModelview, mesh) {
-    mat4_exports.translate(
-      currentModelview,
-      currentModelview,
-      mesh.position.multiply(new Vector3(1, 1, -1)).vec
-    );
-  }
-  rotateObject(currentModelview, mesh) {
-    mat4_exports.translate(
-      currentModelview,
-      currentModelview,
-      mesh.anchorPoint.multiply(1, 1, -1).vec
-    );
-    mesh.rotation.multiply(new Vector3(1, -1, -1)).forEach((r, i) => {
-      mat4_exports.rotate(
-        currentModelview,
-        currentModelview,
-        r,
-        [Number(i === 0), Number(i === 1), Number(i === 2)]
-      );
-    });
-    mat4_exports.translate(
-      currentModelview,
-      currentModelview,
-      mesh.anchorPoint.multiply(-1, -1, 1).vec
-    );
-  }
-  setObjectNormals(currentModelview) {
-    const normalMatrix = mat4_exports.create();
-    mat4_exports.invert(normalMatrix, currentModelview);
-    mat4_exports.transpose(normalMatrix, normalMatrix);
-    this.GLT.sendUniform("normal", normalMatrix);
-  }
   renderMesh(mesh, currentModelview) {
-    this.GLT.sendBuffer(mesh.buffer.indices, "element");
-    this.GLT.sendAttribute("position", mesh.buffer.positionBuffer);
-    this.GLT.sendAttribute("texture", mesh.buffer.textureCoord);
-    this.GLT.sendAttribute("normal", mesh.buffer.normalBuffer);
-    this.GLT.sendUniform("projection", this.frameData.projectionMatrix);
-    this.GLT.sendUniform("modelView", currentModelview);
-    this.GLT.sendUniform("opacity", mesh.opacity);
-    this.GLT.sendTexture(mesh.texture.texture);
-    this.GLT.drawElements(mesh.verticesCount);
+    this.glt.sendBuffer(mesh.buffer.indices, "element");
+    this.glt.sendAttribute("position", mesh.buffer.positionBuffer);
+    this.glt.sendAttribute("texture", mesh.buffer.textureCoord);
+    this.glt.sendAttribute("normal", mesh.buffer.normalBuffer);
+    this.glt.sendUniform("modelView", currentModelview.mat4);
+    this.glt.sendUniform("opacity", mesh.opacity);
+    this.glt.sendUniform(
+      "normal",
+      new Matrix4().invert(currentModelview).transpose().mat4
+    );
+    this.glt.sendTexture(mesh.texture.texture);
+    this.glt.drawElements(mesh.verticesCount);
   }
 };
 

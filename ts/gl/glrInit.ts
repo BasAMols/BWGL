@@ -16,7 +16,16 @@ function loadShader(gl: WebGLRenderingContext, type: number, source: string) {
     return shader;
 }
 
-export function initShaderProgram(gl: WebGLRenderingContext) {
+export type uniforms = Record<string, {
+    pointer: WebGLUniformLocation,
+    type: 'matrix4' | 'float' | 'int';
+}>
+export type attributes = Record<string, {
+    pointer: number,
+    count: number;
+}>
+
+export function initShaderProgram(gl: WebGLRenderingContext): [WebGLProgram, uniforms, attributes] {
 
     const vertexShader = loadShader(gl, gl.VERTEX_SHADER, vs);
     const fragmentShader = loadShader(gl, gl.FRAGMENT_SHADER, fs);
@@ -35,18 +44,43 @@ export function initShaderProgram(gl: WebGLRenderingContext) {
         return;
     }
 
-    return {
-        program: shaderProgram,
-        attribLocations: {
-            vertexPosition: gl.getAttribLocation(shaderProgram, "aVertexPosition"),
-            vertexNormal: gl.getAttribLocation(shaderProgram, "aVertexNormal"),
-            textureCoord: gl.getAttribLocation(shaderProgram, "aTextureCoord"),
+    return [
+        shaderProgram, 
+        {
+            'projection':{
+                pointer: gl.getUniformLocation(shaderProgram, "uProjectionMatrix"),
+                type: 'matrix4'
+            },
+            'modelView':{
+                pointer: gl.getUniformLocation(shaderProgram, "uModelViewMatrix"),
+                type: 'matrix4'
+            },
+            'normal':{
+                pointer: gl.getUniformLocation(shaderProgram, "uNormalMatrix"),
+                type: 'matrix4'
+            },
+            'opacity':{
+                pointer: gl.getUniformLocation(shaderProgram, "uOpacity"),
+                type: 'float'
+            },
+            'sampler':{
+                pointer: gl.getUniformLocation(shaderProgram, "uSampler"),
+                type: 'int'
+            },
         },
-        uniformLocations: {
-            projectionMatrix: gl.getUniformLocation(shaderProgram, "uProjectionMatrix"),
-            modelViewMatrix: gl.getUniformLocation(shaderProgram, "uModelViewMatrix"),
-            normalMatrix: gl.getUniformLocation(shaderProgram, "uNormalMatrix"),
-            uSampler: gl.getUniformLocation(shaderProgram, "uSampler"),
-        },
-    };
+        {
+            'position':{
+                pointer: gl.getAttribLocation(shaderProgram, "aVertexPosition"),
+                count: 3,
+            },
+            'normal':{
+                pointer: gl.getAttribLocation(shaderProgram, "aVertexNormal"),
+                count: 3,
+            },
+            'texture':{
+                pointer: gl.getAttribLocation(shaderProgram, "aTextureCoord"),
+                count: 2,
+            },
+        }
+    ]
 }

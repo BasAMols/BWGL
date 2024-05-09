@@ -1,73 +1,19 @@
 import { mat4 } from 'gl-matrix';
 import { Game } from '../game';
 import { GLR } from './glRenderer';
-import { initShaderProgram } from './glrInit';
+import { attributes, initShaderProgram, uniforms } from './glrInit';
+
 
 export class GLTranslator {
 
-    private uniforms: Record<string, {
-        pointer: WebGLUniformLocation,
-        type: 'matrix4' | 'float' | 'int';
-    }>;
-    private attributes: Record<string, {
-        pointer: number,
-        count: number;
-    }>;
+    public program: WebGLProgram;
+    private uniforms: uniforms;
+    private attributes: attributes;
     public gl: WebGLRenderingContext;
-    public programInfo: {
-        program: WebGLProgram;
-        attribLocations: {
-            vertexPosition: number;
-            vertexNormal: number;
-            textureCoord: number,
-        };
-        uniformLocations: {
-            projectionMatrix: WebGLUniformLocation;
-            modelViewMatrix: WebGLUniformLocation;
-            normalMatrix: WebGLUniformLocation,
-            uSampler: WebGLUniformLocation;
-        };
-    };
 
     constructor(public game: Game, public glr: GLR) {
         this.gl = this.glr.gl;
-        this.programInfo = initShaderProgram(this.gl);
-        this.uniforms = {
-            'projection':{
-                pointer: this.programInfo.uniformLocations.projectionMatrix,
-                type: 'matrix4'
-            },
-            'modelView':{
-                pointer: this.programInfo.uniformLocations.modelViewMatrix,
-                type: 'matrix4'
-            },
-            'normal':{
-                pointer: this.programInfo.uniformLocations.normalMatrix,
-                type: 'matrix4'
-            },
-            'opacity':{
-                pointer: this.gl.getUniformLocation(this.programInfo.program, "uOpacity"),
-                type: 'float'
-            },
-            'sampler':{
-                pointer: this.programInfo.uniformLocations.uSampler,
-                type: 'int'
-            },
-        }
-        this.attributes = {
-            'position':{
-                pointer: this.programInfo.attribLocations.vertexPosition,
-                count: 3,
-            },
-            'normal':{
-                pointer: this.programInfo.attribLocations.vertexNormal,
-                count: 3,
-            },
-            'texture':{
-                pointer: this.programInfo.attribLocations.textureCoord,
-                count: 2,
-            },
-        }
+        [this.program, this.uniforms, this.attributes] = initShaderProgram(this.gl) as [WebGLProgram, uniforms, attributes];
     }
 
     public sendAttribute(pointer: string, buffer: WebGLBuffer) {
