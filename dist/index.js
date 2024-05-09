@@ -1,22 +1,4 @@
 var __defProp = Object.defineProperty;
-var __defProps = Object.defineProperties;
-var __getOwnPropDescs = Object.getOwnPropertyDescriptors;
-var __getOwnPropSymbols = Object.getOwnPropertySymbols;
-var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __propIsEnum = Object.prototype.propertyIsEnumerable;
-var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues = (a, b) => {
-  for (var prop in b || (b = {}))
-    if (__hasOwnProp.call(b, prop))
-      __defNormalProp(a, prop, b[prop]);
-  if (__getOwnPropSymbols)
-    for (var prop of __getOwnPropSymbols(b)) {
-      if (__propIsEnum.call(b, prop))
-        __defNormalProp(a, prop, b[prop]);
-    }
-  return a;
-};
-var __spreadProps = (a, b) => __defProps(a, __getOwnPropDescs(b));
 var __export = (target, all) => {
   for (var name in all)
     __defProp(target, name, { get: all[name], enumerable: true });
@@ -2181,7 +2163,6 @@ var GLR = class {
     this.gl.enable(this.gl.DEPTH_TEST);
     this.gl.depthFunc(this.gl.LEQUAL);
     this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
-    this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
   }
   draw() {
     this.clear();
@@ -2189,6 +2170,7 @@ var GLR = class {
     this.gl.uniform1i(this.programInfo.uniformLocations.uSampler, 0);
     this.setCamera();
     this.drawChildren(this.game.level);
+    this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
   }
   drawChildren(element, currentModelview) {
     element.children.forEach((o) => {
@@ -2372,6 +2354,9 @@ var GlElement = class _GlElement extends Element {
       child.ready();
     }
     _GlElement.registerControllers(child);
+    if (child.type === "collider" && this.level) {
+      this.level.colliders.push(child);
+    }
     return child;
   }
   addControllers(c) {
@@ -2462,6 +2447,43 @@ var Mode = class extends GLGroup {
     this.children.filter((child) => child.active).forEach((c) => c.tick(obj));
   }
 };
+
+// ts/utils/level.ts
+var Level = class extends GlElement {
+  constructor(attr = {}) {
+    super(attr);
+    this.type = "group";
+    this.colliders = [];
+    this._camera = {
+      target: Vector3.f(0),
+      rotation: Vector3.f(0),
+      offset: Vector3.f(0),
+      fov: 60
+    };
+    this.size = this.size;
+  }
+  get camera() {
+    return this._camera;
+  }
+  set camera(value) {
+    this._camera = value;
+  }
+  build() {
+    this.game.active.level = this;
+  }
+};
+
+// ts/utils/colors.ts
+var Colors = class {
+};
+Colors.k = [0, 0, 0, 1];
+Colors.r = [1, 0, 0, 1];
+Colors.g = [0, 1, 0, 1];
+Colors.b = [0, 0, 1, 1];
+Colors.y = [1, 1, 0, 1];
+Colors.c = [0, 1, 1, 1];
+Colors.m = [1, 0, 1, 1];
+Colors.w = [1, 1, 1, 1];
 
 // ts/gl/rendable.ts
 var GLRendable = class extends GlElement {
@@ -2596,167 +2618,6 @@ var GLTexture = class {
     return (value & value - 1) === 0;
   }
 };
-
-// ts/gl/obj.ts
-var GLobj = class extends GLRendable {
-  constructor(attr = {}) {
-    super(__spreadValues(__spreadValues({}, attr), { autoReady: false }));
-    this.type = "mesh";
-    this.verticesCount = 0;
-    this.matIndeces = [];
-    this.mats = {};
-    this.positionIndeces = [];
-    this.indexIndeces = [];
-    this.normalIndeces = [];
-    this.textureIndeces = [];
-    this.texturePositionIndeces = [];
-    this.loadFile("".concat(window.location.href, "/obj/").concat(attr.url)).then(this.parseMtl.bind(this)).then(this.parseObj.bind(this)).then(() => {
-      this.ready();
-    });
-  }
-  build() {
-    super.build();
-  }
-  async parseMtl(str2) {
-    if (/mtllib/.test(str2)) {
-      await this.loadFile("".concat(window.location.href, "obj/").concat(str2.split(/mtllib/)[1].split(/(?: |\n)/)[1])).then((v) => {
-        v.split("newmtl ").slice(1).forEach((s) => {
-          const l = s.split("\n");
-          this.mats[l.shift()] = l;
-        });
-      });
-      return str2;
-    } else {
-      return str2;
-    }
-  }
-  parseFaces(lineArray, mat, points, normals, tCoords) {
-    const textRemainder = lineArray.slice(1);
-    const numbRemainder = textRemainder.map(Number);
-    ({
-      usemtl: () => {
-        mat = textRemainder[0];
-      },
-      f: () => {
-        if (numbRemainder.length === 3) {
-          this.positionIndeces.push(...points[numbRemainder[0] - 1]);
-          this.positionIndeces.push(...points[numbRemainder[1] - 1]);
-          this.positionIndeces.push(...points[numbRemainder[2] - 1]);
-        } else if (numbRemainder.length === 6) {
-          this.positionIndeces.push(...points[numbRemainder[0] - 1]);
-          this.positionIndeces.push(...points[numbRemainder[2] - 1]);
-          this.positionIndeces.push(...points[numbRemainder[4] - 1]);
-          this.textureIndeces.push(numbRemainder[1] - 1);
-          this.textureIndeces.push(numbRemainder[3] - 1);
-          this.textureIndeces.push(numbRemainder[5] - 1);
-        } else {
-          this.positionIndeces.push(...points[numbRemainder[0] - 1]);
-          this.positionIndeces.push(...points[numbRemainder[3] - 1]);
-          this.positionIndeces.push(...points[numbRemainder[6] - 1]);
-          this.textureIndeces.push(
-            ...GLTexture.textureOffset(Object.keys(this.mats).indexOf(mat), Object.keys(this.mats).length)
-          );
-          this.normalIndeces.push(...normals[numbRemainder[2] - 1]);
-          this.normalIndeces.push(...normals[numbRemainder[5] - 1]);
-          this.normalIndeces.push(...normals[numbRemainder[8] - 1]);
-        }
-        this.indexIndeces.push(this.indexIndeces.length);
-        this.indexIndeces.push(this.indexIndeces.length);
-        this.indexIndeces.push(this.indexIndeces.length);
-        this.matIndeces.push(mat);
-        this.matIndeces.push(mat);
-        this.matIndeces.push(mat);
-      }
-    }[lineArray[0]] || (() => {
-    }))();
-    return mat;
-  }
-  parseObj(str2) {
-    let mat = "none";
-    const lines = str2.split("\n");
-    const nonVertex = [];
-    const points = [];
-    const normals = [];
-    const tCoords = [];
-    lines.forEach(async (line) => {
-      const words = line.split(/(?: |\/)/);
-      const command = words[0];
-      const numbers = words.slice(1).map(Number);
-      if (command === "v") {
-        points.push([numbers[0], numbers[1], numbers[2]]);
-      } else if (command === "vn") {
-        normals.push([numbers[0], numbers[1], numbers[2]]);
-      } else if (command === "vt") {
-        tCoords.push([numbers[0], numbers[1]]);
-      } else {
-        nonVertex.push(words);
-      }
-    });
-    nonVertex.forEach((words) => {
-      mat = this.parseFaces(words, mat, points, normals, tCoords);
-    });
-    this.verticesCount = this.indexIndeces.length;
-  }
-  async loadFile(url) {
-    const response = await fetch(url);
-    const data = await response.text();
-    return data;
-  }
-  indexBuffer() {
-    return this.getIndexBuffer(this.indexIndeces);
-  }
-  positionBuffer(size) {
-    return this.getPositionBuffer(this.positionIndeces.map((n, i) => n * size.array[i % 3]));
-  }
-  normalBuffer() {
-    return this.getNormalBuffer(this.normalIndeces);
-  }
-  textureBuffer(size) {
-    if (Object.values(this.mats).length) {
-      this.texture = new GLTexture(this.game, { color: Object.values(this.mats).map((s) => [...s[2].slice(3).split(" ").map(Number), Number(s[6].slice(2))]) });
-    } else {
-      this.texture = new GLTexture(this.game, {});
-    }
-    return this.getTextureBuffer(this.textureIndeces);
-  }
-};
-
-// ts/utils/level.ts
-var Level = class extends GlElement {
-  constructor(attr = {}) {
-    super(attr);
-    this.type = "group";
-    // public colliders: Collider[] = [];
-    this._camera = {
-      target: Vector3.f(0),
-      rotation: Vector3.f(0),
-      offset: Vector3.f(0),
-      fov: 60
-    };
-    this.size = this.size;
-  }
-  get camera() {
-    return this._camera;
-  }
-  set camera(value) {
-    this._camera = value;
-  }
-  build() {
-    this.game.active.level = this;
-  }
-};
-
-// ts/utils/colors.ts
-var Colors = class {
-};
-Colors.k = [0, 0, 0, 1];
-Colors.r = [1, 0, 0, 1];
-Colors.g = [0, 1, 0, 1];
-Colors.b = [0, 0, 1, 1];
-Colors.y = [1, 1, 0, 1];
-Colors.c = [0, 1, 1, 1];
-Colors.m = [1, 0, 1, 1];
-Colors.w = [1, 1, 1, 1];
 
 // ts/gl/mesh.ts
 var GlMesh = class _GlMesh extends GLRendable {
@@ -3309,153 +3170,28 @@ var SideCharacter = class extends Character {
   build() {
     this.addChild(this.mesh = new GlMesh({ size: this.size, colors: [[0.3, 0.4, 0.2, 1], [0.3, 0.4, 0.2, 1], [0.3, 0.4, 0.2, 1], [0.3, 0.4, 0.2, 1], [0.3, 0.4, 0.2, 1], [0.3, 0.4, 0.2, 1]] }));
     GlElement.registerControllers(this);
-    this.controllers[0].active = true;
-    this.controllers[1].active = true;
-    this.controllers[2].active = false;
-    this.controllers[3].active = false;
+    this.controllers[0].active = false;
+    this.controllers[1].active = false;
+    this.controllers[2].active = true;
+    this.controllers[3].active = true;
   }
 };
 
-// ts/gl/imagePlane.ts
-var GlImage = class extends GlMesh {
+// ts/utils/collider.ts
+var Collider = class extends GlElement {
   constructor(attr) {
-    super(__spreadProps(__spreadValues({}, attr), {
-      size: attr.size.multiply(v3(attr.repeatX || 1, attr.repeatY || 1, 1))
-    }));
-    this.repeatX = attr.repeatX || 1;
-    this.repeatY = attr.repeatY || 1;
+    super(attr);
+    this.type = "collider";
+    this.colliderType = "static";
+    this.direction = attr.direction;
   }
   build() {
-    super.build();
-    if (this.repeatX !== 1 || this.repeatY !== 1) {
-      const img = new Image();
-      img.src = "".concat(window.location.href).concat(this.textureUrl);
-      img.onload = () => {
-        const repeater = document.createElement("canvas");
-        repeater.width = img.width * this.repeatX;
-        repeater.height = img.height * this.repeatY;
-        const repeaterContext = repeater.getContext("2d");
-        for (let x = 0; x < this.repeatX; x++) {
-          for (let y = 0; y < 1; y++) {
-            repeaterContext.drawImage(
-              img,
-              x * img.width,
-              y * img.height,
-              img.width,
-              img.height
-            );
-          }
-        }
-        this.texture = new GLTexture(this.game, { image: repeater });
-      };
-    }
-  }
-  // public render(ctx: CanvasRenderingContext2D) {        
-  //     if (this.prepped.ready && (!this.condition || this.condition(this.position.add(this.parent.position), this.prepped.size))) {            
-  //         for (let i = 0; i < this.repeatX; i++) {
-  //             for (let j = 0; j < this.repeatY; j++) {
-  //                 if (this.opacity !== 1){
-  //                     ctx.globalAlpha = this.opacity;
-  //                 }
-  //                 if (this.shadow){
-  //                     ctx.shadowColor = this.shadow[0];
-  //                     ctx.shadowOffsetX = this.shadow[1];
-  //                     ctx.shadowOffsetY = this.shadow[2];
-  //                     ctx.shadowBlur = this.shadow[3];
-  //                 }
-  //                 ctx.drawImage(
-  //                     this.prepped.image,
-  //                     this.x + (this.worldSpaceParalaxX * this.level.x) + ((this.width / 2 + this.x) - (this.mode.width / 2 - this.level.x)) * this.screenSpaceParalaxX + (i * this.prepped.width)+ (i * this.repeatGapX)+this.renderOffsetX,
-  //                     this.y + (j * this.prepped.height)+ (j * this.repeatGapY)+this.renderOffsetY,
-  //                     this.prepped.width,
-  //                     this.prepped.height,
-  //                 );
-  //             }
-  //         }     
-  //     }
-  //     // this.level.x + this.x + (this.prepped.width/2); // center of image
-  //     // this.level.x + this.x + (this.prepped.width/2);
-  // }
-};
-
-// ts/modes/side/scrolling.ts
-var Scroller = class extends GLGroup {
-  build() {
-    this.addChild(new GlImage({
-      textureUrl: "img/dusk/far-clouds.png",
-      position: v3(-4e3, -200, 3500),
-      size: v3(128, 240, 0).scale(10),
-      opacity: 0.4,
-      repeatX: 10
-    }));
-    this.addChild(new GlImage({
-      textureUrl: "img/dusk/far-clouds.png",
-      position: v3(-4e3, -200, 3500),
-      repeatX: 10,
-      opacity: 0.4,
-      size: v3(128, 240, 0).scale(10)
-    }));
-    this.addChild(new GlImage({
-      textureUrl: "img/dusk/near-clouds.png",
-      position: v3(-4e3, -300, 3200),
-      repeatX: 10,
-      opacity: 0.4,
-      size: v3(144, 240, 0).scale(10)
-    }));
-    this.addChild(new GlImage({
-      textureUrl: "img/dusk/mountains.png",
-      position: v3(-3500, -500, 2500),
-      repeatX: 10,
-      size: v3(320, 240, 0).scale(8)
-    }));
-    this.addChild(new GlImage({
-      textureUrl: "img/dusk/far-mountains.png",
-      position: v3(-4e3, -700, 2e3),
-      repeatX: 10,
-      size: v3(160, 240, 0).scale(10)
-    }));
-    this.addChild(new GlImage({
-      textureUrl: "img/dusk/near-clouds.png",
-      position: v3(-2e3, -300, 1750),
-      repeatX: 20,
-      opacity: 0.5,
-      size: v3(144, 240, 0).scale(6)
-    }));
-    this.addChild(new GlImage({
-      textureUrl: "img/dusk/mountains.png",
-      position: v3(-4e3, -300, 1500),
-      repeatX: 4,
-      size: v3(320, 240, 0).scale(6)
-    }));
-    this.addChild(new GlImage({
-      textureUrl: "img/dusk/trees.png",
-      position: v3(-2e3, -100, 720),
-      repeatX: 20,
-      size: v3(240, 240, 0).scale(3)
-    }));
-    this.addChild(new GlImage({
-      textureUrl: "img/dusk/trees.png",
-      position: v3(-2e3, 0, 650),
-      repeatX: 20,
-      size: v3(240, 240, 0).scale(2)
-    }));
-    this.addChild(new GlImage({
-      textureUrl: "img/dusk/trees.png",
-      position: v3(-2e3, 0, 570),
-      repeatX: 20,
-      size: v3(240, 240, 0).scale(1.5)
-    }));
-    this.addChild(new GlImage({
-      textureUrl: "img/dusk/trees.png",
-      position: v3(-2e3, 0, 490),
-      repeatX: 20,
-      size: v3(240, 240, 0)
-    }));
-    this.addChild(new GlImage({
-      textureUrl: "img/dusk/trees.png",
-      position: v3(-2e3, 0, 410),
-      repeatX: 20,
-      size: v3(240, 240, 0)
+    this.debugObject = this.addChild(new GlMesh({ size: this.size, position: this.position, colors: [Colors.w] }));
+    this.debugObject.addChild(new GlMesh({
+      position: this.direction.multiply(this.size).scale(0.5),
+      size: this.direction.multiply(v3(10, 10, 10)).scale(0.5),
+      colors: [Colors.r],
+      rotation: this.direction.scale(Math.PI)
     }));
   }
 };
@@ -3509,18 +3245,11 @@ var World = class extends Level {
       position: v3(0, 0, 250)
     }));
     this.addChild(new GlMesh({ size: v3(1e4, 1, 4e3), position: v3(-5e3, -1, -2e3), colors: [[0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.05, 0.05, 0.05, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1]] }));
-    this.addChild(new GlMesh({ size: v3(1e4, 4, 52), position: v3(-5e3, 0, 300), colors: [[0.15, 0.15, 0.15, 1], [0.1, 0.1, 0.1, 1], [0.15, 0.15, 0.15, 1], [0.1, 0.1, 0.1, 1], [0.1, 0.1, 0.1, 1], [0.1, 0.1, 0.1, 1]] }));
-    this.addChild(new GLobj({ url: "carriage.obj", size: v3(1, 1, 1), position: v3(-512, 4, 300) }));
-    this.addChild(new GLobj({ url: "carriage.obj", size: v3(1, 1, 1), position: v3(-256, 4, 300) }));
-    this.addChild(new GLobj({ url: "carriage.obj", size: v3(1, 1, 1), position: v3(4, 4, 300) }));
-    this.addChild(new GLobj({ url: "carriage.obj", size: v3(1, 1, 1), position: v3(256, 4, 300) }));
-    this.addChild(new GLobj({ url: "coal.obj", size: v3(1, 1, 1), position: v3(513, 4, 302) }));
-    this.addChild(new GLobj({ url: "loco.obj", size: v3(1, 1, 1), position: v3(595, 4, 300) }));
-    this.addChild(new GLobj({ url: "GearPump3.obj", size: v3(10, 10, 10), position: v3(-1500, 60, 0) }));
-    this.addChild(new GLobj({ url: "farm.obj", size: v3(30, 30, 30), position: v3(-1500, 0, 700) }));
-    this.addChild(new GLobj({ url: "subway.obj", size: v3(25, 25, 25), position: v3(-1500, 0, 328), rotation: v3(0, Math.PI / 2, 0) }));
-    this.env = new Scroller();
-    this.addChild(this.env);
+    [
+      [v3(10, 0, 100), v3(50, 50, 50), v3(1, 1, 0)]
+    ].forEach(([position, size, direction]) => {
+      this.addChild(new Collider({ position, size, direction }));
+    });
   }
   tick(obj) {
     super.tick(obj);

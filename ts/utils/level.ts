@@ -3,6 +3,7 @@ import { Color } from './colors';
 import { GlElementType } from '../gl/glr';
 import { Vector2 } from "./vector2";
 import { Vector3 } from './vector3';
+import { Collider } from './collider';
 
 export type levelAttributes = GlElementAttributes & {
     size3?: Vector3;
@@ -11,7 +12,7 @@ export abstract class Level extends GlElement {
     abstract start: Vector2;
     abstract background: Color;
     public type: GlElementType = 'group';
-    // public colliders: Collider[] = [];
+    public colliders: Collider[] = [];
 
     private _camera: {
         target: Vector3;

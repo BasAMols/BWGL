@@ -4,6 +4,7 @@ import { TickerReturnData } from '../utils/ticker';
 import { Vector2 } from "../utils/vector2";
 import { Vector3, v3 } from '../utils/vector3';
 import { GlController } from './controller';
+import { Collider } from '../utils/collider';
 
 export type GlElementAttributes = ElementAttributes & {
     autoReady?: boolean,
@@ -79,9 +80,9 @@ export abstract class GlElement extends Element {
         }
         GlElement.registerControllers(child);
 
-        // if (child.rendererType === 'canvas' && child.type === 'collider' && (child as Collider).colliderType === 'static' && this.level) {
-        //     this.level.colliders.push(child as Collider);
-        // }
+        if (child.type === 'collider' && this.level) {
+            this.level.colliders.push(child as Collider);
+        }
 
         return child;
 

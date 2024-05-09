@@ -1,34 +1,34 @@
-// import { CanvasElementAttributes } from '../elements/canvas/canvasElement';
-// import { GlElement } from '../elements/gl/glElement';
-// import { ElementRelativity } from './elementPosition';
-// import { GlElementType } from './glr';
+import { GlElement, GlElementAttributes } from '../gl/elementBase';
+import { GlElementType } from '../gl/glr';
+import { GlMesh } from '../gl/mesh';
+import { Colors } from './colors';
+import { Vector3, v3 } from './vector3';
 
-// export type ColliderAttributes = CanvasElementAttributes & {
-//     cornerTolerance?: number;
-//     colliderType?: ColliderType,
-//     condition?: () => void;
-//     callback?: () => void;
-// }
 
-// export type ColliderType = 'static' | 'dynamic';
+export type ColliderAttributes = GlElementAttributes & {
+    direction: Vector3,
+};
 
-// export class Collider extends GlElement {
-//     public type: GlElementType = 'collider';
-//     public relativity: ElementRelativity = 'anchor';
-//     public colliderType: ColliderType = 'static';
-//     public cornerTolerance: number;
-//     public callback: () => void;
-//     public condition: () => void;
+export type ColliderType = 'static' | 'dynamic';
 
-//     public constructor(attr: ColliderAttributes = {}) {
-//         super(attr);
-//         this.cornerTolerance = attr.cornerTolerance || 0;
-//         this.colliderType = attr.colliderType || 'static';
-//         this.condition = attr.condition;
-//         this.callback = attr.callback;
-//     }
+export class Collider extends GlElement {
+    public type: GlElementType = 'collider';
+    public colliderType: ColliderType = 'static';
+    public direction: Vector3;
+    public debugObject: GlElement;
 
-//     public build(): void {
-//         // this.addChild( new CanvasSquare({size: this.size, color: 'rgba(255,0,0,0.5)', rounded: 0}), true);
-//     }
-// }
+    public constructor(attr: ColliderAttributes) {
+        super(attr);
+        this.direction = attr.direction;
+    }
+
+    public build(): void {
+        this.debugObject = this.addChild(new GlMesh({ size: this.size, position: this.position, colors: [Colors.w] }));
+        this.debugObject.addChild(new GlMesh({ 
+            position: this.direction.multiply(this.size).scale(0.5),
+            size: this.direction.multiply(v3(10,10,10)).scale(0.5), 
+            colors: [Colors.r], 
+            rotation: this.direction.scale(Math.PI) 
+        }));
+    }
+}

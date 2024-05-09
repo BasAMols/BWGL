@@ -119,7 +119,6 @@ export class GLR {
         this.gl.enable(this.gl.DEPTH_TEST);
         this.gl.depthFunc(this.gl.LEQUAL);
         this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
-        this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
     }
 
     draw() {
@@ -128,6 +127,8 @@ export class GLR {
         this.gl.uniform1i(this.programInfo.uniformLocations.uSampler, 0);
         this.setCamera();
         this.drawChildren(this.game.level);
+        this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
+
     }
 
     drawChildren(element: GlElement, currentModelview?: mat4) {

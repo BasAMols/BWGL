@@ -46,9 +46,9 @@ export class SideCharacter extends Character {
     build() {
         this.addChild(this.mesh = new GlMesh({ size: this.size, colors: [[0.3,0.4,0.2,1], [0.3,0.4,0.2,1], [0.3,0.4,0.2,1], [0.3,0.4,0.2,1], [0.3,0.4,0.2,1], [0.3,0.4,0.2,1]] }));
         GlElement.registerControllers(this);
-        this.controllers[0].active = true;
-        this.controllers[1].active = true;
-        this.controllers[2].active = false;
-        this.controllers[3].active = false;
+        this.controllers[0].active = false;
+        this.controllers[1].active = false;
+        this.controllers[2].active = true;
+        this.controllers[3].active = true;
     }
 }
