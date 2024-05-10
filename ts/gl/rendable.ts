@@ -27,7 +27,6 @@ export abstract class GLRendable extends GlElement {
             normalBuffer: this.GLT.createBuffer(this.normalBuffer()),
         };
         this.GLR.initGlElement(this);
-        // this.texture = new GLTexture(this.game, { url: 'cubetexture.png' });
     };
 
     public ready() {

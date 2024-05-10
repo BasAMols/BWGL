@@ -1,9 +1,9 @@
 import { Vector2 } from '../utils/vector2';
 import { v3 } from '../utils/vector3';
-import { GlMesh, GlMeshAttributes } from './mesh';
+import { GLCuboid, GlCuboidAttributes } from './cuboid';
 import { GLTexture } from './texture';
 
-export type CanvasImageAttributes = GlMeshAttributes & {
+export type CanvasImageAttributes = GlCuboidAttributes & {
     textureUrl: string,
     // condition?: (position: Vector2, size: Vector2) => void,
     // screenSpaceParalaxX?: number,
@@ -17,7 +17,7 @@ export type CanvasImageAttributes = GlMeshAttributes & {
     // opacity?: number,
     // shadow?: [string, number, number, number],
 };
-export class GlImage extends GlMesh {
+export class GlImage extends GLCuboid {
     public condition: (position: Vector2, size: Vector2) => void;
     public repeatX: number;
     public repeatY: number;

@@ -31,7 +31,7 @@ export interface objectData {
     verticesCount?: number;
 }
 
-export class GLR {
+export class GLRenderer {
     private objects: (GLRendable)[] = [];
     public gl: WebGLRenderingContext;
     public glt: GLTranslator;

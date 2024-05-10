@@ -7,7 +7,7 @@ import { Vector3, v3 } from '../../utils/vector3';
 import { SideCharacter } from './sideCharacter';
 import { Scroller } from './scrolling';
 import { Collider } from '../../utils/collider';
-import { GlMesh } from '../../gl/mesh';
+import { GLCuboid } from '../../gl/cuboid';
 
 
 
@@ -68,8 +68,9 @@ export class World extends Level {
             position: v3(0, 0, 250)
         }));
 
+
         // this.addChild(new GlMesh({ size3: v3(176, 65, 0), position3: v3(256 + 83 + 50 + 256, 0, 600), colors: [Colors.k], textureUrl: 'test.png' }));
-        this.addChild(new GlMesh({ size: v3(10000, 1, 4000), position: v3(-5000, -1, -2000), colors: [[0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1], [0.05, 0.05, 0.05, 1], [0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1]]}));
+        this.addChild(new GLCuboid({ size: v3(10000, 1, 4000), position: v3(-5000, -1, -2000), colors: [[0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1], [0.05, 0.05, 0.05, 1], [0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1]] }));
         // this.addChild(new GLMesh({ size: v3(10000, 4, 52), position: v3(-5000, 0, 300), colors: [[0.15, 0.15, 0.15, 1], [0.1, 0.1, 0.1, 1], [0.15, 0.15, 0.15, 1], [0.1, 0.1, 0.1, 1], [0.1, 0.1, 0.1, 1], [0.1, 0.1, 0.1, 1]] }));
         // this.addChild(new GLObj({ url: 'carriage.obj', size: v3(1, 1, 1), position: v3(-512, 4, 300) }));
         // this.addChild(new GLObj({ url: 'carriage.obj', size: v3(1, 1, 1), position: v3(-256, 4, 300) }));
@@ -110,9 +111,17 @@ export class World extends Level {
         // this.character.active = false
         // this.characterLayer.addChild(this.character);
         (([
-            [v3(10, 0, 100), v3(50, 50, 50), v3(1, 1, 0)],
-        ]) as ([Vector3, Vector3, Vector3])[]).forEach(([position, size, direction]) => {
-            this.addChild(new Collider({ position, size, direction}));
+            // [v3(10, 0, 250), v3(10, 10, 10), Vector3.right, true], // right
+            // [v3(40, 0, 250), v3(10, 10, 10), Vector3.up, true], // up
+            // [v3(70, 0, 250), v3(10, 10, 10), Vector3.forwards, true], // forward
+            // [v3(10, 0, 210), v3(10, 10, 10), Vector3.left, true], // left
+            // [v3(40, 0, 210), v3(10, 10, 10), Vector3.down, true], // down
+            // [v3(70, 0, 210), v3(10, 10, 10), Vector3.backwards, true], // back
+            
+            [v3(-2000, 0, 410), v3(6000, 100, 20), Vector3.forwards, false], // forward
+            [v3(-5000, -1, -2000), v3(10000, 1, 4000), Vector3.up, false], // floor
+        ]) as ([Vector3, Vector3, Vector3, boolean?])[]).forEach(([position, size, direction, show]) => {
+            this.addChild(new Collider({ position, size, direction, showMesh: show===undefined?false:show, showArrows: false }));
         });
         // this.inTrain = false;
         // this.train.x = 10;
@@ -120,6 +129,7 @@ export class World extends Level {
 
     public tick(obj: TickerReturnData): void {
         super.tick(obj);
+
         // this.camera.target[0] = (this.camera.target[0]+1)%this.width
         // if (this.inTrain) {
         //     this.backgroundLayer.x = this.foregroundLayer.x = this.backgroundLayer.x - (this.train.speed*10);

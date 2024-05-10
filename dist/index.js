@@ -655,6 +655,24 @@ var Vector3 = class _Vector3 {
   static f(x = 0, y = x, z = x) {
     return new _Vector3(x, y, z);
   }
+  static get forwards() {
+    return new _Vector3(0, 0, 1);
+  }
+  static get backwards() {
+    return new _Vector3(0, 0, -1);
+  }
+  static get up() {
+    return new _Vector3(0, 1, 0);
+  }
+  static get down() {
+    return new _Vector3(0, -1, 0);
+  }
+  static get left() {
+    return new _Vector3(-1, 0, 0);
+  }
+  static get right() {
+    return new _Vector3(1, 0, 0);
+  }
   get array() {
     return [this.x, this.y, this.z];
   }
@@ -666,6 +684,9 @@ var Vector3 = class _Vector3 {
   }
   get c() {
     return this.clone();
+  }
+  equals(vector) {
+    return this.x === vector.x && this.y === vector.y && this.z === vector.z;
   }
   clone() {
     return new _Vector3(
@@ -817,7 +838,7 @@ var Vector3 = class _Vector3 {
 var vertexShader_default = "\nattribute vec4 aVertexPosition;\nattribute vec3 aVertexNormal;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uModelViewMatrix;\nuniform mat4 uProjectionMatrix;\nuniform mat4 uNormalMatrix;\n\nvarying highp vec2 vTextureCoord;\nvarying highp vec3 vLighting;\n\nvoid main(void) {\n  gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;\n  vTextureCoord = aTextureCoord;\n\n  highp vec3 ambientLight = vec3(0.6, 0.6, 0.6);\n  highp vec3 directionalLightColor = vec3(1, 1, 1);\n  highp vec3 directionalVector = normalize(vec3(-0.7, .7, 0.3));\n\n  highp vec4 transformedNormal = uNormalMatrix * vec4(aVertexNormal, 1.0);\n\n  highp float directional = max(dot(transformedNormal.xyz, directionalVector), 0.0);\n  vLighting = ambientLight + (directionalLightColor * directional);\n}";
 
 // ts/gl/shaders/fragmentShader.ts
-var fragmentShader_default = "\nvarying highp vec2 vTextureCoord;\nvarying highp vec3 vLighting;\n\nuniform sampler2D uSampler;\nuniform lowp float uOpacity;\n\nvoid main(void) {\n    highp vec4 texelColor = texture2D(uSampler, vTextureCoord);\n    gl_FragColor = vec4(texelColor.rgb * vLighting, texelColor.a * vLighting*uOpacity);\n}\n";
+var fragmentShader_default = "\nvarying highp vec2 vTextureCoord;\nvarying highp vec3 vLighting;\n\nuniform sampler2D uSampler;\nuniform lowp float uOpacity;\n\nvoid main(void) {\n    highp vec4 texelColor = texture2D(uSampler, vTextureCoord);\n    gl_FragColor = vec4(texelColor.rgb * vLighting, texelColor.a*uOpacity);\n}\n";
 
 // ts/gl/glrInit.ts
 function loadShader(gl, type, source) {
@@ -2296,7 +2317,7 @@ var Matrix4 = class _Matrix4 {
 };
 
 // ts/gl/glRenderer.ts
-var GLR = class {
+var GLRenderer = class {
   constructor(game) {
     this.game = game;
     this.objects = [];
@@ -2645,8 +2666,8 @@ var GLTexture = class {
   }
 };
 
-// ts/gl/mesh.ts
-var GlMesh = class _GlMesh extends GLRendable {
+// ts/gl/cuboid.ts
+var GLCuboid = class _GLCuboid extends GLRendable {
   constructor(attr) {
     super(attr);
     this.type = "mesh";
@@ -2681,8 +2702,8 @@ var GlMesh = class _GlMesh extends GLRendable {
     return b;
   }
   positionBuffer(size) {
-    return _GlMesh.scale(
-      _GlMesh.sliceToDimension(
+    return _GLCuboid.scale(
+      _GLCuboid.sliceToDimension(
         this.getBufferData().position,
         this.size,
         72
@@ -2691,7 +2712,7 @@ var GlMesh = class _GlMesh extends GLRendable {
     );
   }
   normalBuffer() {
-    return _GlMesh.sliceToDimension(
+    return _GLCuboid.sliceToDimension(
       this.getBufferData().normal,
       this.size,
       72
@@ -2700,7 +2721,7 @@ var GlMesh = class _GlMesh extends GLRendable {
   textureBuffer() {
     let b = [];
     if (this.textureUrl) {
-      return _GlMesh.sliceToDimension(
+      return _GLCuboid.sliceToDimension(
         this.getBufferData().texture,
         this.size,
         48
@@ -3015,6 +3036,31 @@ var GlController = class extends GlElement {
   }
 };
 
+// ts/utils/collisions.ts
+var Collisions = class _Collisions {
+  static overlap(aP, aS, bP, bS) {
+    return aP.x < bP.x + bS.x && aP.x + aS.x > bP.x && aP.y < bP.y + bS.y && aP.y + aS.y > bP.y && aP.z < bP.z + bS.z && aP.z + aS.z > bP.z;
+  }
+  static overlapDirection(aP, aS, bP, bS, v) {
+    let result = [];
+    if (_Collisions.overlap(aP, aS, new Vector3(bP.x, bP.y + v.y), bS)) {
+      result.push(v.y > 0 ? ["y", aP.y - bP.y - bS.y] : ["y", aP.y + aS.y - bP.y]);
+    }
+    if (_Collisions.overlap(aP, aS, new Vector3(bP.x + v.x, bP.y), bS)) {
+      result.push(v.x < 0 ? ["x", aP.x + aS.x - bP.x] : ["x", aP.x - bP.x - bS.x]);
+    }
+    return result;
+  }
+  static check(statics, dynamic, velocity) {
+    return statics.filter(
+      (s) => _Collisions.overlap(s.position, s.size, dynamic.position.add(velocity), dynamic.size)
+      // r.push(...Collisions.overlapDirection(s.position.add(s.parent instanceof Level ? v3(0) : s.parent.position), s.size, dynamic[0], dynamic[1], velocity));
+      // if (!s.condition || s.condition()){
+      // }
+    );
+  }
+};
+
 // ts/modes/side/movementController.ts
 var MovementController = class extends GlController {
   constructor() {
@@ -3060,13 +3106,36 @@ var MovementController = class extends GlController {
         rotated.y
       );
       const p = this.parent.position.add(movement);
-      if (p.y < 0) {
-        this.velocity.y = 0;
-        p.y = 0;
-        if (this.jumping) {
-          this.land();
+      this.level.colliders.forEach((col) => {
+        if (Collisions.overlap(col.position, col.size, p, this.parent.size)) {
+          if (col.direction.equals(Vector3.up)) {
+            this.velocity.y = Math.max(this.velocity.y, 0);
+            p.y = col.position.y + col.size.y;
+            if (this.jumping)
+              this.land();
+          }
+          if (col.direction.equals(Vector3.down)) {
+            this.velocity.y = Math.min(this.velocity.y, 0);
+            p.y = col.position.y - this.parent.size.y;
+          }
+          if (col.direction.equals(Vector3.right)) {
+            this.velocity.x = Math.max(this.velocity.x, 0);
+            p.x = col.position.x + col.size.x;
+          }
+          if (col.direction.equals(Vector3.left)) {
+            this.velocity.x = Math.min(this.velocity.x, 0);
+            p.x = col.position.x - this.parent.size.x;
+          }
+          if (col.direction.equals(Vector3.backwards)) {
+            this.velocity.z = Math.max(this.velocity.z, 0);
+            p.z = col.position.z + col.size.z;
+          }
+          if (col.direction.equals(Vector3.forwards)) {
+            this.velocity.z = Math.min(this.velocity.z, 0);
+            p.z = col.position.z - this.parent.size.z;
+          }
         }
-      }
+      });
       this.parent.position = p;
       if (movement.x || movement.z) {
         this.parent.rotation = this.camera.rotation.multiply(0, 1, 0);
@@ -3188,7 +3257,7 @@ var SideCharacter = class extends Character {
     }
   }
   build() {
-    this.addChild(this.mesh = new GlMesh({ size: this.size, colors: [[0.3, 0.4, 0.2, 1], [0.3, 0.4, 0.2, 1], [0.3, 0.4, 0.2, 1], [0.3, 0.4, 0.2, 1], [0.3, 0.4, 0.2, 1], [0.3, 0.4, 0.2, 1]] }));
+    this.addChild(this.mesh = new GLCuboid({ size: this.size, colors: [[0.3, 0.4, 0.2, 1], [0.3, 0.4, 0.2, 1], [0.3, 0.4, 0.2, 1], [0.3, 0.4, 0.2, 1], [0.3, 0.4, 0.2, 1], [0.3, 0.4, 0.2, 1]] }));
     GlElement.registerControllers(this);
     this.controllers[0].active = false;
     this.controllers[1].active = false;
@@ -3198,7 +3267,7 @@ var SideCharacter = class extends Character {
 };
 
 // ts/gl/imagePlane.ts
-var GlImage = class extends GlMesh {
+var GlImage = class extends GLCuboid {
   constructor(attr) {
     super(__spreadProps(__spreadValues({}, attr), {
       size: attr.size.multiply(v3(attr.repeatX || 1, attr.repeatY || 1, 1))
@@ -3341,6 +3410,314 @@ var Scroller = class extends GLGroup {
   }
 };
 
+// ts/gl/pyramid.ts
+var GLPyramid = class _GLPyramid extends GLRendable {
+  constructor(attr) {
+    super(attr);
+    this.type = "mesh";
+    this.colors = [];
+    this.verticesCount = 30;
+    this.dimensions = 0 | 1 | 2 | 3;
+    this.faceCount = 5;
+    this.dimensions = attr.size.array.filter((v) => v !== 0).length;
+    if (this.dimensions < 2) {
+      return;
+    }
+    this.textureUrl = attr.textureUrl;
+    if (attr.colors)
+      this.colors = attr.colors;
+    else
+      this.colors = [
+        Colors.r,
+        Colors.g,
+        Colors.b,
+        Colors.c,
+        Colors.m,
+        Colors.y
+      ].slice(0, this.faceCount);
+  }
+  build() {
+    super.build();
+    this.texture = new GLTexture(this.game, this.textureUrl ? { url: this.textureUrl } : { color: this.colors });
+  }
+  indexBuffer() {
+    let b = this.getBufferData().index.slice(0, this.faceCount * 6);
+    return b;
+  }
+  positionBuffer(size) {
+    return _GLPyramid.scale(
+      this.getBufferData().position,
+      size
+    );
+  }
+  normalBuffer() {
+    return this.getBufferData().normal;
+  }
+  textureBuffer() {
+    let b = [];
+    if (this.textureUrl) {
+      return this.getBufferData().texture;
+    } else {
+      const inc = 1 / this.faceCount;
+      for (let index = 0; index < this.faceCount; index++) {
+        b.push(
+          index * inc + inc / 3,
+          0,
+          index * inc + inc / 3,
+          1,
+          (index + 1) * inc - inc / 3,
+          0,
+          (index + 1) * inc - inc / 3,
+          0
+        );
+      }
+    }
+    return b;
+  }
+  getIndexBufferData() {
+    return [
+      0,
+      1,
+      2,
+      0,
+      2,
+      3,
+      4,
+      5,
+      6,
+      4,
+      6,
+      7,
+      8,
+      9,
+      10,
+      8,
+      10,
+      11,
+      12,
+      13,
+      14,
+      12,
+      14,
+      15,
+      16,
+      17,
+      18,
+      16,
+      18,
+      19
+    ];
+  }
+  getPositionBufferData() {
+    return [
+      0,
+      0,
+      -1,
+      1,
+      0,
+      -1,
+      0.5,
+      1,
+      -0.5,
+      0.5,
+      1,
+      -0.5,
+      0,
+      0,
+      -0,
+      0.5,
+      1,
+      -0.5,
+      0.5,
+      1,
+      -0.5,
+      1,
+      0,
+      -0,
+      0,
+      0,
+      -0,
+      1,
+      0,
+      -0,
+      1,
+      0,
+      -1,
+      0,
+      0,
+      -1,
+      1,
+      0,
+      -0,
+      0.5,
+      1,
+      -0.5,
+      0.5,
+      1,
+      -0.5,
+      1,
+      0,
+      -1,
+      0,
+      0,
+      -0,
+      0,
+      0,
+      -1,
+      0.5,
+      1,
+      -0.5,
+      0.5,
+      1,
+      -0.5
+    ];
+  }
+  getNormalBufferData() {
+    return [
+      0,
+      0,
+      -1,
+      0,
+      0,
+      -1,
+      0,
+      0,
+      -1,
+      0,
+      0,
+      -1,
+      0,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      -1,
+      0,
+      0,
+      -1,
+      0,
+      0,
+      -1,
+      0,
+      0,
+      -1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      0,
+      -1,
+      0,
+      0,
+      -1,
+      0,
+      0,
+      -1,
+      0,
+      0,
+      -1,
+      0,
+      0
+    ];
+  }
+  getTextureBufferData() {
+    return [
+      0,
+      0,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1
+    ];
+  }
+  getBufferData() {
+    return {
+      index: this.getIndexBufferData(),
+      position: this.getPositionBufferData(),
+      normal: this.getNormalBufferData(),
+      texture: this.getTextureBufferData()
+    };
+  }
+  static scale(array, size) {
+    return size ? array.map((n, i) => n * size.array[i % 3]) : array;
+  }
+};
+
+// ts/utils/arrow.ts
+var Arrow = class extends GLGroup {
+  constructor(attr) {
+    super(attr);
+    this.direction = attr.direction = v3(1, 0, 0);
+    this.width = attr.width || 2;
+    this.length = attr.length || 4;
+    this.colors = attr.colors || [Colors.r];
+  }
+  build() {
+    const s = new GLCuboid({
+      position: v3(-this.width / 4, 0, -this.width / 4),
+      size: v3(this.width / 2, this.length / 2, this.width / 2),
+      colors: this.colors
+    });
+    this.addChild(s);
+    const p = new GLPyramid({
+      position: v3(-this.width / 2, this.length / 2, -this.width / 2),
+      size: v3(this.width, this.length / 2, this.width),
+      colors: [Colors.r]
+    });
+    this.addChild(p);
+  }
+};
+
 // ts/utils/collider.ts
 var Collider = class extends GlElement {
   constructor(attr) {
@@ -3348,15 +3725,51 @@ var Collider = class extends GlElement {
     this.type = "collider";
     this.colliderType = "static";
     this.direction = attr.direction;
+    this.showMesh = attr.showMesh || false;
+    this.showArrows = attr.showArrows || false;
   }
   build() {
-    this.debugObject = this.addChild(new GlMesh({ size: this.size, position: this.position, colors: [Colors.w] }));
-    this.debugObject.addChild(new GlMesh({
-      position: this.direction.multiply(this.size).scale(0.5),
-      size: this.direction.multiply(v3(10, 10, 10)).scale(0.5),
-      colors: [Colors.r],
-      rotation: this.direction.scale(Math.PI)
-    }));
+    if (this.showMesh) {
+      this.debugObject = this.addChild(new GLCuboid({
+        size: this.size,
+        colors: [Colors.c]
+      }));
+      if (this.showArrows) {
+        console.log(this.direction);
+        this.debugObject.addChild(new Arrow({
+          position: this.size.multiply(v3(1, 1, 1)),
+          rotation: Vector3.up.multiply(this.direction)
+        }));
+        this.debugObject.addChild(new Arrow({
+          position: this.size.multiply(v3(1, 1, 0)),
+          rotation: Vector3.up.multiply(this.direction)
+        }));
+        this.debugObject.addChild(new Arrow({
+          position: this.size.multiply(v3(0, 1, 1)),
+          rotation: Vector3.up.multiply(this.direction)
+        }));
+        this.debugObject.addChild(new Arrow({
+          position: this.size.multiply(v3(1, 0, 1)),
+          rotation: Vector3.up.multiply(this.direction)
+        }));
+        this.debugObject.addChild(new Arrow({
+          position: this.size.multiply(v3(1, 0, 0)),
+          rotation: Vector3.up.multiply(this.direction)
+        }));
+        this.debugObject.addChild(new Arrow({
+          position: this.size.multiply(v3(0, 1, 0)),
+          rotation: Vector3.up.multiply(this.direction)
+        }));
+        this.debugObject.addChild(new Arrow({
+          position: this.size.multiply(v3(0, 0, 1)),
+          rotation: Vector3.up.multiply(this.direction)
+        }));
+        this.debugObject.addChild(new Arrow({
+          position: this.size.multiply(v3(0, 0, 0)),
+          rotation: Vector3.up.multiply(this.direction)
+        }));
+      }
+    }
   }
 };
 
@@ -3408,13 +3821,22 @@ var World = class extends Level {
       size: v3(8, 24, 8),
       position: v3(0, 0, 250)
     }));
-    this.addChild(new GlMesh({ size: v3(1e4, 1, 4e3), position: v3(-5e3, -1, -2e3), colors: [[0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.05, 0.05, 0.05, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1]] }));
+    this.addChild(new GLCuboid({ size: v3(1e4, 1, 4e3), position: v3(-5e3, -1, -2e3), colors: [[0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.05, 0.05, 0.05, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1]] }));
     this.env = new Scroller();
     this.addChild(this.env);
     [
-      [v3(10, 0, 100), v3(50, 50, 50), v3(1, 1, 0)]
-    ].forEach(([position, size, direction]) => {
-      this.addChild(new Collider({ position, size, direction }));
+      // [v3(10, 0, 250), v3(10, 10, 10), Vector3.right, true], // right
+      // [v3(40, 0, 250), v3(10, 10, 10), Vector3.up, true], // up
+      // [v3(70, 0, 250), v3(10, 10, 10), Vector3.forwards, true], // forward
+      // [v3(10, 0, 210), v3(10, 10, 10), Vector3.left, true], // left
+      // [v3(40, 0, 210), v3(10, 10, 10), Vector3.down, true], // down
+      // [v3(70, 0, 210), v3(10, 10, 10), Vector3.backwards, true], // back
+      [v3(-2e3, 0, 410), v3(6e3, 100, 20), Vector3.forwards, false],
+      // forward
+      [v3(-5e3, -1, -2e3), v3(1e4, 1, 4e3), Vector3.up, false]
+      // floor
+    ].forEach(([position, size, direction, show]) => {
+      this.addChild(new Collider({ position, size, direction, showMesh: show === void 0 ? false : show, showArrows: false }));
     });
   }
   tick(obj) {
@@ -3468,7 +3890,7 @@ var Game = class {
     this.renderer = new Renderer(this);
     this.loader = new Loader();
     this.renderer.addChild(this.loader);
-    this.GLR = new GLR(this);
+    this.GLR = new GLRenderer(this);
     this.setupModes();
     this.ticker = new Ticker();
     this.ticker.add(this.tick.bind(this));

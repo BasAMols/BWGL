@@ -1,4 +1,4 @@
-import { GlMesh } from '../../gl/mesh';
+import { GLCuboid } from '../../gl/cuboid';
 import { Character } from '../../gl/character';
 import { Vector3 } from '../../utils/vector3';
 import { SideController } from './sideController';
@@ -8,7 +8,7 @@ import { GlElement } from '../../gl/elementBase';
 import { MovementController } from './movementController';
 
 export class SideCharacter extends Character {
-    public mesh: GlMesh
+    public mesh: GLCuboid
 
     constructor({
         position = Vector3.f(0),
@@ -44,7 +44,7 @@ export class SideCharacter extends Character {
     }
 
     build() {
-        this.addChild(this.mesh = new GlMesh({ size: this.size, colors: [[0.3,0.4,0.2,1], [0.3,0.4,0.2,1], [0.3,0.4,0.2,1], [0.3,0.4,0.2,1], [0.3,0.4,0.2,1], [0.3,0.4,0.2,1]] }));
+        this.addChild(this.mesh = new GLCuboid({ size: this.size, colors: [[0.3,0.4,0.2,1], [0.3,0.4,0.2,1], [0.3,0.4,0.2,1], [0.3,0.4,0.2,1], [0.3,0.4,0.2,1], [0.3,0.4,0.2,1]] }));
         GlElement.registerControllers(this);
         this.controllers[0].active = false;
         this.controllers[1].active = false;

@@ -4,7 +4,7 @@ import { Input } from './utils/input';
 import { Mode } from './utils/mode';
 import { Renderer } from './dom/renderer';
 import { Loader } from './utils/debug/loader';
-import { GLR } from './gl/glRenderer';
+import { GLRenderer } from './gl/glRenderer';
 import { Level } from './utils/level';
 import { SideMode } from './modes/side/sideMode';
 
@@ -19,7 +19,7 @@ export class Game {
     private started: boolean = false;
     private loader: Loader;
     public total: number = 0;
-    public GLR: GLR;
+    public GLR: GLRenderer;
     public active: {
         mode: Mode,
         level: Level,
@@ -57,7 +57,7 @@ export class Game {
         this.loader = new Loader();
         this.renderer.addChild(this.loader);
 
-        this.GLR = new GLR(this);
+        this.GLR = new GLRenderer(this);
         this.setupModes();
 
         this.ticker = new Ticker();

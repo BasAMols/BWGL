@@ -1,6 +1,6 @@
 import { mat4 } from 'gl-matrix';
 import { Game } from '../game';
-import { GLR } from './glRenderer';
+import { GLRenderer } from './glRenderer';
 import { attributes, initShaderProgram, uniforms } from './glrInit';
 
 export class GLTranslator {
@@ -10,7 +10,7 @@ export class GLTranslator {
     private attributes: attributes;
     public gl: WebGLRenderingContext;
 
-    constructor(public game: Game, public glr: GLR) {
+    constructor(public game: Game, public glr: GLRenderer) {
         this.gl = this.glr.gl;
         [this.program, this.uniforms, this.attributes] = initShaderProgram(this.gl) as [WebGLProgram, uniforms, attributes];
     }

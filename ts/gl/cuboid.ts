@@ -4,7 +4,7 @@ import { Vector3 } from '../utils/vector3';
 import { GLRendable, GLRendableAttributes } from './rendable';
 import { GLTexture } from './texture';
 
-export type GlMeshAttributes = GLRendableAttributes & {
+export type GlCuboidAttributes = GLRendableAttributes & {
     colors?: [Color, Color?, Color?, Color?, Color?, Color?],
     textureUrl?: string,
     size: Vector3;
@@ -17,7 +17,7 @@ export type bufferData = {
     texture: number[],
 };
 
-export class GlMesh extends GLRendable {
+export class GLCuboid extends GLRendable {
     public texture: GLTexture;
     public type: GlElementType = 'mesh';
     public colors: [number, number, number, number][] = [];
@@ -26,7 +26,7 @@ export class GlMesh extends GLRendable {
     public textureUrl: string;
     private faceCount: number;
 
-    constructor(attr: GlMeshAttributes) {
+    constructor(attr: GlCuboidAttributes) {
         super(attr);
         this.dimensions = attr.size.array.filter((v) => v !== 0).length;
         if (this.dimensions < 2) {
@@ -60,8 +60,8 @@ export class GlMesh extends GLRendable {
     }
 
     protected positionBuffer(size: Vector3) {
-        return GlMesh.scale(
-            GlMesh.sliceToDimension(
+        return GLCuboid.scale(
+            GLCuboid.sliceToDimension(
                 this.getBufferData().position,
                 this.size,
                 72
@@ -71,7 +71,7 @@ export class GlMesh extends GLRendable {
     }
 
     protected normalBuffer() {
-        return GlMesh.sliceToDimension(
+        return GLCuboid.sliceToDimension(
             this.getBufferData().normal,
             this.size,
             72
@@ -81,7 +81,7 @@ export class GlMesh extends GLRendable {
     protected textureBuffer() {
         let b: number[] = [];
         if (this.textureUrl) {
-            return GlMesh.sliceToDimension(
+            return GLCuboid.sliceToDimension(
                 this.getBufferData().texture,
                 this.size,
                 48

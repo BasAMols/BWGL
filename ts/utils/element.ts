@@ -1,6 +1,6 @@
 import { Game } from '../game';
 import { Event } from "./event";
-import { GLR } from '../gl/glRenderer';
+import { GLRenderer } from '../gl/glRenderer';
 import { Level } from './level';
 import { Mode } from './mode';
 import { TickerReturnData } from './ticker';
@@ -31,7 +31,7 @@ export abstract class Element {
     public get GLT(): GLTranslator {
         return this.game.GLR.glt;
     }
-    public get GLR(): GLR {
+    public get GLR(): GLRenderer {
         return this.game.GLR;
     }
     public get gl(): WebGLRenderingContext{

@@ -12,32 +12,32 @@ export function v3(n: [number, number?, number?] | number, y?: number, z?: numbe
 }
 
 export class Vector3 {
-	public get pitch(): number {return this.x}
-	public set pitch(value: number) {this.x = value}
+	public get pitch(): number { return this.x; }
+	public set pitch(value: number) { this.x = value; }
 
-	public get yaw(): number {return this.y}
-	public set yaw(value: number) {this.y = value}
+	public get yaw(): number { return this.y; }
+	public set yaw(value: number) { this.y = value; }
 
-	public get roll(): number {return this.z}
-	public set roll(value: number) {this.z = value}
+	public get roll(): number { return this.z; }
+	public set roll(value: number) { this.z = value; }
 
-	public get x(): number {return this.vec[0]}
-	public set x(value: number) {this.vec[0] = value}
+	public get x(): number { return this.vec[0]; }
+	public set x(value: number) { this.vec[0] = value; }
 
-	public get y(): number {return this.vec[1]}
-	public set y(value: number) {this.vec[1] = value}
+	public get y(): number { return this.vec[1]; }
+	public set y(value: number) { this.vec[1] = value; }
 
-	public get z(): number {return this.vec[2]}
-	public set z(value: number) {this.vec[2] = value}
+	public get z(): number { return this.vec[2]; }
+	public set z(value: number) { this.vec[2] = value; }
 
-	public get xy(){return v2(this.x, this.y)}
-	public get xz(){return v2(this.x, this.z)}
+	public get xy() { return v2(this.x, this.y); }
+	public get xz() { return v2(this.x, this.z); }
 
-	public get yx(){return v2(this.y, this.x)}
-	public get yz(){return v2(this.y, this.z)}
-	
-	public get zx(){return v2(this.z, this.x)}
-	public get zy(){return v2(this.z, this.y)}
+	public get yx() { return v2(this.y, this.x); }
+	public get yz() { return v2(this.y, this.z); }
+
+	public get zx() { return v2(this.z, this.x); }
+	public get zy() { return v2(this.z, this.y); }
 
 	public vec: vec3;
 
@@ -51,6 +51,25 @@ export class Vector3 {
 
 	static f(x: number = 0, y: number = x, z: number = x) {
 		return new Vector3(x, y, z);
+	}
+
+	static get forwards() {
+		return new Vector3(0, 0, 1);
+	}
+	static get backwards() {
+		return new Vector3(0, 0, -1);
+	}
+	static get up() {
+		return new Vector3(0, 1, 0);
+	}
+	static get down() {
+		return new Vector3(0, -1, 0);
+	}
+	static get left() {
+		return new Vector3(-1, 0, 0);
+	}
+	static get right() {
+		return new Vector3(1, 0, 0);
 	}
 
 	get array() {
@@ -67,6 +86,14 @@ export class Vector3 {
 
 	get c(): Vector3 {
 		return this.clone();
+	}
+
+	equals(vector: Vector3): boolean {
+		return (
+			this.x === vector.x &&
+			this.y === vector.y &&
+			this.z === vector.z
+		);
 	}
 
 	clone(): Vector3 {
@@ -88,7 +115,7 @@ export class Vector3 {
 	multiply(a: Vector3): Vector3;
 	multiply(a: number, b: number, c: number): Vector3;
 	multiply(a: Vector3 | number, b?: number, c?: number): Vector3 {
-		const [x,y,z] = (typeof a === 'number')? [a,b,c]: a.array
+		const [x, y, z] = (typeof a === 'number') ? [a, b, c] : a.array;
 		return new Vector3(
 			this.x * x,
 			this.y * y,

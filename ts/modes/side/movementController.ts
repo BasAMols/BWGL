@@ -4,6 +4,7 @@ import { TickerReturnData } from '../../utils/ticker';
 import { Util } from '../../utils/utils';
 import { v2 } from '../../utils/vector2';
 import { Vector3, v3 } from '../../utils/vector3';
+import { Collisions } from '../../utils/collisions';
 
 export class MovementController extends GlController {
     private speed = 0.8;
@@ -77,15 +78,45 @@ export class MovementController extends GlController {
                 frameScaledVelocity.y,
                 rotated.y,
             );
+            
             const p = this.parent.position.add(movement);
-
-            if (p.y < 0) {
-                this.velocity.y = 0;
-                p.y = 0;
-                if (this.jumping) {
-                    this.land();
+            this.level.colliders.forEach((col)=>{
+                if(Collisions.overlap(col.position, col.size, p, this.parent.size)){
+                    if (col.direction.equals(Vector3.up)){ // floor
+                        this.velocity.y = Math.max(this.velocity.y, 0);
+                        p.y = col.position.y+col.size.y;
+                        if (this.jumping) this.land();
+                    }
+                    if (col.direction.equals(Vector3.down)){ // ceiling
+                        this.velocity.y = Math.min(this.velocity.y, 0);
+                        p.y = col.position.y-this.parent.size.y;
+                    }
+                    if (col.direction.equals(Vector3.right)){ // left wall
+                        this.velocity.x = Math.max(this.velocity.x, 0);
+                        p.x = col.position.x+col.size.x;
+                    }
+                    if (col.direction.equals(Vector3.left)){ // right wall
+                        this.velocity.x = Math.min(this.velocity.x, 0);
+                        p.x = col.position.x-this.parent.size.x;
+                    }
+                    if (col.direction.equals(Vector3.backwards)){ // left wall
+                        this.velocity.z = Math.max(this.velocity.z, 0);
+                        p.z = col.position.z+col.size.z;
+                    }
+                    if (col.direction.equals(Vector3.forwards)){ // right wall
+                        this.velocity.z = Math.min(this.velocity.z, 0);
+                        p.z = col.position.z-this.parent.size.z;
+                    }
                 }
-            }
+            })
+
+            // const collisions = Collisions.check(this.level.colliders, this.parent, movement);
+            // if (collisions){
+            //     collisions.forEach((col)=>{
+                    
+            //     })
+            // }
+            
             this.parent.position = p;
             if (movement.x || movement.z) {
                 this.parent.rotation = this.camera.rotation.multiply(0,1,0);
