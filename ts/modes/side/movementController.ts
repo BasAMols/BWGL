@@ -52,26 +52,6 @@ export class MovementController extends GlController {
         if (this.velocity.x || this.velocity.y || this.velocity.z) {
 
             const frameScaledVelocity = this.velocity.scale(m);
-
-            // const r = Collisions.check(this.level.colliders, this.parent, frameScaledVelocity);
-
-            // if (r.length !== 0) {
-            //     r.sort(function (a, b) {
-            //         return Math.abs(a[1]) - Math.abs(b[1]);
-            //     });
-            //     if (r.find((a) => a[0] === "x")) {
-            //         frameScaledVelocity.x = 0;
-            //         this.velocity.x = 0;
-            //         frameScaledVelocity.x = r.find((a) => a[0] === "x")[1];
-            //     }
-            //     if (r.find((a) => a[0] === "y")) {
-            //         this.jumping = false;
-            //         frameScaledVelocity.y = 0;
-            //         this.velocity.y = 0;
-            //         frameScaledVelocity.y = r.find((a) => a[0] === "y")[1];
-            //     }
-            // }
-
             const rotated = v2(frameScaledVelocity.x, frameScaledVelocity.z).rotate(-this.camera.rotation.y);
             const movement = v3(
                 rotated.x,
@@ -79,45 +59,38 @@ export class MovementController extends GlController {
                 rotated.y,
             );
             
-            const p = this.parent.position.add(movement);
+            const newAbs = this.parent.absolutePosition.add(movement);
             this.level.colliders.forEach((col)=>{
-                if(Collisions.overlap(col.position, col.size, p, this.parent.size)){
+                if(Collisions.overlap(col.absolutePosition, col.size, newAbs, this.parent.size)){
                     if (col.direction.equals(Vector3.up)){ // floor
                         this.velocity.y = Math.max(this.velocity.y, 0);
-                        p.y = col.position.y+col.size.y;
+                        newAbs.y = col.absolutePosition.y+col.size.y;
                         if (this.jumping) this.land();
                     }
                     if (col.direction.equals(Vector3.down)){ // ceiling
                         this.velocity.y = Math.min(this.velocity.y, 0);
-                        p.y = col.position.y-this.parent.size.y;
+                        newAbs.y = col.absolutePosition.y-this.parent.size.y;
                     }
                     if (col.direction.equals(Vector3.right)){ // left wall
                         this.velocity.x = Math.max(this.velocity.x, 0);
-                        p.x = col.position.x+col.size.x;
+                        newAbs.x = col.absolutePosition.x+col.size.x;
                     }
                     if (col.direction.equals(Vector3.left)){ // right wall
                         this.velocity.x = Math.min(this.velocity.x, 0);
-                        p.x = col.position.x-this.parent.size.x;
+                        newAbs.x = col.absolutePosition.x-this.parent.size.x;
                     }
                     if (col.direction.equals(Vector3.backwards)){ // left wall
                         this.velocity.z = Math.max(this.velocity.z, 0);
-                        p.z = col.position.z+col.size.z;
+                        newAbs.z = col.absolutePosition.z+col.size.z;
                     }
                     if (col.direction.equals(Vector3.forwards)){ // right wall
                         this.velocity.z = Math.min(this.velocity.z, 0);
-                        p.z = col.position.z-this.parent.size.z;
+                        newAbs.z = col.absolutePosition.z-this.parent.size.z;
                     }
                 }
             })
 
-            // const collisions = Collisions.check(this.level.colliders, this.parent, movement);
-            // if (collisions){
-            //     collisions.forEach((col)=>{
-                    
-            //     })
-            // }
-            
-            this.parent.position = p;
+            this.parent.absolutePosition = newAbs;
             if (movement.x || movement.z) {
                 this.parent.rotation = this.camera.rotation.multiply(0,1,0);
             }

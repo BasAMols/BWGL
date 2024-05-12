@@ -38,8 +38,6 @@ export class Collider extends GlElement {
             }));
             
             if (this.showArrows) {
-                console.log(this.direction);
-                
                 this.debugObject.addChild(new Arrow({
                     position: this.size.multiply(v3(1, 1, 1)),
                     rotation: Vector3.up.multiply(this.direction)

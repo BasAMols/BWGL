@@ -835,7 +835,7 @@ var Vector3 = class _Vector3 {
 };
 
 // ts/gl/shaders/vertexShader.ts
-var vertexShader_default = "\nattribute vec4 aVertexPosition;\nattribute vec3 aVertexNormal;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uModelViewMatrix;\nuniform mat4 uProjectionMatrix;\nuniform mat4 uNormalMatrix;\n\nvarying highp vec2 vTextureCoord;\nvarying highp vec3 vLighting;\n\nvoid main(void) {\n  gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;\n  vTextureCoord = aTextureCoord;\n\n  highp vec3 ambientLight = vec3(0.6, 0.6, 0.6);\n  highp vec3 directionalLightColor = vec3(1, 1, 1);\n  highp vec3 directionalVector = normalize(vec3(-0.7, .7, 0.3));\n\n  highp vec4 transformedNormal = uNormalMatrix * vec4(aVertexNormal, 1.0);\n\n  highp float directional = max(dot(transformedNormal.xyz, directionalVector), 0.0);\n  vLighting = ambientLight + (directionalLightColor * directional);\n}";
+var vertexShader_default = "\nattribute vec4 aVertexPosition;\nattribute vec3 aVertexNormal;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uModelViewMatrix;\nuniform mat4 uProjectionMatrix;\nuniform mat4 uNormalMatrix;\n\nvarying highp vec2 vTextureCoord;\nvarying highp vec3 vLighting;\n\nvoid main(void) {\n  gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;\n  vTextureCoord = aTextureCoord;\n\n  highp vec3 ambientLight = vec3(1, 1, 1);\n  highp vec3 directionalLightColor = vec3(1, 1, 1);\n  highp vec3 directionalVector = normalize(vec3(-0.7, .7, 0.3));\n\n  highp vec4 transformedNormal = uNormalMatrix * vec4(aVertexNormal, 1.0);\n\n  highp float directional = max(dot(transformedNormal.xyz, directionalVector), 0.0);\n  vLighting = ambientLight + (directionalLightColor * directional);\n}";
 
 // ts/gl/shaders/fragmentShader.ts
 var fragmentShader_default = "\nvarying highp vec2 vTextureCoord;\nvarying highp vec3 vLighting;\n\nuniform sampler2D uSampler;\nuniform lowp float uOpacity;\n\nvoid main(void) {\n    highp vec4 texelColor = texture2D(uSampler, vTextureCoord);\n    gl_FragColor = vec4(texelColor.rgb * vLighting, texelColor.a*uOpacity);\n}\n";
@@ -2419,6 +2419,13 @@ var GlElement = class _GlElement extends Element {
   set camera(c) {
     this.mode.camera = c;
   }
+  get absolutePosition() {
+    var _a;
+    return (((_a = this.parent) == null ? void 0 : _a.absolutePosition) || v3(0)).add(this.position);
+  }
+  set absolutePosition(v) {
+    this.position = v.subtract(this.parent.absolutePosition);
+  }
   ready() {
     this.build();
     if (this.game.waitCount) {
@@ -3105,38 +3112,38 @@ var MovementController = class extends GlController {
         frameScaledVelocity.y,
         rotated.y
       );
-      const p = this.parent.position.add(movement);
+      const newAbs = this.parent.absolutePosition.add(movement);
       this.level.colliders.forEach((col) => {
-        if (Collisions.overlap(col.position, col.size, p, this.parent.size)) {
+        if (Collisions.overlap(col.absolutePosition, col.size, newAbs, this.parent.size)) {
           if (col.direction.equals(Vector3.up)) {
             this.velocity.y = Math.max(this.velocity.y, 0);
-            p.y = col.position.y + col.size.y;
+            newAbs.y = col.absolutePosition.y + col.size.y;
             if (this.jumping)
               this.land();
           }
           if (col.direction.equals(Vector3.down)) {
             this.velocity.y = Math.min(this.velocity.y, 0);
-            p.y = col.position.y - this.parent.size.y;
+            newAbs.y = col.absolutePosition.y - this.parent.size.y;
           }
           if (col.direction.equals(Vector3.right)) {
             this.velocity.x = Math.max(this.velocity.x, 0);
-            p.x = col.position.x + col.size.x;
+            newAbs.x = col.absolutePosition.x + col.size.x;
           }
           if (col.direction.equals(Vector3.left)) {
             this.velocity.x = Math.min(this.velocity.x, 0);
-            p.x = col.position.x - this.parent.size.x;
+            newAbs.x = col.absolutePosition.x - this.parent.size.x;
           }
           if (col.direction.equals(Vector3.backwards)) {
             this.velocity.z = Math.max(this.velocity.z, 0);
-            p.z = col.position.z + col.size.z;
+            newAbs.z = col.absolutePosition.z + col.size.z;
           }
           if (col.direction.equals(Vector3.forwards)) {
             this.velocity.z = Math.min(this.velocity.z, 0);
-            p.z = col.position.z - this.parent.size.z;
+            newAbs.z = col.absolutePosition.z - this.parent.size.z;
           }
         }
       });
-      this.parent.position = p;
+      this.parent.absolutePosition = newAbs;
       if (movement.x || movement.z) {
         this.parent.rotation = this.camera.rotation.multiply(0, 1, 0);
       }
@@ -3735,7 +3742,6 @@ var Collider = class extends GlElement {
         colors: [Colors.c]
       }));
       if (this.showArrows) {
-        console.log(this.direction);
         this.debugObject.addChild(new Arrow({
           position: this.size.multiply(v3(1, 1, 1)),
           rotation: Vector3.up.multiply(this.direction)
@@ -3770,6 +3776,141 @@ var Collider = class extends GlElement {
         }));
       }
     }
+  }
+};
+
+// ts/gl/obj.ts
+var GLobj = class extends GLRendable {
+  constructor(attr = {}) {
+    super(__spreadValues(__spreadValues({}, attr), { autoReady: false }));
+    this.type = "mesh";
+    this.verticesCount = 0;
+    this.matIndeces = [];
+    this.mats = {};
+    this.positionIndeces = [];
+    this.indexIndeces = [];
+    this.normalIndeces = [];
+    this.textureIndeces = [];
+    this.texturePositionIndeces = [];
+    this.loadFile("".concat(window.location.href, "/obj/").concat(attr.url)).then(this.parseMtl.bind(this)).then(this.parseObj.bind(this)).then(() => {
+      this.ready();
+    });
+  }
+  build() {
+    super.build();
+  }
+  async parseMtl(str2) {
+    if (/mtllib/.test(str2)) {
+      await this.loadFile("".concat(window.location.href, "obj/").concat(str2.split(/mtllib/)[1].split(/(?: |\n)/)[1])).then((v) => {
+        v.split("newmtl ").slice(1).forEach((s) => {
+          const l = s.split("\n");
+          this.mats[l.shift()] = l;
+        });
+      });
+      return str2;
+    } else {
+      return str2;
+    }
+  }
+  parseFaces(lineArray, mat, points, normals, tCoords) {
+    const textRemainder = lineArray.slice(1);
+    const numbRemainder = textRemainder.map(Number);
+    ({
+      usemtl: () => {
+        mat = textRemainder[0];
+      },
+      f: () => {
+        if (numbRemainder.length === 3) {
+          this.positionIndeces.push(...points[numbRemainder[0] - 1]);
+          this.positionIndeces.push(...points[numbRemainder[1] - 1]);
+          this.positionIndeces.push(...points[numbRemainder[2] - 1]);
+        } else if (numbRemainder.length === 6) {
+          this.positionIndeces.push(...points[numbRemainder[0] - 1]);
+          this.positionIndeces.push(...points[numbRemainder[2] - 1]);
+          this.positionIndeces.push(...points[numbRemainder[4] - 1]);
+          this.textureIndeces.push(numbRemainder[1] - 1);
+          this.textureIndeces.push(numbRemainder[3] - 1);
+          this.textureIndeces.push(numbRemainder[5] - 1);
+        } else {
+          this.positionIndeces.push(...points[numbRemainder[0] - 1]);
+          this.positionIndeces.push(...points[numbRemainder[3] - 1]);
+          this.positionIndeces.push(...points[numbRemainder[6] - 1]);
+          this.textureIndeces.push(
+            ...GLTexture.textureOffset(Object.keys(this.mats).indexOf(mat), Object.keys(this.mats).length)
+          );
+          this.normalIndeces.push(...normals[numbRemainder[2] - 1]);
+          this.normalIndeces.push(...normals[numbRemainder[5] - 1]);
+          this.normalIndeces.push(...normals[numbRemainder[8] - 1]);
+        }
+        this.indexIndeces.push(this.indexIndeces.length);
+        this.indexIndeces.push(this.indexIndeces.length);
+        this.indexIndeces.push(this.indexIndeces.length);
+        this.matIndeces.push(mat);
+        this.matIndeces.push(mat);
+        this.matIndeces.push(mat);
+      }
+    }[lineArray[0]] || (() => {
+    }))();
+    return mat;
+  }
+  parseObj(str2) {
+    let mat = "none";
+    const lines = str2.split("\n");
+    const nonVertex = [];
+    const points = [];
+    const normals = [];
+    const tCoords = [];
+    lines.forEach(async (line) => {
+      const words = line.split(/(?: |\/)/);
+      const command = words[0];
+      const numbers = words.slice(1).map(Number);
+      if (command === "v") {
+        points.push([numbers[0], numbers[1], numbers[2]]);
+      } else if (command === "vn") {
+        normals.push([numbers[0], numbers[1], numbers[2]]);
+      } else if (command === "vt") {
+        tCoords.push([numbers[0], numbers[1]]);
+      } else {
+        nonVertex.push(words);
+      }
+    });
+    nonVertex.forEach((words) => {
+      mat = this.parseFaces(words, mat, points, normals, tCoords);
+    });
+    this.verticesCount = this.indexIndeces.length;
+  }
+  async loadFile(url) {
+    const response = await fetch(url);
+    const data = await response.text();
+    return data;
+  }
+  indexBuffer() {
+    return this.indexIndeces;
+  }
+  positionBuffer(size) {
+    return this.positionIndeces.map((n, i) => n * size.array[i % 3]);
+  }
+  normalBuffer() {
+    return this.normalIndeces;
+  }
+  textureBuffer(size) {
+    if (Object.values(this.mats).length) {
+      this.texture = new GLTexture(this.game, { color: Object.values(this.mats).map((s) => [...s[2].slice(3).split(" ").map(Number), Number(s[6].slice(2))]) });
+    } else {
+      this.texture = new GLTexture(this.game, {});
+    }
+    return this.textureIndeces;
+  }
+};
+
+// ts/modes/side/trainCar.ts
+var TrainCar = class extends GLGroup {
+  build() {
+    super.build();
+    this.addChild(new GLobj({ url: "carriage.obj", size: v3(1, 1, 1) }));
+    const floor = new Collider({ size: v3(16, 4, 16), direction: Vector3.up, showMesh: true });
+    this.addChild(floor);
+    console.log(floor.absolutePosition.vec);
   }
 };
 
@@ -3822,6 +3963,12 @@ var World = class extends Level {
       position: v3(0, 0, 250)
     }));
     this.addChild(new GLCuboid({ size: v3(1e4, 1, 4e3), position: v3(-5e3, -1, -2e3), colors: [[0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.05, 0.05, 0.05, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1]] }));
+    this.addChild(new TrainCar({ position: v3(-512, 4, 300) }));
+    this.addChild(new GLobj({ url: "carriage.obj", size: v3(1, 1, 1), position: v3(-256, 4, 300) }));
+    this.addChild(new GLobj({ url: "carriage.obj", size: v3(1, 1, 1), position: v3(4, 4, 300) }));
+    this.addChild(new GLobj({ url: "carriage.obj", size: v3(1, 1, 1), position: v3(256, 4, 300) }));
+    this.addChild(new GLobj({ url: "coal.obj", size: v3(1, 1, 1), position: v3(513, 4, 302) }));
+    this.addChild(new GLobj({ url: "loco.obj", size: v3(1, 1, 1), position: v3(595, 4, 300) }));
     this.env = new Scroller();
     this.addChild(this.env);
     [

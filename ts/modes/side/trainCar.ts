@@ -18,6 +18,24 @@
 // import { Train } from './train';
 // import { World } from './world';
 
+import { GLGroup } from '../../gl/group';
+import { GLobj } from '../../gl/obj';
+import { Collider } from '../../utils/collider';
+import { Vector3, v3 } from '../../utils/vector3';
+
+
+export class TrainCar extends GLGroup {
+    public build(): void {
+        super.build();
+        this.addChild(new GLobj({ url: 'carriage.obj', size: v3(1, 1, 1)}));
+        const floor = new Collider({size: v3(16,4,16), direction: Vector3.up, showMesh: true });
+        this.addChild(floor);
+        console.log(floor.absolutePosition.vec);
+        
+
+    }
+}
+
 
 // export class TrainCar extends CanvasWrapper {
 //     public level: World;

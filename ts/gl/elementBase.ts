@@ -61,6 +61,14 @@ export abstract class GlElement extends Element {
         this.anchorPoint = attr.anchorPoint || v3(0);
     }
 
+    public get absolutePosition(): Vector3 {
+        return (this.parent?.absolutePosition || v3(0)).add(this.position);
+    }
+
+    public set absolutePosition(v: Vector3) {
+        this.position = v.subtract(this.parent.absolutePosition);
+    }
+
     public ready() {
         this.build();
         if (this.game.waitCount) {
