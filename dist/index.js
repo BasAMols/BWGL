@@ -2944,12 +2944,44 @@ var GLobj = class extends GLRendable {
     this.normalIndeces = [];
     this.textureIndeces = [];
     this.texturePositionIndeces = [];
-    this.loadFile("".concat(window.location.href, "/obj/").concat(attr.url)).then(this.parseMtl.bind(this)).then(this.parseObj.bind(this)).then(() => {
-      this.ready();
-    });
+    if (attr.storage) {
+      if (attr.storage.register(attr.url, this)) {
+        this.loadFile("".concat(window.location.href, "/obj/").concat(attr.url)).then(this.parseMtl.bind(this)).then(this.parseObj.bind(this)).then(() => {
+          this.ready();
+          attr.storage.loaded(attr.url);
+        });
+      }
+    } else {
+      this.loadFile("".concat(window.location.href, "/obj/").concat(attr.url)).then(this.parseMtl.bind(this)).then(this.parseObj.bind(this)).then(() => {
+        this.ready();
+      });
+    }
   }
-  build() {
-    super.build();
+  getData() {
+    return {
+      texture: this.texture,
+      verticesCount: this.verticesCount,
+      matIndeces: this.matIndeces,
+      mats: this.mats,
+      matsData: this.matsData,
+      positionIndeces: this.positionIndeces,
+      indexIndeces: this.indexIndeces,
+      normalIndeces: this.normalIndeces,
+      textureIndeces: this.textureIndeces,
+      texturePositionIndeces: this.texturePositionIndeces
+    };
+  }
+  giveData(data) {
+    this.texture = data.texture;
+    this.verticesCount = data.verticesCount;
+    this.matIndeces = data.matIndeces;
+    this.mats = data.mats;
+    this.matsData = data.matsData;
+    this.positionIndeces = data.positionIndeces;
+    this.indexIndeces = data.indexIndeces;
+    this.normalIndeces = data.normalIndeces;
+    this.textureIndeces = data.textureIndeces;
+    this.texturePositionIndeces = data.texturePositionIndeces;
   }
   async parseMtl(str2) {
     if (/mtllib/.test(str2)) {
@@ -3829,6 +3861,45 @@ var Collider = class extends GlElement {
   }
 };
 
+// ts/gl/objStorage.ts
+var ObjStorage = class {
+  constructor() {
+    this.registered = {};
+  }
+  check(url) {
+    const item = Object.entries(this.registered).find(([u]) => u === url);
+    return item ? item[1] : false;
+  }
+  register(url, user) {
+    const o = this.check(url);
+    if (o) {
+      o.using.push(user);
+      if (o.ready) {
+        this.callBack(user, o.origin);
+      }
+      return false;
+    } else {
+      this.registered[url] = {
+        ready: false,
+        origin: user,
+        using: []
+      };
+      return true;
+    }
+  }
+  callBack(user, origin) {
+    user.giveData(origin.getData());
+    user.build();
+  }
+  loaded(url) {
+    const o = this.check(url);
+    if (o && !o.ready) {
+      o.ready = true;
+      o.using.forEach((user) => this.callBack(user, o.origin));
+    }
+  }
+};
+
 // ts/modes/side/world.ts
 var World = class extends Level {
   constructor() {
@@ -3842,8 +3913,9 @@ var World = class extends Level {
     super.build();
     this.addChild(new Player({
       size: v3(8, 24, 8),
-      position: v3(130, 0, 700)
+      position: v3(130, 1, 700)
     }));
+    const st = new ObjStorage();
     this.addChild(new GLCuboid({ size: v3(3500, 1, 5e3), position: v3(-5600, -1, -2e3), colors: [[0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.317, 0.362, 0.298, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1]] }));
     this.addChild(new GLCuboid({ size: v3(4e3, 1, 5e3), position: v3(1900, -1, -2e3), colors: [[0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.317, 0.362, 0.298, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1]] }));
     this.addChild(new GLCuboid({ size: v3(4e3, 1, 1800), position: v3(-2100, -1, -2e3), colors: [[0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.317, 0.362, 0.298, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1]] }));
@@ -3856,15 +3928,16 @@ var World = class extends Level {
           200 * y - 100
         );
         if (Math.random() < 0.5) {
-          this.addChild(new GLobj({ url: "CountrySide-3-GroundTile1.obj", size: v3(20, 20, 20), position: p }));
+          this.addChild(new GLobj({ storage: st, url: "CountrySide-3-GroundTile1.obj", size: v3(20, 20, 20), position: p }));
         } else {
-          this.addChild(new GLobj({ url: "CountrySide-2-GroundTile2.obj", size: v3(20, 20, 20), position: p }));
+          this.addChild(new GLobj({ storage: st, url: "CountrySide-2-GroundTile2.obj", size: v3(20, 20, 20), position: p }));
         }
         if (![2, 3, 4].includes(x) || ![3, 4, 5].includes(y)) {
           for (let rx = 0; rx < 5; rx++) {
             for (let ry = 0; ry < 5; ry++) {
-              if (Math.random() < 0.02) {
+              if (Math.random() < 0.1) {
                 this.addChild(new GLobj({
+                  storage: st,
                   url: ["CountrySide-6-Vegetation5.obj", "CountrySide-0-Vegetation3.obj", "CountrySide-6-Vegetation5.obj", "CountrySide-8-Rock.obj"][Math.floor(Math.random() * 4)],
                   size: v3(
                     10,
@@ -3888,14 +3961,14 @@ var World = class extends Level {
         }
       }
     }
-    this.addChild(new GLobj({ url: "CountrySide-4-Vegetation1.obj", size: v3(20, 20, 20), position: v3(100 + 200, 5, 370 + 400) }));
-    this.addChild(new GLobj({ url: "CountrySide-4-Vegetation1.obj", size: v3(25, 25, 25), position: v3(140 + 200, 6, 420 + 400) }));
-    this.addChild(new GLobj({ url: "Plane01.obj", size: v3(30, 30, 30), position: v3(140 + 200, 16, 200 + 400), rotation: v3(0, Math.PI / 8 + Math.PI, -0.12) }));
-    this.addChild(new GLobj({ url: "Shop-3-Car.obj", size: v3(20, 20, 20), position: v3(-100 + 200, 17, 300 + 400), rotation: v3(0, Math.PI / 2 - Math.PI / 8, 0) }));
-    this.addChild(new GLobj({ url: "CountrySide-5-House.obj", size: v3(20, 20, 20), position: v3(0 + 200, 49, 400 + 400), rotation: v3(0, -Math.PI / 2, 0) }));
+    this.addChild(new GLobj({ storage: st, url: "CountrySide-4-Vegetation1.obj", size: v3(20, 20, 20), position: v3(100 + 200, 5, 370 + 400) }));
+    this.addChild(new GLobj({ storage: st, url: "CountrySide-4-Vegetation1.obj", size: v3(25, 25, 25), position: v3(140 + 200, 6, 420 + 400) }));
+    this.addChild(new GLobj({ storage: st, url: "Plane01.obj", size: v3(30, 30, 30), position: v3(140 + 200, 16, 200 + 400), rotation: v3(0, Math.PI / 8 + Math.PI, -0.12) }));
+    this.addChild(new GLobj({ storage: st, url: "Shop-3-Car.obj", size: v3(20, 20, 20), position: v3(-100 + 200, 17, 300 + 400), rotation: v3(0, Math.PI / 2 - Math.PI / 8, 0) }));
+    this.addChild(new GLobj({ storage: st, url: "CountrySide-5-House.obj", size: v3(20, 20, 20), position: v3(0 + 200, 49, 400 + 400), rotation: v3(0, -Math.PI / 2, 0) }));
     [
       // [v3(-2000, 0, 410), v3(6000, 100, 20), Vector3.forwards, false], // forward
-      [v3(-5e3, -1, -2e3), v3(1e4, 1, 4e3), Vector3.up, false],
+      [v3(-5e3, -1e3, -2e3), v3(1e4, 1e3, 4e3), Vector3.up, false],
       // floor
       [v3(150, -3, 727), v3(100, 15, 168), Vector3.up, false]
       // floor

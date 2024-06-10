@@ -9,10 +9,10 @@ export type modeAttributes = GlElementAttributes & {
 export abstract class Mode extends GLGroup {
     public levels: Record<string, Level> = {};
 
-    public get camera():typeof this.level.camera {
+    public get camera(): typeof this.level.camera {
         return this.level.camera;
     }
-    public set camera(value:typeof this.level.camera) {
+    public set camera(value: typeof this.level.camera) {
         this.level.camera = value;
     }
 
@@ -22,7 +22,7 @@ export abstract class Mode extends GLGroup {
 
     public build(): void {
         this.game.active.mode = this;
-        this.switchLevel(Object.keys(this.levels)[0])
+        this.switchLevel(Object.keys(this.levels)[0]);
     }
 
     private keyAliases = {

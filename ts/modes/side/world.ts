@@ -8,6 +8,7 @@ import { Scroller } from './scrolling';
 import { Collider } from '../../utils/collider';
 import { GLobj } from '../../gl/obj';
 import { GLCuboid } from '../../gl/cuboid';
+import { ObjStorage } from '../../gl/objStorage';
 
 
 
@@ -29,8 +30,10 @@ export class World extends Level {
         super.build();
         this.addChild(new Player({
             size: v3(8, 24, 8),
-            position: v3(130, 0, 700)
+            position: v3(130, 1, 700)
         }));
+
+        const st = new ObjStorage();
 
         this.addChild(new GLCuboid({ size: v3(3500, 1, 5000), position: v3(-5600, -1, -2000), colors: [[0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1], [0.317, 0.362, 0.298, 1], [0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1]] }));
         this.addChild(new GLCuboid({ size: v3(4000, 1, 5000), position: v3(1900, -1, -2000), colors: [[0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1], [0.317, 0.362, 0.298, 1], [0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1]] }));
@@ -45,16 +48,17 @@ export class World extends Level {
                     200 * y - 100
                 );
                 if (Math.random() < 0.5) {
-                    this.addChild(new GLobj({ url: 'CountrySide-3-GroundTile1.obj', size: v3(20, 20, 20), position: p }));
+                    this.addChild(new GLobj({ storage: st, url: 'CountrySide-3-GroundTile1.obj', size: v3(20, 20, 20), position: p }));
                 } else {
-                    this.addChild(new GLobj({ url: 'CountrySide-2-GroundTile2.obj', size: v3(20, 20, 20), position: p }));
+                    this.addChild(new GLobj({ storage: st, url: 'CountrySide-2-GroundTile2.obj', size: v3(20, 20, 20), position: p }));
                 }
 
                 if (![2,3,4].includes(x) || ![3,4,5].includes(y)) {
                     for (let rx = 0; rx < 5; rx++) {
                         for (let ry = 0; ry < 5; ry++) {
-                            if (Math.random() < 0.02) {
+                            if (Math.random() < 0.1) {
                                 this.addChild(new GLobj({
+                                    storage: st, 
                                     url: ['CountrySide-6-Vegetation5.obj','CountrySide-0-Vegetation3.obj','CountrySide-6-Vegetation5.obj','CountrySide-8-Rock.obj'][Math.floor(Math.random()*4)],
                                     size: v3(
                                         10,
@@ -78,17 +82,17 @@ export class World extends Level {
                 }
             }
         }
-        this.addChild(new GLobj({ url: 'CountrySide-4-Vegetation1.obj', size: v3(20, 20, 20), position: v3(100+200, 5, 370+400) }));
-        this.addChild(new GLobj({ url: 'CountrySide-4-Vegetation1.obj', size: v3(25, 25, 25), position: v3(140+200, 6, 420+400) }));
-        this.addChild(new GLobj({ url: 'Plane01.obj', size: v3(30, 30, 30), position: v3(140+200, 16, 200+400), rotation: v3(0, Math.PI/8 + Math.PI,-0.12) }));
-        this.addChild(new GLobj({ url: 'Shop-3-Car.obj', size: v3(20, 20, 20), position: v3(-100+200, 17, 300+400), rotation: v3(0, Math.PI/2-Math.PI/8,0) }));
-        this.addChild(new GLobj({ url: 'CountrySide-5-House.obj', size: v3(20, 20, 20), position: v3(0+200,49,400+400), rotation: v3(0,-Math.PI/2,0) }));
+        this.addChild(new GLobj({ storage: st, url: 'CountrySide-4-Vegetation1.obj', size: v3(20, 20, 20), position: v3(100+200, 5, 370+400) }));
+        this.addChild(new GLobj({ storage: st, url: 'CountrySide-4-Vegetation1.obj', size: v3(25, 25, 25), position: v3(140+200, 6, 420+400) }));
+        this.addChild(new GLobj({ storage: st, url: 'Plane01.obj', size: v3(30, 30, 30), position: v3(140+200, 16, 200+400), rotation: v3(0, Math.PI/8 + Math.PI,-0.12) }));
+        this.addChild(new GLobj({ storage: st, url: 'Shop-3-Car.obj', size: v3(20, 20, 20), position: v3(-100+200, 17, 300+400), rotation: v3(0, Math.PI/2-Math.PI/8,0) }));
+        this.addChild(new GLobj({ storage: st, url: 'CountrySide-5-House.obj', size: v3(20, 20, 20), position: v3(0+200,49,400+400), rotation: v3(0,-Math.PI/2,0) }));
         // this.addChild(new GLobj({ url: 'loco.obj', size: v3(1, 1, 1), position: v3(595, 4, 300) }));
         // this.addChild(new Scroller({position: v3(0,0,1000)}));
 
         (([
             // [v3(-2000, 0, 410), v3(6000, 100, 20), Vector3.forwards, false], // forward
-            [v3(-5000, -1, -2000), v3(10000, 1, 4000), Vector3.up, false], // floor
+            [v3(-5000, -1000, -2000), v3(10000, 1000, 4000), Vector3.up, false], // floor
             [v3(150,-3,727), v3(100, 15, 168), Vector3.up, false], // floor
         ]) as ([Vector3, Vector3, Vector3, boolean?])[]).forEach(([position, size, direction, show]) => {
             this.addChild(new Collider({ position, size, direction, showMesh: show === undefined ? false : show, showArrows: false }));

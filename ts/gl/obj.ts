@@ -4,16 +4,31 @@ import { Vector3 } from '../utils/vector3';
 import { GlElementAttributes } from './elementBase';
 import { GLRendable } from './rendable';
 import { GLTexture } from './texture';
+import { ObjStorage } from './objStorage';
 
 export type matData = Record<string, string[]>;
 
 export type GLobjAttributes = GlElementAttributes & {
     url?: string;
+    storage?: ObjStorage;
 };
 export type textureCoords = [number, number];
 export type vertexCoords = [number, number, number];
 export type vertexData = [vertexCoords, number, vertexCoords, string];
 export type faceData = [vertexData, vertexData, vertexData];
+
+export type GLObjTransferData = {
+    texture: GLTexture;
+    verticesCount: number;
+    matIndeces: string[];
+    mats: Record<string, string[]>;
+    matsData: Record<string, matData>;
+    positionIndeces: number[];
+    indexIndeces: number[];
+    normalIndeces: number[];
+    textureIndeces: number[];
+    texturePositionIndeces: number[];
+};
 export class GLobj extends GLRendable {
     public type: GlElementType = 'mesh';
     public texture: GLTexture;
@@ -27,20 +42,55 @@ export class GLobj extends GLRendable {
     private textureIndeces: number[] = [];
     private texturePositionIndeces: number[] = [];
 
+    public getData(): GLObjTransferData {
+        return {
+            texture: this.texture,
+            verticesCount: this.verticesCount,
+            matIndeces: this.matIndeces,
+            mats: this.mats,
+            matsData: this.matsData,
+            positionIndeces: this.positionIndeces,
+            indexIndeces: this.indexIndeces,
+            normalIndeces: this.normalIndeces,
+            textureIndeces: this.textureIndeces,
+            texturePositionIndeces: this.texturePositionIndeces
+        };
+    }
+
+    public giveData(data: GLObjTransferData) {
+        this.texture = data.texture;
+        this.verticesCount = data.verticesCount;
+        this.matIndeces = data.matIndeces;
+        this.mats = data.mats;
+        this.matsData = data.matsData;
+        this.positionIndeces = data.positionIndeces;
+        this.indexIndeces = data.indexIndeces;
+        this.normalIndeces = data.normalIndeces;
+        this.textureIndeces = data.textureIndeces;
+        this.texturePositionIndeces = data.texturePositionIndeces;
+    }
+
     constructor(attr: GLobjAttributes = {}) {
         super({ ...attr, ...{ autoReady: false } });
 
-        this.loadFile(`${window.location.href}/obj/${attr.url}`)
-            .then(this.parseMtl.bind(this))
-            .then(this.parseObj.bind(this))
-            .then(() => {
-                this.ready();
-            });
-
-    }
-
-    public build(): void {
-        super.build();
+        if (attr.storage){
+            if (attr.storage.register(attr.url, this)) {
+                this.loadFile(`${window.location.href}/obj/${attr.url}`)
+                    .then(this.parseMtl.bind(this))
+                    .then(this.parseObj.bind(this))
+                    .then(() => {
+                        this.ready();
+                        attr.storage.loaded(attr.url);
+                    });
+            }
+        } else {
+            this.loadFile(`${window.location.href}/obj/${attr.url}`)
+                .then(this.parseMtl.bind(this))
+                .then(this.parseObj.bind(this))
+                .then(() => {
+                    this.ready();
+                });
+        }
     }
 
     private async parseMtl(str: string) {
