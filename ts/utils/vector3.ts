@@ -147,6 +147,14 @@ export class Vector3 {
 		);
 	}
 
+	magnitude() {
+		return Math.sqrt(this.magnitudeSqr());
+	}
+
+	magnitudeSqr() {
+		return (this.x * this.x + this.y * this.y + this.z * this.z);
+	}
+
 	// dot(vector: Vector2) {
 	// 	return (this.x * vector.x + this.y + vector.y);
 	// }

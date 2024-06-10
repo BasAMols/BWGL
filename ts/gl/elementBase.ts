@@ -113,8 +113,13 @@ export abstract class GlElement extends Element {
     }
 
     public tick(obj: TickerReturnData) {
-        
-        this.controllers.filter((child) => child.active).forEach((c) => c.tick(obj));
+
+        this.controllers.filter((child) => child.active && child.order === 'before').forEach((c) => c.tick(obj));
         this.children.filter((child) => child.active).forEach((c) => c.tick(obj));
+        this.children.filter((child) => child.active).forEach((c) => c.afterTick(obj));
+    }
+
+    public afterTick(obj: TickerReturnData) {
+        this.controllers.filter((child) => child.active && child.order === 'after').forEach((c) => c.tick(obj));
     }
 }

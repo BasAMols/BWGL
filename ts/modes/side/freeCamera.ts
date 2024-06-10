@@ -1,13 +1,16 @@
 import { TickerReturnData } from '../../utils/ticker';
 import { Character } from '../../gl/character';
 import { GlElementType } from '../../gl/glRenderer';
-import { v3 } from '../../utils/vector3';
-import { GlController } from '../../gl/controller';
+import { Vector3, v3 } from '../../utils/vector3';
+import { GlController, GlControllerOrder } from '../../gl/controller';
 import { Util } from '../../utils/utils';
 import { v2 } from '../../utils/vector2';
 
 export class FreeCamera extends GlController {
     public type: GlElementType = 'controller';
+    public order: GlControllerOrder = 'after';
+    private lagList: Vector3[] = [];
+    private lagCount: number = 6;
     public get active(): boolean {
         return super.active;
     }
@@ -39,6 +42,11 @@ export class FreeCamera extends GlController {
 
     public tick(o: TickerReturnData) {
         super.tick(o);
-        this.camera.target = this.target.position.add(this.target.size.multiply(0.5,0.5,0.5)).multiply(1,-1,1);
+        const nP =this.target.position.add(this.target.size.multiply(0.5,0.5,0.5)).multiply(1,-1,1);
+        while (this.lagList.length < this.lagCount){
+            this.lagList.push(nP);
+        }
+        this.camera.target = this.lagList.shift();
+
     }
 }

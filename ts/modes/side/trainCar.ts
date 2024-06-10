@@ -28,11 +28,11 @@ export class TrainCar extends GLGroup {
     public build(): void {
         super.build();
         this.addChild(new GLobj({ url: 'carriage.obj', size: v3(1, 1, 1)}));
-        const floor = new Collider({size: v3(16,4,16), direction: Vector3.up, showMesh: true });
-        this.addChild(floor);
-        console.log(floor.absolutePosition.vec);
-        
-
+        this.addChild(new Collider({size: v3(240,15,40), position: v3(8,0,6), direction: Vector3.up, showMesh: false }));
+        this.addChild(new Collider({size: v3(224,48,1), position: v3(16,8,3), direction: Vector3.forwards, showMesh: false }));
+        this.addChild(new Collider({size: v3(224,48,1), position: v3(16,8,4), direction: Vector3.backwards, showMesh: false }));
+        this.addChild(new Collider({size: v3(224,48,1), position: v3(16,8,47), direction: Vector3.forwards, showMesh: false }));
+        this.addChild(new Collider({size: v3(224,48,1), position: v3(16,8,48), direction: Vector3.backwards, showMesh: false }));
     }
 }
 

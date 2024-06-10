@@ -76,9 +76,9 @@ export class World extends Level {
         this.addChild(new GLCuboid({ size: v3(10000, 1, 4000), position: v3(-5000, -1, -2000), colors: [[0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1], [0.05, 0.05, 0.05, 1], [0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1]] }));
         // this.addChild(new GLMesh({ size: v3(10000, 4, 52), position: v3(-5000, 0, 300), colors: [[0.15, 0.15, 0.15, 1], [0.1, 0.1, 0.1, 1], [0.15, 0.15, 0.15, 1], [0.1, 0.1, 0.1, 1], [0.1, 0.1, 0.1, 1], [0.1, 0.1, 0.1, 1]] }));
         this.addChild(new TrainCar({position: v3(-512, 4, 300) }));
-        this.addChild(new GLobj({ url: 'carriage.obj', size: v3(1, 1, 1), position: v3(-256, 4, 300) }));
-        this.addChild(new GLobj({ url: 'carriage.obj', size: v3(1, 1, 1), position: v3(4, 4, 300) }));
-        this.addChild(new GLobj({ url: 'carriage.obj', size: v3(1, 1, 1), position: v3(256, 4, 300) }));
+        this.addChild(new TrainCar({position: v3(-256, 4, 300) }));
+        this.addChild(new TrainCar({position: v3(0, 4, 300) }));
+        this.addChild(new TrainCar({position: v3(256, 4, 300) }));
         this.addChild(new GLobj({ url: 'coal.obj', size: v3(1, 1, 1), position: v3(513, 4, 302) }));
         this.addChild(new GLobj({ url: 'loco.obj', size: v3(1, 1, 1), position: v3(595, 4, 300) }));
         // this.addChild(new GLObj({ url: 'GearPump3.obj', size: v3(10, 10, 10), position: v3(-1500, 60, 0) }));

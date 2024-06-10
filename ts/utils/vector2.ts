@@ -59,6 +59,10 @@ export class Vector2 {
 		return (this.x * this.x + this.y * this.y);
 	}
 
+	clampMagnitude( max:number = 1 ) {
+		return this.scale( 1/ this.magnitude() || 1 ).scale( Math.min( max, this.magnitude() ) );
+	}
+
 	distance(vector: Vector2) {
 		return Math.sqrt(this.distanceSqr(vector));
 	}
@@ -137,6 +141,15 @@ export class Vector2 {
 	public clampMagnitute(mag: number) {
 		return Vector2.clampMagnitute(this, mag);
     }
+
+	get array() {
+		return [this.x, this.y];
+	}
+
+	set array(a: [number, number]) {
+		[this.x, this.y] = a;
+	}
+
 
 	public static clampMagnitute(value:Vector2, mag: number) {
 		var ratio = value.magnitude() / mag;

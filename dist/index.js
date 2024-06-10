@@ -102,6 +102,9 @@ var Vector2 = class _Vector2 {
   magnitudeSqr() {
     return this.x * this.x + this.y * this.y;
   }
+  clampMagnitude(max = 1) {
+    return this.scale(1 / this.magnitude() || 1).scale(Math.min(max, this.magnitude()));
+  }
   distance(vector) {
     return Math.sqrt(this.distanceSqr(vector));
   }
@@ -166,6 +169,12 @@ var Vector2 = class _Vector2 {
   }
   clampMagnitute(mag) {
     return _Vector2.clampMagnitute(this, mag);
+  }
+  get array() {
+    return [this.x, this.y];
+  }
+  set array(a) {
+    [this.x, this.y] = a;
   }
   static clampMagnitute(value, mag) {
     var ratio = value.magnitude() / mag;
@@ -730,6 +739,12 @@ var Vector3 = class _Vector3 {
       this.y / vector.y,
       this.z / vector.z
     );
+  }
+  magnitude() {
+    return Math.sqrt(this.magnitudeSqr());
+  }
+  magnitudeSqr() {
+    return this.x * this.x + this.y * this.y + this.z * this.z;
   }
   // dot(vector: Vector2) {
   // 	return (this.x * vector.x + this.y + vector.y);
@@ -2465,8 +2480,12 @@ var GlElement = class _GlElement extends Element {
     });
   }
   tick(obj) {
-    this.controllers.filter((child) => child.active).forEach((c) => c.tick(obj));
+    this.controllers.filter((child) => child.active && child.order === "before").forEach((c) => c.tick(obj));
     this.children.filter((child) => child.active).forEach((c) => c.tick(obj));
+    this.children.filter((child) => child.active).forEach((c) => c.afterTick(obj));
+  }
+  afterTick(obj) {
+    this.controllers.filter((child) => child.active && child.order === "after").forEach((c) => c.tick(obj));
   }
 };
 
@@ -3040,27 +3059,34 @@ var GlController = class extends GlElement {
   constructor() {
     super(...arguments);
     this.type = "controller";
+    this.order = "before";
   }
 };
 
 // ts/utils/collisions.ts
 var Collisions = class _Collisions {
-  static overlap(aP, aS, bP, bS) {
+  static boxesOverlap(aP, aS, bP, bS) {
     return aP.x < bP.x + bS.x && aP.x + aS.x > bP.x && aP.y < bP.y + bS.y && aP.y + aS.y > bP.y && aP.z < bP.z + bS.z && aP.z + aS.z > bP.z;
+  }
+  static pointInBox(p, bP, bS) {
+    return p.x < bP.x + bS.x && p.x > bP.x && p.y < bP.y + bS.y && p.y > bP.y && p.z < bP.z + bS.z && p.z > bP.z;
+  }
+  static edgeCrossesBox(p1, p2, boxPosition, boxSize) {
+    return p1.x < boxPosition.x + boxSize.x && p1.x > boxPosition.x && p1.y < boxPosition.y + boxSize.y && p1.y > boxPosition.y && p1.z < boxPosition.z + boxSize.z && p1.z > boxPosition.z;
   }
   static overlapDirection(aP, aS, bP, bS, v) {
     let result = [];
-    if (_Collisions.overlap(aP, aS, new Vector3(bP.x, bP.y + v.y), bS)) {
+    if (_Collisions.boxesOverlap(aP, aS, new Vector3(bP.x, bP.y + v.y), bS)) {
       result.push(v.y > 0 ? ["y", aP.y - bP.y - bS.y] : ["y", aP.y + aS.y - bP.y]);
     }
-    if (_Collisions.overlap(aP, aS, new Vector3(bP.x + v.x, bP.y), bS)) {
+    if (_Collisions.boxesOverlap(aP, aS, new Vector3(bP.x + v.x, bP.y), bS)) {
       result.push(v.x < 0 ? ["x", aP.x + aS.x - bP.x] : ["x", aP.x - bP.x - bS.x]);
     }
     return result;
   }
   static check(statics, dynamic, velocity) {
     return statics.filter(
-      (s) => _Collisions.overlap(s.position, s.size, dynamic.position.add(velocity), dynamic.size)
+      (s) => _Collisions.boxesOverlap(s.position, s.size, dynamic.position.add(velocity), dynamic.size)
       // r.push(...Collisions.overlapDirection(s.position.add(s.parent instanceof Level ? v3(0) : s.parent.position), s.size, dynamic[0], dynamic[1], velocity));
       // if (!s.condition || s.condition()){
       // }
@@ -3072,82 +3098,99 @@ var Collisions = class _Collisions {
 var MovementController = class extends GlController {
   constructor() {
     super(...arguments);
-    this.speed = 0.8;
-    this.jumpHeight = 1.4;
+    this.intr = { fall: 0, jump: 0, landDelay: 0 };
+    this.stat = { jumping: false, falling: false, running: false };
+    this.cnst = { runTime: 200, runSlowDownFactor: 0.7, minJumpTime: 200, jumpTime: 250, jumpSpeed: 0.8 };
     this.velocity = Vector3.f(0);
-    this.jumping = false;
-    this.jumpDuration = 0;
   }
-  keyDown(e) {
-    if (!this.jumping && this.mode.input.space) {
-      this.jumpVelocity = 1;
+  setMovementVelocity(interval) {
+    const setter = (key, cond, interval2) => {
+      this.intr[key] = Util.clamp((this.intr[key] || 0) + (cond ? interval2 : -(interval2 * this.cnst.runSlowDownFactor)), 0, this.cnst.runTime);
+    };
+    setter("right", this.mode.input.right && !this.mode.input.left, interval);
+    setter("left", this.mode.input.left && !this.mode.input.right, interval);
+    setter("up", this.mode.input.up && !this.mode.input.down, interval);
+    setter("down", this.mode.input.down && !this.mode.input.up, interval);
+    const plane = v2(
+      (this.intr.right - this.intr.left) / this.cnst.runTime,
+      (this.intr.up - this.intr.down) / this.cnst.runTime
+    ).clampMagnitude(1);
+    this.velocity = v3(
+      plane.x,
+      0,
+      plane.y
+    );
+  }
+  determineStates(interval) {
+    if (this.stat.falling) {
+      this.stat.jumping = false;
+    } else {
+      if (this.stat.jumping) {
+        if (this.intr.jump < this.cnst.minJumpTime) {
+          this.stat.jumping = true;
+          this.stat.falling = false;
+        } else if (this.intr.jump < this.cnst.jumpTime) {
+          this.stat.jumping = this.mode.input.space;
+        } else {
+          this.stat.jumping = false;
+          this.stat.falling = true;
+          this.intr.jump = this.cnst.jumpTime;
+        }
+      } else {
+        this.stat.jumping = this.mode.input.space;
+      }
     }
   }
-  jump(m) {
-    if (this.jumpDuration !== 0 || !this.jumping) {
-      this.jumping = true;
-      this.velocity.y += this.jumpHeight;
+  setJumpVelocity(interval) {
+    this.determineStates(interval);
+    if (this.stat.jumping) {
+      this.intr.jump = Math.min(this.intr.jump + interval, this.cnst.jumpTime);
+      this.intr.fall = -this.intr.jump;
+    } else if (this.stat.falling) {
+      this.intr.jump = this.cnst.jumpTime;
+      this.intr.fall += interval;
+    } else {
+      this.velocity.y = 0;
+      return;
+    }
+    const y = (this.cnst.jumpTime - this.intr.jump - this.intr.fall) / this.cnst.jumpTime * this.cnst.jumpSpeed;
+    this.velocity.y = y;
+  }
+  setVelocity(obj) {
+    this.setMovementVelocity(obj.interval);
+    this.setJumpVelocity(obj.interval);
+    const sc = this.velocity.scale(obj.interval / 6);
+    if (sc.xz.magnitude() > 0) {
+      const [x, z] = sc.xz.rotate(-this.camera.rotation.y).array;
+      this.newPosition = this.parent.absolutePosition.add(v3(x, sc.y, z));
+      this.parent.rotation = this.camera.rotation.multiply(0, 1, 0);
+    } else {
+      this.newPosition = this.parent.absolutePosition.add(v3(0, sc.y, 0));
     }
   }
-  land() {
-    this.jumpDuration = 0;
-    this.jumping = false;
+  colliders(obj) {
+    let platform = false;
+    this.level.colliders.forEach((col) => {
+      if (Collisions.boxesOverlap(col.absolutePosition, col.size, this.newPosition, this.parent.size)) {
+        if (col.direction.equals(Vector3.up) && this.velocity.y < 0) {
+          this.velocity.y = Math.max(this.velocity.y, 0);
+          this.stat.falling = false;
+          this.intr.fall = 0;
+          this.intr.jump = 0;
+          this.newPosition.y = col.absolutePosition.y + col.size.y;
+          platform = true;
+        }
+      }
+    });
+    if (!this.stat.jumping) {
+      this.stat.falling = !platform;
+    }
   }
   tick(obj) {
     super.tick(obj);
-    const m = 1 / obj.frameRate * 144;
-    if (this.mode.input.space) {
-      this.jump(m);
-    } else {
-      this.jumpDuration = 0;
-    }
-    this.velocity.x = (this.mode.input.right ? 1 : this.mode.input.left ? -1 : 0) * this.speed;
-    this.velocity.z = (this.mode.input.up ? 1 : this.mode.input.down ? -1 : 0) * this.speed;
-    this.velocity.y = Util.to0(this.velocity.y - 9.8 * 3e-3 * m, 1e-4);
-    if (this.velocity.x || this.velocity.y || this.velocity.z) {
-      const frameScaledVelocity = this.velocity.scale(m);
-      const rotated = v2(frameScaledVelocity.x, frameScaledVelocity.z).rotate(-this.camera.rotation.y);
-      const movement = v3(
-        rotated.x,
-        frameScaledVelocity.y,
-        rotated.y
-      );
-      const newAbs = this.parent.absolutePosition.add(movement);
-      this.level.colliders.forEach((col) => {
-        if (Collisions.overlap(col.absolutePosition, col.size, newAbs, this.parent.size)) {
-          if (col.direction.equals(Vector3.up)) {
-            this.velocity.y = Math.max(this.velocity.y, 0);
-            newAbs.y = col.absolutePosition.y + col.size.y;
-            if (this.jumping)
-              this.land();
-          }
-          if (col.direction.equals(Vector3.down)) {
-            this.velocity.y = Math.min(this.velocity.y, 0);
-            newAbs.y = col.absolutePosition.y - this.parent.size.y;
-          }
-          if (col.direction.equals(Vector3.right)) {
-            this.velocity.x = Math.max(this.velocity.x, 0);
-            newAbs.x = col.absolutePosition.x + col.size.x;
-          }
-          if (col.direction.equals(Vector3.left)) {
-            this.velocity.x = Math.min(this.velocity.x, 0);
-            newAbs.x = col.absolutePosition.x - this.parent.size.x;
-          }
-          if (col.direction.equals(Vector3.backwards)) {
-            this.velocity.z = Math.max(this.velocity.z, 0);
-            newAbs.z = col.absolutePosition.z + col.size.z;
-          }
-          if (col.direction.equals(Vector3.forwards)) {
-            this.velocity.z = Math.min(this.velocity.z, 0);
-            newAbs.z = col.absolutePosition.z - this.parent.size.z;
-          }
-        }
-      });
-      this.parent.absolutePosition = newAbs;
-      if (movement.x || movement.z) {
-        this.parent.rotation = this.camera.rotation.multiply(0, 1, 0);
-      }
-    }
+    this.setVelocity(obj);
+    this.colliders(obj);
+    this.parent.absolutePosition = this.newPosition.clone();
   }
 };
 
@@ -3206,6 +3249,9 @@ var FreeCamera = class extends GlController {
     super({ autoReady: false });
     this.target = target;
     this.type = "controller";
+    this.order = "after";
+    this.lagList = [];
+    this.lagCount = 6;
   }
   get active() {
     return super.active;
@@ -3231,7 +3277,11 @@ var FreeCamera = class extends GlController {
   }
   tick(o) {
     super.tick(o);
-    this.camera.target = this.target.position.add(this.target.size.multiply(0.5, 0.5, 0.5)).multiply(1, -1, 1);
+    const nP = this.target.position.add(this.target.size.multiply(0.5, 0.5, 0.5)).multiply(1, -1, 1);
+    while (this.lagList.length < this.lagCount) {
+      this.lagList.push(nP);
+    }
+    this.camera.target = this.lagList.shift();
   }
 };
 
@@ -3908,9 +3958,11 @@ var TrainCar = class extends GLGroup {
   build() {
     super.build();
     this.addChild(new GLobj({ url: "carriage.obj", size: v3(1, 1, 1) }));
-    const floor = new Collider({ size: v3(16, 4, 16), direction: Vector3.up, showMesh: true });
-    this.addChild(floor);
-    console.log(floor.absolutePosition.vec);
+    this.addChild(new Collider({ size: v3(240, 15, 40), position: v3(8, 0, 6), direction: Vector3.up, showMesh: false }));
+    this.addChild(new Collider({ size: v3(224, 48, 1), position: v3(16, 8, 3), direction: Vector3.forwards, showMesh: false }));
+    this.addChild(new Collider({ size: v3(224, 48, 1), position: v3(16, 8, 4), direction: Vector3.backwards, showMesh: false }));
+    this.addChild(new Collider({ size: v3(224, 48, 1), position: v3(16, 8, 47), direction: Vector3.forwards, showMesh: false }));
+    this.addChild(new Collider({ size: v3(224, 48, 1), position: v3(16, 8, 48), direction: Vector3.backwards, showMesh: false }));
   }
 };
 
@@ -3964,9 +4016,9 @@ var World = class extends Level {
     }));
     this.addChild(new GLCuboid({ size: v3(1e4, 1, 4e3), position: v3(-5e3, -1, -2e3), colors: [[0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.05, 0.05, 0.05, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1]] }));
     this.addChild(new TrainCar({ position: v3(-512, 4, 300) }));
-    this.addChild(new GLobj({ url: "carriage.obj", size: v3(1, 1, 1), position: v3(-256, 4, 300) }));
-    this.addChild(new GLobj({ url: "carriage.obj", size: v3(1, 1, 1), position: v3(4, 4, 300) }));
-    this.addChild(new GLobj({ url: "carriage.obj", size: v3(1, 1, 1), position: v3(256, 4, 300) }));
+    this.addChild(new TrainCar({ position: v3(-256, 4, 300) }));
+    this.addChild(new TrainCar({ position: v3(0, 4, 300) }));
+    this.addChild(new TrainCar({ position: v3(256, 4, 300) }));
     this.addChild(new GLobj({ url: "coal.obj", size: v3(1, 1, 1), position: v3(513, 4, 302) }));
     this.addChild(new GLobj({ url: "loco.obj", size: v3(1, 1, 1), position: v3(595, 4, 300) }));
     this.env = new Scroller();
