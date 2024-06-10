@@ -9,7 +9,7 @@ import { v2 } from '../../utils/vector2';
 export class MovementController extends GlController {
     private intr: Record<string, number> = { fall: 0, jump: 0, landDelay: 0 };
     private stat: Record<string, boolean> = { jumping: false, falling: false, running: false };
-    private cnst = { runTime: 200, runSlowDownFactor:0.7, minJumpTime: 200, jumpTime: 250, jumpSpeed: 0.8} as const;
+    private cnst = { runTime: 200, runSlowDownFactor:0.7, runSpeed: 0.6, minJumpTime: 200, jumpTime: 250, jumpSpeed: 0.8} as const;
     private velocity: Vector3 = Vector3.f(0);
     private newPosition: Vector3;
     public parent: Character;
@@ -27,7 +27,7 @@ export class MovementController extends GlController {
         const plane = v2(
             (this.intr.right - this.intr.left) / this.cnst.runTime,
             (this.intr.up - this.intr.down) / this.cnst.runTime,
-        ).clampMagnitude(1);
+        ).clampMagnitude(1).scale(this.cnst.runSpeed);
 
         this.velocity = v3(
             plane.x,
@@ -61,7 +61,6 @@ export class MovementController extends GlController {
 
     public setJumpVelocity(interval: number) {
         this.determineStates(interval);
-
 
         if (this.stat.jumping) {
             this.intr.jump = Math.min(this.intr.jump + interval, this.cnst.jumpTime);
@@ -98,7 +97,8 @@ export class MovementController extends GlController {
         this.level.colliders.forEach((col) => {
             if (Collisions.boxesOverlap(col.absolutePosition, col.size, this.newPosition, this.parent.size)) {
                 // if(Collisions.boxesOverlap(col.absolutePosition, newAbs, this.parent.size)){
-                if (col.direction.equals(Vector3.up) && this.velocity.y < 0) { // floor
+                if (col.direction.equals(Vector3.up) && this.velocity.y <= 0) { // floor
+                    
                     this.velocity.y = Math.max(this.velocity.y, 0);
                     this.stat.falling = false;
                     this.intr.fall = 0;

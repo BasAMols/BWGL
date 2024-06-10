@@ -73,11 +73,5 @@ export class Scroller extends GLGroup {
             repeatX: 20,
             size: v3(240, 240, 0)
         }));
-        this.addChild(new GlImage({
-            textureUrl: 'img/dusk/trees.png',
-            position: v3(-2000, 0, 410),
-            repeatX: 20,
-            size: v3(240, 240, 0),
-        }));
     }
 }

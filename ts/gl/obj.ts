@@ -5,6 +5,8 @@ import { GlElementAttributes } from './elementBase';
 import { GLRendable } from './rendable';
 import { GLTexture } from './texture';
 
+export type matData = Record<string, string[]>;
+
 export type GLobjAttributes = GlElementAttributes & {
     url?: string;
 };
@@ -18,6 +20,7 @@ export class GLobj extends GLRendable {
     public verticesCount: number = 0;
     private matIndeces: string[] = [];
     private mats: Record<string, string[]> = {};
+    private matsData: Record<string, matData> = {};
     private positionIndeces: number[] = [];
     private indexIndeces: number[] = [];
     private normalIndeces: number[] = [];
@@ -45,8 +48,12 @@ export class GLobj extends GLRendable {
             await this.loadFile(`${window.location.href}obj/${str.split(/mtllib/)[1].split(/(?: |\n)/)[1]}`)
                 .then((v) => {
                     v.split('newmtl ').slice(1).forEach((s: string) => {
-                        const l = s.split('\n');
-                        this.mats[l.shift()] = l;
+                        const lines = s.split(/\r\n|\r|\n/).filter((n) => n);
+
+                        this.matsData[lines.shift()] = Object.fromEntries(lines.map((line) => {
+                            const a = line.split(' ');
+                            return [a.shift(), a];
+                        }));
                     });
                 });
 
@@ -60,6 +67,7 @@ export class GLobj extends GLRendable {
     private parseFaces(lineArray: string[], mat: string, points: vertexCoords[], normals: vertexCoords[], tCoords: textureCoords[]) {
         const textRemainder = lineArray.slice(1);
         const numbRemainder = textRemainder.map(Number);
+
         (({
             usemtl: () => {
                 mat = textRemainder[0];
@@ -76,20 +84,27 @@ export class GLobj extends GLRendable {
                     this.positionIndeces.push(...points[numbRemainder[0] - 1]);
                     this.positionIndeces.push(...points[numbRemainder[2] - 1]);
                     this.positionIndeces.push(...points[numbRemainder[4] - 1]);
-                    this.textureIndeces.push(numbRemainder[1] - 1);
-                    this.textureIndeces.push(numbRemainder[3] - 1);
-                    this.textureIndeces.push(numbRemainder[5] - 1);
+
+                    this.texturePositionIndeces.push(...tCoords[numbRemainder[1] - 1]);
+                    this.texturePositionIndeces.push(...tCoords[numbRemainder[3] - 1]);
+                    this.texturePositionIndeces.push(...tCoords[numbRemainder[5] - 1]);
 
                 } else {
                     this.positionIndeces.push(...points[numbRemainder[0] - 1]);
                     this.positionIndeces.push(...points[numbRemainder[3] - 1]);
                     this.positionIndeces.push(...points[numbRemainder[6] - 1]);
-                    this.textureIndeces.push(
-                        ...GLTexture.textureOffset(Object.keys(this.mats).indexOf(mat), Object.keys(this.mats).length)
-                    );
+
+                    this.texturePositionIndeces.push(...tCoords[numbRemainder[1] - 1]);
+                    this.texturePositionIndeces.push(...tCoords[numbRemainder[4] - 1]);
+                    this.texturePositionIndeces.push(...tCoords[numbRemainder[7] - 1]);
+
                     this.normalIndeces.push(...normals[numbRemainder[2] - 1]);
                     this.normalIndeces.push(...normals[numbRemainder[5] - 1]);
                     this.normalIndeces.push(...normals[numbRemainder[8] - 1]);
+
+                    this.textureIndeces.push(
+                        ...GLTexture.textureOffset(Object.keys(this.mats).indexOf(mat), Object.keys(this.mats).length)
+                    );
                 }
 
                 this.indexIndeces.push(this.indexIndeces.length);
@@ -98,8 +113,6 @@ export class GLobj extends GLRendable {
                 this.matIndeces.push(mat);
                 this.matIndeces.push(mat);
                 this.matIndeces.push(mat);
-                // this.texturePositionIndeces.push(0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0);
-
             },
         } as Record<string, () => void>)[lineArray[0]] || (() => { }))();
 
@@ -108,7 +121,7 @@ export class GLobj extends GLRendable {
 
     private parseObj(str: string) {
         let mat = 'none';
-        const lines = str.split("\n");
+        const lines = str.split(/\r\n|\r|\n/);
         const nonVertex: string[][] = [];
         const points: vertexCoords[] = [];
         const normals: vertexCoords[] = [];
@@ -157,11 +170,28 @@ export class GLobj extends GLRendable {
     }
 
     protected textureBuffer(size: Vector3) {
-        if (Object.values(this.mats).length) {
-            this.texture = new GLTexture(this.game, { color: Object.values(this.mats).map((s) => [...s[2].slice(3).split(' ').map(Number), Number(s[6].slice(2))] as Color) });
-        } else {
-            this.texture = new GLTexture(this.game, {});
+
+        this.texture = new GLTexture(this.game, {});
+
+        if (Object.values(this.matsData).length) {
+
+            const matArray = Object.values(this.matsData);
+            const matImage = matArray.find((m) => m.map_Kd);
+
+            if (matImage) {
+                this.texture = new GLTexture(this.game, {
+                    url: `obj/${matImage.map_Kd}`,
+                });
+            } else {
+                this.texture = new GLTexture(this.game, {
+                    color: matArray.map((m) => [
+                        ...(m.Kd ? m.Kd.map(Number) : [0, 0, 0]),
+                        m.d ? Number(m.d[0]) : 1] as Color)
+                });
+            }
+
         }
-        return this.textureIndeces;
+
+        return this.texturePositionIndeces;
     }
 }

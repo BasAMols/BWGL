@@ -1,11 +1,12 @@
 import { GLCuboid } from '../../gl/cuboid';
 import { Character } from '../../gl/character';
-import { Vector3 } from '../../utils/vector3';
+import { Vector3, v3 } from '../../utils/vector3';
 import { SideController } from './sideController';
 import { SideCamera } from './sideCamera';
 import { FreeCamera } from './freeCamera';
 import { GlElement } from '../../gl/elementBase';
 import { MovementController } from './movementController';
+import { GLobj } from '../../gl/obj';
 
 export class SideCharacter extends Character {
     public mesh: GLCuboid
@@ -44,7 +45,8 @@ export class SideCharacter extends Character {
     }
 
     build() {
-        this.addChild(this.mesh = new GLCuboid({ size: this.size, colors: [[0.3,0.4,0.2,1], [0.3,0.4,0.2,1], [0.3,0.4,0.2,1], [0.3,0.4,0.2,1], [0.3,0.4,0.2,1], [0.3,0.4,0.2,1]] }));
+        // this.addChild(this.mesh = new GLCuboid({ size: this.size, colors: [[0.3,0.4,0.2,1], [0.3,0.4,0.2,1], [0.3,0.4,0.2,1], [0.3,0.4,0.2,1], [0.3,0.4,0.2,1], [0.3,0.4,0.2,1]] }));
+        this.addChild(new GLobj({ url: 'PhoneAddict-1-Man.obj', size: v3(10, 10, 10), position: v3(-4, 0,33), rotation: v3(0,Math.PI,0) }));
         GlElement.registerControllers(this);
         this.controllers[0].active = false;
         this.controllers[1].active = false;
