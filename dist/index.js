@@ -847,10 +847,10 @@ var Vector3 = class _Vector3 {
 };
 
 // ts/gl/shaders/vertexShader.ts
-var vertexShader_default = "\nattribute vec4 aVertexPosition;\nattribute vec3 aVertexNormal;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uModelViewMatrix;\nuniform mat4 uProjectionMatrix;\nuniform mat4 uNormalMatrix;\n\nvarying highp vec2 vTextureCoord;\nvarying highp vec3 vLighting;\n\nvoid main(void) {\n  gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;\n  vTextureCoord = aTextureCoord;\n\n  highp vec3 ambientLight = vec3(1, 1, 1);\n  highp vec3 directionalLightColor = vec3(1, 1, 1);\n  highp vec3 directionalVector = normalize(vec3(-0.7, .7, 0.3));\n\n  highp vec4 transformedNormal = uNormalMatrix * vec4(aVertexNormal, 1.0);\n\n  highp float directional = max(dot(transformedNormal.xyz, directionalVector), 0.0);\n  vLighting = ambientLight + (directionalLightColor * directional);\n}";
+var vertexShader_default = "\nattribute vec4 aVertexPosition;\nattribute vec3 aVertexNormal;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uModelViewMatrix;\nuniform mat4 uProjectionMatrix;\nuniform mat4 uNormalMatrix;\n\nvarying highp vec2 vTextureCoord;\nvarying highp vec3 vLighting;\n\nvoid main(void) {\n  gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;\n  vTextureCoord = aTextureCoord;\n\n  highp vec3 ambientLight = vec3(1, 1, 1) *0.8;\n  highp vec3 directionalLightColor = vec3(1, 1, 1);\n  highp vec3 directionalVector = normalize(vec3(-0.7, .7, 0.3));\n\n  highp vec4 transformedNormal = uNormalMatrix * vec4(aVertexNormal, 1.0);\n\n  highp float directional = max(dot(transformedNormal.xyz, directionalVector), 0.0);\n  vLighting = ambientLight + (directionalLightColor * directional);\n}";
 
 // ts/gl/shaders/fragmentShader.ts
-var fragmentShader_default = "\nvarying highp vec2 vTextureCoord;\nvarying highp vec3 vLighting;\n\nuniform sampler2D uSampler;\nuniform lowp float uOpacity;\n\nvoid main(void) {\n    highp vec4 texelColor = texture2D(uSampler, vTextureCoord);\n    gl_FragColor = vec4(texelColor.rgb * vLighting, texelColor.a*uOpacity);\n}\n";
+var fragmentShader_default = "\nvarying highp vec2 vTextureCoord;\nvarying highp vec3 vLighting;\n\nuniform sampler2D uSampler;\nuniform lowp float uOpacity;\n\nvoid main(void) {\n    highp vec4 texelColor = texture2D(uSampler, vTextureCoord);\n    gl_FragColor = vec4(texelColor.rgb * vLighting * 1.1, texelColor.a*uOpacity);\n}\n";
 
 // ts/gl/glrInit.ts
 function loadShader(gl, type, source) {
@@ -2363,7 +2363,9 @@ var GLRenderer = class {
       "uProjectionMatrix",
       new Matrix4().perspective(
         this.game.mode.camera.fov * Math.PI / 180,
-        this.gl.canvas.clientWidth / this.gl.canvas.clientHeight
+        this.gl.canvas.clientWidth / this.gl.canvas.clientHeight,
+        1,
+        1e3
       ).translate(this.game.mode.camera.offset.multiply(1, 1, -1)).rotate(this.game.mode.camera.rotation).mat4
     );
     this.drawChildren(this.game.level, new Matrix4().translate(this.game.mode.camera.target.multiply(-1, 1, 1)));
@@ -2643,7 +2645,7 @@ var MovementController = class extends GlController {
     super(...arguments);
     this.intr = { fall: 0, jump: 0, landDelay: 0 };
     this.stat = { jumping: false, falling: false, running: false };
-    this.cnst = { runTime: 200, runSlowDownFactor: 0.7, runSpeed: 0.6, minJumpTime: 200, jumpTime: 250, jumpSpeed: 0.8 };
+    this.cnst = { runTime: 300, runSlowDownFactor: 0.7, runSpeed: 0.6, minJumpTime: 200, jumpTime: 250, jumpSpeed: 0.8 };
     this.velocity = Vector3.f(0);
   }
   setMovementVelocity(interval) {
@@ -2706,7 +2708,9 @@ var MovementController = class extends GlController {
     if (sc.xz.magnitude() > 0) {
       const [x, z] = sc.xz.rotate(-this.camera.rotation.y).array;
       this.newPosition = this.parent.absolutePosition.add(v3(x, sc.y, z));
-      this.parent.rotation = this.camera.rotation.multiply(0, 1, 0);
+      if (this.mode.input.right || this.mode.input.left || this.mode.input.up || this.mode.input.down) {
+        this.parent.rotation = this.camera.rotation.multiply(0, 1, 0).add(v3(0, Math.PI / 2, 0)).add(v3(0, -sc.xz.angle(), 0));
+      }
     } else {
       this.newPosition = this.parent.absolutePosition.add(v3(0, sc.y, 0));
     }
@@ -3069,8 +3073,8 @@ var GLobj = class extends GLRendable {
   }
 };
 
-// ts/modes/side/sideCharacter.ts
-var SideCharacter = class extends Character {
+// ts/modes/side/player.ts
+var Player = class extends Character {
   constructor({
     position = Vector3.f(0),
     size = Vector3.f(0)
@@ -3832,22 +3836,22 @@ var World = class extends Level {
       size: v3(900, 200, 400)
     });
     this.start = Vector2.zero;
-    this.background = [0.47451, 0.403922, 0.668627, 1];
+    this.background = [0.67451, 0.603922, 0.968627, 1];
   }
   build() {
     super.build();
-    this.addChild(new SideCharacter({
+    this.addChild(new Player({
       size: v3(8, 24, 8),
       position: v3(130, 0, 700)
     }));
-    this.addChild(new GLCuboid({ size: v3(5e3, 1, 5e3), position: v3(-5600, -1, -2e3), colors: [[0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.317, 0.362, 0.298, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1]] }));
-    this.addChild(new GLCuboid({ size: v3(4e3, 1, 5e3), position: v3(1400, -1, -2e3), colors: [[0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.317, 0.362, 0.298, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1]] }));
-    this.addChild(new GLCuboid({ size: v3(2e3, 1, 1800), position: v3(-600, -1, -2e3), colors: [[0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.317, 0.362, 0.298, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1]] }));
-    this.addChild(new GLCuboid({ size: v3(2e3, 1, 1800), position: v3(-600, -1, 1200), colors: [[0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.317, 0.362, 0.298, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1]] }));
-    for (let x = 0; x < 10; x++) {
-      for (let y = 0; y < 7; y++) {
+    this.addChild(new GLCuboid({ size: v3(3500, 1, 5e3), position: v3(-5600, -1, -2e3), colors: [[0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.317, 0.362, 0.298, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1]] }));
+    this.addChild(new GLCuboid({ size: v3(4e3, 1, 5e3), position: v3(1900, -1, -2e3), colors: [[0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.317, 0.362, 0.298, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1]] }));
+    this.addChild(new GLCuboid({ size: v3(4e3, 1, 1800), position: v3(-2100, -1, -2e3), colors: [[0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.317, 0.362, 0.298, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1]] }));
+    this.addChild(new GLCuboid({ size: v3(4e3, 1, 800), position: v3(-2100, -1, 2200), colors: [[0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.317, 0.362, 0.298, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1]] }));
+    for (let x = 0; x < 20; x++) {
+      for (let y = 0; y < 12; y++) {
         const p = v3(
-          200 * x - 500,
+          200 * x - 2e3,
           -2,
           200 * y - 100
         );
@@ -3859,7 +3863,7 @@ var World = class extends Level {
         if (![2, 3, 4].includes(x) || ![3, 4, 5].includes(y)) {
           for (let rx = 0; rx < 5; rx++) {
             for (let ry = 0; ry < 5; ry++) {
-              if (Math.random() < 0.1) {
+              if (Math.random() < 0.02) {
                 this.addChild(new GLobj({
                   url: ["CountrySide-6-Vegetation5.obj", "CountrySide-0-Vegetation3.obj", "CountrySide-6-Vegetation5.obj", "CountrySide-8-Rock.obj"][Math.floor(Math.random() * 4)],
                   size: v3(
@@ -3868,9 +3872,9 @@ var World = class extends Level {
                     10
                   ).scale(Math.ceil(Math.random() * 3)),
                   position: p.add(v3(
-                    40 * rx + Math.random() * 5,
+                    40 * rx + Math.random() * 6,
                     8,
-                    40 * ry + Math.random() * 5
+                    40 * ry + Math.random() * 6
                   )),
                   rotation: v3(
                     0,

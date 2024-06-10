@@ -8,7 +8,7 @@ import { GlElement } from '../../gl/elementBase';
 import { MovementController } from './movementController';
 import { GLobj } from '../../gl/obj';
 
-export class SideCharacter extends Character {
+export class Player extends Character {
     public mesh: GLCuboid
 
     constructor({

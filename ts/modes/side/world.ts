@@ -3,7 +3,7 @@ import { Color } from '../../utils/colors';
 import { Level } from '../../utils/level';
 import { Vector2 } from '../../utils/vector2';
 import { Vector3, v3 } from '../../utils/vector3';
-import { SideCharacter } from './sideCharacter';
+import { Player } from './player';
 import { Scroller } from './scrolling';
 import { Collider } from '../../utils/collider';
 import { GLobj } from '../../gl/obj';
@@ -13,8 +13,8 @@ import { GLCuboid } from '../../gl/cuboid';
 
 export class World extends Level {
     public start = Vector2.zero;
-    public background: Color = [0.47451, 0.403922, 0.668627, 1];
-    public character: SideCharacter;
+    public background: Color = [0.67451, 0.603922, 0.968627, 1];
+    public character: Player;
     public mo: DomText;
     public env: Scroller;
     public train: any;
@@ -27,20 +27,20 @@ export class World extends Level {
 
     build() {
         super.build();
-        this.addChild(new SideCharacter({
+        this.addChild(new Player({
             size: v3(8, 24, 8),
             position: v3(130, 0, 700)
         }));
 
-        this.addChild(new GLCuboid({ size: v3(5000, 1, 5000), position: v3(-5600, -1, -2000), colors: [[0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1], [0.317, 0.362, 0.298, 1], [0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1]] }));
-        this.addChild(new GLCuboid({ size: v3(4000, 1, 5000), position: v3(1400, -1, -2000), colors: [[0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1], [0.317, 0.362, 0.298, 1], [0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1]] }));
-        this.addChild(new GLCuboid({ size: v3(2000, 1, 1800), position: v3(-600, -1, -2000), colors: [[0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1], [0.317, 0.362, 0.298, 1], [0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1]] }));
-        this.addChild(new GLCuboid({ size: v3(2000, 1, 1800), position: v3(-600, -1, 1200), colors: [[0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1], [0.317, 0.362, 0.298, 1], [0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1]] }));
+        this.addChild(new GLCuboid({ size: v3(3500, 1, 5000), position: v3(-5600, -1, -2000), colors: [[0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1], [0.317, 0.362, 0.298, 1], [0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1]] }));
+        this.addChild(new GLCuboid({ size: v3(4000, 1, 5000), position: v3(1900, -1, -2000), colors: [[0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1], [0.317, 0.362, 0.298, 1], [0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1]] }));
+        this.addChild(new GLCuboid({ size: v3(4000, 1, 1800), position: v3(-2100, -1, -2000), colors: [[0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1], [0.317, 0.362, 0.298, 1], [0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1]] }));
+        this.addChild(new GLCuboid({ size: v3(4000, 1, 800), position: v3(-2100, -1, 2200), colors: [[0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1], [0.317, 0.362, 0.298, 1], [0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1], [0.15, 0.15, 1.0, 1]] }));
 
-        for (let x = 0; x < 10; x++) {
-            for (let y = 0; y < 7; y++) {
+        for (let x = 0; x < 20; x++) {
+            for (let y = 0; y < 12; y++) {
                 const p = v3(
-                    200 * x - 500,
+                    200 * x - 2000,
                     -2,
                     200 * y - 100
                 );
@@ -53,7 +53,7 @@ export class World extends Level {
                 if (![2,3,4].includes(x) || ![3,4,5].includes(y)) {
                     for (let rx = 0; rx < 5; rx++) {
                         for (let ry = 0; ry < 5; ry++) {
-                            if (Math.random() < 0.1) {
+                            if (Math.random() < 0.02) {
                                 this.addChild(new GLobj({
                                     url: ['CountrySide-6-Vegetation5.obj','CountrySide-0-Vegetation3.obj','CountrySide-6-Vegetation5.obj','CountrySide-8-Rock.obj'][Math.floor(Math.random()*4)],
                                     size: v3(
@@ -62,9 +62,9 @@ export class World extends Level {
                                         10,
                                     ).scale(Math.ceil(Math.random()*3)),
                                     position: p.add(v3(
-                                        (40 * rx) + (Math.random() * 5),
+                                        (40 * rx) + (Math.random() * 6),
                                         8,
-                                        (40 * ry) + (Math.random() * 5)
+                                        (40 * ry) + (Math.random() * 6)
                                     )),
                                     rotation: v3(
                                         0,
