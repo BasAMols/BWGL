@@ -18,15 +18,12 @@ export type vertexData = [vertexCoords, number, vertexCoords, string];
 export type faceData = [vertexData, vertexData, vertexData];
 
 export type GLObjTransferData = {
-    texture: GLTexture;
     verticesCount: number;
     matIndeces: string[];
-    mats: Record<string, string[]>;
     matsData: Record<string, matData>;
     positionIndeces: number[];
     indexIndeces: number[];
     normalIndeces: number[];
-    textureIndeces: number[];
     texturePositionIndeces: number[];
 };
 export class GLobj extends GLRendable {
@@ -44,29 +41,23 @@ export class GLobj extends GLRendable {
 
     public getData(): GLObjTransferData {
         return {
-            texture: this.texture,
             verticesCount: this.verticesCount,
             matIndeces: this.matIndeces,
-            mats: this.mats,
             matsData: this.matsData,
             positionIndeces: this.positionIndeces,
             indexIndeces: this.indexIndeces,
             normalIndeces: this.normalIndeces,
-            textureIndeces: this.textureIndeces,
             texturePositionIndeces: this.texturePositionIndeces
         };
     }
 
     public giveData(data: GLObjTransferData) {
-        this.texture = data.texture;
         this.verticesCount = data.verticesCount;
         this.matIndeces = data.matIndeces;
-        this.mats = data.mats;
         this.matsData = data.matsData;
         this.positionIndeces = data.positionIndeces;
         this.indexIndeces = data.indexIndeces;
         this.normalIndeces = data.normalIndeces;
-        this.textureIndeces = data.textureIndeces;
         this.texturePositionIndeces = data.texturePositionIndeces;
     }
 

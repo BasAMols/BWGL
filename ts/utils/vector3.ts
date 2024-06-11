@@ -1,13 +1,17 @@
 import { vec3 } from 'gl-matrix';
 import { Vector2, v2 } from './vector2';
+import { Util } from './utils';
 
-export function v3(n: [number, number?, number?] | number, y?: number, z?: number) {
-	if (typeof n === 'number') {
-		return Vector3.f(n, y, z);
-	} else if (typeof n === 'undefined') {
+export function v3(): Vector3;
+export function v3(a?: [number?, number?, number?]): Vector3;
+export function v3(a?: number, b?: number, c?: number): Vector3;
+export function v3(a?: [number?, number?, number?] | number, b?: number, c?: number): Vector3 {
+	if (typeof a === 'number') {
+		return Vector3.f(a, b, c);
+	} else if (typeof a === 'undefined') {
 		return Vector3.f(0);
 	} else {
-		return Vector3.f(...n);
+		return Vector3.f(...a);
 	}
 }
 
@@ -70,6 +74,12 @@ export class Vector3 {
 	}
 	static get right() {
 		return new Vector3(1, 0, 0);
+	}
+	static get PI() {
+		return new Vector3(Math.PI, Math.PI, Math.PI);
+	}
+	static get TAU() {
+		return Vector3.PI.scale(0.5);
 	}
 
 	get array() {
@@ -155,124 +165,20 @@ export class Vector3 {
 		return (this.x * this.x + this.y * this.y + this.z * this.z);
 	}
 
-	// dot(vector: Vector2) {
-	// 	return (this.x * vector.x + this.y + vector.y);
-	// }
-
-	// moveTowards(vector: Vector2, t: number) {
-	// 	t = Math.min(t, 1); // still allow negative t
-	// 	var diff = vector.subtract(this);
-	// 	return this.add(diff.scale(t));
-	// }
-
-	// magnitude() {
-	// 	return Math.sqrt(this.magnitudeSqr());
-	// }
-
-	// magnitudeSqr() {
-	// 	return (this.x * this.x + this.y * this.y);
-	// }
-
-	// distance(vector: Vector2) {
-	// 	return Math.sqrt(this.distanceSqr(vector));
-	// }
-
-	// distanceSqr(vector: Vector2) {
-	// 	var deltaX = this.x - vector.x;
-	// 	var deltaY = this.y - vector.y;
-	// 	return (deltaX * deltaX + deltaY * deltaY);
-	// }
-
-	// normalize() {
-	// 	var mag = this.magnitude();
-	// 	var vector = this.clone();
-	// 	if (Math.abs(mag) < 1e-9) {
-	// 		vector.x = 0;
-	// 		vector.y = 0;
-	// 	} else {
-	// 		vector.x /= mag;
-	// 		vector.y /= mag;
-	// 	}
-	// 	return vector;
-	// }
-
-	// angleDegrees() {
-	// 	return this.angle() * (180 / Math.PI);
-	// }
-
-	// angle() {
-	// 	return Math.atan2(this.y, this.x);
-	// }
+	mod(max: Vector3) {
+		return new Vector3(
+			this.x % max.x,
+			this.y % max.y,
+			this.z % max.z,
+		);
+	}
+	clamp(min: Vector3, max: Vector3) {
+		return new Vector3(
+			Util.clamp(this.x, min.x, max.x),
+			Util.clamp(this.y, min.y, max.y),
+			Util.clamp(this.z, min.z, max.z),
+		);
+	}
 
 
-	// rotate(rad: number) {
-	// 	var cos = Math.cos(rad);
-	// 	var sin = Math.sin(rad);
-	// 	return new Vector2(
-	// 		this.x * cos - this.y * sin,
-	// 		this.x * sin + this.y * cos
-	// 	);
-	// }
-
-	// toPrecision(precision: number) {
-	// 	var vector = this.clone();
-	// 	vector.x = +vector.x.toFixed(precision);
-	// 	vector.y = +vector.y.toFixed(precision);
-	// 	return vector;
-	// }
-
-	// toString() {
-	// 	var vector = this.toPrecision(1);
-	// 	return ("[" + vector.x + "; " + vector.y + "]");
-	// }
-
-	// public clamp(min: Vector2, max: Vector2) {
-	// 	return Vector2.clamp(this, min, max);
-	// }
-
-	// public static min(a: Vector2, b: Vector2) {
-	// 	return new Vector2(
-	// 		Math.min(a.x, b.x),
-	// 		Math.min(a.y, b.y),
-	// 	);
-	// }
-
-	// public static max(a: Vector2, b: Vector2) {
-	// 	return new Vector2(
-	// 		Math.max(a.x, b.x),
-	// 		Math.max(a.y, b.y),
-	// 	);
-	// }
-
-	// public static clamp(value: Vector2, min: Vector2, max: Vector2) {
-	// 	return Vector2.max(Vector2.min(value, min), max);
-	// }
-
-	// public clampMagnitute(mag: number) {
-	// 	return Vector2.clampMagnitute(this, mag);
-	// }
-
-	// public static clampMagnitute(value: Vector2, mag: number) {
-	// 	var ratio = value.magnitude() / mag;
-	// 	return new Vector2(value.x / ratio, value.y / ratio);
-	// }
-
-	// static get zero() {
-	// 	return new Vector2(0, 0);
-	// }
-	// static get down() {
-	// 	return new Vector2(0, -1);
-	// }
-	// static get up() {
-	// 	return new Vector2(0, 1);
-	// }
-	// static get right() {
-	// 	return new Vector2(1, 0);
-	// }
-	// static get left() {
-	// 	return new Vector2(-1, 0);
-	// }
-	// static get fromDegree() {
-	// 	return new Vector2(0, 0);
-	// }
 }

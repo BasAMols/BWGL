@@ -587,14 +587,24 @@ var Loader = class extends DomElement {
   }
 };
 
+// ts/utils/utils.ts
+var Util = class {
+  static clamp(value, min, max) {
+    return Math.max(Math.min(value, max), min);
+  }
+  static to0(value, tolerance = 0.1) {
+    return Math.abs(value) < tolerance ? 0 : value;
+  }
+};
+
 // ts/utils/vector3.ts
-function v3(n, y, z) {
-  if (typeof n === "number") {
-    return Vector3.f(n, y, z);
-  } else if (typeof n === "undefined") {
+function v3(a, b, c) {
+  if (typeof a === "number") {
+    return Vector3.f(a, b, c);
+  } else if (typeof a === "undefined") {
     return Vector3.f(0);
   } else {
-    return Vector3.f(...n);
+    return Vector3.f(...a);
   }
 }
 var Vector3 = class _Vector3 {
@@ -679,6 +689,12 @@ var Vector3 = class _Vector3 {
   static get right() {
     return new _Vector3(1, 0, 0);
   }
+  static get PI() {
+    return new _Vector3(Math.PI, Math.PI, Math.PI);
+  }
+  static get TAU() {
+    return _Vector3.PI.scale(0.5);
+  }
   get array() {
     return [this.x, this.y, this.z];
   }
@@ -743,107 +759,20 @@ var Vector3 = class _Vector3 {
   magnitudeSqr() {
     return this.x * this.x + this.y * this.y + this.z * this.z;
   }
-  // dot(vector: Vector2) {
-  // 	return (this.x * vector.x + this.y + vector.y);
-  // }
-  // moveTowards(vector: Vector2, t: number) {
-  // 	t = Math.min(t, 1); // still allow negative t
-  // 	var diff = vector.subtract(this);
-  // 	return this.add(diff.scale(t));
-  // }
-  // magnitude() {
-  // 	return Math.sqrt(this.magnitudeSqr());
-  // }
-  // magnitudeSqr() {
-  // 	return (this.x * this.x + this.y * this.y);
-  // }
-  // distance(vector: Vector2) {
-  // 	return Math.sqrt(this.distanceSqr(vector));
-  // }
-  // distanceSqr(vector: Vector2) {
-  // 	var deltaX = this.x - vector.x;
-  // 	var deltaY = this.y - vector.y;
-  // 	return (deltaX * deltaX + deltaY * deltaY);
-  // }
-  // normalize() {
-  // 	var mag = this.magnitude();
-  // 	var vector = this.clone();
-  // 	if (Math.abs(mag) < 1e-9) {
-  // 		vector.x = 0;
-  // 		vector.y = 0;
-  // 	} else {
-  // 		vector.x /= mag;
-  // 		vector.y /= mag;
-  // 	}
-  // 	return vector;
-  // }
-  // angleDegrees() {
-  // 	return this.angle() * (180 / Math.PI);
-  // }
-  // angle() {
-  // 	return Math.atan2(this.y, this.x);
-  // }
-  // rotate(rad: number) {
-  // 	var cos = Math.cos(rad);
-  // 	var sin = Math.sin(rad);
-  // 	return new Vector2(
-  // 		this.x * cos - this.y * sin,
-  // 		this.x * sin + this.y * cos
-  // 	);
-  // }
-  // toPrecision(precision: number) {
-  // 	var vector = this.clone();
-  // 	vector.x = +vector.x.toFixed(precision);
-  // 	vector.y = +vector.y.toFixed(precision);
-  // 	return vector;
-  // }
-  // toString() {
-  // 	var vector = this.toPrecision(1);
-  // 	return ("[" + vector.x + "; " + vector.y + "]");
-  // }
-  // public clamp(min: Vector2, max: Vector2) {
-  // 	return Vector2.clamp(this, min, max);
-  // }
-  // public static min(a: Vector2, b: Vector2) {
-  // 	return new Vector2(
-  // 		Math.min(a.x, b.x),
-  // 		Math.min(a.y, b.y),
-  // 	);
-  // }
-  // public static max(a: Vector2, b: Vector2) {
-  // 	return new Vector2(
-  // 		Math.max(a.x, b.x),
-  // 		Math.max(a.y, b.y),
-  // 	);
-  // }
-  // public static clamp(value: Vector2, min: Vector2, max: Vector2) {
-  // 	return Vector2.max(Vector2.min(value, min), max);
-  // }
-  // public clampMagnitute(mag: number) {
-  // 	return Vector2.clampMagnitute(this, mag);
-  // }
-  // public static clampMagnitute(value: Vector2, mag: number) {
-  // 	var ratio = value.magnitude() / mag;
-  // 	return new Vector2(value.x / ratio, value.y / ratio);
-  // }
-  // static get zero() {
-  // 	return new Vector2(0, 0);
-  // }
-  // static get down() {
-  // 	return new Vector2(0, -1);
-  // }
-  // static get up() {
-  // 	return new Vector2(0, 1);
-  // }
-  // static get right() {
-  // 	return new Vector2(1, 0);
-  // }
-  // static get left() {
-  // 	return new Vector2(-1, 0);
-  // }
-  // static get fromDegree() {
-  // 	return new Vector2(0, 0);
-  // }
+  mod(max) {
+    return new _Vector3(
+      this.x % max.x,
+      this.y % max.y,
+      this.z % max.z
+    );
+  }
+  clamp(min, max) {
+    return new _Vector3(
+      Util.clamp(this.x, min.x, max.x),
+      Util.clamp(this.y, min.y, max.y),
+      Util.clamp(this.z, min.z, max.z)
+    );
+  }
 };
 
 // ts/gl/shaders/vertexShader.ts
@@ -2586,16 +2515,7 @@ var Character = class extends GlElement {
   constructor(attr) {
     super(attr);
     this.type = "group";
-  }
-};
-
-// ts/utils/utils.ts
-var Util = class {
-  static clamp(value, min, max) {
-    return Math.max(Math.min(value, max), min);
-  }
-  static to0(value, tolerance = 0.1) {
-    return Math.abs(value) < tolerance ? 0 : value;
+    this.stat = {};
   }
 };
 
@@ -2645,7 +2565,7 @@ var MovementController = class extends GlController {
     super(...arguments);
     this.intr = { fall: 0, jump: 0, landDelay: 0 };
     this.stat = { jumping: false, falling: false, running: false };
-    this.cnst = { runTime: 300, runSlowDownFactor: 0.7, runSpeed: 0.6, minJumpTime: 200, jumpTime: 250, jumpSpeed: 0.8 };
+    this.cnst = { runTime: 250, runSlowDownFactor: 0.7, runSpeed: 0.5, minJumpTime: 200, jumpTime: 300, jumpSpeed: 0.6 };
     this.velocity = Vector3.f(0);
   }
   setMovementVelocity(interval) {
@@ -2667,31 +2587,31 @@ var MovementController = class extends GlController {
     );
   }
   determineStates(interval) {
-    if (this.stat.falling) {
-      this.stat.jumping = false;
+    if (this.parent.stat.falling) {
+      this.parent.stat.jumping = false;
     } else {
-      if (this.stat.jumping) {
+      if (this.parent.stat.jumping) {
         if (this.intr.jump < this.cnst.minJumpTime) {
-          this.stat.jumping = true;
-          this.stat.falling = false;
+          this.parent.stat.jumping = true;
+          this.parent.stat.falling = false;
         } else if (this.intr.jump < this.cnst.jumpTime) {
-          this.stat.jumping = this.mode.input.space;
+          this.parent.stat.jumping = this.mode.input.space;
         } else {
-          this.stat.jumping = false;
-          this.stat.falling = true;
+          this.parent.stat.jumping = false;
+          this.parent.stat.falling = true;
           this.intr.jump = this.cnst.jumpTime;
         }
       } else {
-        this.stat.jumping = this.mode.input.space;
+        this.parent.stat.jumping = this.mode.input.space;
       }
     }
   }
   setJumpVelocity(interval) {
     this.determineStates(interval);
-    if (this.stat.jumping) {
+    if (this.parent.stat.jumping) {
       this.intr.jump = Math.min(this.intr.jump + interval, this.cnst.jumpTime);
       this.intr.fall = -this.intr.jump;
-    } else if (this.stat.falling) {
+    } else if (this.parent.stat.falling) {
       this.intr.jump = this.cnst.jumpTime;
       this.intr.fall += interval;
     } else {
@@ -2711,26 +2631,28 @@ var MovementController = class extends GlController {
       if (this.mode.input.right || this.mode.input.left || this.mode.input.up || this.mode.input.down) {
         this.parent.rotation = this.camera.rotation.multiply(0, 1, 0).add(v3(0, Math.PI / 2, 0)).add(v3(0, -sc.xz.angle(), 0));
       }
+      this.parent.stat.running = true;
     } else {
       this.newPosition = this.parent.absolutePosition.add(v3(0, sc.y, 0));
+      this.parent.stat.running = false;
     }
   }
   colliders(obj) {
-    let platform = false;
+    this.parent.stat.ground = false;
     this.level.colliders.forEach((col) => {
       if (Collisions.boxesOverlap(col.absolutePosition, col.size, this.newPosition, this.parent.size)) {
         if (col.direction.equals(Vector3.up) && this.velocity.y <= 0) {
           this.velocity.y = Math.max(this.velocity.y, 0);
-          this.stat.falling = false;
+          this.parent.stat.falling = false;
           this.intr.fall = 0;
           this.intr.jump = 0;
-          this.newPosition.y = col.absolutePosition.y + col.size.y;
-          platform = true;
+          this.newPosition.y = col.absolutePosition.y + col.size.y - 1;
+          this.parent.stat.ground = true;
         }
       }
     });
-    if (!this.stat.jumping) {
-      this.stat.falling = !platform;
+    if (!this.parent.stat.jumping) {
+      this.parent.stat.falling = !this.parent.stat.ground;
     }
   }
   tick(obj) {
@@ -2832,6 +2754,18 @@ var FreeCamera = class extends GlController {
   }
 };
 
+// ts/utils/colors.ts
+var Colors = class {
+};
+Colors.k = [0, 0, 0, 1];
+Colors.r = [1, 0, 0, 1];
+Colors.g = [0, 1, 0, 1];
+Colors.b = [0, 0, 1, 1];
+Colors.y = [1, 1, 0, 1];
+Colors.c = [0, 1, 1, 1];
+Colors.m = [1, 0, 1, 1];
+Colors.w = [1, 1, 1, 1];
+
 // ts/gl/rendable.ts
 var GLRendable = class extends GlElement {
   constructor(attr = {}) {
@@ -2929,231 +2863,6 @@ var GLTexture = class {
     return (value & value - 1) === 0;
   }
 };
-
-// ts/gl/obj.ts
-var GLobj = class extends GLRendable {
-  constructor(attr = {}) {
-    super(__spreadValues(__spreadValues({}, attr), { autoReady: false }));
-    this.type = "mesh";
-    this.verticesCount = 0;
-    this.matIndeces = [];
-    this.mats = {};
-    this.matsData = {};
-    this.positionIndeces = [];
-    this.indexIndeces = [];
-    this.normalIndeces = [];
-    this.textureIndeces = [];
-    this.texturePositionIndeces = [];
-    if (attr.storage) {
-      if (attr.storage.register(attr.url, this)) {
-        this.loadFile("".concat(window.location.href, "/obj/").concat(attr.url)).then(this.parseMtl.bind(this)).then(this.parseObj.bind(this)).then(() => {
-          this.ready();
-          attr.storage.loaded(attr.url);
-        });
-      }
-    } else {
-      this.loadFile("".concat(window.location.href, "/obj/").concat(attr.url)).then(this.parseMtl.bind(this)).then(this.parseObj.bind(this)).then(() => {
-        this.ready();
-      });
-    }
-  }
-  getData() {
-    return {
-      texture: this.texture,
-      verticesCount: this.verticesCount,
-      matIndeces: this.matIndeces,
-      mats: this.mats,
-      matsData: this.matsData,
-      positionIndeces: this.positionIndeces,
-      indexIndeces: this.indexIndeces,
-      normalIndeces: this.normalIndeces,
-      textureIndeces: this.textureIndeces,
-      texturePositionIndeces: this.texturePositionIndeces
-    };
-  }
-  giveData(data) {
-    this.texture = data.texture;
-    this.verticesCount = data.verticesCount;
-    this.matIndeces = data.matIndeces;
-    this.mats = data.mats;
-    this.matsData = data.matsData;
-    this.positionIndeces = data.positionIndeces;
-    this.indexIndeces = data.indexIndeces;
-    this.normalIndeces = data.normalIndeces;
-    this.textureIndeces = data.textureIndeces;
-    this.texturePositionIndeces = data.texturePositionIndeces;
-  }
-  async parseMtl(str2) {
-    if (/mtllib/.test(str2)) {
-      await this.loadFile("".concat(window.location.href, "obj/").concat(str2.split(/mtllib/)[1].split(/(?: |\n)/)[1])).then((v) => {
-        v.split("newmtl ").slice(1).forEach((s) => {
-          const lines = s.split(/\r\n|\r|\n/).filter((n) => n);
-          this.matsData[lines.shift()] = Object.fromEntries(lines.map((line) => {
-            const a = line.split(" ");
-            return [a.shift(), a];
-          }));
-        });
-      });
-      return str2;
-    } else {
-      return str2;
-    }
-  }
-  parseFaces(lineArray, mat, points, normals, tCoords) {
-    const textRemainder = lineArray.slice(1);
-    const numbRemainder = textRemainder.map(Number);
-    ({
-      usemtl: () => {
-        mat = textRemainder[0];
-      },
-      f: () => {
-        if (numbRemainder.length === 3) {
-          this.positionIndeces.push(...points[numbRemainder[0] - 1]);
-          this.positionIndeces.push(...points[numbRemainder[1] - 1]);
-          this.positionIndeces.push(...points[numbRemainder[2] - 1]);
-        } else if (numbRemainder.length === 6) {
-          this.positionIndeces.push(...points[numbRemainder[0] - 1]);
-          this.positionIndeces.push(...points[numbRemainder[2] - 1]);
-          this.positionIndeces.push(...points[numbRemainder[4] - 1]);
-          this.texturePositionIndeces.push(...tCoords[numbRemainder[1] - 1]);
-          this.texturePositionIndeces.push(...tCoords[numbRemainder[3] - 1]);
-          this.texturePositionIndeces.push(...tCoords[numbRemainder[5] - 1]);
-        } else {
-          this.positionIndeces.push(...points[numbRemainder[0] - 1]);
-          this.positionIndeces.push(...points[numbRemainder[3] - 1]);
-          this.positionIndeces.push(...points[numbRemainder[6] - 1]);
-          this.texturePositionIndeces.push(...tCoords[numbRemainder[1] - 1]);
-          this.texturePositionIndeces.push(...tCoords[numbRemainder[4] - 1]);
-          this.texturePositionIndeces.push(...tCoords[numbRemainder[7] - 1]);
-          this.normalIndeces.push(...normals[numbRemainder[2] - 1]);
-          this.normalIndeces.push(...normals[numbRemainder[5] - 1]);
-          this.normalIndeces.push(...normals[numbRemainder[8] - 1]);
-          this.textureIndeces.push(
-            ...GLTexture.textureOffset(Object.keys(this.mats).indexOf(mat), Object.keys(this.mats).length)
-          );
-        }
-        this.indexIndeces.push(this.indexIndeces.length);
-        this.indexIndeces.push(this.indexIndeces.length);
-        this.indexIndeces.push(this.indexIndeces.length);
-        this.matIndeces.push(mat);
-        this.matIndeces.push(mat);
-        this.matIndeces.push(mat);
-      }
-    }[lineArray[0]] || (() => {
-    }))();
-    return mat;
-  }
-  parseObj(str2) {
-    let mat = "none";
-    const lines = str2.split(/\r\n|\r|\n/);
-    const nonVertex = [];
-    const points = [];
-    const normals = [];
-    const tCoords = [];
-    lines.forEach(async (line) => {
-      const words = line.split(/(?: |\/)/);
-      const command = words[0];
-      const numbers = words.slice(1).map(Number);
-      if (command === "v") {
-        points.push([numbers[0], numbers[1], numbers[2]]);
-      } else if (command === "vn") {
-        normals.push([numbers[0], numbers[1], numbers[2]]);
-      } else if (command === "vt") {
-        tCoords.push([numbers[0], numbers[1]]);
-      } else {
-        nonVertex.push(words);
-      }
-    });
-    nonVertex.forEach((words) => {
-      mat = this.parseFaces(words, mat, points, normals, tCoords);
-    });
-    this.verticesCount = this.indexIndeces.length;
-  }
-  async loadFile(url) {
-    const response = await fetch(url);
-    const data = await response.text();
-    return data;
-  }
-  indexBuffer() {
-    return this.indexIndeces;
-  }
-  positionBuffer(size) {
-    return this.positionIndeces.map((n, i) => n * size.array[i % 3]);
-  }
-  normalBuffer() {
-    return this.normalIndeces;
-  }
-  textureBuffer(size) {
-    this.texture = new GLTexture(this.game, {});
-    if (Object.values(this.matsData).length) {
-      const matArray = Object.values(this.matsData);
-      const matImage = matArray.find((m) => m.map_Kd);
-      if (matImage) {
-        this.texture = new GLTexture(this.game, {
-          url: "obj/".concat(matImage.map_Kd)
-        });
-      } else {
-        this.texture = new GLTexture(this.game, {
-          color: matArray.map((m) => [
-            ...m.Kd ? m.Kd.map(Number) : [0, 0, 0],
-            m.d ? Number(m.d[0]) : 1
-          ])
-        });
-      }
-    }
-    return this.texturePositionIndeces;
-  }
-};
-
-// ts/modes/side/player.ts
-var Player = class extends Character {
-  constructor({
-    position = Vector3.f(0),
-    size = Vector3.f(0)
-  } = {}) {
-    super({
-      position,
-      size,
-      anchorPoint: size.multiply(0.5, 0, 0.5)
-    });
-    this.addControllers([new SideController(), new SideCamera(this), new FreeCamera(this), new MovementController(this)]);
-  }
-  keyDown(e) {
-    if (e.key === "Enter") {
-      if (this.controllers[0].active) {
-        this.controllers[0].active = false;
-        this.controllers[1].active = false;
-        this.controllers[2].active = true;
-        this.controllers[3].active = true;
-      } else {
-        this.controllers[0].active = true;
-        this.controllers[1].active = true;
-        this.controllers[2].active = false;
-        this.controllers[3].active = false;
-      }
-    }
-  }
-  build() {
-    this.addChild(new GLobj({ url: "PhoneAddict-1-Man.obj", size: v3(10, 10, 10), position: v3(-4, 0, 33), rotation: v3(0, Math.PI, 0) }));
-    GlElement.registerControllers(this);
-    this.controllers[0].active = false;
-    this.controllers[1].active = false;
-    this.controllers[2].active = true;
-    this.controllers[3].active = true;
-  }
-};
-
-// ts/utils/colors.ts
-var Colors = class {
-};
-Colors.k = [0, 0, 0, 1];
-Colors.r = [1, 0, 0, 1];
-Colors.g = [0, 1, 0, 1];
-Colors.b = [0, 0, 1, 1];
-Colors.y = [1, 1, 0, 1];
-Colors.c = [0, 1, 1, 1];
-Colors.m = [1, 0, 1, 1];
-Colors.w = [1, 1, 1, 1];
 
 // ts/gl/cuboid.ts
 var GLCuboid = class _GLCuboid extends GLRendable {
@@ -3496,6 +3205,265 @@ var GLCuboid = class _GLCuboid extends GLRendable {
   }
   static scale(array, size) {
     return size ? array.map((n, i) => n * size.array[i % 3]) : array;
+  }
+};
+
+// ts/modes/side/Skeleton.ts
+var Bone = class extends GLGroup {
+  constructor(attr = {}) {
+    super(attr);
+    this.mesh = attr.mesh === void 0 ? true : attr.mesh;
+    this.length = attr.length === void 0 ? 10 : attr.length;
+    this.profile = attr.profile || v2(0);
+    this.speed = attr.speed === void 0 ? 0.015 : attr.speed;
+    this.baseRotation = attr.baseRotation || v3(0);
+    if (!attr.anchorPoint) {
+      this.anchorPoint = v3(
+        this.profile.x / 2,
+        this.length,
+        this.profile.y / 2
+      );
+    }
+    this.rotation = this.baseRotation;
+  }
+  setRotation(r) {
+    this.target = this.baseRotation.add(r.clone());
+  }
+  tick(obj) {
+    super.tick(obj);
+    if (!this.target)
+      return;
+    const dif = this.rotation.subtract(this.target);
+    if (this.length === 13) {
+    }
+    if (dif.magnitude() === 0)
+      return;
+    const movement = v3(
+      this.target.x > this.rotation.x ? Math.abs(dif.x) : -Math.abs(dif.x),
+      this.target.y > this.rotation.y ? Math.abs(dif.y) : -Math.abs(dif.y),
+      this.target.z > this.rotation.z ? Math.abs(dif.z) : -Math.abs(dif.z)
+    ).clamp(
+      v3(-this.speed, -this.speed, -this.speed).scale(obj.interval / 6),
+      v3(this.speed, this.speed, this.speed).scale(obj.interval / 6)
+    );
+    this.rotation = this.rotation.add(movement);
+  }
+  build() {
+    super.build();
+    if (this.mesh) {
+      this.addChild(new GLCuboid({
+        colors: [[0, 0, 0.2, 1], [0.2, 0.3, 0.4, 1], [0.2, 0.3, 0.4, 1], [0.2, 0.3, 0.4, 1], [0.2, 0.3, 0.4, 1], [0.2, 0.3, 0.4, 1]],
+        size: v3(this.profile.x, this.length, this.profile.y)
+      }));
+    }
+  }
+};
+var Skeleton = class extends GLGroup {
+  constructor(attr = {}) {
+    super(attr);
+    this.runTime = 0;
+    this.idleTime = 0;
+    this.sizes = attr.boneSizes || {
+      "head": 6,
+      "armUpper": 6,
+      "armElbow": 0,
+      "armLower": 3,
+      "hand": 3,
+      "legUpper": 5,
+      "legKnee": 0,
+      "legLower": 4,
+      "foot": 2,
+      "torso": 13
+    };
+  }
+  build() {
+    super.build();
+    this.torso = this.addChild(new Bone({ speed: 0.01, profile: v2(6, 3), length: this.sizes.torso, position: v3(0, this.sizes.legUpper + this.sizes.legKnee + this.sizes.legLower + this.sizes.foot, 0) }));
+    this.head = this.torso.addChild(new Bone({ speed: 5e-3, profile: v2(5, 6), length: this.sizes.head, anchorPoint: v3(3, 0, 3), position: v3(0.5, this.sizes.torso + 1, -1) }));
+    this.lArmUpper = this.torso.addChild(new Bone({ profile: v2(2.4), length: this.sizes.armUpper, position: v3(-3.4, this.sizes.torso - this.sizes.armUpper, 1), mesh: true }));
+    this.rArmUpper = this.torso.addChild(new Bone({ profile: v2(2.4), length: this.sizes.armUpper, position: v3(7, this.sizes.torso - this.sizes.armUpper, 1), mesh: true }));
+    this.lArmLower = this.lArmUpper.addChild(new Bone({ speed: 0.03, profile: v2(2), length: this.sizes.armLower, position: v3(0.2, -this.sizes.armLower, 0.2) }));
+    this.rArmLower = this.rArmUpper.addChild(new Bone({ speed: 0.03, profile: v2(2), length: this.sizes.armLower, position: v3(0.2, -this.sizes.armLower, 0.2) }));
+    this.lHand = this.lArmLower.addChild(new Bone({ profile: v2(3), length: this.sizes.hand, position: v3(-0.5, -this.sizes.hand, -0.5) }));
+    this.rHand = this.rArmLower.addChild(new Bone({ profile: v2(3), length: this.sizes.hand, position: v3(-0.5, -this.sizes.hand, -0.5) }));
+    this.lLegUpper = this.torso.addChild(new Bone({ profile: v2(3), length: this.sizes.legUpper, position: v3(-1, -this.sizes.legUpper, 0), mesh: true }));
+    this.rLegUpper = this.torso.addChild(new Bone({ profile: v2(3), length: this.sizes.legUpper, position: v3(4, -this.sizes.legUpper, 0), mesh: true }));
+    this.lLegLower = this.lLegUpper.addChild(new Bone({ speed: 0.03, profile: v2(2), length: this.sizes.legLower, position: v3(0.5, -this.sizes.legLower, 0.5) }));
+    this.rLegLower = this.rLegUpper.addChild(new Bone({ speed: 0.03, profile: v2(2), length: this.sizes.legLower, position: v3(0.5, -this.sizes.legLower, 0.5) }));
+    this.lFoot = this.lLegLower.addChild(new Bone({ profile: v2(3, 6), length: this.sizes.foot, position: v3(-0.5, -this.sizes.foot, -0.5) }));
+    this.rFoot = this.rLegLower.addChild(new Bone({ profile: v2(3, 6), length: this.sizes.foot, position: v3(-0.5, -this.sizes.foot, -0.5) }));
+  }
+  setLimbRotation(key, time, rotation = v3(0)) {
+    const bone = this[key];
+    if (bone) {
+      bone.speed = time;
+      bone.setRotation(rotation);
+    }
+  }
+  setPose(p = "") {
+    const animation = {
+      running1: {
+        torso: [0.01, [-0.3, -0.3, 0]],
+        head: [5e-3, [0.2, 0.2, 0]],
+        lArmUpper: [0.015, [-0.8, 0, 0.1]],
+        lArmLower: [0.03, [0.3, 0, 0]],
+        lHand: [0.015, []],
+        rArmUpper: [0.015, [1.2, 0, -0.1]],
+        rArmLower: [0.03, [1.2, 0, 1.2]],
+        rHand: [0.015, []],
+        lLegUpper: [0.015, [1.2, 0, 0]],
+        lLegLower: [0.03, [-0.3, 0, 0]],
+        lFoot: [0.015, [-0.2, 0, 0]],
+        rLegUpper: [0.015, []],
+        rLegLower: [0.03, [-2, 0, 0]],
+        rFoot: [0.015, [-0.2, 0, 0]]
+      },
+      running2: {
+        torso: [0.01, [-0.3, 0.3, 0]],
+        head: [5e-3, [0.2, -0.2, 0]],
+        lArmUpper: [0.015, [1.2, 0, 0.1]],
+        lArmLower: [0.03, [1.2, 0, -1.2]],
+        lHand: [0.015, []],
+        rArmUpper: [0.015, [-0.8, 0, -0.1]],
+        rArmLower: [0.03, [0.3, 0, 0]],
+        rHand: [0.015, []],
+        lLegUpper: [0.03, []],
+        lLegLower: [0.015, [-2, 0, 0]],
+        lFoot: [0.015, [-0.2, 0, 0]],
+        rLegUpper: [0.03, [1.2, 0, 0]],
+        rLegLower: [0.015, [-0.3, 0, 0]],
+        rFoot: [0.015, [-0.2, 0, 0]]
+      },
+      T: {
+        torso: [0.02, []],
+        head: [0.02, []],
+        lArmUpper: [0.02, [0, 0, Math.PI / 2]],
+        lArmLower: [0.02, []],
+        lHand: [0.02, []],
+        rArmUpper: [0.02, [0, 0, -Math.PI / 2]],
+        rArmLower: [0.02, []],
+        rHand: [0.02, []],
+        lLegUpper: [0.02, []],
+        lLegLower: [0.02, []],
+        lFoot: [0.02, []],
+        rLegUpper: [0.02, []],
+        rLegLower: [0.02, []],
+        rFoot: [0.02, []]
+      },
+      idle: {
+        torso: [0.02, []],
+        head: [5e-3, [0, 0.5]],
+        lArmUpper: [0.03, [0.8, 0.2, -0.4]],
+        lArmLower: [0.03, [0, 0.2, -0.8]],
+        lHand: [0.03, []],
+        rArmUpper: [0.03, [0.4, -0.2, 0.4]],
+        rArmLower: [0.03, [0, 0, 0.7]],
+        rHand: [0.03, []],
+        lLegUpper: [0.04, []],
+        lLegLower: [0.05, []],
+        lFoot: [0.03, []],
+        rLegUpper: [0.03, []],
+        rLegLower: [0.03, []],
+        rFoot: [0.03, []]
+      },
+      idle2: {
+        torso: [0.02, []],
+        head: [5e-3, [0, -0.5]],
+        lArmUpper: [0.03, [0.8, 0.2, -0.4]],
+        lArmLower: [0.03, [0, 0.2, -0.8]],
+        lHand: [0.03, []],
+        rArmUpper: [0.03, [0.4, -0.2, 0.4]],
+        rArmLower: [0.03, [0, 0, 0.7]],
+        rHand: [0.03, []],
+        lLegUpper: [0.04, []],
+        lLegLower: [0.05, []],
+        lFoot: [0.03, []],
+        rLegUpper: [0.03, []],
+        rLegLower: [0.03, []],
+        rFoot: [0.03, []]
+      },
+      jump: {
+        torso: [0.03, [0.1, -0.1, -0.1]],
+        head: [0.03, [0.3, 0, 0]],
+        lArmUpper: [0.03, [-0.2, 0, 0.1]],
+        lArmLower: [0.03, [0, 0, 0.2]],
+        lHand: [0.03, []],
+        rArmUpper: [0.03, [-0.1, 0, -0.3]],
+        rArmLower: [0.03, [0, 0, 0.2]],
+        rHand: [0.03, []],
+        lLegUpper: [0.06, [2, 0, 0]],
+        lLegLower: [0.08, [-2.4, 0, 0]],
+        lFoot: [0.03, []],
+        rLegUpper: [0.03, [-0.2, 0, 0]],
+        rLegLower: [0.03, [-0.3, 0, 0]],
+        rFoot: [0.03, [-0.6, 0, 0]]
+      }
+    };
+    const a = animation[p];
+    if (a) {
+      Object.entries(a).forEach(([key, [time, val]]) => {
+        this.setLimbRotation(key, time, v3(val));
+      });
+    }
+  }
+  tick(obj) {
+    super.tick(obj);
+    this.runTime = (this.runTime + obj.interval) % 1400;
+    this.idleTime = (this.idleTime + obj.interval) % 12e3;
+    if (!this.parent.stat.ground) {
+      this.setPose("jump");
+    } else {
+      if (this.parent.stat.running) {
+        this.setPose(this.runTime < 700 ? "running1" : "running2");
+      } else {
+        this.setPose(this.idleTime < 6e3 ? "idle" : "idle2");
+      }
+    }
+  }
+};
+
+// ts/modes/side/player.ts
+var Player = class extends Character {
+  constructor({
+    position = Vector3.f(0),
+    size = Vector3.f(0),
+    rotation = Vector3.f(0)
+  } = {}) {
+    super({
+      position,
+      size,
+      rotation,
+      anchorPoint: size.multiply(0.5, 0, 0.5)
+    });
+    this.stat = { jumping: false, falling: false, running: false, fallAnimation: false };
+    this.addControllers([new SideController(), new SideCamera(this), new FreeCamera(this), new MovementController(this)]);
+  }
+  keyDown(e) {
+    if (e.key === "Enter") {
+      if (this.controllers[0].active) {
+        this.controllers[0].active = false;
+        this.controllers[1].active = false;
+        this.controllers[2].active = true;
+        this.controllers[3].active = true;
+      } else {
+        this.controllers[0].active = true;
+        this.controllers[1].active = true;
+        this.controllers[2].active = false;
+        this.controllers[3].active = false;
+      }
+    }
+  }
+  build() {
+    GlElement.registerControllers(this);
+    this.skeleton = new Skeleton();
+    this.addChild(this.skeleton);
+    this.controllers[0].active = false;
+    this.controllers[1].active = false;
+    this.controllers[2].active = true;
+    this.controllers[3].active = true;
+  }
+  tick(obj) {
+    super.tick(obj);
   }
 };
 
@@ -3861,6 +3829,175 @@ var Collider = class extends GlElement {
   }
 };
 
+// ts/gl/obj.ts
+var GLobj = class extends GLRendable {
+  constructor(attr = {}) {
+    super(__spreadValues(__spreadValues({}, attr), { autoReady: false }));
+    this.type = "mesh";
+    this.verticesCount = 0;
+    this.matIndeces = [];
+    this.mats = {};
+    this.matsData = {};
+    this.positionIndeces = [];
+    this.indexIndeces = [];
+    this.normalIndeces = [];
+    this.textureIndeces = [];
+    this.texturePositionIndeces = [];
+    if (attr.storage) {
+      if (attr.storage.register(attr.url, this)) {
+        this.loadFile("".concat(window.location.href, "/obj/").concat(attr.url)).then(this.parseMtl.bind(this)).then(this.parseObj.bind(this)).then(() => {
+          this.ready();
+          attr.storage.loaded(attr.url);
+        });
+      }
+    } else {
+      this.loadFile("".concat(window.location.href, "/obj/").concat(attr.url)).then(this.parseMtl.bind(this)).then(this.parseObj.bind(this)).then(() => {
+        this.ready();
+      });
+    }
+  }
+  getData() {
+    return {
+      verticesCount: this.verticesCount,
+      matIndeces: this.matIndeces,
+      matsData: this.matsData,
+      positionIndeces: this.positionIndeces,
+      indexIndeces: this.indexIndeces,
+      normalIndeces: this.normalIndeces,
+      texturePositionIndeces: this.texturePositionIndeces
+    };
+  }
+  giveData(data) {
+    this.verticesCount = data.verticesCount;
+    this.matIndeces = data.matIndeces;
+    this.matsData = data.matsData;
+    this.positionIndeces = data.positionIndeces;
+    this.indexIndeces = data.indexIndeces;
+    this.normalIndeces = data.normalIndeces;
+    this.texturePositionIndeces = data.texturePositionIndeces;
+  }
+  async parseMtl(str2) {
+    if (/mtllib/.test(str2)) {
+      await this.loadFile("".concat(window.location.href, "obj/").concat(str2.split(/mtllib/)[1].split(/(?: |\n)/)[1])).then((v) => {
+        v.split("newmtl ").slice(1).forEach((s) => {
+          const lines = s.split(/\r\n|\r|\n/).filter((n) => n);
+          this.matsData[lines.shift()] = Object.fromEntries(lines.map((line) => {
+            const a = line.split(" ");
+            return [a.shift(), a];
+          }));
+        });
+      });
+      return str2;
+    } else {
+      return str2;
+    }
+  }
+  parseFaces(lineArray, mat, points, normals, tCoords) {
+    const textRemainder = lineArray.slice(1);
+    const numbRemainder = textRemainder.map(Number);
+    ({
+      usemtl: () => {
+        mat = textRemainder[0];
+      },
+      f: () => {
+        if (numbRemainder.length === 3) {
+          this.positionIndeces.push(...points[numbRemainder[0] - 1]);
+          this.positionIndeces.push(...points[numbRemainder[1] - 1]);
+          this.positionIndeces.push(...points[numbRemainder[2] - 1]);
+        } else if (numbRemainder.length === 6) {
+          this.positionIndeces.push(...points[numbRemainder[0] - 1]);
+          this.positionIndeces.push(...points[numbRemainder[2] - 1]);
+          this.positionIndeces.push(...points[numbRemainder[4] - 1]);
+          this.texturePositionIndeces.push(...tCoords[numbRemainder[1] - 1]);
+          this.texturePositionIndeces.push(...tCoords[numbRemainder[3] - 1]);
+          this.texturePositionIndeces.push(...tCoords[numbRemainder[5] - 1]);
+        } else {
+          this.positionIndeces.push(...points[numbRemainder[0] - 1]);
+          this.positionIndeces.push(...points[numbRemainder[3] - 1]);
+          this.positionIndeces.push(...points[numbRemainder[6] - 1]);
+          this.texturePositionIndeces.push(...tCoords[numbRemainder[1] - 1]);
+          this.texturePositionIndeces.push(...tCoords[numbRemainder[4] - 1]);
+          this.texturePositionIndeces.push(...tCoords[numbRemainder[7] - 1]);
+          this.normalIndeces.push(...normals[numbRemainder[2] - 1]);
+          this.normalIndeces.push(...normals[numbRemainder[5] - 1]);
+          this.normalIndeces.push(...normals[numbRemainder[8] - 1]);
+          this.textureIndeces.push(
+            ...GLTexture.textureOffset(Object.keys(this.mats).indexOf(mat), Object.keys(this.mats).length)
+          );
+        }
+        this.indexIndeces.push(this.indexIndeces.length);
+        this.indexIndeces.push(this.indexIndeces.length);
+        this.indexIndeces.push(this.indexIndeces.length);
+        this.matIndeces.push(mat);
+        this.matIndeces.push(mat);
+        this.matIndeces.push(mat);
+      }
+    }[lineArray[0]] || (() => {
+    }))();
+    return mat;
+  }
+  parseObj(str2) {
+    let mat = "none";
+    const lines = str2.split(/\r\n|\r|\n/);
+    const nonVertex = [];
+    const points = [];
+    const normals = [];
+    const tCoords = [];
+    lines.forEach(async (line) => {
+      const words = line.split(/(?: |\/)/);
+      const command = words[0];
+      const numbers = words.slice(1).map(Number);
+      if (command === "v") {
+        points.push([numbers[0], numbers[1], numbers[2]]);
+      } else if (command === "vn") {
+        normals.push([numbers[0], numbers[1], numbers[2]]);
+      } else if (command === "vt") {
+        tCoords.push([numbers[0], numbers[1]]);
+      } else {
+        nonVertex.push(words);
+      }
+    });
+    nonVertex.forEach((words) => {
+      mat = this.parseFaces(words, mat, points, normals, tCoords);
+    });
+    this.verticesCount = this.indexIndeces.length;
+  }
+  async loadFile(url) {
+    const response = await fetch(url);
+    const data = await response.text();
+    return data;
+  }
+  indexBuffer() {
+    return this.indexIndeces;
+  }
+  positionBuffer(size) {
+    return this.positionIndeces.map((n, i) => n * size.array[i % 3]);
+  }
+  normalBuffer() {
+    return this.normalIndeces;
+  }
+  textureBuffer(size) {
+    this.texture = new GLTexture(this.game, {});
+    if (Object.values(this.matsData).length) {
+      const matArray = Object.values(this.matsData);
+      const matImage = matArray.find((m) => m.map_Kd);
+      if (matImage) {
+        this.texture = new GLTexture(this.game, {
+          url: "obj/".concat(matImage.map_Kd)
+        });
+      } else {
+        this.texture = new GLTexture(this.game, {
+          color: matArray.map((m) => [
+            ...m.Kd ? m.Kd.map(Number) : [0, 0, 0],
+            m.d ? Number(m.d[0]) : 1
+          ])
+        });
+      }
+    }
+    return this.texturePositionIndeces;
+  }
+};
+
 // ts/gl/objStorage.ts
 var ObjStorage = class {
   constructor() {
@@ -3912,8 +4049,9 @@ var World = class extends Level {
   build() {
     super.build();
     this.addChild(new Player({
-      size: v3(8, 24, 8),
-      position: v3(130, 1, 700)
+      size: v3(6, 24, 8),
+      position: v3(130, 1, 600),
+      rotation: v3(0, 2.3, 0)
     }));
     const st = new ObjStorage();
     this.addChild(new GLCuboid({ size: v3(3500, 1, 5e3), position: v3(-5600, -1, -2e3), colors: [[0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.317, 0.362, 0.298, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1]] }));

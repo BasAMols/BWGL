@@ -10,8 +10,6 @@ import { GLobj } from '../../gl/obj';
 import { GLCuboid } from '../../gl/cuboid';
 import { ObjStorage } from '../../gl/objStorage';
 
-
-
 export class World extends Level {
     public start = Vector2.zero;
     public background: Color = [0.67451, 0.603922, 0.968627, 1];
@@ -29,8 +27,9 @@ export class World extends Level {
     build() {
         super.build();
         this.addChild(new Player({
-            size: v3(8, 24, 8),
-            position: v3(130, 1, 700)
+            size: v3(6, 24, 8),
+            position: v3(130, 1, 600),
+            rotation: v3(0,2.3,0)
         }));
 
         const st = new ObjStorage();
@@ -97,6 +96,7 @@ export class World extends Level {
         ]) as ([Vector3, Vector3, Vector3, boolean?])[]).forEach(([position, size, direction, show]) => {
             this.addChild(new Collider({ position, size, direction, showMesh: show === undefined ? false : show, showArrows: false }));
         });
+
     }
 
 }
