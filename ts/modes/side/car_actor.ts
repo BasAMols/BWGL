@@ -3,10 +3,10 @@ import { Character } from '../../gl/character';
 import { Vector3, v3 } from '../../utils/vector3';
 import { GlElement } from '../../gl/elementBase';
 import { TickerReturnData } from '../../utils/ticker';
-import { Skeleton } from './skeleton';
+import { Skeleton } from '../../utils/skeleton';
 import { GLobj } from '../../gl/obj';
-import { CarController } from './carController';
-import { CarCamera } from './carCamera';
+import { CarController } from './car_controller';
+import { CarCamera } from './car_camera';
 
 export class Driver extends Character {
     public stat: Record<string, boolean> = { jumping: false, falling: false, running: false, fallAnimation: false };
@@ -41,6 +41,5 @@ export class Driver extends Character {
 
     public tick(obj: TickerReturnData): void {
         super.tick(obj);
-
     }
 }

@@ -6,7 +6,7 @@ import { Renderer } from './dom/renderer';
 import { Loader } from './utils/debug/loader';
 import { GLRenderer } from './gl/glRenderer';
 import { Level } from './utils/level';
-import { OpenWorldMode } from './modes/side/openWorld';
+import { OpenWorldMode } from './modes/side/mode';
 
 export class Game {
     public ticker: Ticker;

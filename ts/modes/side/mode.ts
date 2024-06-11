@@ -1,5 +1,5 @@
 import { Mode } from '../../utils/mode';
-import { World } from './world';
+import { World } from './level';
 
 export class OpenWorldMode extends Mode{
     build(){

@@ -1,8 +1,15 @@
 import { GLobj } from '../../gl/obj';
 import { v3 } from '../../utils/vector3';
-import { Skeleton } from './skeleton';
+import { HumanSkeleton } from '../../utils/skeleton_human';
+import { TickerReturnData } from '../../utils/ticker';
+import { Player } from './player_actor';
 
-export class WorkerSkel extends Skeleton{
+export class PlayerSkel extends HumanSkeleton{
+    
+    runTime: number = 0;
+    idleTime: number = 0;
+    public parent: Player;
+    
     constructor() {
         super({
             boneSizes: {
@@ -176,5 +183,23 @@ export class WorkerSkel extends Skeleton{
                 rFoot: [0.03, [-0.6, 0, 0]],
             }
         };
+    }
+
+    
+    public tick(obj: TickerReturnData): void {
+        super.tick(obj);
+
+        this.runTime = (this.runTime + obj.interval) % 1400;
+        this.idleTime = (this.idleTime + obj.interval) % 12000;
+        // this.setPose(this.runTime < 800 ? 'running1' : 'running2');
+        if (!this.parent.stat.ground) {
+            this.setPose('jump');
+        } else {
+            if (this.parent.stat.running) {
+                this.setPose(this.runTime < 700 ? 'running1' : 'running2');
+            } else {
+                this.setPose(this.idleTime < 6000 ? 'idle' : 'idle2');
+            }
+        }
     }
 }

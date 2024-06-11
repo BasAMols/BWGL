@@ -800,10 +800,10 @@ var Vector3 = class _Vector3 {
 };
 
 // ts/gl/shaders/vertexShader.ts
-var vertexShader_default = "\nattribute vec4 aVertexPosition;\nattribute vec3 aVertexNormal;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uModelViewMatrix;\nuniform mat4 uProjectionMatrix;\nuniform mat4 uNormalMatrix;\n\nvarying highp vec2 vTextureCoord;\nvarying highp vec3 vLighting;\n\nvoid main(void) {\n  gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;\n  vTextureCoord = aTextureCoord;\n\n  highp vec3 ambientLight = vec3(1, 1, 1) *0.8;\n  highp vec3 directionalLightColor = vec3(1, 1, 1);\n  highp vec3 directionalVector = normalize(vec3(-0.7, .7, 0.3));\n\n  highp vec4 transformedNormal = uNormalMatrix * vec4(aVertexNormal, 1.0);\n\n  highp float directional = max(dot(transformedNormal.xyz, directionalVector), 0.0);\n  vLighting = ambientLight + (directionalLightColor * directional);\n}";
+var vertexShader_default = "\nattribute vec4 aVertexPosition;\nattribute vec3 aVertexNormal;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uModelViewMatrix;\nuniform mat4 uProjectionMatrix;\nuniform mat4 uNormalMatrix;\n\nvarying highp vec2 vTextureCoord;\nvarying highp vec3 vLighting;\n\nvoid main(void) {\n  gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;\n  vTextureCoord = aTextureCoord;\n\n  highp vec3 ambientLight = vec3(1, 1, 1) *0.3;\n  highp vec3 directionalLightColor = vec3(1, 1, 1)*1.0;\n  highp vec3 directionalVector = normalize(vec3(-0.7, .7, 0.3));\n\n  highp vec4 transformedNormal = uNormalMatrix * vec4(aVertexNormal, 1.0);\n\n  highp float directional = max(dot(transformedNormal.xyz, directionalVector), 0.0);\n  vLighting = ambientLight + (directionalLightColor * directional);\n}";
 
 // ts/gl/shaders/fragmentShader.ts
-var fragmentShader_default = "\nvarying highp vec2 vTextureCoord;\nvarying highp vec3 vLighting;\n\nuniform sampler2D uSampler;\nuniform lowp float uOpacity;\n\nvoid main(void) {\n    highp vec4 texelColor = texture2D(uSampler, vTextureCoord);\n    gl_FragColor = vec4(texelColor.rgb * vLighting * 1.1, texelColor.a*uOpacity);\n}\n";
+var fragmentShader_default = "\nvarying highp vec2 vTextureCoord;\nvarying highp vec3 vLighting;\n\nuniform sampler2D uSampler;\nuniform lowp float uOpacity;\n\nvoid main(void) {\n    highp vec4 texelColor = texture2D(uSampler, vTextureCoord);\n    gl_FragColor = vec4(texelColor.rgb * vLighting, texelColor.a*uOpacity);\n}\n";
 
 // ts/gl/glrInit.ts
 function loadShader(gl, type, source) {
@@ -2589,7 +2589,7 @@ var GlController = class extends GlElement {
   }
 };
 
-// ts/modes/side/freeCamera.ts
+// ts/modes/side/player_camera.ts
 var FreeCamera = class extends GlController {
   constructor(target) {
     super({ autoReady: false });
@@ -2662,7 +2662,7 @@ var Collisions = class _Collisions {
   }
 };
 
-// ts/modes/side/movementController.ts
+// ts/modes/side/player_controller.ts
 var MovementController = class extends GlController {
   constructor() {
     super(...arguments);
@@ -3390,7 +3390,7 @@ var GLCuboid = class _GLCuboid extends GLRendable {
   }
 };
 
-// ts/modes/side/skeleton.ts
+// ts/utils/skeleton_bone.ts
 var Bone = class extends GLGroup {
   constructor(attr = {}) {
     super(attr);
@@ -3441,11 +3441,11 @@ var Bone = class extends GLGroup {
     }
   }
 };
-var Skeleton = class extends GLGroup {
+
+// ts/utils/skeleton_human.ts
+var HumanSkeleton = class extends GLGroup {
   constructor(attr = {}) {
     super(attr);
-    this.runTime = 0;
-    this.idleTime = 0;
     this.animation = {};
     this.sizes = attr.boneSizes || {
       "head": 6,
@@ -3494,24 +3494,10 @@ var Skeleton = class extends GLGroup {
       });
     }
   }
-  tick(obj) {
-    super.tick(obj);
-    this.runTime = (this.runTime + obj.interval) % 1400;
-    this.idleTime = (this.idleTime + obj.interval) % 12e3;
-    if (!this.parent.stat.ground) {
-      this.setPose("jump");
-    } else {
-      if (this.parent.stat.running) {
-        this.setPose(this.runTime < 700 ? "running1" : "running2");
-      } else {
-        this.setPose(this.idleTime < 6e3 ? "idle" : "idle2");
-      }
-    }
-  }
 };
 
-// ts/modes/side/worker.ts
-var WorkerSkel = class extends Skeleton {
+// ts/modes/side/player_skeleton.ts
+var PlayerSkel = class extends HumanSkeleton {
   constructor() {
     super({
       boneSizes: {
@@ -3528,6 +3514,8 @@ var WorkerSkel = class extends Skeleton {
         "shoulderWidth": 8
       }
     });
+    this.runTime = 0;
+    this.idleTime = 0;
   }
   build() {
     super.build();
@@ -3681,9 +3669,23 @@ var WorkerSkel = class extends Skeleton {
       }
     };
   }
+  tick(obj) {
+    super.tick(obj);
+    this.runTime = (this.runTime + obj.interval) % 1400;
+    this.idleTime = (this.idleTime + obj.interval) % 12e3;
+    if (!this.parent.stat.ground) {
+      this.setPose("jump");
+    } else {
+      if (this.parent.stat.running) {
+        this.setPose(this.runTime < 700 ? "running1" : "running2");
+      } else {
+        this.setPose(this.idleTime < 6e3 ? "idle" : "idle2");
+      }
+    }
+  }
 };
 
-// ts/modes/side/player.ts
+// ts/modes/side/player_actor.ts
 var Player = class extends Character {
   constructor({
     position = Vector3.f(0),
@@ -3701,7 +3703,7 @@ var Player = class extends Character {
   }
   build() {
     GlElement.registerControllers(this);
-    this.skeleton = new WorkerSkel();
+    this.skeleton = new PlayerSkel();
     this.addChild(this.skeleton);
   }
 };
@@ -4068,12 +4070,11 @@ var Collider = class extends GlElement {
   }
 };
 
-// ts/modes/side/carController.ts
+// ts/modes/side/car_controller.ts
 var CarController = class extends GlController {
   constructor() {
     super(...arguments);
     this.intr = { fall: 0, jump: 0, landDelay: 0 };
-    this.stat = {};
     this.cnst = { runTime: 5e3, runSlowDownFactor: 0.1, runSpeed: 2 };
     this.velocity = Vector3.f(0);
     this.direction = 0;
@@ -4142,7 +4143,7 @@ var CarController = class extends GlController {
   }
 };
 
-// ts/modes/side/carCamera.ts
+// ts/modes/side/car_camera.ts
 var CarCamera = class extends GlController {
   constructor(target) {
     super({ autoReady: false });
@@ -4187,7 +4188,7 @@ var CarCamera = class extends GlController {
   }
 };
 
-// ts/modes/side/driver.ts
+// ts/modes/side/car_actor.ts
 var Driver = class extends Character {
   constructor({
     position = Vector3.f(0),
@@ -4212,7 +4213,106 @@ var Driver = class extends Character {
   }
 };
 
-// ts/modes/side/world.ts
+// ts/modes/side/npc_skeleton.ts
+var npcSkeleton = class extends HumanSkeleton {
+  constructor() {
+    super({
+      boneSizes: {
+        "head": 6,
+        "armUpper": 5,
+        "armLower": 9,
+        "hand": 0,
+        "legUpper": 9,
+        "legLower": 5,
+        "foot": 1,
+        "torso": 5.5,
+        "hips": 3,
+        "hipsWidth": 6,
+        "shoulderWidth": 8
+      }
+    });
+    this.idleTime = 0;
+  }
+  build() {
+    super.build();
+    this.head.addChild(new GLobj({ url: "worker/worker-10-Head.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(2, -9.5, 2) }));
+    this.torso.addChild(new GLobj({ url: "worker/worker-8-TorsoUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(this.sizes.shoulderWidth / 2, -3, 1) }));
+    this.hips.addChild(new GLobj({ url: "worker/worker-9-TorsoLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(3, 0, 1) }));
+    this.lLegUpper.addChild(new GLobj({ url: "worker/worker-0-lLegUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(3, 9, 1) }));
+    this.rLegUpper.addChild(new GLobj({ url: "worker/worker-1-rLegUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(-2, 9, 1) }));
+    this.lLegLower.addChild(new GLobj({ url: "worker/worker-2-lLegLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(3, 14.4, 1.5) }));
+    this.rLegLower.addChild(new GLobj({ url: "worker/worker-3-rLegLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(-2, 14.4, 1.5) }));
+    this.lArmUpper.addChild(new GLobj({ url: "worker/worker-4-lArmUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, Math.PI / 2), position: v3(8.5, 7, 1) }));
+    this.rArmUpper.addChild(new GLobj({ url: "worker/worker-5-rArmUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, -Math.PI / 2), position: v3(-7.5, 7, 1) }));
+    this.lArmLower.addChild(new GLobj({ url: "worker/worker-6-lArmLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, Math.PI / 2), position: v3(8.5, 16, 1) }));
+    this.rArmLower.addChild(new GLobj({ url: "worker/worker-7-rArmLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, -Math.PI / 2), position: v3(-7.5, 16, 1) }));
+    this.animation = {
+      idle: {
+        torso: [0.02, []],
+        hips: [0.02, []],
+        head: [5e-3, [0, 0.5]],
+        lArmUpper: [0.03, []],
+        lArmLower: [0.03, []],
+        lHand: [0.03, []],
+        rArmUpper: [0.03, []],
+        rArmLower: [0.03, []],
+        rHand: [0.03, []],
+        lLegUpper: [0.04, []],
+        lLegLower: [0.05, []],
+        lFoot: [0.03, []],
+        rLegUpper: [0.03, []],
+        rLegLower: [0.03, []],
+        rFoot: [0.03, []]
+      },
+      idle2: {
+        torso: [0.02, []],
+        hips: [0.02, []],
+        head: [5e-3, [0, -0.5]],
+        lArmUpper: [0.03, []],
+        lArmLower: [0.03, []],
+        lHand: [0.03, []],
+        rArmUpper: [0.03, []],
+        rArmLower: [0.03, []],
+        rHand: [0.03, []],
+        lLegUpper: [0.04, []],
+        lLegLower: [0.05, []],
+        lFoot: [0.03, []],
+        rLegUpper: [0.03, []],
+        rLegLower: [0.03, []],
+        rFoot: [0.03, []]
+      }
+    };
+  }
+  tick(obj) {
+    super.tick(obj);
+    this.idleTime = (this.idleTime + obj.interval) % 12e3;
+    this.setPose(this.idleTime < 6e3 ? "idle" : "idle2");
+  }
+};
+
+// ts/modes/side/npc_actor.ts
+var NPC = class extends Character {
+  constructor({
+    position = Vector3.f(0),
+    size = Vector3.f(0),
+    rotation = Vector3.f(0)
+  } = {}) {
+    super({
+      position,
+      size,
+      rotation,
+      anchorPoint: size.multiply(0.5, 0, 0.5)
+    });
+    this.stat = { jumping: false, falling: false, running: false, fallAnimation: false };
+  }
+  build() {
+    GlElement.registerControllers(this);
+    this.skeleton = new npcSkeleton();
+    this.addChild(this.skeleton);
+  }
+};
+
+// ts/modes/side/level.ts
 var World = class extends Level {
   constructor() {
     super({
@@ -4292,6 +4392,11 @@ var World = class extends Level {
   }
   build() {
     super.build();
+    this.addChild(new NPC({
+      size: v3(6, 33, 8),
+      position: v3(220, 11, 736),
+      rotation: v3(0, Math.PI, 0)
+    }));
     this.player = new Player({
       size: v3(6, 33, 8),
       position: v3(130, 1, 600),
@@ -4334,7 +4439,7 @@ var World = class extends Level {
   }
 };
 
-// ts/modes/side/openWorld.ts
+// ts/modes/side/mode.ts
 var OpenWorldMode = class extends Mode {
   build() {
     super.build();

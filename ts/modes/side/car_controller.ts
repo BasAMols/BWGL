@@ -7,7 +7,6 @@ import { Vector2 } from '../../utils/vector2';
 
 export class CarController extends GlController {
     private intr: Record<string, number> = { fall: 0, jump: 0, landDelay: 0 };
-    private stat: Record<string, boolean> = {};
     private cnst = { runTime: 5000, runSlowDownFactor: 0.1, runSpeed: 2 } as const;
     private velocity: Vector3 = Vector3.f(0);
     private newPosition: Vector3;

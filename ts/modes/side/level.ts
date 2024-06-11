@@ -3,21 +3,19 @@ import { Color } from '../../utils/colors';
 import { Level } from '../../utils/level';
 import { Vector2 } from '../../utils/vector2';
 import { Vector3, v3 } from '../../utils/vector3';
-import { Player } from './player';
-import { Scroller } from './scrolling';
+import { Player } from './player_actor';
 import { Collider } from '../../utils/collider';
 import { GLobj } from '../../gl/obj';
 import { GLCuboid } from '../../gl/cuboid';
 import { ObjStorage } from '../../gl/objStorage';
-import { Driver } from './driver';
+import { Driver } from './car_actor';
+import { NPC } from './npc_actor';
 
 export class World extends Level {
     public start = Vector2.zero;
     public background: Color = [0.67451, 0.603922, 0.968627, 1];
     public character: Player;
     public mo: DomText;
-    public env: Scroller;
-    public train: any;
     public st: ObjStorage;
     public driving: boolean;
     car: Driver;
@@ -106,6 +104,12 @@ export class World extends Level {
 
     build() {
         super.build();
+        this.addChild(new NPC({
+            size: v3(6, 33, 8),
+            position: v3(220, 11, 736),
+            rotation: v3(0, Math.PI, 0)
+        }));
+
         this.player = new Player({
             size: v3(6, 33, 8),
             position: v3(130, 1, 600),
