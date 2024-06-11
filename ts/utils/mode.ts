@@ -1,5 +1,6 @@
 import { GlElementAttributes } from '../gl/elementBase';
 import { GLGroup } from '../gl/group';
+import { ObjStorage } from '../gl/objStorage';
 import { Level } from './level';
 import { TickerReturnData } from './ticker';
 
@@ -8,6 +9,7 @@ export type modeAttributes = GlElementAttributes & {
 };
 export abstract class Mode extends GLGroup {
     public levels: Record<string, Level> = {};
+    public storage: ObjStorage;
 
     public get camera(): typeof this.level.camera {
         return this.level.camera;
@@ -22,6 +24,7 @@ export abstract class Mode extends GLGroup {
 
     public build(): void {
         this.game.active.mode = this;
+        this.storage = new ObjStorage();
         this.switchLevel(Object.keys(this.levels)[0]);
     }
 

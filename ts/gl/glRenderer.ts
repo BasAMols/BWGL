@@ -75,8 +75,6 @@ export class GLRenderer {
             .perspective(
                 (this.game.mode.camera.fov * Math.PI) / 180,
                 (this.gl.canvas as HTMLCanvasElement).clientWidth / (this.gl.canvas as HTMLCanvasElement).clientHeight,
-                1,
-                1000
             )
             .translate(this.game.mode.camera.offset.multiply(1, 1, -1))
             .rotate(this.game.mode.camera.rotation)

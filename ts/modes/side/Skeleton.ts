@@ -30,6 +30,8 @@ export class Bone extends GLGroup {
         this.profile = attr.profile || v2(0);
         this.speed = attr.speed === undefined ? 0.015 : attr.speed;
         this.baseRotation = attr.baseRotation || v3(0);
+        this.size = v3(this.profile.x, this.length, this.profile.y);
+
         if (!attr.anchorPoint) {
             this.anchorPoint = v3(
                 this.profile.x / 2,
@@ -65,25 +67,13 @@ export class Bone extends GLGroup {
         );
 
         this.rotation = this.rotation.add(movement);
-
-        // console.log(dif.array);
-        // const dif = this.rotation
-        //     .subtract(this.target)
-        //     .mod(Vector3.PI.scale(0.5))
-        //     .clamp(
-        //         v3(-0.01, -0.01, -0.01),
-        //         v3(0.01, 0.01, 0.01)
-        //     );
-        // if (dif.magnitude() > 0) {
-        //     this.rotation = this.rotation.add(dif);
-        // }
     }
     public build(): void {
         super.build();
         if (this.mesh) {
             this.addChild(new GLCuboid({
-                colors: [[0, 0, 0.2, 1], [0.2, 0.3, 0.4, 1], [0.2, 0.3, 0.4, 1], [0.2, 0.3, 0.4, 1], [0.2, 0.3, 0.4, 1], [0.2, 0.3, 0.4, 1]] as [Color, Color?, Color?, Color?, Color?, Color?],
-                size: v3(this.profile.x, this.length, this.profile.y),
+                colors: [[0.05, 0.2, 0.3, 1], [0.2, 0.3, 0.4, 1], [0.2, 0.3, 0.4, 1], [0.2, 0.3, 0.4, 1], [0.2, 0.3, 0.4, 1], [0.2, 0.3, 0.4, 1]] as [Color, Color?, Color?, Color?, Color?, Color?],
+                size: this.size,
             }));
         }
     }
@@ -149,8 +139,7 @@ export class Skeleton extends GLGroup {
     public build(): void {
         super.build();
 
-
-        this.torso = this.addChild(new Bone({ speed: 0.01, profile: v2(6, 3), length: this.sizes.torso, position: v3(0, this.sizes.legUpper + this.sizes.legKnee + this.sizes.legLower + this.sizes.foot, 0) })) as Bone;
+        this.torso = this.addChild(new Bone({ speed: 0.01, profile: v2(6, 4), length: this.sizes.torso, position: v3(0, this.sizes.legUpper + this.sizes.legKnee + this.sizes.legLower + this.sizes.foot, 3) })) as Bone;
         this.head = this.torso.addChild(new Bone({ speed: 0.005, profile: v2(5, 6), length: this.sizes.head, anchorPoint: v3(3, 0, 3), position: v3(0.5, this.sizes.torso + 1, -1) })) as Bone;
 
         this.lArmUpper = this.torso.addChild(new Bone({ profile: v2(2.4), length: this.sizes.armUpper, position: v3(-3.4, this.sizes.torso - this.sizes.armUpper, 1), mesh: true })) as Bone;
@@ -262,7 +251,7 @@ export class Skeleton extends GLGroup {
                 rFoot: [0.03,[]],
             },
             jump: {
-                torso: [0.03,[0.1, -0.1, -0.1]],
+                torso: [0.03,[-0.1, -0.1, 0.15]],
                 head: [0.03,[0.3, 0, 0]],
                 lArmUpper: [0.03,[-0.2, 0, 0.1]],
                 lArmLower: [0.03,[0, 0, 0.2]],

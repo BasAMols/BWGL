@@ -38,6 +38,7 @@ export class GLobj extends GLRendable {
     private normalIndeces: number[] = [];
     private textureIndeces: number[] = [];
     private texturePositionIndeces: number[] = [];
+    path: string;
 
     public getData(): GLObjTransferData {
         return {
@@ -64,6 +65,8 @@ export class GLobj extends GLRendable {
     constructor(attr: GLobjAttributes = {}) {
         super({ ...attr, ...{ autoReady: false } });
 
+        this.path = attr.url.split('/').slice(0, -1).join('/') + '/';
+
         if (attr.storage){
             if (attr.storage.register(attr.url, this)) {
                 this.loadFile(`${window.location.href}/obj/${attr.url}`)
@@ -86,7 +89,7 @@ export class GLobj extends GLRendable {
 
     private async parseMtl(str: string) {
         if (/mtllib/.test(str)) {
-            await this.loadFile(`${window.location.href}obj/${str.split(/mtllib/)[1].split(/(?: |\n)/)[1]}`)
+            await this.loadFile(`${window.location.href}obj/${this.path}${str.split(/mtllib/)[1].split(/\n/)[0].trim()}`)
                 .then((v) => {
                     v.split('newmtl ').slice(1).forEach((s: string) => {
                         const lines = s.split(/\r\n|\r|\n/).filter((n) => n);
@@ -221,7 +224,7 @@ export class GLobj extends GLRendable {
 
             if (matImage) {
                 this.texture = new GLTexture(this.game, {
-                    url: `obj/${matImage.map_Kd}`,
+                    url: `obj/${this.path}${matImage.map_Kd.join(' ').trim()}`,
                 });
             } else {
                 this.texture = new GLTexture(this.game, {

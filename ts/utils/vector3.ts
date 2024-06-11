@@ -157,6 +157,34 @@ export class Vector3 {
 		);
 	}
 
+	rotateXY(rad: number) {
+		const [a,b] = this.xy.rotate(rad).array;
+
+		return new Vector3(
+			a,
+			this.y,
+			b,
+		);
+	}
+	rotateXZ(rad: number) {
+		const [a,b] = this.xz.rotate(rad).array;
+
+		return new Vector3(
+			a,
+			b,
+			this.z,
+		);
+	}
+	rotateYZ(rad: number) {
+		const [a,b] = this.yz.rotate(rad).array;
+
+		return new Vector3(
+			this.x,
+			a,
+			b,
+		);
+	}
+
 	magnitude() {
 		return Math.sqrt(this.magnitudeSqr());
 	}

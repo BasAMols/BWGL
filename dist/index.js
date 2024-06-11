@@ -753,6 +753,30 @@ var Vector3 = class _Vector3 {
       this.z / vector.z
     );
   }
+  rotateXY(rad) {
+    const [a, b] = this.xy.rotate(rad).array;
+    return new _Vector3(
+      a,
+      this.y,
+      b
+    );
+  }
+  rotateXZ(rad) {
+    const [a, b] = this.xz.rotate(rad).array;
+    return new _Vector3(
+      a,
+      b,
+      this.z
+    );
+  }
+  rotateYZ(rad) {
+    const [a, b] = this.yz.rotate(rad).array;
+    return new _Vector3(
+      this.x,
+      a,
+      b
+    );
+  }
   magnitude() {
     return Math.sqrt(this.magnitudeSqr());
   }
@@ -2292,9 +2316,7 @@ var GLRenderer = class {
       "uProjectionMatrix",
       new Matrix4().perspective(
         this.game.mode.camera.fov * Math.PI / 180,
-        this.gl.canvas.clientWidth / this.gl.canvas.clientHeight,
-        1,
-        1e3
+        this.gl.canvas.clientWidth / this.gl.canvas.clientHeight
       ).translate(this.game.mode.camera.offset.multiply(1, 1, -1)).rotate(this.game.mode.camera.rotation).mat4
     );
     this.drawChildren(this.game.level, new Matrix4().translate(this.game.mode.camera.target.multiply(-1, 1, 1)));
@@ -2425,6 +2447,45 @@ var GLGroup = class extends GlElement {
   }
 };
 
+// ts/gl/objStorage.ts
+var ObjStorage = class {
+  constructor() {
+    this.registered = {};
+  }
+  check(url) {
+    const item = Object.entries(this.registered).find(([u]) => u === url);
+    return item ? item[1] : false;
+  }
+  register(url, user) {
+    const o = this.check(url);
+    if (o) {
+      o.using.push(user);
+      if (o.ready) {
+        this.callBack(user, o.origin);
+      }
+      return false;
+    } else {
+      this.registered[url] = {
+        ready: false,
+        origin: user,
+        using: []
+      };
+      return true;
+    }
+  }
+  callBack(user, origin) {
+    user.giveData(origin.getData());
+    user.build();
+  }
+  loaded(url) {
+    const o = this.check(url);
+    if (o && !o.ready) {
+      o.ready = true;
+      o.using.forEach((user) => this.callBack(user, o.origin));
+    }
+  }
+};
+
 // ts/utils/mode.ts
 var Mode = class extends GLGroup {
   constructor(attr = {}) {
@@ -2457,6 +2518,7 @@ var Mode = class extends GLGroup {
   }
   build() {
     this.game.active.mode = this;
+    this.storage = new ObjStorage();
     this.switchLevel(Object.keys(this.levels)[0]);
   }
   addLevel(s, level) {
@@ -2525,6 +2587,48 @@ var GlController = class extends GlElement {
     super(...arguments);
     this.type = "controller";
     this.order = "before";
+  }
+};
+
+// ts/modes/side/freeCamera.ts
+var FreeCamera = class extends GlController {
+  constructor(target) {
+    super({ autoReady: false });
+    this.target = target;
+    this.type = "controller";
+    this.order = "after";
+    this.lagList = [];
+    this.lagCount = 8;
+  }
+  get active() {
+    return super.active;
+  }
+  set active(value) {
+    super.active = value;
+    if (value) {
+      this.camera.offset = v3(0, -15, 100);
+      this.camera.rotation = v3(0.15, 0, 0);
+      this.camera.fov = 70;
+    }
+  }
+  mouseMove(e) {
+    const r = v2(e.movementX, e.movementY).scale(5e-3);
+    this.camera.rotation = v3(
+      Util.clamp(this.camera.rotation.x + r.y, -0.1, Math.PI / 2),
+      this.camera.rotation.y + r.x,
+      this.camera.rotation.z
+    );
+  }
+  scroll(e) {
+    this.camera.offset.z = Util.clamp(this.camera.offset.z + e.deltaY * 0.1, 10, 300);
+  }
+  tick(o) {
+    super.tick(o);
+    const nP = this.target.position.add(this.target.size.multiply(0.5, 0.5, 0.5)).multiply(1, -1, 1);
+    while (this.lagList.length < this.lagCount) {
+      this.lagList.push(nP);
+    }
+    this.camera.target = this.lagList.shift();
   }
 };
 
@@ -2660,97 +2764,6 @@ var MovementController = class extends GlController {
     this.setVelocity(obj);
     this.colliders(obj);
     this.parent.absolutePosition = this.newPosition.clone();
-  }
-};
-
-// ts/modes/side/sideController.ts
-var SideController = class extends MovementController {
-  tick(obj) {
-    super.tick(obj);
-    this.parent.position.x = Util.clamp(this.parent.position.x, -600, 1e3);
-    this.parent.position.z = Util.clamp(this.parent.position.z, 260, 340);
-  }
-};
-
-// ts/modes/side/sideCamera.ts
-var SideCamera = class extends GlController {
-  constructor(target) {
-    super({ autoReady: false });
-    this.target = target;
-    this.type = "controller";
-  }
-  get active() {
-    return super.active;
-  }
-  set active(value) {
-    super.active = value;
-    if (value) {
-      this.camera.target = v3(0, -80, 175);
-      this.camera.offset = v3(0);
-      this.camera.rotation = v3(0.05, 0, 0);
-      this.camera.fov = 70;
-    }
-  }
-  // mouseMove(e: MouseEvent): void {
-  //     const r = v2(e.movementX, e.movementY).scale(0.005);
-  //     this.camera.rotation = v3(
-  //         Util.clamp(this.camera.rotation.x + r.y, -0.1, Math.PI / 2),
-  //         this.camera.rotation.y + r.x,
-  //         this.camera.rotation.z
-  //     );
-  // }
-  // scroll(e: WheelEvent): void {
-  //     this.camera.offset.z = Util.clamp(this.camera.offset.z + e.deltaY * 0.1, 10, 300);
-  // }
-  tick(o) {
-    super.tick(o);
-    this.camera.target = v3(
-      this.target.position.x + this.target.size.x / 2,
-      this.camera.target.y,
-      this.camera.target.z
-    );
-  }
-};
-
-// ts/modes/side/freeCamera.ts
-var FreeCamera = class extends GlController {
-  constructor(target) {
-    super({ autoReady: false });
-    this.target = target;
-    this.type = "controller";
-    this.order = "after";
-    this.lagList = [];
-    this.lagCount = 8;
-  }
-  get active() {
-    return super.active;
-  }
-  set active(value) {
-    super.active = value;
-    if (value) {
-      this.camera.offset = v3(0, -15, 100);
-      this.camera.rotation = v3(0.15, 0, 0);
-      this.camera.fov = 70;
-    }
-  }
-  mouseMove(e) {
-    const r = v2(e.movementX, e.movementY).scale(5e-3);
-    this.camera.rotation = v3(
-      Util.clamp(this.camera.rotation.x + r.y, -0.1, Math.PI / 2),
-      this.camera.rotation.y + r.x,
-      this.camera.rotation.z
-    );
-  }
-  scroll(e) {
-    this.camera.offset.z = Util.clamp(this.camera.offset.z + e.deltaY * 0.1, 10, 300);
-  }
-  tick(o) {
-    super.tick(o);
-    const nP = this.target.position.add(this.target.size.multiply(0.5, 0.5, 0.5)).multiply(1, -1, 1);
-    while (this.lagList.length < this.lagCount) {
-      this.lagList.push(nP);
-    }
-    this.camera.target = this.lagList.shift();
   }
 };
 
@@ -3208,7 +3221,7 @@ var GLCuboid = class _GLCuboid extends GLRendable {
   }
 };
 
-// ts/modes/side/Skeleton.ts
+// ts/modes/side/skeleton.ts
 var Bone = class extends GLGroup {
   constructor(attr = {}) {
     super(attr);
@@ -3217,6 +3230,7 @@ var Bone = class extends GLGroup {
     this.profile = attr.profile || v2(0);
     this.speed = attr.speed === void 0 ? 0.015 : attr.speed;
     this.baseRotation = attr.baseRotation || v3(0);
+    this.size = v3(this.profile.x, this.length, this.profile.y);
     if (!attr.anchorPoint) {
       this.anchorPoint = v3(
         this.profile.x / 2,
@@ -3252,8 +3266,8 @@ var Bone = class extends GLGroup {
     super.build();
     if (this.mesh) {
       this.addChild(new GLCuboid({
-        colors: [[0, 0, 0.2, 1], [0.2, 0.3, 0.4, 1], [0.2, 0.3, 0.4, 1], [0.2, 0.3, 0.4, 1], [0.2, 0.3, 0.4, 1], [0.2, 0.3, 0.4, 1]],
-        size: v3(this.profile.x, this.length, this.profile.y)
+        colors: [[0.05, 0.2, 0.3, 1], [0.2, 0.3, 0.4, 1], [0.2, 0.3, 0.4, 1], [0.2, 0.3, 0.4, 1], [0.2, 0.3, 0.4, 1], [0.2, 0.3, 0.4, 1]],
+        size: this.size
       }));
     }
   }
@@ -3278,7 +3292,7 @@ var Skeleton = class extends GLGroup {
   }
   build() {
     super.build();
-    this.torso = this.addChild(new Bone({ speed: 0.01, profile: v2(6, 3), length: this.sizes.torso, position: v3(0, this.sizes.legUpper + this.sizes.legKnee + this.sizes.legLower + this.sizes.foot, 0) }));
+    this.torso = this.addChild(new Bone({ speed: 0.01, profile: v2(6, 4), length: this.sizes.torso, position: v3(0, this.sizes.legUpper + this.sizes.legKnee + this.sizes.legLower + this.sizes.foot, 3) }));
     this.head = this.torso.addChild(new Bone({ speed: 5e-3, profile: v2(5, 6), length: this.sizes.head, anchorPoint: v3(3, 0, 3), position: v3(0.5, this.sizes.torso + 1, -1) }));
     this.lArmUpper = this.torso.addChild(new Bone({ profile: v2(2.4), length: this.sizes.armUpper, position: v3(-3.4, this.sizes.torso - this.sizes.armUpper, 1), mesh: true }));
     this.rArmUpper = this.torso.addChild(new Bone({ profile: v2(2.4), length: this.sizes.armUpper, position: v3(7, this.sizes.torso - this.sizes.armUpper, 1), mesh: true }));
@@ -3383,7 +3397,7 @@ var Skeleton = class extends GLGroup {
         rFoot: [0.03, []]
       },
       jump: {
-        torso: [0.03, [0.1, -0.1, -0.1]],
+        torso: [0.03, [-0.1, -0.1, 0.15]],
         head: [0.03, [0.3, 0, 0]],
         lArmUpper: [0.03, [-0.2, 0, 0.1]],
         lArmLower: [0.03, [0, 0, 0.2]],
@@ -3436,31 +3450,25 @@ var Player = class extends Character {
       anchorPoint: size.multiply(0.5, 0, 0.5)
     });
     this.stat = { jumping: false, falling: false, running: false, fallAnimation: false };
-    this.addControllers([new SideController(), new SideCamera(this), new FreeCamera(this), new MovementController(this)]);
-  }
-  keyDown(e) {
-    if (e.key === "Enter") {
-      if (this.controllers[0].active) {
-        this.controllers[0].active = false;
-        this.controllers[1].active = false;
-        this.controllers[2].active = true;
-        this.controllers[3].active = true;
-      } else {
-        this.controllers[0].active = true;
-        this.controllers[1].active = true;
-        this.controllers[2].active = false;
-        this.controllers[3].active = false;
-      }
-    }
+    this.addControllers([new FreeCamera(this), new MovementController(this)]);
   }
   build() {
     GlElement.registerControllers(this);
-    this.skeleton = new Skeleton();
+    this.skeleton = new Skeleton({
+      boneSizes: {
+        "head": 6,
+        "armUpper": 6,
+        "armElbow": 0,
+        "armLower": 3,
+        "hand": 3,
+        "legUpper": 6,
+        "legKnee": 0,
+        "legLower": 5,
+        "foot": 2,
+        "torso": 13
+      }
+    });
     this.addChild(this.skeleton);
-    this.controllers[0].active = false;
-    this.controllers[1].active = false;
-    this.controllers[2].active = true;
-    this.controllers[3].active = true;
   }
   tick(obj) {
     super.tick(obj);
@@ -3843,6 +3851,7 @@ var GLobj = class extends GLRendable {
     this.normalIndeces = [];
     this.textureIndeces = [];
     this.texturePositionIndeces = [];
+    this.path = attr.url.split("/").slice(0, -1).join("/") + "/";
     if (attr.storage) {
       if (attr.storage.register(attr.url, this)) {
         this.loadFile("".concat(window.location.href, "/obj/").concat(attr.url)).then(this.parseMtl.bind(this)).then(this.parseObj.bind(this)).then(() => {
@@ -3878,7 +3887,7 @@ var GLobj = class extends GLRendable {
   }
   async parseMtl(str2) {
     if (/mtllib/.test(str2)) {
-      await this.loadFile("".concat(window.location.href, "obj/").concat(str2.split(/mtllib/)[1].split(/(?: |\n)/)[1])).then((v) => {
+      await this.loadFile("".concat(window.location.href, "obj/").concat(this.path).concat(str2.split(/mtllib/)[1].split(/\n/)[0].trim())).then((v) => {
         v.split("newmtl ").slice(1).forEach((s) => {
           const lines = s.split(/\r\n|\r|\n/).filter((n) => n);
           this.matsData[lines.shift()] = Object.fromEntries(lines.map((line) => {
@@ -3983,7 +3992,7 @@ var GLobj = class extends GLRendable {
       const matImage = matArray.find((m) => m.map_Kd);
       if (matImage) {
         this.texture = new GLTexture(this.game, {
-          url: "obj/".concat(matImage.map_Kd)
+          url: "obj/".concat(this.path).concat(matImage.map_Kd.join(" ").trim())
         });
       } else {
         this.texture = new GLTexture(this.game, {
@@ -3998,42 +4007,147 @@ var GLobj = class extends GLRendable {
   }
 };
 
-// ts/gl/objStorage.ts
-var ObjStorage = class {
+// ts/modes/side/carController.ts
+var CarController = class extends GlController {
   constructor() {
-    this.registered = {};
+    super(...arguments);
+    this.intr = { fall: 0, jump: 0, landDelay: 0 };
+    this.stat = {};
+    this.cnst = { runTime: 5e3, runSlowDownFactor: 0.1, runSpeed: 2 };
+    this.velocity = Vector3.f(0);
+    this.direction = 0;
   }
-  check(url) {
-    const item = Object.entries(this.registered).find(([u]) => u === url);
-    return item ? item[1] : false;
-  }
-  register(url, user) {
-    const o = this.check(url);
-    if (o) {
-      o.using.push(user);
-      if (o.ready) {
-        this.callBack(user, o.origin);
+  setMovementVelocity(interval) {
+    if (this.mode.input.space) {
+      this.intr.acc = 0;
+    } else if (this.mode.input.up) {
+      this.intr.acc = Util.clamp((this.intr.acc | 0) + interval, -(this.cnst.runTime / 3), this.cnst.runTime);
+    }
+    {
+      if (this.mode.input.down) {
+        this.intr.acc = Util.clamp((this.intr.acc | 0) - interval * 0.8, -(this.cnst.runTime / 3), this.cnst.runTime);
+      } else {
+        if (this.intr.acc >= 0) {
+          this.intr.acc = Util.clamp((this.intr.acc | 0) - interval * this.cnst.runSlowDownFactor, 0, this.cnst.runTime);
+        } else {
+          this.intr.acc = Util.clamp((this.intr.acc | 0) + interval * this.cnst.runSlowDownFactor, -(this.cnst.runTime / 3), 0);
+        }
       }
-      return false;
+    }
+    this.direction = this.direction - 1e-3 * interval * (+this.mode.input.left - +this.mode.input.right) * (1.5 - this.intr.acc / this.cnst.runTime) * (this.intr.acc / this.cnst.runTime);
+    this.parent.rotation = v3(0, this.direction, 0);
+    const plane = Vector2.up.clampMagnitude(1).scale(this.intr.acc / this.cnst.runTime).scale(this.cnst.runSpeed).rotate(-this.direction);
+    this.velocity = v3(
+      plane.x,
+      0,
+      plane.y
+    );
+  }
+  setJumpVelocity(interval) {
+    if (this.parent.stat.falling) {
+      this.intr.fall += interval;
     } else {
-      this.registered[url] = {
-        ready: false,
-        origin: user,
-        using: []
-      };
-      return true;
+      this.velocity.y = 0;
+      return;
+    }
+    this.velocity.y = 0;
+  }
+  setVelocity(obj) {
+    this.setMovementVelocity(obj.interval);
+    this.setJumpVelocity(obj.interval);
+    const sc = this.velocity.scale(obj.interval / 6);
+    if (sc.xz.magnitude() > 0) {
+      const [x, z] = sc.xz.array;
+      this.newPosition = this.parent.absolutePosition.add(v3(x, sc.y, z));
+    } else {
+      this.newPosition = this.parent.absolutePosition.add(v3(0, sc.y, 0));
     }
   }
-  callBack(user, origin) {
-    user.giveData(origin.getData());
-    user.build();
-  }
-  loaded(url) {
-    const o = this.check(url);
-    if (o && !o.ready) {
-      o.ready = true;
-      o.using.forEach((user) => this.callBack(user, o.origin));
+  colliders(obj) {
+    this.parent.stat.ground = false;
+    if (!this.parent.stat.jumping) {
+      this.parent.stat.falling = !this.parent.stat.ground;
     }
+  }
+  build() {
+    super.build();
+    this.direction = this.parent.rotation.y;
+  }
+  tick(obj) {
+    super.tick(obj);
+    this.setVelocity(obj);
+    this.colliders(obj);
+    this.parent.absolutePosition = this.newPosition.clone();
+  }
+};
+
+// ts/modes/side/carCamera.ts
+var CarCamera = class extends GlController {
+  constructor(target) {
+    super({ autoReady: false });
+    this.target = target;
+    this.type = "controller";
+    this.order = "after";
+    this.lagList = [];
+    this.lagCount = 8;
+  }
+  get active() {
+    return super.active;
+  }
+  set active(value) {
+    super.active = value;
+    if (value) {
+      this.camera.offset = v3(0, -15, 200);
+      this.camera.rotation = v3(0.15, 0, 0);
+      this.camera.fov = 70;
+    }
+  }
+  mouseMove(e) {
+    const r = v2(e.movementX, e.movementY).scale(5e-3);
+    this.camera.rotation = v3(
+      Util.clamp(this.camera.rotation.x + r.y, -0.1, Math.PI / 2),
+      this.camera.rotation.y + r.x,
+      this.camera.rotation.z
+    );
+  }
+  build() {
+    this.active = true;
+  }
+  scroll(e) {
+    this.camera.offset.z = Util.clamp(this.camera.offset.z + e.deltaY * 0.1, 100, 200);
+  }
+  tick(o) {
+    super.tick(o);
+    const nP = this.target.position.add(this.target.size.multiply(0.5, 0.5, 0.5)).multiply(1, -1, 1);
+    while (this.lagList.length < this.lagCount) {
+      this.lagList.push(nP);
+    }
+    this.camera.target = this.lagList.shift();
+  }
+};
+
+// ts/modes/side/driver.ts
+var Driver = class extends Character {
+  constructor({
+    position = Vector3.f(0),
+    size = Vector3.f(0),
+    rotation = Vector3.f(0)
+  } = {}) {
+    super({
+      position,
+      size,
+      rotation,
+      anchorPoint: size.multiply(0.5, 0, 0.5)
+    });
+    this.stat = { jumping: false, falling: false, running: false, fallAnimation: false };
+    this.addControllers([new CarController(this), new CarCamera(this)]);
+  }
+  build() {
+    GlElement.registerControllers(this);
+    this.addChild(new GLobj({ storage: this.mode.storage, url: "Shop-3-Car.obj", size: v3(20, 20, 20), position: v3(20, 15, 52), rotation: v3(0, -Math.PI / 2, 0) }));
+  }
+  tick(obj) {
+    super.tick(obj);
   }
 };
 
@@ -4046,66 +4160,109 @@ var World = class extends Level {
     this.start = Vector2.zero;
     this.background = [0.67451, 0.603922, 0.968627, 1];
   }
-  build() {
-    super.build();
-    this.addChild(new Player({
-      size: v3(6, 24, 8),
-      position: v3(130, 1, 600),
-      rotation: v3(0, 2.3, 0)
-    }));
-    const st = new ObjStorage();
-    this.addChild(new GLCuboid({ size: v3(3500, 1, 5e3), position: v3(-5600, -1, -2e3), colors: [[0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.317, 0.362, 0.298, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1]] }));
-    this.addChild(new GLCuboid({ size: v3(4e3, 1, 5e3), position: v3(1900, -1, -2e3), colors: [[0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.317, 0.362, 0.298, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1]] }));
-    this.addChild(new GLCuboid({ size: v3(4e3, 1, 1800), position: v3(-2100, -1, -2e3), colors: [[0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.317, 0.362, 0.298, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1]] }));
-    this.addChild(new GLCuboid({ size: v3(4e3, 1, 800), position: v3(-2100, -1, 2200), colors: [[0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.317, 0.362, 0.298, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1]] }));
-    for (let x = 0; x < 20; x++) {
-      for (let y = 0; y < 12; y++) {
-        const p = v3(
-          200 * x - 2e3,
-          -2,
-          200 * y - 100
-        );
-        if (Math.random() < 0.5) {
-          this.addChild(new GLobj({ storage: st, url: "CountrySide-3-GroundTile1.obj", size: v3(20, 20, 20), position: p }));
-        } else {
-          this.addChild(new GLobj({ storage: st, url: "CountrySide-2-GroundTile2.obj", size: v3(20, 20, 20), position: p }));
-        }
-        if (![2, 3, 4].includes(x) || ![3, 4, 5].includes(y)) {
-          for (let rx = 0; rx < 5; rx++) {
-            for (let ry = 0; ry < 5; ry++) {
-              if (Math.random() < 0.1) {
-                this.addChild(new GLobj({
-                  storage: st,
-                  url: ["CountrySide-6-Vegetation5.obj", "CountrySide-0-Vegetation3.obj", "CountrySide-6-Vegetation5.obj", "CountrySide-8-Rock.obj"][Math.floor(Math.random() * 4)],
-                  size: v3(
-                    10,
-                    10,
-                    10
-                  ).scale(Math.ceil(Math.random() * 3)),
-                  position: p.add(v3(
-                    40 * rx + Math.random() * 6,
-                    8,
-                    40 * ry + Math.random() * 6
-                  )),
-                  rotation: v3(
-                    0,
-                    Math.floor(Math.random() * 4) * Math.PI,
-                    0
-                  )
-                }));
-              }
-            }
+  keyDown(e) {
+    if (e.key === "Enter") {
+      this.drive();
+    }
+  }
+  drive(b = !this.driving) {
+    this.driving = b;
+    this.player.active = !this.driving;
+    this.car.active = this.driving;
+    if (this.driving) {
+      this.player.position = v3(0, -100, 0);
+    } else {
+      this.player.position = this.car.position.add(v3(10, 0, 0).rotateXZ(-this.car.rotation.xz.angle())).clone();
+    }
+  }
+  spawnTile(x, y) {
+    const p = v3(
+      200 * x - 2e3,
+      -3,
+      200 * y - 100
+    );
+    if (Math.random() < 0.5) {
+      this.addChild(new GLobj({ storage: this.mode.storage, url: "CountrySide-3-GroundTile1.obj", size: v3(20, 20, 20), position: p }));
+    } else {
+      this.addChild(new GLobj({ storage: this.mode.storage, url: "CountrySide-2-GroundTile2.obj", size: v3(20, 20, 20), position: p }));
+    }
+    if (![9, 10, 11].includes(x) || ![3, 4].includes(y)) {
+      for (let rx = 0; rx < 5; rx++) {
+        for (let ry = 0; ry < 5; ry++) {
+          if (Math.random() < 0.1) {
+            this.addChild(new GLobj({
+              storage: this.mode.storage,
+              url: ["CountrySide-6-Vegetation5.obj", "CountrySide-0-Vegetation3.obj", "CountrySide-6-Vegetation5.obj", "CountrySide-8-Rock.obj"][Math.floor(Math.random() * 4)],
+              size: v3(
+                10,
+                10,
+                10
+              ).scale(Math.ceil(Math.random() * 3)),
+              position: p.add(v3(
+                40 * rx + Math.random() * 6,
+                3,
+                40 * ry + Math.random() * 6 - 80
+              )),
+              rotation: v3(
+                0,
+                Math.floor(Math.random() * 4) * Math.PI,
+                0
+              )
+            }));
           }
         }
       }
     }
-    this.addChild(new GLobj({ storage: st, url: "CountrySide-4-Vegetation1.obj", size: v3(20, 20, 20), position: v3(100 + 200, 5, 370 + 400) }));
-    this.addChild(new GLobj({ storage: st, url: "CountrySide-4-Vegetation1.obj", size: v3(25, 25, 25), position: v3(140 + 200, 6, 420 + 400) }));
-    this.addChild(new GLobj({ storage: st, url: "Plane01.obj", size: v3(30, 30, 30), position: v3(140 + 200, 16, 200 + 400), rotation: v3(0, Math.PI / 8 + Math.PI, -0.12) }));
-    this.addChild(new GLobj({ storage: st, url: "Shop-3-Car.obj", size: v3(20, 20, 20), position: v3(-100 + 200, 17, 300 + 400), rotation: v3(0, Math.PI / 2 - Math.PI / 8, 0) }));
-    this.addChild(new GLobj({ storage: st, url: "CountrySide-5-House.obj", size: v3(20, 20, 20), position: v3(0 + 200, 49, 400 + 400), rotation: v3(0, -Math.PI / 2, 0) }));
+  }
+  spawnRoad(x, y) {
+    if (Math.random() < 0.5) {
+      this.addChild(new GLobj({ storage: this.mode.storage, url: "apoc/VoxelNuke-18-RoadTile-1.obj", size: v3(100, 100, 100), position: v3(x * 200 - 2200, -6, y * 200 - 100) }));
+    } else {
+      this.addChild(new GLobj({ storage: this.mode.storage, url: "apoc/VoxelNuke-17-RoadTile-0.obj", size: v3(100, 100, 100), position: v3(x * 200 - 2e3, -6, y * 200 - 100) }));
+    }
+    for (let i = 0; i < 6; i++) {
+      if (Math.random() < 0.2) {
+        this.addChild(new GLobj({ storage: this.mode.storage, url: "apoc/VoxelNuke-0-Overgrowth-0.obj", size: v3(50, 50, 50), position: v3(x * 200 - 2e3 + i * 33, -4, y * 200 - 55) }));
+      }
+      if (Math.random() < 0.2) {
+        this.addChild(new GLobj({ storage: this.mode.storage, url: "apoc/VoxelNuke-0-Overgrowth-0.obj", size: v3(50, 50, 50), position: v3(x * 200 - 2e3 + i * 33, -4, y * 200 - 145), rotation: v3(0, Math.PI, 0) }));
+      }
+    }
+  }
+  build() {
+    super.build();
+    this.player = new Player({
+      size: v3(6, 33, 8),
+      position: v3(130, 1, 600),
+      rotation: v3(0, 2.3, 0)
+    });
+    this.addChild(this.player);
+    this.car = new Driver({
+      size: v3(40, 31, 104),
+      position: v3(130, 1, 600),
+      rotation: v3(0, 2.3, 0)
+    });
+    this.addChild(this.car);
+    this.drive(false);
+    this.addChild(new GLCuboid({ size: v3(3500, 1, 5e3), position: v3(-5600, -2, -2e3), colors: [[0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.317, 0.362, 0.298, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1]] }));
+    this.addChild(new GLCuboid({ size: v3(4e3, 1, 5e3), position: v3(1900, -2, -2e3), colors: [[0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.317, 0.362, 0.298, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1]] }));
+    this.addChild(new GLCuboid({ size: v3(4e3, 1, 1800), position: v3(-2100, -2, -2e3), colors: [[0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.317, 0.362, 0.298, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1]] }));
+    this.addChild(new GLCuboid({ size: v3(4e3, 1, 800), position: v3(-2100, -2, 2200), colors: [[0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.317, 0.362, 0.298, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1]] }));
+    for (let x = 0; x < 20; x++) {
+      for (let y = 0; y < 12; y++) {
+        if (y === 3) {
+          this.spawnRoad(x, y);
+        } else {
+          this.spawnTile(x, y);
+        }
+      }
+    }
+    this.addChild(new GLobj({ storage: this.mode.storage, url: "CountrySide-4-Vegetation1.obj", size: v3(20, 20, 20), rotation: v3(0, Math.PI, 0), position: v3(-100 - 20, 5, 670) }));
+    this.addChild(new GLobj({ storage: this.mode.storage, url: "CountrySide-4-Vegetation1.obj", size: v3(25, 25, 25), rotation: v3(0, 0, 0), position: v3(-20 - 20, 6, 760) }));
+    this.addChild(new GLobj({ storage: this.mode.storage, url: "CountrySide-4-Vegetation1.obj", size: v3(25, 25, 25), rotation: v3(0, Math.PI / 2, 0), position: v3(0 - 20, 3, 670) }));
+    this.addChild(new GLobj({ storage: this.mode.storage, url: "Plane01.obj", size: v3(30, 30, 30), position: v3(420, 16, 720), rotation: v3(0, Math.PI / 4 + Math.PI / 2, -0.12) }));
+    this.addChild(new GLobj({ storage: this.mode.storage, url: "CountrySide-5-House.obj", size: v3(20, 20, 20), position: v3(200, 48, 800), rotation: v3(0, -Math.PI / 2, 0) }));
     [
-      // [v3(-2000, 0, 410), v3(6000, 100, 20), Vector3.forwards, false], // forward
       [v3(-5e3, -1e3, -2e3), v3(1e4, 1e3, 4e3), Vector3.up, false],
       // floor
       [v3(150, -3, 727), v3(100, 15, 168), Vector3.up, false]
