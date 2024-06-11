@@ -2766,18 +2766,6 @@ var MovementController = class extends GlController {
   }
 };
 
-// ts/utils/colors.ts
-var Colors = class {
-};
-Colors.k = [0, 0, 0, 1];
-Colors.r = [1, 0, 0, 1];
-Colors.g = [0, 1, 0, 1];
-Colors.b = [0, 0, 1, 1];
-Colors.y = [1, 1, 0, 1];
-Colors.c = [0, 1, 1, 1];
-Colors.m = [1, 0, 1, 1];
-Colors.w = [1, 1, 1, 1];
-
 // ts/gl/rendable.ts
 var GLRendable = class extends GlElement {
   constructor(attr = {}) {
@@ -2875,6 +2863,188 @@ var GLTexture = class {
     return (value & value - 1) === 0;
   }
 };
+
+// ts/gl/obj.ts
+var GLobj = class extends GLRendable {
+  constructor(attr = {}) {
+    super(__spreadValues(__spreadValues({}, attr), { autoReady: false }));
+    this.type = "mesh";
+    this.verticesCount = 0;
+    this.matIndeces = [];
+    this.mats = {};
+    this.matsData = {};
+    this.positionIndeces = [];
+    this.indexIndeces = [];
+    this.normalIndeces = [];
+    this.textureIndeces = [];
+    this.texturePositionIndeces = [];
+    this.path = attr.url.split("/").slice(0, -1).join("/") + "/";
+    if (attr.storage) {
+      if (attr.storage.register(attr.url, this)) {
+        this.loadFile("".concat(window.location.href, "/obj/").concat(attr.url)).then(this.parseMtl.bind(this)).then(this.parseObj.bind(this)).then(() => {
+          this.ready();
+          attr.storage.loaded(attr.url);
+        });
+      }
+    } else {
+      this.loadFile("".concat(window.location.href, "/obj/").concat(attr.url)).then(this.parseMtl.bind(this)).then(this.parseObj.bind(this)).then(() => {
+        this.ready();
+      });
+    }
+  }
+  getData() {
+    return {
+      verticesCount: this.verticesCount,
+      matIndeces: this.matIndeces,
+      matsData: this.matsData,
+      positionIndeces: this.positionIndeces,
+      indexIndeces: this.indexIndeces,
+      normalIndeces: this.normalIndeces,
+      texturePositionIndeces: this.texturePositionIndeces
+    };
+  }
+  giveData(data) {
+    this.verticesCount = data.verticesCount;
+    this.matIndeces = data.matIndeces;
+    this.matsData = data.matsData;
+    this.positionIndeces = data.positionIndeces;
+    this.indexIndeces = data.indexIndeces;
+    this.normalIndeces = data.normalIndeces;
+    this.texturePositionIndeces = data.texturePositionIndeces;
+  }
+  async parseMtl(str2) {
+    if (/mtllib/.test(str2)) {
+      await this.loadFile("".concat(window.location.href, "obj/").concat(this.path).concat(str2.split(/mtllib/)[1].split(/\n/)[0].trim())).then((v) => {
+        v.split("newmtl ").slice(1).forEach((s) => {
+          const lines = s.split(/\r\n|\r|\n/).filter((n) => n);
+          this.matsData[lines.shift()] = Object.fromEntries(lines.map((line) => {
+            const a = line.split(" ");
+            return [a.shift(), a];
+          }));
+        });
+      });
+      return str2;
+    } else {
+      return str2;
+    }
+  }
+  parseFaces(lineArray, mat, points, normals, tCoords) {
+    const textRemainder = lineArray.slice(1);
+    const numbRemainder = textRemainder.map(Number);
+    ({
+      usemtl: () => {
+        mat = textRemainder[0];
+      },
+      f: () => {
+        if (numbRemainder.length === 3) {
+          this.positionIndeces.push(...points[numbRemainder[0] - 1]);
+          this.positionIndeces.push(...points[numbRemainder[1] - 1]);
+          this.positionIndeces.push(...points[numbRemainder[2] - 1]);
+        } else if (numbRemainder.length === 6) {
+          this.positionIndeces.push(...points[numbRemainder[0] - 1]);
+          this.positionIndeces.push(...points[numbRemainder[2] - 1]);
+          this.positionIndeces.push(...points[numbRemainder[4] - 1]);
+          this.texturePositionIndeces.push(...tCoords[numbRemainder[1] - 1]);
+          this.texturePositionIndeces.push(...tCoords[numbRemainder[3] - 1]);
+          this.texturePositionIndeces.push(...tCoords[numbRemainder[5] - 1]);
+        } else {
+          this.positionIndeces.push(...points[numbRemainder[0] - 1]);
+          this.positionIndeces.push(...points[numbRemainder[3] - 1]);
+          this.positionIndeces.push(...points[numbRemainder[6] - 1]);
+          this.texturePositionIndeces.push(...tCoords[numbRemainder[1] - 1]);
+          this.texturePositionIndeces.push(...tCoords[numbRemainder[4] - 1]);
+          this.texturePositionIndeces.push(...tCoords[numbRemainder[7] - 1]);
+          this.normalIndeces.push(...normals[numbRemainder[2] - 1]);
+          this.normalIndeces.push(...normals[numbRemainder[5] - 1]);
+          this.normalIndeces.push(...normals[numbRemainder[8] - 1]);
+          this.textureIndeces.push(
+            ...GLTexture.textureOffset(Object.keys(this.mats).indexOf(mat), Object.keys(this.mats).length)
+          );
+        }
+        this.indexIndeces.push(this.indexIndeces.length);
+        this.indexIndeces.push(this.indexIndeces.length);
+        this.indexIndeces.push(this.indexIndeces.length);
+        this.matIndeces.push(mat);
+        this.matIndeces.push(mat);
+        this.matIndeces.push(mat);
+      }
+    }[lineArray[0]] || (() => {
+    }))();
+    return mat;
+  }
+  parseObj(str2) {
+    let mat = "none";
+    const lines = str2.split(/\r\n|\r|\n/);
+    const nonVertex = [];
+    const points = [];
+    const normals = [];
+    const tCoords = [];
+    lines.forEach(async (line) => {
+      const words = line.split(/(?: |\/)/);
+      const command = words[0];
+      const numbers = words.slice(1).map(Number);
+      if (command === "v") {
+        points.push([numbers[0], numbers[1], numbers[2]]);
+      } else if (command === "vn") {
+        normals.push([numbers[0], numbers[1], numbers[2]]);
+      } else if (command === "vt") {
+        tCoords.push([numbers[0], numbers[1]]);
+      } else {
+        nonVertex.push(words);
+      }
+    });
+    nonVertex.forEach((words) => {
+      mat = this.parseFaces(words, mat, points, normals, tCoords);
+    });
+    this.verticesCount = this.indexIndeces.length;
+  }
+  async loadFile(url) {
+    const response = await fetch(url);
+    const data = await response.text();
+    return data;
+  }
+  indexBuffer() {
+    return this.indexIndeces;
+  }
+  positionBuffer(size) {
+    return this.positionIndeces.map((n, i) => n * size.array[i % 3]);
+  }
+  normalBuffer() {
+    return this.normalIndeces;
+  }
+  textureBuffer(size) {
+    this.texture = new GLTexture(this.game, {});
+    if (Object.values(this.matsData).length) {
+      const matArray = Object.values(this.matsData);
+      const matImage = matArray.find((m) => m.map_Kd);
+      if (matImage) {
+        this.texture = new GLTexture(this.game, {
+          url: "obj/".concat(this.path).concat(matImage.map_Kd.join(" ").trim())
+        });
+      } else {
+        this.texture = new GLTexture(this.game, {
+          color: matArray.map((m) => [
+            ...m.Kd ? m.Kd.map(Number) : [0, 0, 0],
+            m.d ? Number(m.d[0]) : 1
+          ])
+        });
+      }
+    }
+    return this.texturePositionIndeces;
+  }
+};
+
+// ts/utils/colors.ts
+var Colors = class {
+};
+Colors.k = [0, 0, 0, 1];
+Colors.r = [1, 0, 0, 1];
+Colors.g = [0, 1, 0, 1];
+Colors.b = [0, 0, 1, 1];
+Colors.y = [1, 1, 0, 1];
+Colors.c = [0, 1, 1, 1];
+Colors.m = [1, 0, 1, 1];
+Colors.w = [1, 1, 1, 1];
 
 // ts/gl/cuboid.ts
 var GLCuboid = class _GLCuboid extends GLRendable {
@@ -3265,7 +3435,7 @@ var Bone = class extends GLGroup {
     super.build();
     if (this.mesh) {
       this.addChild(new GLCuboid({
-        colors: [[0.05, 0.2, 0.3, 1], [0.2, 0.3, 0.4, 1], [0.2, 0.3, 0.4, 1], [0.2, 0.3, 0.4, 1], [0.2, 0.3, 0.4, 1], [0.2, 0.3, 0.4, 1]],
+        colors: [[0.8, 0.8, 0.8, 1], [0.8, 0.8, 0.8, 1], [0.8, 0.8, 0.8, 1], [0.8, 0.8, 0.8, 1], [0.8, 0.8, 0.8, 1], [0.8, 0.8, 0.8, 1]],
         size: this.size
       }));
     }
@@ -3276,37 +3446,38 @@ var Skeleton = class extends GLGroup {
     super(attr);
     this.runTime = 0;
     this.idleTime = 0;
+    this.animation = {};
     this.sizes = attr.boneSizes || {
       "head": 6,
       "armUpper": 6,
-      "armElbow": 0,
       "armLower": 3,
       "hand": 3,
       "legUpper": 5,
-      "legKnee": 0,
       "legLower": 4,
       "foot": 2,
       "torso": 8,
-      "hips": 5
+      "hips": 5,
+      "hipsWidth": 4,
+      "shoulderWidth": 4
     };
   }
   build() {
     super.build();
-    this.torso = this.addChild(new Bone({ speed: 0.01, profile: v2(4, 4), length: this.sizes.torso, position: v3(0, this.sizes.legUpper + this.sizes.legKnee + this.sizes.legLower + this.sizes.foot + this.sizes.hips, 3) }));
-    this.hips = this.torso.addChild(new Bone({ speed: 0.01, profile: v2(4, 4), length: this.sizes.hips, position: v3(0, -this.sizes.hips, 0) }));
-    this.head = this.torso.addChild(new Bone({ speed: 5e-3, profile: v2(5, 6), length: this.sizes.head, anchorPoint: v3(3, 0, 2.5), position: v3(0.5 - 1, this.sizes.torso + 1, -1) }));
-    this.lArmUpper = this.torso.addChild(new Bone({ profile: v2(2.4), baseRotation: v3(-0.1, 0, 0.4), length: this.sizes.armUpper, position: v3(-3.5 + 2.5 - 1, this.sizes.torso - this.sizes.armUpper, 1) }));
-    this.rArmUpper = this.torso.addChild(new Bone({ profile: v2(2.4), baseRotation: v3(-0.1, 0, -0.4), length: this.sizes.armUpper, position: v3(4.5 - 1, this.sizes.torso - this.sizes.armUpper, 1) }));
-    this.lArmLower = this.lArmUpper.addChild(new Bone({ speed: 0.03, baseRotation: v3(0.2, 0, -0.3), profile: v2(2), length: this.sizes.armLower, position: v3(0.2, -this.sizes.armLower, 0.2) }));
-    this.rArmLower = this.rArmUpper.addChild(new Bone({ speed: 0.03, baseRotation: v3(0.2, 0, 0.3), profile: v2(2), length: this.sizes.armLower, position: v3(0.2, -this.sizes.armLower, 0.2) }));
-    this.lHand = this.lArmLower.addChild(new Bone({ profile: v2(3), length: this.sizes.hand, position: v3(-0.5, -this.sizes.hand, -0.5) }));
-    this.rHand = this.rArmLower.addChild(new Bone({ profile: v2(3), length: this.sizes.hand, position: v3(-0.5, -this.sizes.hand, -0.5) }));
-    this.lLegUpper = this.hips.addChild(new Bone({ profile: v2(3), length: this.sizes.legUpper, position: v3(-1 - 1, -this.sizes.legUpper, 0) }));
-    this.rLegUpper = this.hips.addChild(new Bone({ profile: v2(3), length: this.sizes.legUpper, position: v3(4 - 1, -this.sizes.legUpper, 0) }));
-    this.lLegLower = this.lLegUpper.addChild(new Bone({ speed: 0.03, profile: v2(2), length: this.sizes.legLower, position: v3(0.5, -this.sizes.legLower, 0.5) }));
-    this.rLegLower = this.rLegUpper.addChild(new Bone({ speed: 0.03, profile: v2(2), length: this.sizes.legLower, position: v3(0.5, -this.sizes.legLower, 0.5) }));
-    this.lFoot = this.lLegLower.addChild(new Bone({ profile: v2(3, 6), length: this.sizes.foot, position: v3(-0.5, -this.sizes.foot, -0.5) }));
-    this.rFoot = this.rLegLower.addChild(new Bone({ profile: v2(3, 6), length: this.sizes.foot, position: v3(-0.5, -this.sizes.foot, -0.5) }));
+    this.hips = this.addChild(new Bone({ speed: 0.01, profile: v2(this.sizes.hipsWidth, 1), length: this.sizes.hips, position: v3(0, this.sizes.legUpper + this.sizes.legLower + this.sizes.foot, 0) }));
+    this.torso = this.hips.addChild(new Bone({ speed: 0.01, anchorPoint: v3(this.sizes.shoulderWidth / 2, 0, 0), baseRotation: v3(0, 0, 0), profile: v2(this.sizes.shoulderWidth, 1), length: this.sizes.torso, position: v3(-(this.sizes.shoulderWidth - this.sizes.hipsWidth) / 2, this.sizes.hips, 0) }));
+    this.head = this.torso.addChild(new Bone({ speed: 5e-3, profile: v2(4, 3), length: this.sizes.head, anchorPoint: v3(2, 0, 1), position: v3((this.sizes.shoulderWidth - 4) / 2, this.sizes.torso + 1, -1) }));
+    this.lArmUpper = this.torso.addChild(new Bone({ profile: v2(1), baseRotation: v3(-0.1, 0, 0.4), length: this.sizes.armUpper, position: v3(0, this.sizes.torso - this.sizes.armUpper, 0) }));
+    this.rArmUpper = this.torso.addChild(new Bone({ profile: v2(1), baseRotation: v3(-0.1, 0, -0.4), length: this.sizes.armUpper, position: v3(this.sizes.shoulderWidth - 1, this.sizes.torso - this.sizes.armUpper, 0) }));
+    this.lArmLower = this.lArmUpper.addChild(new Bone({ speed: 0.03, baseRotation: v3(0.2, 0, -0.3), profile: v2(1), length: this.sizes.armLower, position: v3(0, -this.sizes.armLower, 0) }));
+    this.rArmLower = this.rArmUpper.addChild(new Bone({ speed: 0.03, baseRotation: v3(0.2, 0, 0.3), profile: v2(1), length: this.sizes.armLower, position: v3(0, -this.sizes.armLower, 0) }));
+    this.lHand = this.lArmLower.addChild(new Bone({ profile: v2(1), length: this.sizes.hand, position: v3(0, -this.sizes.hand, 0) }));
+    this.rHand = this.rArmLower.addChild(new Bone({ profile: v2(1), length: this.sizes.hand, position: v3(0, -this.sizes.hand, 0) }));
+    this.lLegUpper = this.hips.addChild(new Bone({ profile: v2(1), length: this.sizes.legUpper, position: v3(0, -this.sizes.legUpper, 0) }));
+    this.rLegUpper = this.hips.addChild(new Bone({ profile: v2(1), length: this.sizes.legUpper, position: v3(this.sizes.hipsWidth - 1, -this.sizes.legUpper, 0) }));
+    this.lLegLower = this.lLegUpper.addChild(new Bone({ speed: 0.03, profile: v2(1), length: this.sizes.legLower, position: v3(0, -this.sizes.legLower, 0) }));
+    this.rLegLower = this.rLegUpper.addChild(new Bone({ speed: 0.03, profile: v2(1), length: this.sizes.legLower, position: v3(0, -this.sizes.legLower, 0) }));
+    this.lFoot = this.lLegLower.addChild(new Bone({ profile: v2(1, 3), length: this.sizes.foot, position: v3(-0, -this.sizes.foot, -0) }));
+    this.rFoot = this.rLegLower.addChild(new Bone({ profile: v2(1, 3), length: this.sizes.foot, position: v3(-0, -this.sizes.foot, -0) }));
   }
   setLimbRotation(key, time, rotation = v3(0)) {
     const bone = this[key];
@@ -3316,137 +3487,7 @@ var Skeleton = class extends GLGroup {
     }
   }
   setPose(p = "") {
-    const animation = {
-      running1: {
-        torso: [0.01, [-0.3, -0.3, 0]],
-        head: [5e-3, [0.2, 0.2, 0]],
-        lArmUpper: [0.015, [-0.8, 0, 0.1]],
-        lArmLower: [0.01, [0.3, 0, 0]],
-        lHand: [0.015, []],
-        rArmUpper: [0.015, [1.2, 0, -0.1]],
-        rArmLower: [0.01, [1.2, 0, 1.2]],
-        rHand: [0.015, []],
-        lLegUpper: [0.015, [1.2, 0, 0]],
-        lLegLower: [0.03, [-0.3, 0, 0]],
-        lFoot: [0.015, [-0.2, 0, 0]],
-        rLegUpper: [0.015, []],
-        rLegLower: [0.03, [-2, 0, 0]],
-        rFoot: [0.015, [-0.2, 0, 0]]
-      },
-      running2: {
-        torso: [0.01, [-0.3, 0.3, 0]],
-        head: [5e-3, [0.2, -0.2, 0]],
-        lArmUpper: [0.015, [1.2, 0, 0.1]],
-        lArmLower: [0.01, [1.2, 0, -1.2]],
-        lHand: [0.015, []],
-        rArmUpper: [0.015, [-0.8, 0, -0.1]],
-        rArmLower: [0.01, [0.3, 0, 0]],
-        rHand: [0.015, []],
-        lLegUpper: [0.03, []],
-        lLegLower: [0.015, [-2, 0, 0]],
-        lFoot: [0.015, [-0.2, 0, 0]],
-        rLegUpper: [0.03, [1.2, 0, 0]],
-        rLegLower: [0.015, [-0.3, 0, 0]],
-        rFoot: [0.015, [-0.2, 0, 0]]
-      },
-      T: {
-        torso: [0.02, []],
-        head: [0.02, []],
-        lArmUpper: [0.02, [0, 0, Math.PI / 2]],
-        lArmLower: [0.02, []],
-        lHand: [0.02, []],
-        rArmUpper: [0.02, [0, 0, -Math.PI / 2]],
-        rArmLower: [0.02, []],
-        rHand: [0.02, []],
-        lLegUpper: [0.02, []],
-        lLegLower: [0.02, []],
-        lFoot: [0.02, []],
-        rLegUpper: [0.02, []],
-        rLegLower: [0.02, []],
-        rFoot: [0.02, []]
-      },
-      idle: {
-        torso: [0.02, []],
-        head: [5e-3, [0, 0.5]],
-        lArmUpper: [0.03, []],
-        lArmLower: [0.03, []],
-        lHand: [0.03, []],
-        rArmUpper: [0.03, []],
-        rArmLower: [0.03, []],
-        rHand: [0.03, []],
-        lLegUpper: [0.04, []],
-        lLegLower: [0.05, []],
-        lFoot: [0.03, []],
-        rLegUpper: [0.03, []],
-        rLegLower: [0.03, []],
-        rFoot: [0.03, []]
-      },
-      idle2: {
-        torso: [0.02, []],
-        head: [5e-3, [0, -0.5]],
-        lArmUpper: [0.03, []],
-        lArmLower: [0.03, []],
-        lHand: [0.03, []],
-        rArmUpper: [0.03, []],
-        rArmLower: [0.03, []],
-        rHand: [0.03, []],
-        lLegUpper: [0.04, []],
-        lLegLower: [0.05, []],
-        lFoot: [0.03, []],
-        rLegUpper: [0.03, []],
-        rLegLower: [0.03, []],
-        rFoot: [0.03, []]
-      },
-      // idle: {
-      //     torso: [0.02, []],
-      //     head: [0.005, [0, 0.5]],
-      //     lArmUpper: [0.03, [0.8, 0.2, -0.4]],
-      //     lArmLower: [0.03, [0, 0.2, -0.8]],
-      //     lHand: [0.03, []],
-      //     rArmUpper: [0.03, [.4, -0.2, 0.4]],
-      //     rArmLower: [0.03, [0, 0, 0.7]],
-      //     rHand: [0.03, []],
-      //     lLegUpper: [0.04, []],
-      //     lLegLower: [0.05, []],
-      //     lFoot: [0.03, []],
-      //     rLegUpper: [0.03, []],
-      //     rLegLower: [0.03, []],
-      //     rFoot: [0.03, []],
-      // },
-      // idle2: {
-      //     torso: [0.02, []],
-      //     head: [0.005, [0, -0.5]],
-      //     lArmUpper: [0.03, [0.8, 0.2, -0.4]],
-      //     lArmLower: [0.03, [0, 0.2, -0.8]],
-      //     lHand: [0.03, []],
-      //     rArmUpper: [0.03, [.4, -0.2, 0.4]],
-      //     rArmLower: [0.03, [0, 0, 0.7]],
-      //     rHand: [0.03, []],
-      //     lLegUpper: [0.04, []],
-      //     lLegLower: [0.05, []],
-      //     lFoot: [0.03, []],
-      //     rLegUpper: [0.03, []],
-      //     rLegLower: [0.03, []],
-      //     rFoot: [0.03, []],
-      // },
-      jump: {
-        torso: [0.03, [-0.1, -0.1, 0.15]],
-        head: [0.03, [0.3, 0, 0]],
-        lArmUpper: [0.03, [-0.2, 0, 0.1]],
-        lArmLower: [0.03, [0, 0, 0.2]],
-        lHand: [0.03, []],
-        rArmUpper: [0.03, [-0.1, 0, -0.3]],
-        rArmLower: [0.03, [0, 0, 0.2]],
-        rHand: [0.03, []],
-        lLegUpper: [0.06, [2, 0, 0]],
-        lLegLower: [0.08, [-2.4, 0, 0]],
-        lFoot: [0.03, []],
-        rLegUpper: [0.03, [-0.2, 0, 0]],
-        rLegLower: [0.03, [-0.3, 0, 0]],
-        rFoot: [0.03, [-0.6, 0, 0]]
-      }
-    };
-    const a = animation[p];
+    const a = this.animation[p];
     if (a) {
       Object.entries(a).forEach(([key, [time, val]]) => {
         this.setLimbRotation(key, time, v3(val));
@@ -3469,173 +3510,176 @@ var Skeleton = class extends GLGroup {
   }
 };
 
-// ts/gl/obj.ts
-var GLobj = class extends GLRendable {
-  constructor(attr = {}) {
-    super(__spreadValues(__spreadValues({}, attr), { autoReady: false }));
-    this.type = "mesh";
-    this.verticesCount = 0;
-    this.matIndeces = [];
-    this.mats = {};
-    this.matsData = {};
-    this.positionIndeces = [];
-    this.indexIndeces = [];
-    this.normalIndeces = [];
-    this.textureIndeces = [];
-    this.texturePositionIndeces = [];
-    this.path = attr.url.split("/").slice(0, -1).join("/") + "/";
-    if (attr.storage) {
-      if (attr.storage.register(attr.url, this)) {
-        this.loadFile("".concat(window.location.href, "/obj/").concat(attr.url)).then(this.parseMtl.bind(this)).then(this.parseObj.bind(this)).then(() => {
-          this.ready();
-          attr.storage.loaded(attr.url);
-        });
+// ts/modes/side/worker.ts
+var WorkerSkel = class extends Skeleton {
+  constructor() {
+    super({
+      boneSizes: {
+        "head": 6,
+        "armUpper": 5,
+        "armLower": 9,
+        "hand": 0,
+        "legUpper": 9,
+        "legLower": 5,
+        "foot": 1,
+        "torso": 5.5,
+        "hips": 3,
+        "hipsWidth": 6,
+        "shoulderWidth": 8
       }
-    } else {
-      this.loadFile("".concat(window.location.href, "/obj/").concat(attr.url)).then(this.parseMtl.bind(this)).then(this.parseObj.bind(this)).then(() => {
-        this.ready();
-      });
-    }
+    });
   }
-  getData() {
-    return {
-      verticesCount: this.verticesCount,
-      matIndeces: this.matIndeces,
-      matsData: this.matsData,
-      positionIndeces: this.positionIndeces,
-      indexIndeces: this.indexIndeces,
-      normalIndeces: this.normalIndeces,
-      texturePositionIndeces: this.texturePositionIndeces
-    };
-  }
-  giveData(data) {
-    this.verticesCount = data.verticesCount;
-    this.matIndeces = data.matIndeces;
-    this.matsData = data.matsData;
-    this.positionIndeces = data.positionIndeces;
-    this.indexIndeces = data.indexIndeces;
-    this.normalIndeces = data.normalIndeces;
-    this.texturePositionIndeces = data.texturePositionIndeces;
-  }
-  async parseMtl(str2) {
-    if (/mtllib/.test(str2)) {
-      await this.loadFile("".concat(window.location.href, "obj/").concat(this.path).concat(str2.split(/mtllib/)[1].split(/\n/)[0].trim())).then((v) => {
-        v.split("newmtl ").slice(1).forEach((s) => {
-          const lines = s.split(/\r\n|\r|\n/).filter((n) => n);
-          this.matsData[lines.shift()] = Object.fromEntries(lines.map((line) => {
-            const a = line.split(" ");
-            return [a.shift(), a];
-          }));
-        });
-      });
-      return str2;
-    } else {
-      return str2;
-    }
-  }
-  parseFaces(lineArray, mat, points, normals, tCoords) {
-    const textRemainder = lineArray.slice(1);
-    const numbRemainder = textRemainder.map(Number);
-    ({
-      usemtl: () => {
-        mat = textRemainder[0];
+  build() {
+    super.build();
+    this.head.addChild(new GLobj({ url: "worker/worker-10-Head.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(2, -9.5, 2) }));
+    this.torso.addChild(new GLobj({ url: "worker/worker-8-TorsoUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(this.sizes.shoulderWidth / 2, -3, 1) }));
+    this.hips.addChild(new GLobj({ url: "worker/worker-9-TorsoLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(3, 0, 1) }));
+    this.lLegUpper.addChild(new GLobj({ url: "worker/worker-0-lLegUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(3, 9, 1) }));
+    this.rLegUpper.addChild(new GLobj({ url: "worker/worker-1-rLegUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(-2, 9, 1) }));
+    this.lLegLower.addChild(new GLobj({ url: "worker/worker-2-lLegLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(3, 14.4, 1.5) }));
+    this.rLegLower.addChild(new GLobj({ url: "worker/worker-3-rLegLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(-2, 14.4, 1.5) }));
+    this.lArmUpper.addChild(new GLobj({ url: "worker/worker-4-lArmUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, Math.PI / 2), position: v3(8.5, 7, 1) }));
+    this.rArmUpper.addChild(new GLobj({ url: "worker/worker-5-rArmUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, -Math.PI / 2), position: v3(-7.5, 7, 1) }));
+    this.lArmLower.addChild(new GLobj({ url: "worker/worker-6-lArmLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, Math.PI / 2), position: v3(8.5, 16, 1) }));
+    this.rArmLower.addChild(new GLobj({ url: "worker/worker-7-rArmLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, -Math.PI / 2), position: v3(-7.5, 16, 1) }));
+    this.animation = {
+      running1: {
+        torso: [0.01, [-0.3, -0.3, 0]],
+        hips: [0.01, [-0.3, 0, 0]],
+        head: [5e-3, [0.2, 0.2, 0]],
+        lArmUpper: [0.015, [-0.8, 0, 0.1]],
+        lArmLower: [0.01, [0.3, 0, 0]],
+        lHand: [0.015, []],
+        rArmUpper: [0.015, [1.2, 0, -0.1]],
+        rArmLower: [0.01, [1.2, 0, 1.2]],
+        rHand: [0.015, []],
+        lLegUpper: [0.015, [1.2, 0, 0]],
+        lLegLower: [0.03, [-0.3, 0, 0]],
+        lFoot: [0.015, [-0.2, 0, 0]],
+        rLegUpper: [0.015, []],
+        rLegLower: [0.03, [-2, 0, 0]],
+        rFoot: [0.015, [-0.2, 0, 0]]
       },
-      f: () => {
-        if (numbRemainder.length === 3) {
-          this.positionIndeces.push(...points[numbRemainder[0] - 1]);
-          this.positionIndeces.push(...points[numbRemainder[1] - 1]);
-          this.positionIndeces.push(...points[numbRemainder[2] - 1]);
-        } else if (numbRemainder.length === 6) {
-          this.positionIndeces.push(...points[numbRemainder[0] - 1]);
-          this.positionIndeces.push(...points[numbRemainder[2] - 1]);
-          this.positionIndeces.push(...points[numbRemainder[4] - 1]);
-          this.texturePositionIndeces.push(...tCoords[numbRemainder[1] - 1]);
-          this.texturePositionIndeces.push(...tCoords[numbRemainder[3] - 1]);
-          this.texturePositionIndeces.push(...tCoords[numbRemainder[5] - 1]);
-        } else {
-          this.positionIndeces.push(...points[numbRemainder[0] - 1]);
-          this.positionIndeces.push(...points[numbRemainder[3] - 1]);
-          this.positionIndeces.push(...points[numbRemainder[6] - 1]);
-          this.texturePositionIndeces.push(...tCoords[numbRemainder[1] - 1]);
-          this.texturePositionIndeces.push(...tCoords[numbRemainder[4] - 1]);
-          this.texturePositionIndeces.push(...tCoords[numbRemainder[7] - 1]);
-          this.normalIndeces.push(...normals[numbRemainder[2] - 1]);
-          this.normalIndeces.push(...normals[numbRemainder[5] - 1]);
-          this.normalIndeces.push(...normals[numbRemainder[8] - 1]);
-          this.textureIndeces.push(
-            ...GLTexture.textureOffset(Object.keys(this.mats).indexOf(mat), Object.keys(this.mats).length)
-          );
-        }
-        this.indexIndeces.push(this.indexIndeces.length);
-        this.indexIndeces.push(this.indexIndeces.length);
-        this.indexIndeces.push(this.indexIndeces.length);
-        this.matIndeces.push(mat);
-        this.matIndeces.push(mat);
-        this.matIndeces.push(mat);
+      running2: {
+        torso: [0.01, [-0.3, 0.3, 0]],
+        hips: [0.01, [-0.3, 0, 0]],
+        head: [5e-3, [0.2, -0.2, 0]],
+        lArmUpper: [0.015, [1.2, 0, 0.1]],
+        lArmLower: [0.01, [1.2, 0, -1.2]],
+        lHand: [0.015, []],
+        rArmUpper: [0.015, [-0.8, 0, -0.1]],
+        rArmLower: [0.01, [0.3, 0, 0]],
+        rHand: [0.015, []],
+        lLegUpper: [0.03, []],
+        lLegLower: [0.015, [-2, 0, 0]],
+        lFoot: [0.015, [-0.2, 0, 0]],
+        rLegUpper: [0.03, [1.2, 0, 0]],
+        rLegLower: [0.015, [-0.3, 0, 0]],
+        rFoot: [0.015, [-0.2, 0, 0]]
+      },
+      T: {
+        torso: [0.02, []],
+        hips: [0.02, []],
+        head: [0.02, []],
+        lArmUpper: [0.02, [0, 0, Math.PI / 2]],
+        lArmLower: [0.02, []],
+        lHand: [0.02, []],
+        rArmUpper: [0.02, [0, 0, -Math.PI / 2]],
+        rArmLower: [0.02, []],
+        rHand: [0.02, []],
+        lLegUpper: [0.02, []],
+        lLegLower: [0.02, []],
+        lFoot: [0.02, []],
+        rLegUpper: [0.02, []],
+        rLegLower: [0.02, []],
+        rFoot: [0.02, []]
+      },
+      idle: {
+        torso: [0.02, []],
+        hips: [0.02, []],
+        head: [5e-3, [0, 0.5]],
+        lArmUpper: [0.03, []],
+        lArmLower: [0.03, []],
+        lHand: [0.03, []],
+        rArmUpper: [0.03, []],
+        rArmLower: [0.03, []],
+        rHand: [0.03, []],
+        lLegUpper: [0.04, []],
+        lLegLower: [0.05, []],
+        lFoot: [0.03, []],
+        rLegUpper: [0.03, []],
+        rLegLower: [0.03, []],
+        rFoot: [0.03, []]
+      },
+      idle2: {
+        torso: [0.02, []],
+        hips: [0.02, []],
+        head: [5e-3, [0, -0.5]],
+        lArmUpper: [0.03, []],
+        lArmLower: [0.03, []],
+        lHand: [0.03, []],
+        rArmUpper: [0.03, []],
+        rArmLower: [0.03, []],
+        rHand: [0.03, []],
+        lLegUpper: [0.04, []],
+        lLegLower: [0.05, []],
+        lFoot: [0.03, []],
+        rLegUpper: [0.03, []],
+        rLegLower: [0.03, []],
+        rFoot: [0.03, []]
+      },
+      // idle: {
+      //     torso: [0.02, []],
+      //     hips: [0.02, []],
+      //     head: [0.005, [0, 0.5]],
+      //     lArmUpper: [0.03, [0.8, 0.2, -0.4]],
+      //     lArmLower: [0.03, [0, 0.2, -0.8]],
+      //     lHand: [0.03, []],
+      //     rArmUpper: [0.03, [.4, -0.2, 0.4]],
+      //     rArmLower: [0.03, [0, 0, 0.7]],
+      //     rHand: [0.03, []],
+      //     lLegUpper: [0.04, []],
+      //     lLegLower: [0.05, []],
+      //     lFoot: [0.03, []],
+      //     rLegUpper: [0.03, []],
+      //     rLegLower: [0.03, []],
+      //     rFoot: [0.03, []],
+      // },
+      // idle2: {
+      //     torso: [0.02, []],
+      //     hips: [0.02, []],
+      //     head: [0.005, [0, -0.5]],
+      //     lArmUpper: [0.03, [0.8, 0.2, -0.4]],
+      //     lArmLower: [0.03, [0, 0.2, -0.8]],
+      //     lHand: [0.03, []],
+      //     rArmUpper: [0.03, [.4, -0.2, 0.4]],
+      //     rArmLower: [0.03, [0, 0, 0.7]],
+      //     rHand: [0.03, []],
+      //     lLegUpper: [0.04, []],
+      //     lLegLower: [0.05, []],
+      //     lFoot: [0.03, []],
+      //     rLegUpper: [0.03, []],
+      //     rLegLower: [0.03, []],
+      //     rFoot: [0.03, []],
+      // },
+      jump: {
+        torso: [0.03, [-0.1, -0.1, 0.15]],
+        hips: [0.03, [-0.1, -0.1, 0.15]],
+        head: [0.03, [0.3, 0, 0]],
+        lArmUpper: [0.03, [-0.2, 0, 0.1]],
+        lArmLower: [0.03, [0, 0, 0.2]],
+        lHand: [0.03, []],
+        rArmUpper: [0.03, [-0.1, 0, -0.3]],
+        rArmLower: [0.03, [0, 0, 0.2]],
+        rHand: [0.03, []],
+        lLegUpper: [0.06, [2, 0, 0]],
+        lLegLower: [0.08, [-2.4, 0, 0]],
+        lFoot: [0.03, []],
+        rLegUpper: [0.03, [-0.2, 0, 0]],
+        rLegLower: [0.03, [-0.3, 0, 0]],
+        rFoot: [0.03, [-0.6, 0, 0]]
       }
-    }[lineArray[0]] || (() => {
-    }))();
-    return mat;
-  }
-  parseObj(str2) {
-    let mat = "none";
-    const lines = str2.split(/\r\n|\r|\n/);
-    const nonVertex = [];
-    const points = [];
-    const normals = [];
-    const tCoords = [];
-    lines.forEach(async (line) => {
-      const words = line.split(/(?: |\/)/);
-      const command = words[0];
-      const numbers = words.slice(1).map(Number);
-      if (command === "v") {
-        points.push([numbers[0], numbers[1], numbers[2]]);
-      } else if (command === "vn") {
-        normals.push([numbers[0], numbers[1], numbers[2]]);
-      } else if (command === "vt") {
-        tCoords.push([numbers[0], numbers[1]]);
-      } else {
-        nonVertex.push(words);
-      }
-    });
-    nonVertex.forEach((words) => {
-      mat = this.parseFaces(words, mat, points, normals, tCoords);
-    });
-    this.verticesCount = this.indexIndeces.length;
-  }
-  async loadFile(url) {
-    const response = await fetch(url);
-    const data = await response.text();
-    return data;
-  }
-  indexBuffer() {
-    return this.indexIndeces;
-  }
-  positionBuffer(size) {
-    return this.positionIndeces.map((n, i) => n * size.array[i % 3]);
-  }
-  normalBuffer() {
-    return this.normalIndeces;
-  }
-  textureBuffer(size) {
-    this.texture = new GLTexture(this.game, {});
-    if (Object.values(this.matsData).length) {
-      const matArray = Object.values(this.matsData);
-      const matImage = matArray.find((m) => m.map_Kd);
-      if (matImage) {
-        this.texture = new GLTexture(this.game, {
-          url: "obj/".concat(this.path).concat(matImage.map_Kd.join(" ").trim())
-        });
-      } else {
-        this.texture = new GLTexture(this.game, {
-          color: matArray.map((m) => [
-            ...m.Kd ? m.Kd.map(Number) : [0, 0, 0],
-            m.d ? Number(m.d[0]) : 1
-          ])
-        });
-      }
-    }
-    return this.texturePositionIndeces;
+    };
   }
 };
 
@@ -3657,36 +3701,8 @@ var Player = class extends Character {
   }
   build() {
     GlElement.registerControllers(this);
-    this.skeleton = new Skeleton({
-      boneSizes: {
-        "head": 6,
-        "armUpper": 5,
-        "armElbow": 0,
-        "armLower": 3,
-        "hand": 3,
-        "legUpper": 6,
-        "legKnee": 0,
-        "legLower": 6,
-        "foot": 2,
-        "torso": 7,
-        "hips": 3
-      }
-    });
+    this.skeleton = new WorkerSkel();
     this.addChild(this.skeleton);
-    this.skeleton.torso.addChild(new GLobj({ url: "worker/worker-8-TorsoUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(2, -1, 2) }));
-    this.skeleton.hips.addChild(new GLobj({ url: "worker/worker-9-TorsoLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(2, 2, 2) }));
-    this.skeleton.lLegUpper.addChild(new GLobj({ url: "worker/worker-0-lLegUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(4, 8, 2) }));
-    this.skeleton.rLegUpper.addChild(new GLobj({ url: "worker/worker-1-rLegUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(-1, 8, 2) }));
-    this.skeleton.lLegLower.addChild(new GLobj({ url: "worker/worker-2-lLegLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(3.5, 14.5, 2) }));
-    this.skeleton.rLegLower.addChild(new GLobj({ url: "worker/worker-3-rLegLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(-1.5, 14.5, 2) }));
-    this.skeleton.lArmUpper.addChild(new GLobj({ url: "worker/worker-4-lArmUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, Math.PI / 2), position: v3(9, 7.75, 1.5) }));
-    this.skeleton.rArmUpper.addChild(new GLobj({ url: "worker/worker-5-rArmUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, -Math.PI / 2), position: v3(-6.5, 7.75, 1.5) }));
-    this.skeleton.lArmLower.addChild(new GLobj({ url: "worker/worker-6-lArmLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, Math.PI / 2), position: v3(8.75, 10.5, 1.5) }));
-    this.skeleton.rArmLower.addChild(new GLobj({ url: "worker/worker-7-rArmLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, -Math.PI / 2), position: v3(-6.75, 10.5, 1.5) }));
-    this.skeleton.head.addChild(new GLobj({ url: "worker/worker-10-Head.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(2.5, -9, 3) }));
-  }
-  tick(obj) {
-    super.tick(obj);
   }
 };
 

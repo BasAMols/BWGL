@@ -72,15 +72,15 @@ export class Bone extends GLGroup {
         super.build();
         if (this.mesh) {
             this.addChild(new GLCuboid({
-                colors: [[0.05, 0.2, 0.3, 1], [0.2, 0.3, 0.4, 1], [0.2, 0.3, 0.4, 1], [0.2, 0.3, 0.4, 1], [0.2, 0.3, 0.4, 1], [0.2, 0.3, 0.4, 1]] as [Color, Color?, Color?, Color?, Color?, Color?],
+                colors: [[0.8, 0.8, 0.8, 1], [0.8, 0.8, 0.8, 1], [0.8, 0.8, 0.8, 1], [0.8, 0.8, 0.8, 1], [0.8, 0.8, 0.8, 1], [0.8, 0.8, 0.8, 1]] as [Color, Color?, Color?, Color?, Color?, Color?],
                 size: this.size,
             }));
         }
     }
 }
 
-export type SkeletonBonesSizes = 'head' | 'torso' | 'armUpper' | 'armElbow' | 'armLower' | 'hand' | 'legUpper' | 'legKnee' | 'legLower' | 'foot' | 'hips';
-export type SkeletonBones = 'head' | 'torso' |
+export type SkeletonBonesSizes = 'hipsWidth'|'shoulderWidth'|'head' | 'torso' | 'armUpper' |'armLower' | 'hand' | 'legUpper'| 'legLower' | 'foot' | 'hips';
+export type SkeletonBones = 'head' | 'torso' | 'hips' |
     'lArmUpper' | 'lArmLower' | 'lHand' |
     'lLegUpper' | 'lLegLower' | 'lFoot' |
     'rArmUpper' | 'rArmLower' | 'rHand' |
@@ -120,44 +120,45 @@ export class Skeleton extends GLGroup {
     runTime: number = 0;
     idleTime: number = 0;
     hips: Bone;
+    animation: Record<string, Record<SkeletonBones, [number?, [number?, number?, number?]?]>> = {};
 
     constructor(attr: SkeletonAttributes = {}) {
         super(attr);
         this.sizes = attr.boneSizes || {
             'head': 6,
             'armUpper': 6,
-            'armElbow': 0,
             'armLower': 3,
             'hand': 3,
             'legUpper': 5,
-            'legKnee': 0,
             'legLower': 4,
             'foot': 2,
             'torso': 8,
             'hips': 5,
+            'hipsWidth': 4,
+            'shoulderWidth': 4,
         };
     }
 
     public build(): void {
         super.build();
 
-        this.torso = this.addChild(new Bone({ speed: 0.01, profile: v2(4, 4), length: this.sizes.torso, position: v3(0, this.sizes.legUpper + this.sizes.legKnee + this.sizes.legLower + this.sizes.foot+this.sizes.hips, 3), })) as Bone;
-        this.hips = this.torso.addChild(new Bone({ speed: 0.01, profile: v2(4, 4), length: this.sizes.hips, position: v3(0, -this.sizes.hips, 0), })) as Bone;
-        this.head = this.torso.addChild(new Bone({ speed: 0.005, profile: v2(5, 6), length: this.sizes.head, anchorPoint: v3(3, 0, 2.5), position: v3(0.5-1, this.sizes.torso + 1, -1), })) as Bone;
+        this.hips = this.addChild(new Bone({ speed: 0.01, profile: v2(this.sizes.hipsWidth, 1), length: this.sizes.hips, position: v3(0, this.sizes.legUpper + this.sizes.legLower + this.sizes.foot, 0), })) as Bone;
+        this.torso = this.hips.addChild(new Bone({ speed: 0.01, anchorPoint: v3(this.sizes.shoulderWidth/2, 0, 0), baseRotation: v3(0,0,0), profile: v2(this.sizes.shoulderWidth, 1), length: this.sizes.torso, position: v3(-(this.sizes.shoulderWidth-this.sizes.hipsWidth)/2, this.sizes.hips, 0), })) as Bone;
+        this.head = this.torso.addChild(new Bone({ speed: 0.005, profile: v2(4, 3), length: this.sizes.head, anchorPoint: v3(2, 0, 1), position: v3((this.sizes.shoulderWidth-4)/2, this.sizes.torso + 1, -1), })) as Bone;
 
-        this.lArmUpper = this.torso.addChild(new Bone({ profile: v2(2.4), baseRotation: v3(-0.1,0,0.4), length: this.sizes.armUpper, position: v3(-3.5 + 2.5-1, this.sizes.torso - this.sizes.armUpper, 1), })) as Bone;
-        this.rArmUpper = this.torso.addChild(new Bone({ profile: v2(2.4), baseRotation: v3(-0.1,0,-0.4), length: this.sizes.armUpper, position: v3(4.5-1, this.sizes.torso - this.sizes.armUpper, 1), })) as Bone;
-        this.lArmLower = this.lArmUpper.addChild(new Bone({ speed: 0.03, baseRotation: v3(0.2,0,-0.3), profile: v2(2), length: this.sizes.armLower, position: v3(0.2, -this.sizes.armLower, 0.2) })) as Bone;
-        this.rArmLower = this.rArmUpper.addChild(new Bone({ speed: 0.03, baseRotation: v3(0.2,0,0.3), profile: v2(2), length: this.sizes.armLower, position: v3(0.2, -this.sizes.armLower, 0.2) })) as Bone;
-        this.lHand = this.lArmLower.addChild(new Bone({ profile: v2(3), length: this.sizes.hand, position: v3(-0.5, -this.sizes.hand, -0.5) })) as Bone;
-        this.rHand = this.rArmLower.addChild(new Bone({ profile: v2(3), length: this.sizes.hand, position: v3(-0.5, -this.sizes.hand, -0.5) })) as Bone;
+        this.lArmUpper = this.torso.addChild(new Bone({ profile: v2(1), baseRotation: v3(-0.1,0,0.4), length: this.sizes.armUpper, position: v3(0, this.sizes.torso - this.sizes.armUpper, 0),  })) as Bone;
+        this.rArmUpper = this.torso.addChild(new Bone({ profile: v2(1), baseRotation: v3(-0.1,0,-0.4), length: this.sizes.armUpper, position: v3(this.sizes.shoulderWidth-1, this.sizes.torso - this.sizes.armUpper, 0), })) as Bone;
+        this.lArmLower = this.lArmUpper.addChild(new Bone({ speed: 0.03, baseRotation: v3(0.2,0,-0.3), profile: v2(1), length: this.sizes.armLower, position: v3(0, -this.sizes.armLower, 0), })) as Bone;
+        this.rArmLower = this.rArmUpper.addChild(new Bone({ speed: 0.03, baseRotation: v3(0.2,0,0.3), profile: v2(1), length: this.sizes.armLower, position: v3(0, -this.sizes.armLower, 0), })) as Bone;
+        this.lHand = this.lArmLower.addChild(new Bone({ profile: v2(1), length: this.sizes.hand, position: v3(0, -this.sizes.hand, 0) })) as Bone;
+        this.rHand = this.rArmLower.addChild(new Bone({ profile: v2(1), length: this.sizes.hand, position: v3(0, -this.sizes.hand, 0) })) as Bone;
 
-        this.lLegUpper = this.hips.addChild(new Bone({ profile: v2(3), length: this.sizes.legUpper, position: v3(-1-1, -this.sizes.legUpper, 0), })) as Bone;
-        this.rLegUpper = this.hips.addChild(new Bone({ profile: v2(3), length: this.sizes.legUpper, position: v3(4-1, -this.sizes.legUpper, 0), })) as Bone;
-        this.lLegLower = this.lLegUpper.addChild(new Bone({ speed: 0.03, profile: v2(2), length: this.sizes.legLower, position: v3(0.5, -this.sizes.legLower, 0.5) })) as Bone;
-        this.rLegLower = this.rLegUpper.addChild(new Bone({ speed: 0.03, profile: v2(2), length: this.sizes.legLower, position: v3(0.5, -this.sizes.legLower, 0.5) })) as Bone;
-        this.lFoot = this.lLegLower.addChild(new Bone({ profile: v2(3, 6), length: this.sizes.foot, position: v3(-0.5, -this.sizes.foot, -0.5) })) as Bone;
-        this.rFoot = this.rLegLower.addChild(new Bone({ profile: v2(3, 6), length: this.sizes.foot, position: v3(-0.5, -this.sizes.foot, -0.5) })) as Bone;
+        this.lLegUpper = this.hips.addChild(new Bone({ profile: v2(1), length: this.sizes.legUpper, position: v3(0, -this.sizes.legUpper, 0), })) as Bone;
+        this.rLegUpper = this.hips.addChild(new Bone({ profile: v2(1), length: this.sizes.legUpper, position: v3(this.sizes.hipsWidth-1, -this.sizes.legUpper, 0), })) as Bone;
+        this.lLegLower = this.lLegUpper.addChild(new Bone({ speed: 0.03, profile: v2(1), length: this.sizes.legLower, position: v3(0, -this.sizes.legLower, 0) })) as Bone;
+        this.rLegLower = this.rLegUpper.addChild(new Bone({ speed: 0.03, profile: v2(1), length: this.sizes.legLower, position: v3(0, -this.sizes.legLower, 0) })) as Bone;
+        this.lFoot = this.lLegLower.addChild(new Bone({ profile: v2(1, 3), length: this.sizes.foot, position: v3(-0, -this.sizes.foot, -0) })) as Bone;
+        this.rFoot = this.rLegLower.addChild(new Bone({ profile: v2(1,3), length: this.sizes.foot, position: v3(-0, -this.sizes.foot, -0) })) as Bone;
 
 
     }
@@ -172,138 +173,7 @@ export class Skeleton extends GLGroup {
 
     public setPose(p: string = '') {
 
-        const animation: Record<string, Record<SkeletonBones, [number?, [number?, number?, number?]?]>> = {
-            running1: {
-                torso: [0.01, [-0.3, -0.3, 0]],
-                head: [0.005, [0.2, 0.2, 0]],
-                lArmUpper: [0.015, [-0.8, 0, 0.1]],
-                lArmLower: [0.01, [0.3, 0, 0]],
-                lHand: [0.015, []],
-                rArmUpper: [0.015, [1.2, 0, -0.1]],
-                rArmLower: [0.01, [1.2, 0, 1.2]],
-                rHand: [0.015, []],
-                lLegUpper: [0.015, [1.2, 0, 0]],
-                lLegLower: [0.03, [-0.3, 0, 0]],
-                lFoot: [0.015, [-0.2, 0, 0]],
-                rLegUpper: [0.015, []],
-                rLegLower: [0.03, [-2, 0, 0]],
-                rFoot: [0.015, [-0.2, 0, 0]],
-            },
-            running2: {
-                torso: [0.01, [-0.3, 0.3, 0]],
-                head: [0.005, [0.2, -0.2, 0]],
-                lArmUpper: [0.015, [1.2, 0, 0.1]],
-                lArmLower: [0.01, [1.2, 0, -1.2]],
-                lHand: [0.015, []],
-                rArmUpper: [0.015, [-0.8, 0, -0.1]],
-                rArmLower: [0.01, [0.3, 0, 0]],
-                rHand: [0.015, []],
-                lLegUpper: [0.03, []],
-                lLegLower: [0.015, [-2, 0, 0]],
-                lFoot: [0.015, [-0.2, 0, 0]],
-                rLegUpper: [.03, [1.2, 0, 0]],
-                rLegLower: [0.015, [-0.3, 0, 0]],
-                rFoot: [0.015, [-0.2, 0, 0]],
-            },
-            T: {
-                torso: [0.02, []],
-                head: [0.02, []],
-                lArmUpper: [0.02, [0, 0, Math.PI / 2]],
-                lArmLower: [0.02, []],
-                lHand: [0.02, []],
-                rArmUpper: [0.02, [0, 0, -Math.PI / 2]],
-                rArmLower: [0.02, []],
-                rHand: [0.02, []],
-                lLegUpper: [0.02, []],
-                lLegLower: [0.02, []],
-                lFoot: [0.02, []],
-                rLegUpper: [0.02, []],
-                rLegLower: [0.02, []],
-                rFoot: [0.02, []],
-            },
-            idle: {
-                torso: [0.02, []],
-                head: [0.005, [0, 0.5]],
-                lArmUpper: [0.03, []],
-                lArmLower: [0.03, []],
-                lHand: [0.03, []],
-                rArmUpper: [0.03, []],
-                rArmLower: [0.03, []],
-                rHand: [0.03, []],
-                lLegUpper: [0.04, []],
-                lLegLower: [0.05, []],
-                lFoot: [0.03, []],
-                rLegUpper: [0.03, []],
-                rLegLower: [0.03, []],
-                rFoot: [0.03, []],
-            },
-            idle2: {
-                torso: [0.02, []],
-                head: [0.005, [0, -0.5]],
-                lArmUpper: [0.03, []],
-                lArmLower: [0.03, []],
-                lHand: [0.03, []],
-                rArmUpper: [0.03, []],
-                rArmLower: [0.03, []],
-                rHand: [0.03, []],
-                lLegUpper: [0.04, []],
-                lLegLower: [0.05, []],
-                lFoot: [0.03, []],
-                rLegUpper: [0.03, []],
-                rLegLower: [0.03, []],
-                rFoot: [0.03, []],
-            },
-            // idle: {
-            //     torso: [0.02, []],
-            //     head: [0.005, [0, 0.5]],
-            //     lArmUpper: [0.03, [0.8, 0.2, -0.4]],
-            //     lArmLower: [0.03, [0, 0.2, -0.8]],
-            //     lHand: [0.03, []],
-            //     rArmUpper: [0.03, [.4, -0.2, 0.4]],
-            //     rArmLower: [0.03, [0, 0, 0.7]],
-            //     rHand: [0.03, []],
-            //     lLegUpper: [0.04, []],
-            //     lLegLower: [0.05, []],
-            //     lFoot: [0.03, []],
-            //     rLegUpper: [0.03, []],
-            //     rLegLower: [0.03, []],
-            //     rFoot: [0.03, []],
-            // },
-            // idle2: {
-            //     torso: [0.02, []],
-            //     head: [0.005, [0, -0.5]],
-            //     lArmUpper: [0.03, [0.8, 0.2, -0.4]],
-            //     lArmLower: [0.03, [0, 0.2, -0.8]],
-            //     lHand: [0.03, []],
-            //     rArmUpper: [0.03, [.4, -0.2, 0.4]],
-            //     rArmLower: [0.03, [0, 0, 0.7]],
-            //     rHand: [0.03, []],
-            //     lLegUpper: [0.04, []],
-            //     lLegLower: [0.05, []],
-            //     lFoot: [0.03, []],
-            //     rLegUpper: [0.03, []],
-            //     rLegLower: [0.03, []],
-            //     rFoot: [0.03, []],
-            // },
-            jump: {
-                torso: [0.03, [-0.1, -0.1, 0.15]],
-                head: [0.03, [0.3, 0, 0]],
-                lArmUpper: [0.03, [-0.2, 0, 0.1]],
-                lArmLower: [0.03, [0, 0, 0.2]],
-                lHand: [0.03, []],
-                rArmUpper: [0.03, [-0.1, 0, -0.3]],
-                rArmLower: [0.03, [0, 0, 0.2]],
-                rHand: [0.03, []],
-                lLegUpper: [0.06, [2, 0, 0]],
-                lLegLower: [0.08, [-2.4, 0, 0]],
-                lFoot: [0.03, []],
-                rLegUpper: [0.03, [-0.2, 0, 0]],
-                rLegLower: [0.03, [-0.3, 0, 0]],
-                rFoot: [0.03, [-0.6, 0, 0]],
-            }
-        };
-
-        const a = animation[p];
+        const a = this.animation[p];
         if (a) {
             Object.entries(a).forEach(([key, [time, val]]) => {
                 this.setLimbRotation(key, time, v3(val));
