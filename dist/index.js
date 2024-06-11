@@ -3463,7 +3463,7 @@ var Skeleton = class extends GLGroup {
   }
   build() {
     super.build();
-    this.hips = this.addChild(new Bone({ speed: 0.01, profile: v2(this.sizes.hipsWidth, 1), length: this.sizes.hips, position: v3(0, this.sizes.legUpper + this.sizes.legLower + this.sizes.foot, 0) }));
+    this.hips = this.addChild(new Bone({ speed: 0.01, profile: v2(this.sizes.hipsWidth, 1), length: this.sizes.hips, position: v3(0, this.sizes.legUpper + this.sizes.legLower + this.sizes.foot, 2) }));
     this.torso = this.hips.addChild(new Bone({ speed: 0.01, anchorPoint: v3(this.sizes.shoulderWidth / 2, 0, 0), baseRotation: v3(0, 0, 0), profile: v2(this.sizes.shoulderWidth, 1), length: this.sizes.torso, position: v3(-(this.sizes.shoulderWidth - this.sizes.hipsWidth) / 2, this.sizes.hips, 0) }));
     this.head = this.torso.addChild(new Bone({ speed: 5e-3, profile: v2(4, 3), length: this.sizes.head, anchorPoint: v3(2, 0, 1), position: v3((this.sizes.shoulderWidth - 4) / 2, this.sizes.torso + 1, -1) }));
     this.lArmUpper = this.torso.addChild(new Bone({ profile: v2(1), baseRotation: v3(-0.1, 0, 0.4), length: this.sizes.armUpper, position: v3(0, this.sizes.torso - this.sizes.armUpper, 0) }));
@@ -4205,7 +4205,7 @@ var Driver = class extends Character {
   }
   build() {
     GlElement.registerControllers(this);
-    this.addChild(new GLobj({ storage: this.mode.storage, url: "Shop-3-Car.obj", size: v3(20, 20, 20), position: v3(20, 15, 52), rotation: v3(0, -Math.PI / 2, 0) }));
+    this.addChild(new GLobj({ storage: this.mode.storage, url: "Shop-3-Car.obj", size: v3(18, 18, 18), position: v3(18, 12, 47), rotation: v3(0, -Math.PI / 2, 0) }));
   }
   tick(obj) {
     super.tick(obj);
@@ -4299,7 +4299,7 @@ var World = class extends Level {
     });
     this.addChild(this.player);
     this.car = new Driver({
-      size: v3(40, 31, 104),
+      size: v3(36, 26, 93),
       position: v3(130, 1, 600),
       rotation: v3(0, 2.3, 0)
     });
@@ -4322,7 +4322,7 @@ var World = class extends Level {
     this.addChild(new GLobj({ storage: this.mode.storage, url: "CountrySide-4-Vegetation1.obj", size: v3(25, 25, 25), rotation: v3(0, 0, 0), position: v3(-20 - 20, 6, 760) }));
     this.addChild(new GLobj({ storage: this.mode.storage, url: "CountrySide-4-Vegetation1.obj", size: v3(25, 25, 25), rotation: v3(0, Math.PI / 2, 0), position: v3(0 - 20, 3, 670) }));
     this.addChild(new GLobj({ storage: this.mode.storage, url: "Plane01.obj", size: v3(30, 30, 30), position: v3(420, 16, 720), rotation: v3(0, Math.PI / 4 + Math.PI / 2, -0.12) }));
-    this.addChild(new GLobj({ storage: this.mode.storage, url: "CountrySide-5-House.obj", size: v3(20, 20, 20), position: v3(200, 48, 800), rotation: v3(0, -Math.PI / 2, 0) }));
+    this.addChild(new GLobj({ storage: this.mode.storage, url: "CountrySide-5-House.obj", size: v3(18, 18, 18), position: v3(200, 43, 800), rotation: v3(0, -Math.PI / 2, 0) }));
     [
       [v3(-5e3, -1e3, -2e3), v3(1e4, 1e3, 4e3), Vector3.up, false],
       // floor

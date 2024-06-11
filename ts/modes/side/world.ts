@@ -113,7 +113,7 @@ export class World extends Level {
         });
         this.addChild(this.player);
         this.car = new Driver({
-            size: v3(40, 31, 104),
+            size: v3(36, 26, 93),
             position: v3(130, 1, 600),
             rotation: v3(0, 2.3, 0)
         });
@@ -146,7 +146,7 @@ export class World extends Level {
         this.addChild(new GLobj({ storage: this.mode.storage, url: 'CountrySide-4-Vegetation1.obj', size: v3(25, 25, 25), rotation: v3(0, 0, 0), position: v3(-20 - 20, 6, 760) }));
         this.addChild(new GLobj({ storage: this.mode.storage, url: 'CountrySide-4-Vegetation1.obj', size: v3(25, 25, 25), rotation: v3(0, Math.PI / 2, 0), position: v3(0 - 20, 3, 670) }));
         this.addChild(new GLobj({ storage: this.mode.storage, url: 'Plane01.obj', size: v3(30, 30, 30), position: v3(420, 16, 720), rotation: v3(0, Math.PI / 4 + Math.PI / 2, -0.12) }));
-        this.addChild(new GLobj({ storage: this.mode.storage, url: 'CountrySide-5-House.obj', size: v3(20, 20, 20), position: v3(200, 48, 800), rotation: v3(0, -Math.PI / 2, 0) }));
+        this.addChild(new GLobj({ storage: this.mode.storage, url: 'CountrySide-5-House.obj', size: v3(18, 18, 18), position: v3(200, 43, 800), rotation: v3(0, -Math.PI / 2, 0) }));
 
 
         (([

@@ -142,7 +142,7 @@ export class Skeleton extends GLGroup {
     public build(): void {
         super.build();
 
-        this.hips = this.addChild(new Bone({ speed: 0.01, profile: v2(this.sizes.hipsWidth, 1), length: this.sizes.hips, position: v3(0, this.sizes.legUpper + this.sizes.legLower + this.sizes.foot, 0), })) as Bone;
+        this.hips = this.addChild(new Bone({ speed: 0.01, profile: v2(this.sizes.hipsWidth, 1), length: this.sizes.hips, position: v3(0, this.sizes.legUpper + this.sizes.legLower + this.sizes.foot, 2), })) as Bone;
         this.torso = this.hips.addChild(new Bone({ speed: 0.01, anchorPoint: v3(this.sizes.shoulderWidth/2, 0, 0), baseRotation: v3(0,0,0), profile: v2(this.sizes.shoulderWidth, 1), length: this.sizes.torso, position: v3(-(this.sizes.shoulderWidth-this.sizes.hipsWidth)/2, this.sizes.hips, 0), })) as Bone;
         this.head = this.torso.addChild(new Bone({ speed: 0.005, profile: v2(4, 3), length: this.sizes.head, anchorPoint: v3(2, 0, 1), position: v3((this.sizes.shoulderWidth-4)/2, this.sizes.torso + 1, -1), })) as Bone;
 
