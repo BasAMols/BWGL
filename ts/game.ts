@@ -6,7 +6,7 @@ import { Renderer } from './dom/renderer';
 import { Loader } from './utils/debug/loader';
 import { GLRenderer } from './gl/glRenderer';
 import { Level } from './utils/level';
-import { SideMode } from './modes/side/sideMode';
+import { OpenWorldMode } from './modes/side/openWorld';
 
 export class Game {
     public ticker: Ticker;
@@ -80,7 +80,7 @@ export class Game {
     private setupModes() {
         // this.addMode('snakes', new SnakeMode());
         // this.addMode('rpg', new RPGMode());
-        this.addMode('side', new SideMode());
+        this.addMode('side', new OpenWorldMode());
         this.switchMode('side');
     }
 

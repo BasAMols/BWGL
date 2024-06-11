@@ -74,7 +74,6 @@ export class GLRenderer {
         this.glt.sendUniform('uProjectionMatrix', new Matrix4()
             .perspective(
                 (this.game.mode.camera.fov * Math.PI) / 180,
-                (this.gl.canvas as HTMLCanvasElement).clientWidth / (this.gl.canvas as HTMLCanvasElement).clientHeight,
             )
             .translate(this.game.mode.camera.offset.multiply(1, 1, -1))
             .rotate(this.game.mode.camera.rotation)

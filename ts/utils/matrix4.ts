@@ -44,11 +44,11 @@ export class Matrix4 {
         });
         return this;
     }
-    public perspective(fov: number, aspect: number, near: number = 1, far: number = 10000) {
+    public perspective(fov: number, near: number = 1, far: number = Infinity) {
         mat4.perspective(
             this.mat4,
             fov,
-            aspect,
+            document.body.clientWidth / document.body.clientHeight,
             near,
             far
         );

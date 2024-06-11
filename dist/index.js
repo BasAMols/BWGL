@@ -2266,11 +2266,11 @@ var Matrix4 = class _Matrix4 {
     });
     return this;
   }
-  perspective(fov, aspect, near = 1, far = 1e4) {
+  perspective(fov, near = 1, far = Infinity) {
     mat4_exports.perspective(
       this.mat4,
       fov,
-      aspect,
+      document.body.clientWidth / document.body.clientHeight,
       near,
       far
     );
@@ -2315,8 +2315,7 @@ var GLRenderer = class {
     this.glt.sendUniform(
       "uProjectionMatrix",
       new Matrix4().perspective(
-        this.game.mode.camera.fov * Math.PI / 180,
-        this.gl.canvas.clientWidth / this.gl.canvas.clientHeight
+        this.game.mode.camera.fov * Math.PI / 180
       ).translate(this.game.mode.camera.offset.multiply(1, 1, -1)).rotate(this.game.mode.camera.rotation).mat4
     );
     this.drawChildren(this.game.level, new Matrix4().translate(this.game.mode.camera.target.multiply(-1, 1, 1)));
@@ -3225,7 +3224,7 @@ var GLCuboid = class _GLCuboid extends GLRendable {
 var Bone = class extends GLGroup {
   constructor(attr = {}) {
     super(attr);
-    this.mesh = attr.mesh === void 0 ? true : attr.mesh;
+    this.mesh = attr.mesh === void 0 ? false : attr.mesh;
     this.length = attr.length === void 0 ? 10 : attr.length;
     this.profile = attr.profile || v2(0);
     this.speed = attr.speed === void 0 ? 0.015 : attr.speed;
@@ -3287,21 +3286,23 @@ var Skeleton = class extends GLGroup {
       "legKnee": 0,
       "legLower": 4,
       "foot": 2,
-      "torso": 13
+      "torso": 8,
+      "hips": 5
     };
   }
   build() {
     super.build();
-    this.torso = this.addChild(new Bone({ speed: 0.01, profile: v2(6, 4), length: this.sizes.torso, position: v3(0, this.sizes.legUpper + this.sizes.legKnee + this.sizes.legLower + this.sizes.foot, 3) }));
-    this.head = this.torso.addChild(new Bone({ speed: 5e-3, profile: v2(5, 6), length: this.sizes.head, anchorPoint: v3(3, 0, 3), position: v3(0.5, this.sizes.torso + 1, -1) }));
-    this.lArmUpper = this.torso.addChild(new Bone({ profile: v2(2.4), length: this.sizes.armUpper, position: v3(-3.4, this.sizes.torso - this.sizes.armUpper, 1), mesh: true }));
-    this.rArmUpper = this.torso.addChild(new Bone({ profile: v2(2.4), length: this.sizes.armUpper, position: v3(7, this.sizes.torso - this.sizes.armUpper, 1), mesh: true }));
-    this.lArmLower = this.lArmUpper.addChild(new Bone({ speed: 0.03, profile: v2(2), length: this.sizes.armLower, position: v3(0.2, -this.sizes.armLower, 0.2) }));
-    this.rArmLower = this.rArmUpper.addChild(new Bone({ speed: 0.03, profile: v2(2), length: this.sizes.armLower, position: v3(0.2, -this.sizes.armLower, 0.2) }));
+    this.torso = this.addChild(new Bone({ speed: 0.01, profile: v2(4, 4), length: this.sizes.torso, position: v3(0, this.sizes.legUpper + this.sizes.legKnee + this.sizes.legLower + this.sizes.foot + this.sizes.hips, 3) }));
+    this.hips = this.torso.addChild(new Bone({ speed: 0.01, profile: v2(4, 4), length: this.sizes.hips, position: v3(0, -this.sizes.hips, 0) }));
+    this.head = this.torso.addChild(new Bone({ speed: 5e-3, profile: v2(5, 6), length: this.sizes.head, anchorPoint: v3(3, 0, 2.5), position: v3(0.5 - 1, this.sizes.torso + 1, -1) }));
+    this.lArmUpper = this.torso.addChild(new Bone({ profile: v2(2.4), baseRotation: v3(-0.1, 0, 0.4), length: this.sizes.armUpper, position: v3(-3.5 + 2.5 - 1, this.sizes.torso - this.sizes.armUpper, 1) }));
+    this.rArmUpper = this.torso.addChild(new Bone({ profile: v2(2.4), baseRotation: v3(-0.1, 0, -0.4), length: this.sizes.armUpper, position: v3(4.5 - 1, this.sizes.torso - this.sizes.armUpper, 1) }));
+    this.lArmLower = this.lArmUpper.addChild(new Bone({ speed: 0.03, baseRotation: v3(0.2, 0, -0.3), profile: v2(2), length: this.sizes.armLower, position: v3(0.2, -this.sizes.armLower, 0.2) }));
+    this.rArmLower = this.rArmUpper.addChild(new Bone({ speed: 0.03, baseRotation: v3(0.2, 0, 0.3), profile: v2(2), length: this.sizes.armLower, position: v3(0.2, -this.sizes.armLower, 0.2) }));
     this.lHand = this.lArmLower.addChild(new Bone({ profile: v2(3), length: this.sizes.hand, position: v3(-0.5, -this.sizes.hand, -0.5) }));
     this.rHand = this.rArmLower.addChild(new Bone({ profile: v2(3), length: this.sizes.hand, position: v3(-0.5, -this.sizes.hand, -0.5) }));
-    this.lLegUpper = this.torso.addChild(new Bone({ profile: v2(3), length: this.sizes.legUpper, position: v3(-1, -this.sizes.legUpper, 0), mesh: true }));
-    this.rLegUpper = this.torso.addChild(new Bone({ profile: v2(3), length: this.sizes.legUpper, position: v3(4, -this.sizes.legUpper, 0), mesh: true }));
+    this.lLegUpper = this.hips.addChild(new Bone({ profile: v2(3), length: this.sizes.legUpper, position: v3(-1 - 1, -this.sizes.legUpper, 0) }));
+    this.rLegUpper = this.hips.addChild(new Bone({ profile: v2(3), length: this.sizes.legUpper, position: v3(4 - 1, -this.sizes.legUpper, 0) }));
     this.lLegLower = this.lLegUpper.addChild(new Bone({ speed: 0.03, profile: v2(2), length: this.sizes.legLower, position: v3(0.5, -this.sizes.legLower, 0.5) }));
     this.rLegLower = this.rLegUpper.addChild(new Bone({ speed: 0.03, profile: v2(2), length: this.sizes.legLower, position: v3(0.5, -this.sizes.legLower, 0.5) }));
     this.lFoot = this.lLegLower.addChild(new Bone({ profile: v2(3, 6), length: this.sizes.foot, position: v3(-0.5, -this.sizes.foot, -0.5) }));
@@ -3320,10 +3321,10 @@ var Skeleton = class extends GLGroup {
         torso: [0.01, [-0.3, -0.3, 0]],
         head: [5e-3, [0.2, 0.2, 0]],
         lArmUpper: [0.015, [-0.8, 0, 0.1]],
-        lArmLower: [0.03, [0.3, 0, 0]],
+        lArmLower: [0.01, [0.3, 0, 0]],
         lHand: [0.015, []],
         rArmUpper: [0.015, [1.2, 0, -0.1]],
-        rArmLower: [0.03, [1.2, 0, 1.2]],
+        rArmLower: [0.01, [1.2, 0, 1.2]],
         rHand: [0.015, []],
         lLegUpper: [0.015, [1.2, 0, 0]],
         lLegLower: [0.03, [-0.3, 0, 0]],
@@ -3336,10 +3337,10 @@ var Skeleton = class extends GLGroup {
         torso: [0.01, [-0.3, 0.3, 0]],
         head: [5e-3, [0.2, -0.2, 0]],
         lArmUpper: [0.015, [1.2, 0, 0.1]],
-        lArmLower: [0.03, [1.2, 0, -1.2]],
+        lArmLower: [0.01, [1.2, 0, -1.2]],
         lHand: [0.015, []],
         rArmUpper: [0.015, [-0.8, 0, -0.1]],
-        rArmLower: [0.03, [0.3, 0, 0]],
+        rArmLower: [0.01, [0.3, 0, 0]],
         rHand: [0.015, []],
         lLegUpper: [0.03, []],
         lLegLower: [0.015, [-2, 0, 0]],
@@ -3367,11 +3368,11 @@ var Skeleton = class extends GLGroup {
       idle: {
         torso: [0.02, []],
         head: [5e-3, [0, 0.5]],
-        lArmUpper: [0.03, [0.8, 0.2, -0.4]],
-        lArmLower: [0.03, [0, 0.2, -0.8]],
+        lArmUpper: [0.03, []],
+        lArmLower: [0.03, []],
         lHand: [0.03, []],
-        rArmUpper: [0.03, [0.4, -0.2, 0.4]],
-        rArmLower: [0.03, [0, 0, 0.7]],
+        rArmUpper: [0.03, []],
+        rArmLower: [0.03, []],
         rHand: [0.03, []],
         lLegUpper: [0.04, []],
         lLegLower: [0.05, []],
@@ -3383,11 +3384,11 @@ var Skeleton = class extends GLGroup {
       idle2: {
         torso: [0.02, []],
         head: [5e-3, [0, -0.5]],
-        lArmUpper: [0.03, [0.8, 0.2, -0.4]],
-        lArmLower: [0.03, [0, 0.2, -0.8]],
+        lArmUpper: [0.03, []],
+        lArmLower: [0.03, []],
         lHand: [0.03, []],
-        rArmUpper: [0.03, [0.4, -0.2, 0.4]],
-        rArmLower: [0.03, [0, 0, 0.7]],
+        rArmUpper: [0.03, []],
+        rArmLower: [0.03, []],
         rHand: [0.03, []],
         lLegUpper: [0.04, []],
         lLegLower: [0.05, []],
@@ -3396,6 +3397,38 @@ var Skeleton = class extends GLGroup {
         rLegLower: [0.03, []],
         rFoot: [0.03, []]
       },
+      // idle: {
+      //     torso: [0.02, []],
+      //     head: [0.005, [0, 0.5]],
+      //     lArmUpper: [0.03, [0.8, 0.2, -0.4]],
+      //     lArmLower: [0.03, [0, 0.2, -0.8]],
+      //     lHand: [0.03, []],
+      //     rArmUpper: [0.03, [.4, -0.2, 0.4]],
+      //     rArmLower: [0.03, [0, 0, 0.7]],
+      //     rHand: [0.03, []],
+      //     lLegUpper: [0.04, []],
+      //     lLegLower: [0.05, []],
+      //     lFoot: [0.03, []],
+      //     rLegUpper: [0.03, []],
+      //     rLegLower: [0.03, []],
+      //     rFoot: [0.03, []],
+      // },
+      // idle2: {
+      //     torso: [0.02, []],
+      //     head: [0.005, [0, -0.5]],
+      //     lArmUpper: [0.03, [0.8, 0.2, -0.4]],
+      //     lArmLower: [0.03, [0, 0.2, -0.8]],
+      //     lHand: [0.03, []],
+      //     rArmUpper: [0.03, [.4, -0.2, 0.4]],
+      //     rArmLower: [0.03, [0, 0, 0.7]],
+      //     rHand: [0.03, []],
+      //     lLegUpper: [0.04, []],
+      //     lLegLower: [0.05, []],
+      //     lFoot: [0.03, []],
+      //     rLegUpper: [0.03, []],
+      //     rLegLower: [0.03, []],
+      //     rFoot: [0.03, []],
+      // },
       jump: {
         torso: [0.03, [-0.1, -0.1, 0.15]],
         head: [0.03, [0.3, 0, 0]],
@@ -3436,6 +3469,176 @@ var Skeleton = class extends GLGroup {
   }
 };
 
+// ts/gl/obj.ts
+var GLobj = class extends GLRendable {
+  constructor(attr = {}) {
+    super(__spreadValues(__spreadValues({}, attr), { autoReady: false }));
+    this.type = "mesh";
+    this.verticesCount = 0;
+    this.matIndeces = [];
+    this.mats = {};
+    this.matsData = {};
+    this.positionIndeces = [];
+    this.indexIndeces = [];
+    this.normalIndeces = [];
+    this.textureIndeces = [];
+    this.texturePositionIndeces = [];
+    this.path = attr.url.split("/").slice(0, -1).join("/") + "/";
+    if (attr.storage) {
+      if (attr.storage.register(attr.url, this)) {
+        this.loadFile("".concat(window.location.href, "/obj/").concat(attr.url)).then(this.parseMtl.bind(this)).then(this.parseObj.bind(this)).then(() => {
+          this.ready();
+          attr.storage.loaded(attr.url);
+        });
+      }
+    } else {
+      this.loadFile("".concat(window.location.href, "/obj/").concat(attr.url)).then(this.parseMtl.bind(this)).then(this.parseObj.bind(this)).then(() => {
+        this.ready();
+      });
+    }
+  }
+  getData() {
+    return {
+      verticesCount: this.verticesCount,
+      matIndeces: this.matIndeces,
+      matsData: this.matsData,
+      positionIndeces: this.positionIndeces,
+      indexIndeces: this.indexIndeces,
+      normalIndeces: this.normalIndeces,
+      texturePositionIndeces: this.texturePositionIndeces
+    };
+  }
+  giveData(data) {
+    this.verticesCount = data.verticesCount;
+    this.matIndeces = data.matIndeces;
+    this.matsData = data.matsData;
+    this.positionIndeces = data.positionIndeces;
+    this.indexIndeces = data.indexIndeces;
+    this.normalIndeces = data.normalIndeces;
+    this.texturePositionIndeces = data.texturePositionIndeces;
+  }
+  async parseMtl(str2) {
+    if (/mtllib/.test(str2)) {
+      await this.loadFile("".concat(window.location.href, "obj/").concat(this.path).concat(str2.split(/mtllib/)[1].split(/\n/)[0].trim())).then((v) => {
+        v.split("newmtl ").slice(1).forEach((s) => {
+          const lines = s.split(/\r\n|\r|\n/).filter((n) => n);
+          this.matsData[lines.shift()] = Object.fromEntries(lines.map((line) => {
+            const a = line.split(" ");
+            return [a.shift(), a];
+          }));
+        });
+      });
+      return str2;
+    } else {
+      return str2;
+    }
+  }
+  parseFaces(lineArray, mat, points, normals, tCoords) {
+    const textRemainder = lineArray.slice(1);
+    const numbRemainder = textRemainder.map(Number);
+    ({
+      usemtl: () => {
+        mat = textRemainder[0];
+      },
+      f: () => {
+        if (numbRemainder.length === 3) {
+          this.positionIndeces.push(...points[numbRemainder[0] - 1]);
+          this.positionIndeces.push(...points[numbRemainder[1] - 1]);
+          this.positionIndeces.push(...points[numbRemainder[2] - 1]);
+        } else if (numbRemainder.length === 6) {
+          this.positionIndeces.push(...points[numbRemainder[0] - 1]);
+          this.positionIndeces.push(...points[numbRemainder[2] - 1]);
+          this.positionIndeces.push(...points[numbRemainder[4] - 1]);
+          this.texturePositionIndeces.push(...tCoords[numbRemainder[1] - 1]);
+          this.texturePositionIndeces.push(...tCoords[numbRemainder[3] - 1]);
+          this.texturePositionIndeces.push(...tCoords[numbRemainder[5] - 1]);
+        } else {
+          this.positionIndeces.push(...points[numbRemainder[0] - 1]);
+          this.positionIndeces.push(...points[numbRemainder[3] - 1]);
+          this.positionIndeces.push(...points[numbRemainder[6] - 1]);
+          this.texturePositionIndeces.push(...tCoords[numbRemainder[1] - 1]);
+          this.texturePositionIndeces.push(...tCoords[numbRemainder[4] - 1]);
+          this.texturePositionIndeces.push(...tCoords[numbRemainder[7] - 1]);
+          this.normalIndeces.push(...normals[numbRemainder[2] - 1]);
+          this.normalIndeces.push(...normals[numbRemainder[5] - 1]);
+          this.normalIndeces.push(...normals[numbRemainder[8] - 1]);
+          this.textureIndeces.push(
+            ...GLTexture.textureOffset(Object.keys(this.mats).indexOf(mat), Object.keys(this.mats).length)
+          );
+        }
+        this.indexIndeces.push(this.indexIndeces.length);
+        this.indexIndeces.push(this.indexIndeces.length);
+        this.indexIndeces.push(this.indexIndeces.length);
+        this.matIndeces.push(mat);
+        this.matIndeces.push(mat);
+        this.matIndeces.push(mat);
+      }
+    }[lineArray[0]] || (() => {
+    }))();
+    return mat;
+  }
+  parseObj(str2) {
+    let mat = "none";
+    const lines = str2.split(/\r\n|\r|\n/);
+    const nonVertex = [];
+    const points = [];
+    const normals = [];
+    const tCoords = [];
+    lines.forEach(async (line) => {
+      const words = line.split(/(?: |\/)/);
+      const command = words[0];
+      const numbers = words.slice(1).map(Number);
+      if (command === "v") {
+        points.push([numbers[0], numbers[1], numbers[2]]);
+      } else if (command === "vn") {
+        normals.push([numbers[0], numbers[1], numbers[2]]);
+      } else if (command === "vt") {
+        tCoords.push([numbers[0], numbers[1]]);
+      } else {
+        nonVertex.push(words);
+      }
+    });
+    nonVertex.forEach((words) => {
+      mat = this.parseFaces(words, mat, points, normals, tCoords);
+    });
+    this.verticesCount = this.indexIndeces.length;
+  }
+  async loadFile(url) {
+    const response = await fetch(url);
+    const data = await response.text();
+    return data;
+  }
+  indexBuffer() {
+    return this.indexIndeces;
+  }
+  positionBuffer(size) {
+    return this.positionIndeces.map((n, i) => n * size.array[i % 3]);
+  }
+  normalBuffer() {
+    return this.normalIndeces;
+  }
+  textureBuffer(size) {
+    this.texture = new GLTexture(this.game, {});
+    if (Object.values(this.matsData).length) {
+      const matArray = Object.values(this.matsData);
+      const matImage = matArray.find((m) => m.map_Kd);
+      if (matImage) {
+        this.texture = new GLTexture(this.game, {
+          url: "obj/".concat(this.path).concat(matImage.map_Kd.join(" ").trim())
+        });
+      } else {
+        this.texture = new GLTexture(this.game, {
+          color: matArray.map((m) => [
+            ...m.Kd ? m.Kd.map(Number) : [0, 0, 0],
+            m.d ? Number(m.d[0]) : 1
+          ])
+        });
+      }
+    }
+    return this.texturePositionIndeces;
+  }
+};
+
 // ts/modes/side/player.ts
 var Player = class extends Character {
   constructor({
@@ -3457,18 +3660,30 @@ var Player = class extends Character {
     this.skeleton = new Skeleton({
       boneSizes: {
         "head": 6,
-        "armUpper": 6,
+        "armUpper": 5,
         "armElbow": 0,
         "armLower": 3,
         "hand": 3,
         "legUpper": 6,
         "legKnee": 0,
-        "legLower": 5,
+        "legLower": 6,
         "foot": 2,
-        "torso": 13
+        "torso": 7,
+        "hips": 3
       }
     });
     this.addChild(this.skeleton);
+    this.skeleton.torso.addChild(new GLobj({ url: "worker/worker-8-TorsoUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(2, -1, 2) }));
+    this.skeleton.hips.addChild(new GLobj({ url: "worker/worker-9-TorsoLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(2, 2, 2) }));
+    this.skeleton.lLegUpper.addChild(new GLobj({ url: "worker/worker-0-lLegUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(4, 8, 2) }));
+    this.skeleton.rLegUpper.addChild(new GLobj({ url: "worker/worker-1-rLegUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(-1, 8, 2) }));
+    this.skeleton.lLegLower.addChild(new GLobj({ url: "worker/worker-2-lLegLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(3.5, 14.5, 2) }));
+    this.skeleton.rLegLower.addChild(new GLobj({ url: "worker/worker-3-rLegLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(-1.5, 14.5, 2) }));
+    this.skeleton.lArmUpper.addChild(new GLobj({ url: "worker/worker-4-lArmUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, Math.PI / 2), position: v3(9, 7.75, 1.5) }));
+    this.skeleton.rArmUpper.addChild(new GLobj({ url: "worker/worker-5-rArmUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, -Math.PI / 2), position: v3(-6.5, 7.75, 1.5) }));
+    this.skeleton.lArmLower.addChild(new GLobj({ url: "worker/worker-6-lArmLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, Math.PI / 2), position: v3(8.75, 10.5, 1.5) }));
+    this.skeleton.rArmLower.addChild(new GLobj({ url: "worker/worker-7-rArmLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, -Math.PI / 2), position: v3(-6.75, 10.5, 1.5) }));
+    this.skeleton.head.addChild(new GLobj({ url: "worker/worker-10-Head.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(2.5, -9, 3) }));
   }
   tick(obj) {
     super.tick(obj);
@@ -3837,176 +4052,6 @@ var Collider = class extends GlElement {
   }
 };
 
-// ts/gl/obj.ts
-var GLobj = class extends GLRendable {
-  constructor(attr = {}) {
-    super(__spreadValues(__spreadValues({}, attr), { autoReady: false }));
-    this.type = "mesh";
-    this.verticesCount = 0;
-    this.matIndeces = [];
-    this.mats = {};
-    this.matsData = {};
-    this.positionIndeces = [];
-    this.indexIndeces = [];
-    this.normalIndeces = [];
-    this.textureIndeces = [];
-    this.texturePositionIndeces = [];
-    this.path = attr.url.split("/").slice(0, -1).join("/") + "/";
-    if (attr.storage) {
-      if (attr.storage.register(attr.url, this)) {
-        this.loadFile("".concat(window.location.href, "/obj/").concat(attr.url)).then(this.parseMtl.bind(this)).then(this.parseObj.bind(this)).then(() => {
-          this.ready();
-          attr.storage.loaded(attr.url);
-        });
-      }
-    } else {
-      this.loadFile("".concat(window.location.href, "/obj/").concat(attr.url)).then(this.parseMtl.bind(this)).then(this.parseObj.bind(this)).then(() => {
-        this.ready();
-      });
-    }
-  }
-  getData() {
-    return {
-      verticesCount: this.verticesCount,
-      matIndeces: this.matIndeces,
-      matsData: this.matsData,
-      positionIndeces: this.positionIndeces,
-      indexIndeces: this.indexIndeces,
-      normalIndeces: this.normalIndeces,
-      texturePositionIndeces: this.texturePositionIndeces
-    };
-  }
-  giveData(data) {
-    this.verticesCount = data.verticesCount;
-    this.matIndeces = data.matIndeces;
-    this.matsData = data.matsData;
-    this.positionIndeces = data.positionIndeces;
-    this.indexIndeces = data.indexIndeces;
-    this.normalIndeces = data.normalIndeces;
-    this.texturePositionIndeces = data.texturePositionIndeces;
-  }
-  async parseMtl(str2) {
-    if (/mtllib/.test(str2)) {
-      await this.loadFile("".concat(window.location.href, "obj/").concat(this.path).concat(str2.split(/mtllib/)[1].split(/\n/)[0].trim())).then((v) => {
-        v.split("newmtl ").slice(1).forEach((s) => {
-          const lines = s.split(/\r\n|\r|\n/).filter((n) => n);
-          this.matsData[lines.shift()] = Object.fromEntries(lines.map((line) => {
-            const a = line.split(" ");
-            return [a.shift(), a];
-          }));
-        });
-      });
-      return str2;
-    } else {
-      return str2;
-    }
-  }
-  parseFaces(lineArray, mat, points, normals, tCoords) {
-    const textRemainder = lineArray.slice(1);
-    const numbRemainder = textRemainder.map(Number);
-    ({
-      usemtl: () => {
-        mat = textRemainder[0];
-      },
-      f: () => {
-        if (numbRemainder.length === 3) {
-          this.positionIndeces.push(...points[numbRemainder[0] - 1]);
-          this.positionIndeces.push(...points[numbRemainder[1] - 1]);
-          this.positionIndeces.push(...points[numbRemainder[2] - 1]);
-        } else if (numbRemainder.length === 6) {
-          this.positionIndeces.push(...points[numbRemainder[0] - 1]);
-          this.positionIndeces.push(...points[numbRemainder[2] - 1]);
-          this.positionIndeces.push(...points[numbRemainder[4] - 1]);
-          this.texturePositionIndeces.push(...tCoords[numbRemainder[1] - 1]);
-          this.texturePositionIndeces.push(...tCoords[numbRemainder[3] - 1]);
-          this.texturePositionIndeces.push(...tCoords[numbRemainder[5] - 1]);
-        } else {
-          this.positionIndeces.push(...points[numbRemainder[0] - 1]);
-          this.positionIndeces.push(...points[numbRemainder[3] - 1]);
-          this.positionIndeces.push(...points[numbRemainder[6] - 1]);
-          this.texturePositionIndeces.push(...tCoords[numbRemainder[1] - 1]);
-          this.texturePositionIndeces.push(...tCoords[numbRemainder[4] - 1]);
-          this.texturePositionIndeces.push(...tCoords[numbRemainder[7] - 1]);
-          this.normalIndeces.push(...normals[numbRemainder[2] - 1]);
-          this.normalIndeces.push(...normals[numbRemainder[5] - 1]);
-          this.normalIndeces.push(...normals[numbRemainder[8] - 1]);
-          this.textureIndeces.push(
-            ...GLTexture.textureOffset(Object.keys(this.mats).indexOf(mat), Object.keys(this.mats).length)
-          );
-        }
-        this.indexIndeces.push(this.indexIndeces.length);
-        this.indexIndeces.push(this.indexIndeces.length);
-        this.indexIndeces.push(this.indexIndeces.length);
-        this.matIndeces.push(mat);
-        this.matIndeces.push(mat);
-        this.matIndeces.push(mat);
-      }
-    }[lineArray[0]] || (() => {
-    }))();
-    return mat;
-  }
-  parseObj(str2) {
-    let mat = "none";
-    const lines = str2.split(/\r\n|\r|\n/);
-    const nonVertex = [];
-    const points = [];
-    const normals = [];
-    const tCoords = [];
-    lines.forEach(async (line) => {
-      const words = line.split(/(?: |\/)/);
-      const command = words[0];
-      const numbers = words.slice(1).map(Number);
-      if (command === "v") {
-        points.push([numbers[0], numbers[1], numbers[2]]);
-      } else if (command === "vn") {
-        normals.push([numbers[0], numbers[1], numbers[2]]);
-      } else if (command === "vt") {
-        tCoords.push([numbers[0], numbers[1]]);
-      } else {
-        nonVertex.push(words);
-      }
-    });
-    nonVertex.forEach((words) => {
-      mat = this.parseFaces(words, mat, points, normals, tCoords);
-    });
-    this.verticesCount = this.indexIndeces.length;
-  }
-  async loadFile(url) {
-    const response = await fetch(url);
-    const data = await response.text();
-    return data;
-  }
-  indexBuffer() {
-    return this.indexIndeces;
-  }
-  positionBuffer(size) {
-    return this.positionIndeces.map((n, i) => n * size.array[i % 3]);
-  }
-  normalBuffer() {
-    return this.normalIndeces;
-  }
-  textureBuffer(size) {
-    this.texture = new GLTexture(this.game, {});
-    if (Object.values(this.matsData).length) {
-      const matArray = Object.values(this.matsData);
-      const matImage = matArray.find((m) => m.map_Kd);
-      if (matImage) {
-        this.texture = new GLTexture(this.game, {
-          url: "obj/".concat(this.path).concat(matImage.map_Kd.join(" ").trim())
-        });
-      } else {
-        this.texture = new GLTexture(this.game, {
-          color: matArray.map((m) => [
-            ...m.Kd ? m.Kd.map(Number) : [0, 0, 0],
-            m.d ? Number(m.d[0]) : 1
-          ])
-        });
-      }
-    }
-    return this.texturePositionIndeces;
-  }
-};
-
 // ts/modes/side/carController.ts
 var CarController = class extends GlController {
   constructor() {
@@ -4244,10 +4289,10 @@ var World = class extends Level {
     });
     this.addChild(this.car);
     this.drive(false);
-    this.addChild(new GLCuboid({ size: v3(3500, 1, 5e3), position: v3(-5600, -2, -2e3), colors: [[0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.317, 0.362, 0.298, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1]] }));
-    this.addChild(new GLCuboid({ size: v3(4e3, 1, 5e3), position: v3(1900, -2, -2e3), colors: [[0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.317, 0.362, 0.298, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1]] }));
-    this.addChild(new GLCuboid({ size: v3(4e3, 1, 1800), position: v3(-2100, -2, -2e3), colors: [[0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.317, 0.362, 0.298, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1]] }));
-    this.addChild(new GLCuboid({ size: v3(4e3, 1, 800), position: v3(-2100, -2, 2200), colors: [[0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.317, 0.362, 0.298, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1], [0.15, 0.15, 1, 1]] }));
+    this.addChild(new GLCuboid({ size: v3(3500, 1, 5e3), position: v3(-5600, -2, -2e3), colors: [[0.317, 0.362, 0.298, 1]] }));
+    this.addChild(new GLCuboid({ size: v3(4e3, 1, 5e3), position: v3(1900, -2, -2e3), colors: [[0.317, 0.362, 0.298, 1]] }));
+    this.addChild(new GLCuboid({ size: v3(4e3, 1, 1800), position: v3(-2100, -2, -2e3), colors: [[0.317, 0.362, 0.298, 1]] }));
+    this.addChild(new GLCuboid({ size: v3(4e3, 1, 800), position: v3(-2100, -2, 2200), colors: [[0.317, 0.362, 0.298, 1]] }));
     for (let x = 0; x < 20; x++) {
       for (let y = 0; y < 12; y++) {
         if (y === 3) {
@@ -4273,12 +4318,12 @@ var World = class extends Level {
   }
 };
 
-// ts/modes/side/sideMode.ts
-var SideMode = class extends Mode {
+// ts/modes/side/openWorld.ts
+var OpenWorldMode = class extends Mode {
   build() {
     super.build();
-    this.addLevel("platform", new World());
-    this.switchLevel("platform");
+    this.addLevel("openWorld", new World());
+    this.switchLevel("openWorld");
   }
 };
 
@@ -4336,7 +4381,7 @@ var Game = class {
     this.renderer.tick(obj);
   }
   setupModes() {
-    this.addMode("side", new SideMode());
+    this.addMode("side", new OpenWorldMode());
     this.switchMode("side");
   }
   debug() {
