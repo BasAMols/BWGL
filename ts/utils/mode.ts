@@ -3,6 +3,7 @@ import { GLGroup } from '../gl/group';
 import { ObjStorage } from '../gl/objStorage';
 import { Level } from './level';
 import { TickerReturnData } from './ticker';
+import { Vector2 } from './vector2';
 
 export type modeAttributes = GlElementAttributes & {
 
@@ -10,6 +11,7 @@ export type modeAttributes = GlElementAttributes & {
 export abstract class Mode extends GLGroup {
     public levels: Record<string, Level> = {};
     public storage: ObjStorage;
+    public lastTouch: Vector2;
 
     public get camera(): typeof this.level.camera {
         return this.level.camera;
@@ -76,7 +78,6 @@ export abstract class Mode extends GLGroup {
             this.input[this.keyAliases[e.key as keyof typeof this.keyAliases]] = false;
         }
     }
-
 
     public tick(obj: TickerReturnData) {
         super.tick(obj);

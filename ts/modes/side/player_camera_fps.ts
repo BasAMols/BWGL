@@ -5,8 +5,9 @@ import { Vector3, v3 } from '../../utils/vector3';
 import { GlController, GlControllerOrder } from '../../gl/controller';
 import { Util } from '../../utils/utils';
 import { Vector2, v2 } from '../../utils/vector2';
+import { Player } from './player_actor';
 
-export class FreeCamera extends GlController {
+export class fpsCamera extends GlController {
     public type: GlElementType = 'controller';
     public order: GlControllerOrder = 'after';
     private lagList: Vector3[] = [];
@@ -17,9 +18,9 @@ export class FreeCamera extends GlController {
     public set active(value: boolean) {
         super.active = value;
         if (value){
-            this.camera.offset = v3(0, -15, 60);
-            this.camera.rotation = v3(0.3, Math.PI/8, 0);
-            this.camera.fov = 60;
+            this.camera.offset = v3(0, 0, 0);
+            this.camera.rotation = v3(0, 0, 0);
+            this.camera.fov = 80;
         }
     }
 
@@ -30,7 +31,7 @@ export class FreeCamera extends GlController {
     mouseMove(e: MouseEvent): void {
         const r = v2(e.movementX, e.movementY).scale(0.005);
         this.camera.rotation = v3(
-            Util.clamp(this.camera.rotation.x + r.y, -0.1, Math.PI / 2),
+            Util.clamp(this.camera.rotation.x + r.y, -Math.PI / 2, Math.PI / 5),
             this.camera.rotation.y + r.x,
             this.camera.rotation.z
         );
@@ -45,10 +46,6 @@ export class FreeCamera extends GlController {
         );
     }
 
-    scroll(e: WheelEvent): void {
-        this.camera.offset.z = Util.clamp(this.camera.offset.z + e.deltaY * 0.1, 10, 300);
-    }
-
     public build(): void {
         super.build();
         this.active = true;
@@ -56,10 +53,7 @@ export class FreeCamera extends GlController {
 
     public tick(o: TickerReturnData) {
         super.tick(o);
-        const nP = this.target.position.add(this.target.size.multiply(0.5,0.5,0.5)).multiply(1,-1,1);
-        while (this.lagList.length < this.lagCount){
-            this.lagList.push(nP);
-        }
-        this.camera.target = this.lagList.shift();
+        this.camera.target = this.target.position.add(this.target.size.multiply(0.5,0.9,0.5)).multiply(1,-1,1);
+        (this.target as Player).skeleton.head.position.y = -1000
     }
 }

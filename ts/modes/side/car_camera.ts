@@ -37,7 +37,6 @@ export class CarCamera extends GlController {
     }
 
     public build(): void {
-        this.active = true;
     }
 
     scroll(e: WheelEvent): void {

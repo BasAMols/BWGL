@@ -1,11 +1,11 @@
 import { GLCuboid } from '../../gl/cuboid';
 import { Character } from '../../gl/character';
 import { Vector3 } from '../../utils/vector3';
-import { FreeCamera } from './player_camera';
 import { GlElement } from '../../gl/elementBase';
-import { MovementController } from './player_controller';
 import { HumanSkeleton } from '../../utils/skeleton_human';
 import { PlayerSkel } from './player_skeleton';
+import { MovementController } from './player_controller';
+import { FreeCamera } from './player_camera';
 
 export class Player extends Character {
     public stat: Record<string, boolean> = { jumping: false, falling: false, running: false, fallAnimation: false };
@@ -31,7 +31,6 @@ export class Player extends Character {
     }
 
     build() {
-        // this.addChild(this.mesh = new GLCuboid({ size: this.size, colors: [[0.3,0.4,0.2,1], [0.3,0.4,0.2,1], [0.3,0.4,0.2,1], [0.3,0.4,0.2,1], [0.3,0.4,0.2,1], [0.3,0.4,0.2,1]] }));
         GlElement.registerControllers(this);
         this.skeleton = new PlayerSkel();
         this.addChild(this.skeleton);

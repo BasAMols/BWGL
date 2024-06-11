@@ -2,6 +2,7 @@ import { Renderer } from '../dom/renderer';
 import { DomText } from '../dom/domText';
 import { GlElement } from '../gl/elementBase';
 import { Game } from '../game';
+import { Vector2, v2 } from './vector2';
 
 export type inputEvents = 'mouseMove' | 'keyDown' | 'keyUp' | 'click' | 'scroll';
 export type inputEventsData = {
@@ -16,6 +17,7 @@ export class Input {
     private game: Game;
     private _locked: boolean;
     private overlay: DomText;
+    private lastTouch: Vector2;
     public get locked(): boolean {
         return this._locked;
     }
@@ -59,6 +61,29 @@ export class Input {
             this.locked = (document.pointerLockElement === this.canvas.dom);
         });
 
+        document.addEventListener('startstart', (e: TouchEvent)=>{
+            this.lastTouch = v2(
+                e.touches[0].clientX,
+                e.touches[0].clientY,
+            )
+        })
+        document.addEventListener('touchmove', (e)=>{
+            const t = v2(
+                e.touches[0].clientX,
+                e.touches[0].clientY,
+            );
+            if (this.lastTouch){
+                this.sendTouchMove(t.subtract(this.lastTouch))
+            }
+            this.lastTouch = v2(
+                e.touches[0].clientX,
+                e.touches[0].clientY,
+            )
+        })
+        document.addEventListener('touchend', (e)=>{
+            this.lastTouch = undefined
+        })
+
     }
 
     public mouseClick(e: MouseEvent) {
@@ -72,7 +97,6 @@ export class Input {
         if (this.locked) {
             this.send('mouseMove', e);
         }
-
     }
 
     public scroll(e: WheelEvent) {
@@ -92,6 +116,20 @@ export class Input {
         if (this.locked) {
             this.send('keyUp', e);
         }
+    }
+
+    private sendTouchMove(d:Vector2) {
+        this.recursiveTouchMove(this.game.mode,d);
+    }
+
+    private recursiveTouchMove(element: GlElement, d: Vector2) {
+        if (element.active) {
+            if (element.drag) {
+                element.drag(d)
+            }
+            element.controllers.forEach((child) => this.recursiveTouchMove(child, d));
+            element.children.forEach((child) => this.recursiveTouchMove(child, d));
+        } 
     }
 
     private send(event: inputEvents, e: KeyboardEvent | MouseEvent) {

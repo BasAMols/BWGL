@@ -21,6 +21,7 @@ export interface GlElement {
     keyUp?(e: KeyboardEvent): void;
     click?(e: MouseEvent): void;
     scroll?(e: WheelEvent): void;
+    drag?(d: Vector2): void;
 }
 export abstract class GlElement extends Element {
     public abstract type: GlElementType;

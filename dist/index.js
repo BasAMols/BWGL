@@ -437,6 +437,28 @@ var Input = class {
     document.addEventListener("pointerlockchange", () => {
       this.locked = document.pointerLockElement === this.canvas.dom;
     });
+    document.addEventListener("startstart", (e) => {
+      this.lastTouch = v2(
+        e.touches[0].clientX,
+        e.touches[0].clientY
+      );
+    });
+    document.addEventListener("touchmove", (e) => {
+      const t = v2(
+        e.touches[0].clientX,
+        e.touches[0].clientY
+      );
+      if (this.lastTouch) {
+        this.sendTouchMove(t.subtract(this.lastTouch));
+      }
+      this.lastTouch = v2(
+        e.touches[0].clientX,
+        e.touches[0].clientY
+      );
+    });
+    document.addEventListener("touchend", (e) => {
+      this.lastTouch = void 0;
+    });
   }
   mouseClick(e) {
     if (this.locked) {
@@ -463,6 +485,18 @@ var Input = class {
   keyUp(e) {
     if (this.locked) {
       this.send("keyUp", e);
+    }
+  }
+  sendTouchMove(d) {
+    this.recursiveTouchMove(this.game.mode, d);
+  }
+  recursiveTouchMove(element, d) {
+    if (element.active) {
+      if (element.drag) {
+        element.drag(d);
+      }
+      element.controllers.forEach((child) => this.recursiveTouchMove(child, d));
+      element.children.forEach((child) => this.recursiveTouchMove(child, d));
     }
   }
   send(event, e) {
@@ -2580,192 +2614,6 @@ var Character = class extends GlElement {
   }
 };
 
-// ts/gl/controller.ts
-var GlController = class extends GlElement {
-  constructor() {
-    super(...arguments);
-    this.type = "controller";
-    this.order = "before";
-  }
-};
-
-// ts/modes/side/player_camera.ts
-var FreeCamera = class extends GlController {
-  constructor(target) {
-    super({ autoReady: false });
-    this.target = target;
-    this.type = "controller";
-    this.order = "after";
-    this.lagList = [];
-    this.lagCount = 8;
-  }
-  get active() {
-    return super.active;
-  }
-  set active(value) {
-    super.active = value;
-    if (value) {
-      this.camera.offset = v3(0, -15, 100);
-      this.camera.rotation = v3(0.15, 0, 0);
-      this.camera.fov = 70;
-    }
-  }
-  mouseMove(e) {
-    const r = v2(e.movementX, e.movementY).scale(5e-3);
-    this.camera.rotation = v3(
-      Util.clamp(this.camera.rotation.x + r.y, -0.1, Math.PI / 2),
-      this.camera.rotation.y + r.x,
-      this.camera.rotation.z
-    );
-  }
-  scroll(e) {
-    this.camera.offset.z = Util.clamp(this.camera.offset.z + e.deltaY * 0.1, 10, 300);
-  }
-  tick(o) {
-    super.tick(o);
-    const nP = this.target.position.add(this.target.size.multiply(0.5, 0.5, 0.5)).multiply(1, -1, 1);
-    while (this.lagList.length < this.lagCount) {
-      this.lagList.push(nP);
-    }
-    this.camera.target = this.lagList.shift();
-  }
-};
-
-// ts/utils/collisions.ts
-var Collisions = class _Collisions {
-  static boxesOverlap(aP, aS, bP, bS) {
-    return aP.x < bP.x + bS.x && aP.x + aS.x > bP.x && aP.y < bP.y + bS.y && aP.y + aS.y > bP.y && aP.z < bP.z + bS.z && aP.z + aS.z > bP.z;
-  }
-  static pointInBox(p, bP, bS) {
-    return p.x < bP.x + bS.x && p.x > bP.x && p.y < bP.y + bS.y && p.y > bP.y && p.z < bP.z + bS.z && p.z > bP.z;
-  }
-  static edgeCrossesBox(p1, p2, boxPosition, boxSize) {
-    return p1.x < boxPosition.x + boxSize.x && p1.x > boxPosition.x && p1.y < boxPosition.y + boxSize.y && p1.y > boxPosition.y && p1.z < boxPosition.z + boxSize.z && p1.z > boxPosition.z;
-  }
-  static overlapDirection(aP, aS, bP, bS, v) {
-    let result = [];
-    if (_Collisions.boxesOverlap(aP, aS, new Vector3(bP.x, bP.y + v.y), bS)) {
-      result.push(v.y > 0 ? ["y", aP.y - bP.y - bS.y] : ["y", aP.y + aS.y - bP.y]);
-    }
-    if (_Collisions.boxesOverlap(aP, aS, new Vector3(bP.x + v.x, bP.y), bS)) {
-      result.push(v.x < 0 ? ["x", aP.x + aS.x - bP.x] : ["x", aP.x - bP.x - bS.x]);
-    }
-    return result;
-  }
-  static check(statics, dynamic, velocity) {
-    return statics.filter(
-      (s) => _Collisions.boxesOverlap(s.position, s.size, dynamic.position.add(velocity), dynamic.size)
-      // r.push(...Collisions.overlapDirection(s.position.add(s.parent instanceof Level ? v3(0) : s.parent.position), s.size, dynamic[0], dynamic[1], velocity));
-      // if (!s.condition || s.condition()){
-      // }
-    );
-  }
-};
-
-// ts/modes/side/player_controller.ts
-var MovementController = class extends GlController {
-  constructor() {
-    super(...arguments);
-    this.intr = { fall: 0, jump: 0, landDelay: 0 };
-    this.stat = { jumping: false, falling: false, running: false };
-    this.cnst = { runTime: 250, runSlowDownFactor: 0.7, runSpeed: 0.5, minJumpTime: 200, jumpTime: 300, jumpSpeed: 0.6 };
-    this.velocity = Vector3.f(0);
-  }
-  setMovementVelocity(interval) {
-    const setter = (key, cond, interval2) => {
-      this.intr[key] = Util.clamp((this.intr[key] || 0) + (cond ? interval2 : -(interval2 * this.cnst.runSlowDownFactor)), 0, this.cnst.runTime);
-    };
-    setter("right", this.mode.input.right && !this.mode.input.left, interval);
-    setter("left", this.mode.input.left && !this.mode.input.right, interval);
-    setter("up", this.mode.input.up && !this.mode.input.down, interval);
-    setter("down", this.mode.input.down && !this.mode.input.up, interval);
-    const plane = v2(
-      (this.intr.right - this.intr.left) / this.cnst.runTime,
-      (this.intr.up - this.intr.down) / this.cnst.runTime
-    ).clampMagnitude(1).scale(this.cnst.runSpeed);
-    this.velocity = v3(
-      plane.x,
-      0,
-      plane.y
-    );
-  }
-  determineStates(interval) {
-    if (this.parent.stat.falling) {
-      this.parent.stat.jumping = false;
-    } else {
-      if (this.parent.stat.jumping) {
-        if (this.intr.jump < this.cnst.minJumpTime) {
-          this.parent.stat.jumping = true;
-          this.parent.stat.falling = false;
-        } else if (this.intr.jump < this.cnst.jumpTime) {
-          this.parent.stat.jumping = this.mode.input.space;
-        } else {
-          this.parent.stat.jumping = false;
-          this.parent.stat.falling = true;
-          this.intr.jump = this.cnst.jumpTime;
-        }
-      } else {
-        this.parent.stat.jumping = this.mode.input.space;
-      }
-    }
-  }
-  setJumpVelocity(interval) {
-    this.determineStates(interval);
-    if (this.parent.stat.jumping) {
-      this.intr.jump = Math.min(this.intr.jump + interval, this.cnst.jumpTime);
-      this.intr.fall = -this.intr.jump;
-    } else if (this.parent.stat.falling) {
-      this.intr.jump = this.cnst.jumpTime;
-      this.intr.fall += interval;
-    } else {
-      this.velocity.y = 0;
-      return;
-    }
-    const y = (this.cnst.jumpTime - this.intr.jump - this.intr.fall) / this.cnst.jumpTime * this.cnst.jumpSpeed;
-    this.velocity.y = y;
-  }
-  setVelocity(obj) {
-    this.setMovementVelocity(obj.interval);
-    this.setJumpVelocity(obj.interval);
-    const sc = this.velocity.scale(obj.interval / 6);
-    if (sc.xz.magnitude() > 0) {
-      const [x, z] = sc.xz.rotate(-this.camera.rotation.y).array;
-      this.newPosition = this.parent.absolutePosition.add(v3(x, sc.y, z));
-      if (this.mode.input.right || this.mode.input.left || this.mode.input.up || this.mode.input.down) {
-        this.parent.rotation = this.camera.rotation.multiply(0, 1, 0).add(v3(0, Math.PI / 2, 0)).add(v3(0, -sc.xz.angle(), 0));
-      }
-      this.parent.stat.running = true;
-    } else {
-      this.newPosition = this.parent.absolutePosition.add(v3(0, sc.y, 0));
-      this.parent.stat.running = false;
-    }
-  }
-  colliders(obj) {
-    this.parent.stat.ground = false;
-    this.level.colliders.forEach((col) => {
-      if (Collisions.boxesOverlap(col.absolutePosition, col.size, this.newPosition, this.parent.size)) {
-        if (col.direction.equals(Vector3.up) && this.velocity.y <= 0) {
-          this.velocity.y = Math.max(this.velocity.y, 0);
-          this.parent.stat.falling = false;
-          this.intr.fall = 0;
-          this.intr.jump = 0;
-          this.newPosition.y = col.absolutePosition.y + col.size.y - 1;
-          this.parent.stat.ground = true;
-        }
-      }
-    });
-    if (!this.parent.stat.jumping) {
-      this.parent.stat.falling = !this.parent.stat.ground;
-    }
-  }
-  tick(obj) {
-    super.tick(obj);
-    this.setVelocity(obj);
-    this.colliders(obj);
-    this.parent.absolutePosition = this.newPosition.clone();
-  }
-};
-
 // ts/gl/rendable.ts
 var GLRendable = class extends GlElement {
   constructor(attr = {}) {
@@ -3685,6 +3533,204 @@ var PlayerSkel = class extends HumanSkeleton {
   }
 };
 
+// ts/gl/controller.ts
+var GlController = class extends GlElement {
+  constructor() {
+    super(...arguments);
+    this.type = "controller";
+    this.order = "before";
+  }
+};
+
+// ts/utils/collisions.ts
+var Collisions = class _Collisions {
+  static boxesOverlap(aP, aS, bP, bS) {
+    return aP.x < bP.x + bS.x && aP.x + aS.x > bP.x && aP.y < bP.y + bS.y && aP.y + aS.y > bP.y && aP.z < bP.z + bS.z && aP.z + aS.z > bP.z;
+  }
+  static pointInBox(p, bP, bS) {
+    return p.x < bP.x + bS.x && p.x > bP.x && p.y < bP.y + bS.y && p.y > bP.y && p.z < bP.z + bS.z && p.z > bP.z;
+  }
+  static edgeCrossesBox(p1, p2, boxPosition, boxSize) {
+    return p1.x < boxPosition.x + boxSize.x && p1.x > boxPosition.x && p1.y < boxPosition.y + boxSize.y && p1.y > boxPosition.y && p1.z < boxPosition.z + boxSize.z && p1.z > boxPosition.z;
+  }
+  static overlapDirection(aP, aS, bP, bS, v) {
+    let result = [];
+    if (_Collisions.boxesOverlap(aP, aS, new Vector3(bP.x, bP.y + v.y), bS)) {
+      result.push(v.y > 0 ? ["y", aP.y - bP.y - bS.y] : ["y", aP.y + aS.y - bP.y]);
+    }
+    if (_Collisions.boxesOverlap(aP, aS, new Vector3(bP.x + v.x, bP.y), bS)) {
+      result.push(v.x < 0 ? ["x", aP.x + aS.x - bP.x] : ["x", aP.x - bP.x - bS.x]);
+    }
+    return result;
+  }
+  static check(statics, dynamic, velocity) {
+    return statics.filter(
+      (s) => _Collisions.boxesOverlap(s.position, s.size, dynamic.position.add(velocity), dynamic.size)
+      // r.push(...Collisions.overlapDirection(s.position.add(s.parent instanceof Level ? v3(0) : s.parent.position), s.size, dynamic[0], dynamic[1], velocity));
+      // if (!s.condition || s.condition()){
+      // }
+    );
+  }
+};
+
+// ts/modes/side/player_controller.ts
+var MovementController = class extends GlController {
+  constructor() {
+    super(...arguments);
+    this.intr = { fall: 0, jump: 0, landDelay: 0 };
+    this.stat = { jumping: false, falling: false, running: false };
+    this.cnst = { runTime: 250, runSlowDownFactor: 0.7, runSpeed: 0.5, minJumpTime: 200, jumpTime: 300, jumpSpeed: 0.6 };
+    this.velocity = Vector3.f(0);
+  }
+  setMovementVelocity(interval) {
+    const setter = (key, cond, interval2) => {
+      this.intr[key] = Util.clamp((this.intr[key] || 0) + (cond ? interval2 : -(interval2 * this.cnst.runSlowDownFactor)), 0, this.cnst.runTime);
+    };
+    setter("right", this.mode.input.right && !this.mode.input.left, interval);
+    setter("left", this.mode.input.left && !this.mode.input.right, interval);
+    setter("up", this.mode.input.up && !this.mode.input.down, interval);
+    setter("down", this.mode.input.down && !this.mode.input.up, interval);
+    const plane = v2(
+      (this.intr.right - this.intr.left) / this.cnst.runTime,
+      (this.intr.up - this.intr.down) / this.cnst.runTime
+    ).clampMagnitude(1).scale(this.cnst.runSpeed);
+    this.velocity = v3(
+      plane.x,
+      0,
+      plane.y
+    );
+  }
+  determineStates(interval) {
+    if (this.parent.stat.falling) {
+      this.parent.stat.jumping = false;
+    } else {
+      if (this.parent.stat.jumping) {
+        if (this.intr.jump < this.cnst.minJumpTime) {
+          this.parent.stat.jumping = true;
+          this.parent.stat.falling = false;
+        } else if (this.intr.jump < this.cnst.jumpTime) {
+          this.parent.stat.jumping = this.mode.input.space;
+        } else {
+          this.parent.stat.jumping = false;
+          this.parent.stat.falling = true;
+          this.intr.jump = this.cnst.jumpTime;
+        }
+      } else {
+        this.parent.stat.jumping = this.mode.input.space;
+      }
+    }
+  }
+  setJumpVelocity(interval) {
+    this.determineStates(interval);
+    if (this.parent.stat.jumping) {
+      this.intr.jump = Math.min(this.intr.jump + interval, this.cnst.jumpTime);
+      this.intr.fall = -this.intr.jump;
+    } else if (this.parent.stat.falling) {
+      this.intr.jump = this.cnst.jumpTime;
+      this.intr.fall += interval;
+    } else {
+      this.velocity.y = 0;
+      return;
+    }
+    const y = (this.cnst.jumpTime - this.intr.jump - this.intr.fall) / this.cnst.jumpTime * this.cnst.jumpSpeed;
+    this.velocity.y = y;
+  }
+  setVelocity(obj) {
+    this.setMovementVelocity(obj.interval);
+    this.setJumpVelocity(obj.interval);
+    const sc = this.velocity.scale(obj.interval / 6);
+    if (sc.xz.magnitude() > 0) {
+      const [x, z] = sc.xz.rotate(-this.camera.rotation.y).array;
+      this.newPosition = this.parent.absolutePosition.add(v3(x, sc.y, z));
+      if (this.mode.input.right || this.mode.input.left || this.mode.input.up || this.mode.input.down) {
+        this.parent.rotation = this.camera.rotation.multiply(0, 1, 0).add(v3(0, Math.PI / 2, 0)).add(v3(0, -sc.xz.angle(), 0));
+      }
+      this.parent.stat.running = true;
+    } else {
+      this.newPosition = this.parent.absolutePosition.add(v3(0, sc.y, 0));
+      this.parent.stat.running = false;
+    }
+  }
+  colliders(obj) {
+    this.parent.stat.ground = false;
+    this.level.colliders.forEach((col) => {
+      if (Collisions.boxesOverlap(col.absolutePosition, col.size, this.newPosition, this.parent.size)) {
+        if (col.direction.equals(Vector3.up) && this.velocity.y <= 0) {
+          this.velocity.y = Math.max(this.velocity.y, 0);
+          this.parent.stat.falling = false;
+          this.intr.fall = 0;
+          this.intr.jump = 0;
+          this.newPosition.y = col.absolutePosition.y + col.size.y - 1;
+          this.parent.stat.ground = true;
+        }
+      }
+    });
+    if (!this.parent.stat.jumping) {
+      this.parent.stat.falling = !this.parent.stat.ground;
+    }
+  }
+  tick(obj) {
+    super.tick(obj);
+    this.setVelocity(obj);
+    this.colliders(obj);
+    this.parent.absolutePosition = this.newPosition.clone();
+  }
+};
+
+// ts/modes/side/player_camera.ts
+var FreeCamera = class extends GlController {
+  constructor(target) {
+    super({ autoReady: false });
+    this.target = target;
+    this.type = "controller";
+    this.order = "after";
+    this.lagList = [];
+    this.lagCount = 8;
+  }
+  get active() {
+    return super.active;
+  }
+  set active(value) {
+    super.active = value;
+    if (value) {
+      this.camera.offset = v3(0, -15, 60);
+      this.camera.rotation = v3(0.3, Math.PI / 8, 0);
+      this.camera.fov = 60;
+    }
+  }
+  mouseMove(e) {
+    const r = v2(e.movementX, e.movementY).scale(5e-3);
+    this.camera.rotation = v3(
+      Util.clamp(this.camera.rotation.x + r.y, -0.1, Math.PI / 2),
+      this.camera.rotation.y + r.x,
+      this.camera.rotation.z
+    );
+  }
+  drag(d) {
+    const r = d.scale(5e-3);
+    this.camera.rotation = v3(
+      Util.clamp(this.camera.rotation.x + r.y, -0.1, Math.PI / 2),
+      this.camera.rotation.y + r.x,
+      this.camera.rotation.z
+    );
+  }
+  scroll(e) {
+    this.camera.offset.z = Util.clamp(this.camera.offset.z + e.deltaY * 0.1, 10, 300);
+  }
+  build() {
+    super.build();
+    this.active = true;
+  }
+  tick(o) {
+    super.tick(o);
+    const nP = this.target.position.add(this.target.size.multiply(0.5, 0.5, 0.5)).multiply(1, -1, 1);
+    while (this.lagList.length < this.lagCount) {
+      this.lagList.push(nP);
+    }
+    this.camera.target = this.lagList.shift();
+  }
+};
+
 // ts/modes/side/player_actor.ts
 var Player = class extends Character {
   constructor({
@@ -4173,7 +4219,6 @@ var CarCamera = class extends GlController {
     );
   }
   build() {
-    this.active = true;
   }
   scroll(e) {
     this.camera.offset.z = Util.clamp(this.camera.offset.z + e.deltaY * 0.1, 100, 200);
@@ -4315,9 +4360,7 @@ var NPC = class extends Character {
 // ts/modes/side/level.ts
 var World = class extends Level {
   constructor() {
-    super({
-      size: v3(900, 200, 400)
-    });
+    super(...arguments);
     this.start = Vector2.zero;
     this.background = [0.67451, 0.603922, 0.968627, 1];
   }
@@ -4399,8 +4442,8 @@ var World = class extends Level {
     }));
     this.player = new Player({
       size: v3(6, 33, 8),
-      position: v3(130, 1, 600),
-      rotation: v3(0, 2.3, 0)
+      position: v3(150, 1, 500),
+      rotation: v3(0, -2.3, 0)
     });
     this.addChild(this.player);
     this.car = new Driver({
@@ -4409,7 +4452,7 @@ var World = class extends Level {
       rotation: v3(0, 2.3, 0)
     });
     this.addChild(this.car);
-    this.drive(false);
+    this.car.active = false;
     this.addChild(new GLCuboid({ size: v3(3500, 1, 5e3), position: v3(-5600, -2, -2e3), colors: [[0.317, 0.362, 0.298, 1]] }));
     this.addChild(new GLCuboid({ size: v3(4e3, 1, 5e3), position: v3(1900, -2, -2e3), colors: [[0.317, 0.362, 0.298, 1]] }));
     this.addChild(new GLCuboid({ size: v3(4e3, 1, 1800), position: v3(-2100, -2, -2e3), colors: [[0.317, 0.362, 0.298, 1]] }));

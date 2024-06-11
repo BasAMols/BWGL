@@ -78,8 +78,6 @@ export class Game {
     }
 
     private setupModes() {
-        // this.addMode('snakes', new SnakeMode());
-        // this.addMode('rpg', new RPGMode());
         this.addMode('side', new OpenWorldMode());
         this.switchMode('side');
     }
@@ -118,48 +116,6 @@ export class Game {
         this.loader.visible = false;
         this.fps.visible = true;
         this.ticker.start();
-        // this.addChild(new DomButton({
-        //     text: 'RPG',
-        //     fontSize: 39,
-        //     fontWeight: 1000,
-        //     color: 'white',
-        //     position: new Vector2(130, 5),
-        //     size: new Vector2(65, 50),
-        //     background: '#ff00ffaa',
-        //     fontFamily: 'monospace',
-        //     padding: [0, 10, 0, 10],
-        //     onClick: () => {
-        //         this.switchMode('rpg');
-        //     }
-        // }));
-        // this.addChild(new DomButton({
-        //     text: 'SNAKES',
-        //     fontSize: 39,
-        //     fontWeight: 1000,
-        //     color: 'white',
-        //     position: new Vector2(220, 5),
-        //     size: new Vector2(130, 50),
-        //     background: '#ff00ffaa',
-        //     fontFamily: 'monospace',
-        //     padding: [0, 10, 0, 10],
-        //     onClick: () => {
-        //         this.switchMode('snakes');
-        //     }
-        // }));
-        // this.addChild(new DomButton({
-        //     text: 'TRAIN',
-        //     fontSize: 39,
-        //     fontWeight: 1000,
-        //     color: 'white',
-        //     position: new Vector2(375, 5),
-        //     size: new Vector2(130, 50),
-        //     background: '#ff00ffaa',
-        //     fontFamily: 'monospace',
-        //     padding: [0, 10, 0, 10],
-        //     onClick: () => {
-        //         this.switchMode('side');
-        //     }
-        // }));
     }
 }
 
