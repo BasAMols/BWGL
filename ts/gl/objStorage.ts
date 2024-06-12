@@ -30,7 +30,11 @@ export class ObjStorage{
     }
     public callBack(user: GLobj, origin: GLobj) {
         user.giveData(origin.getData());
-        user.build();
+        if (user.readyState){
+            user.build();
+        } else {
+            user.autoReady = true;
+        }
     }
     public loaded(url: string) {
         const o = this.check(url);

@@ -834,10 +834,10 @@ var Vector3 = class _Vector3 {
 };
 
 // ts/gl/shaders/vertexShader.ts
-var vertexShader_default = "\nattribute vec4 aVertexPosition;\nattribute vec3 aVertexNormal;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uModelViewMatrix;\nuniform mat4 uProjectionMatrix;\nuniform mat4 uNormalMatrix;\n\nvarying highp vec2 vTextureCoord;\nvarying highp vec3 vLighting;\nvarying highp vec3 vCloudLighting;\n\nvoid main(void) {\n  gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;\n  vTextureCoord = aTextureCoord;\n\n  highp vec3 ambientLight = vec3(1, 1, 1) *0.3;\n  highp vec3 directionalLightColor = vec3(1, 1, 1)*1.0;\n  highp vec3 directionalVector = normalize(vec3(-0.7, .7, 0.3));\n\n  highp vec4 transformedNormal = uNormalMatrix * vec4(aVertexNormal, 1.0);\n  highp float directional = max(dot(transformedNormal.xyz, directionalVector), 0.0);\n  lowp vec3 vCloudLighting = vec3(1, 1, 1)*0.4 + (vec3(1, 1, 1) * max(dot(transformedNormal.xyz, normalize(vec3(-0.7, -1, 0.3))), 0.0)*0.6);\n\n  if ((uModelViewMatrix * aVertexPosition).y > 100.0) {\n    vLighting = vCloudLighting;\n  } else {\n    vLighting = ambientLight + (directionalLightColor * directional);\n  }\n}";
+var vertexShader_default = "\nattribute vec4 aVertexPosition;\nattribute vec3 aVertexNormal;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uModelViewMatrix;\nuniform mat4 uProjectionMatrix;\nuniform mat4 uNormalMatrix;\n\nvarying highp vec2 vTextureCoord;\nvarying highp vec3 vLighting;\nvarying highp vec3 vCloudLighting;\n\nvoid main(void) {\n  gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;\n  vTextureCoord = aTextureCoord;\n\n  highp vec3 ambientLight = vec3(0.8, 0.8, 1) *0.5;\n  highp vec3 directionalLightColor = vec3(1, 1, 1);\n  highp vec3 directionalVector = normalize(vec3(-0.7, .7, 0.3));\n\n  highp vec4 transformedNormal = uNormalMatrix * vec4(aVertexNormal, 1.0);\n  highp float directional = max(dot(transformedNormal.xyz, directionalVector), 0.0);\n  lowp vec3 vCloudLighting = vec3(1, 1, 1)*0.9 + (vec3(1, 1, 1) * max(dot(transformedNormal.xyz, normalize(vec3(0, -1, 0))), 0.0)*0.0)*0.6;\n\n  if ((uModelViewMatrix * aVertexPosition).y > 100.0) {\n    vLighting = vCloudLighting * 0.9;\n  } else {\n    vLighting = ambientLight + (directionalLightColor * directional);\n  }\n}";
 
 // ts/gl/shaders/fragmentShader.ts
-var fragmentShader_default = "\nvarying highp vec2 vTextureCoord;\nvarying highp vec3 vLighting;\n\nuniform sampler2D uSampler;\nuniform lowp float uOpacity;\n\nvoid main(void) {\n    highp vec4 texelColor = texture2D(uSampler, vTextureCoord);\n    gl_FragColor = vec4(texelColor.rgb * vLighting, texelColor.a*uOpacity);\n}\n";
+var fragmentShader_default = "\nvarying highp vec2 vTextureCoord;\nvarying highp vec3 vLighting;\n\nuniform sampler2D uSampler;\nuniform lowp float uOpacity;\nuniform lowp float uIntensity;\n\nvoid main(void) {\n    highp vec4 texelColor = texture2D(uSampler, vTextureCoord);\n    gl_FragColor = vec4((texelColor.rgb+texelColor.rgb * (uIntensity-1.0)) * vLighting, texelColor.a*uOpacity);\n}\n";
 
 // ts/gl/glrInit.ts
 function loadShader(gl, type, source) {
@@ -883,6 +883,10 @@ function initShaderProgram(gl) {
       },
       "uOpacity": {
         pointer: gl.getUniformLocation(shaderProgram, "uOpacity"),
+        type: "float"
+      },
+      "uIntensity": {
+        pointer: gl.getUniformLocation(shaderProgram, "uIntensity"),
         type: "float"
       },
       "uSampler": {
@@ -2378,6 +2382,7 @@ var GLRenderer = class {
     this.glt.sendAttribute("aTextureCoord", mesh.buffer.textureCoord);
     this.glt.sendUniform("uModelViewMatrix", currentModelview.mat4);
     this.glt.sendUniform("uOpacity", mesh.opacity);
+    this.glt.sendUniform("uIntensity", mesh.colorIntensity);
     this.glt.sendUniform(
       "uNormalMatrix",
       new Matrix4().invert(currentModelview).transpose().mat4
@@ -2397,6 +2402,7 @@ var GlElement = class _GlElement extends Element {
     this.size = v3(0);
     this.rotation = v3(0);
     this._active = true;
+    this.readyState = false;
     this.children = [];
     this.controllers = [];
     this.anchoredPosition = Vector2.zero;
@@ -2447,6 +2453,7 @@ var GlElement = class _GlElement extends Element {
     if (child.type === "collider" && this.level) {
       this.level.colliders.push(child);
     }
+    child.readyState = true;
     return child;
   }
   removeChild(child) {
@@ -2515,7 +2522,11 @@ var ObjStorage = class {
   }
   callBack(user, origin) {
     user.giveData(origin.getData());
-    user.build();
+    if (user.readyState) {
+      user.build();
+    } else {
+      user.autoReady = true;
+    }
   }
   loaded(url) {
     const o = this.check(url);
@@ -2625,9 +2636,11 @@ var Character = class extends GlElement {
 var GLRendable = class extends GlElement {
   constructor(attr = {}) {
     super(attr);
+    this.colorIntensity = 1;
     this.opacity = 1;
     this.colors = [];
     this.opacity = attr.opacity !== void 0 ? attr.opacity : 1;
+    this.colorIntensity = attr.colorIntensity !== void 0 ? attr.colorIntensity : 1;
   }
   build() {
     this.buffer = {
@@ -2733,6 +2746,8 @@ var GLobj = class extends GLRendable {
     this.normalIndeces = [];
     this.textureIndeces = [];
     this.texturePositionIndeces = [];
+    this.opacity = attr.opacity !== void 0 ? attr.opacity : 1;
+    this.colorIntensity = attr.colorIntensity !== void 0 ? attr.colorIntensity : 1;
     this.path = attr.url.split("/").slice(0, -1).join("/") + "/";
     if (attr.storage) {
       if (attr.storage.register(attr.url, this)) {
@@ -3374,17 +3389,17 @@ var PlayerSkel = class extends HumanSkeleton {
   }
   build() {
     super.build();
-    this.head.addChild(new GLobj({ url: "worker/worker-10-Head.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(2, -9.5, 2) }));
-    this.torso.addChild(new GLobj({ url: "worker/worker-8-TorsoUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(this.sizes.shoulderWidth / 2, -3, 1) }));
-    this.hips.addChild(new GLobj({ url: "worker/worker-9-TorsoLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(3, 0, 1) }));
-    this.lLegUpper.addChild(new GLobj({ url: "worker/worker-0-lLegUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(3, 9, 1) }));
-    this.rLegUpper.addChild(new GLobj({ url: "worker/worker-1-rLegUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(-2, 9, 1) }));
-    this.lLegLower.addChild(new GLobj({ url: "worker/worker-2-lLegLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(3, 14.4, 1.5) }));
-    this.rLegLower.addChild(new GLobj({ url: "worker/worker-3-rLegLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(-2, 14.4, 1.5) }));
-    this.lArmUpper.addChild(new GLobj({ url: "worker/worker-4-lArmUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, Math.PI / 2), position: v3(8.5, 7, 1) }));
-    this.rArmUpper.addChild(new GLobj({ url: "worker/worker-5-rArmUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, -Math.PI / 2), position: v3(-7.5, 7, 1) }));
-    this.lArmLower.addChild(new GLobj({ url: "worker/worker-6-lArmLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, Math.PI / 2), position: v3(8.5, 16, 1) }));
-    this.rArmLower.addChild(new GLobj({ url: "worker/worker-7-rArmLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, -Math.PI / 2), position: v3(-7.5, 16, 1) }));
+    this.head.addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-10-Head.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(2, -9.5, 2) }));
+    this.torso.addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-8-TorsoUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(this.sizes.shoulderWidth / 2, -3, 1) }));
+    this.hips.addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-9-TorsoLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(3, 0, 1) }));
+    this.lLegUpper.addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-0-lLegUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(3, 9, 1) }));
+    this.rLegUpper.addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-1-rLegUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(-2, 9, 1) }));
+    this.lLegLower.addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-2-lLegLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(3, 14.4, 1.5) }));
+    this.rLegLower.addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-3-rLegLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(-2, 14.4, 1.5) }));
+    this.lArmUpper.addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-4-lArmUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, Math.PI / 2), position: v3(8.5, 7, 1) }));
+    this.rArmUpper.addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-5-rArmUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, -Math.PI / 2), position: v3(-7.5, 7, 1) }));
+    this.lArmLower.addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-6-lArmLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, Math.PI / 2), position: v3(8.5, 16, 1) }));
+    this.rArmLower.addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-7-rArmLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, -Math.PI / 2), position: v3(-7.5, 16, 1) }));
     this.animation = {
       running1: {
         torso: [0.01, [-0.3, -0.3, 0]],
@@ -3674,15 +3689,15 @@ var FreeCamera = class extends GlController {
   mouseMove(e) {
     const r = v2(e.movementX, e.movementY).scale(5e-3);
     this.camera.rotation = v3(
-      Util.clamp(this.camera.rotation.x + r.y, -0.1, Math.PI / 2),
+      Util.clamp(this.camera.rotation.x + r.y, -1, Math.PI / 2),
       this.camera.rotation.y + r.x,
       this.camera.rotation.z
     );
   }
   drag(d) {
-    const r = d.scale(5e-3);
+    const r = d.scale(0.01);
     this.camera.rotation = v3(
-      Util.clamp(this.camera.rotation.x + r.y, -0.1, Math.PI / 2),
+      Util.clamp(this.camera.rotation.x + r.y, -1, Math.PI / 2),
       this.camera.rotation.y + r.x,
       this.camera.rotation.z
     );
@@ -4253,17 +4268,17 @@ var npcSkeleton = class extends HumanSkeleton {
   }
   build() {
     super.build();
-    this.head.addChild(new GLobj({ url: "worker/worker-10-Head.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(2, -9.5, 2) }));
-    this.torso.addChild(new GLobj({ url: "worker/worker-8-TorsoUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(this.sizes.shoulderWidth / 2, -3, 1) }));
-    this.hips.addChild(new GLobj({ url: "worker/worker-9-TorsoLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(3, 0, 1) }));
-    this.lLegUpper.addChild(new GLobj({ url: "worker/worker-0-lLegUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(3, 9, 1) }));
-    this.rLegUpper.addChild(new GLobj({ url: "worker/worker-1-rLegUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(-2, 9, 1) }));
-    this.lLegLower.addChild(new GLobj({ url: "worker/worker-2-lLegLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(3, 14.4, 1.5) }));
-    this.rLegLower.addChild(new GLobj({ url: "worker/worker-3-rLegLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(-2, 14.4, 1.5) }));
-    this.lArmUpper.addChild(new GLobj({ url: "worker/worker-4-lArmUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, Math.PI / 2), position: v3(8.5, 7, 1) }));
-    this.rArmUpper.addChild(new GLobj({ url: "worker/worker-5-rArmUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, -Math.PI / 2), position: v3(-7.5, 7, 1) }));
-    this.lArmLower.addChild(new GLobj({ url: "worker/worker-6-lArmLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, Math.PI / 2), position: v3(8.5, 16, 1) }));
-    this.rArmLower.addChild(new GLobj({ url: "worker/worker-7-rArmLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, -Math.PI / 2), position: v3(-7.5, 16, 1) }));
+    this.head.addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-10-Head.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(2, -9.5, 2) }));
+    this.torso.addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-8-TorsoUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(this.sizes.shoulderWidth / 2, -3, 1) }));
+    this.hips.addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-9-TorsoLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(3, 0, 1) }));
+    this.lLegUpper.addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-0-lLegUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(3, 9, 1) }));
+    this.rLegUpper.addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-1-rLegUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(-2, 9, 1) }));
+    this.lLegLower.addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-2-lLegLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(3, 14.4, 1.5) }));
+    this.rLegLower.addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-3-rLegLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(-2, 14.4, 1.5) }));
+    this.lArmUpper.addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-4-lArmUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, Math.PI / 2), position: v3(8.5, 7, 1) }));
+    this.rArmUpper.addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-5-rArmUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, -Math.PI / 2), position: v3(-7.5, 7, 1) }));
+    this.lArmLower.addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-6-lArmLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, Math.PI / 2), position: v3(8.5, 16, 1) }));
+    this.rArmLower.addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-7-rArmLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, -Math.PI / 2), position: v3(-7.5, 16, 1) }));
     this.animation = {
       idle: {
         torso: [0.02, []],
@@ -4341,41 +4356,53 @@ var Sky = class extends GLGroup {
   //     super(attr);
   // }
   createBigCloud(p = v3(0), s = v3(2e3, 0, 2e3)) {
-    const c = new GLCuboid({ position: p, size: s, colors: [[0.9, 0.9, 0.9, 1]], opacity: 0.9 });
+    const sc = 200 + 100 * Math.random();
+    const c = new GLobj({ storage: this.mode.storage, position: p, rotation: v3(0, Math.random() * Math.PI * 2, 0), size: v3(sc, sc, sc), url: "cloud2.obj" });
     this.bigClouds.push(c);
+    c.opacity = 0.5;
     this.addChild(c);
   }
   createCloud(p = v3(0), s = v3(500, 0, 500)) {
-    const c = new GLCuboid({ position: p, size: s, colors: [[1, 1, 1, 1]], opacity: 0.9 });
-    this.clouds.push(c);
+    const sc = 50 + 50 * Math.random();
+    const c = new GLobj({ storage: this.mode.storage, position: p, rotation: v3(0, Math.random() * Math.PI * 2, 0), size: v3(sc, sc, sc), url: "cloud2.obj" });
     this.addChild(c);
+    c.opacity = 0.5;
+    this.clouds.push(c);
   }
   spawnBigCloudLayerZ(z = 0) {
-    for (let x = 0; x < 10; x++) {
-      if (Math.random() < 0.15) {
-        this.createBigCloud(v3(x * 2e3 - 1e4, 2e3, z * 2e3 - 1e4));
-      }
+    for (let x = 0; x < Math.random() * 2; x++) {
+      this.createBigCloud(v3(
+        Math.random() * 2e4 - 1e4,
+        500 + Math.random() * 1e3,
+        2e3 + z * 2e3 - 1e4
+      ));
     }
   }
   spawnBigCloudLayerX(x = 0) {
-    for (let z = 0; z < 10; z++) {
-      if (Math.random() < 0.15) {
-        this.createBigCloud(v3(x * 2e3 - 1e4, 2e3, z * 2e3 - 1e4));
-      }
+    for (let z = 0; z < Math.random() * 2; z++) {
+      this.createBigCloud(v3(
+        x * 2e3 - 1e4,
+        500 + Math.random() * 1e3,
+        Math.random() * 2e4 - 1e4
+      ));
     }
   }
   spawnCloudLayerZ(z = 0) {
-    for (let x = 0; x < 40; x++) {
-      if (Math.random() < 0.1) {
-        this.createCloud(v3(x * 500 - 1e4, 900, z * 500 - 1e4));
-      }
+    for (let x = 0; x < Math.random() * 3; x++) {
+      this.createCloud(v3(
+        Math.random() * 2e4 - 1e4,
+        1e3 + Math.random() * 200,
+        z * 500 - 1e4
+      ));
     }
   }
   spawnCloudLayerX(x = 0) {
-    for (let z = 0; z < 40; z++) {
-      if (Math.random() < 0.1) {
-        this.createCloud(v3(x * 500 - 1e4, 900, z * 500 - 1e4));
-      }
+    for (let z = 0; z < Math.random() * 3; z++) {
+      this.createCloud(v3(
+        x * 500 - 1e4,
+        1e3 + Math.random() * 200,
+        Math.random() * 2e4 - 1e4
+      ));
     }
   }
   build() {
@@ -4418,7 +4445,7 @@ var World = class extends Level {
   constructor() {
     super(...arguments);
     this.start = Vector2.zero;
-    this.background = [0.67451, 0.603922, 0.968627, 1];
+    this.background = [0.67451 * 0.6, 0.603922 * 0.6, 0.968627 * 0.9, 1];
   }
   keyDown(e) {
     if (e.key === "Enter") {
@@ -4442,9 +4469,9 @@ var World = class extends Level {
       200 * y - 100
     );
     if (Math.random() < 0.5) {
-      this.addChild(new GLobj({ storage: this.mode.storage, url: "CountrySide-3-GroundTile1.obj", size: v3(20, 20, 20), position: p }));
+      this.addChild(new GLobj({ colorIntensity: 1.2, storage: this.mode.storage, url: "CountrySide-3-GroundTile1.obj", size: v3(20, 20, 20), position: p }));
     } else {
-      this.addChild(new GLobj({ storage: this.mode.storage, url: "CountrySide-2-GroundTile2.obj", size: v3(20, 20, 20), position: p }));
+      this.addChild(new GLobj({ colorIntensity: 1.2, storage: this.mode.storage, url: "CountrySide-2-GroundTile2.obj", size: v3(20, 20, 20), position: p }));
     }
     if (![9, 10, 11].includes(x) || ![3, 4].includes(y)) {
       for (let rx = 0; rx < 5; rx++) {
@@ -4509,10 +4536,10 @@ var World = class extends Level {
     });
     this.addChild(this.car);
     this.car.active = false;
-    this.addChild(new GLCuboid({ size: v3(3500, 1, 5e3), position: v3(-5600, -2, -2e3), colors: [[0.317, 0.362, 0.298, 1]] }));
-    this.addChild(new GLCuboid({ size: v3(4e3, 1, 5e3), position: v3(1900, -2, -2e3), colors: [[0.317, 0.362, 0.298, 1]] }));
-    this.addChild(new GLCuboid({ size: v3(4e3, 1, 1800), position: v3(-2100, -2, -2e3), colors: [[0.317, 0.362, 0.298, 1]] }));
-    this.addChild(new GLCuboid({ size: v3(4e3, 1, 800), position: v3(-2100, -2, 2200), colors: [[0.317, 0.362, 0.298, 1]] }));
+    this.addChild(new GLCuboid({ size: v3(3500, 1, 5e3), position: v3(-5600, -2, -2e3), colors: [[0.476378 * 0.96, 0.547244 * 0.96, 0.492126 * 0.96, 1]] }));
+    this.addChild(new GLCuboid({ size: v3(4e3, 1, 5e3), position: v3(1900, -2, -2e3), colors: [[0.476378 * 0.96, 0.547244 * 0.96, 0.492126 * 0.96, 1]] }));
+    this.addChild(new GLCuboid({ size: v3(4e3, 1, 1800), position: v3(-2100, -2, -2e3), colors: [[0.476378 * 0.96, 0.547244 * 0.96, 0.492126 * 0.96, 1]] }));
+    this.addChild(new GLCuboid({ size: v3(4e3, 1, 800), position: v3(-2100, -2, 2200), colors: [[0.476378 * 0.96, 0.547244 * 0.96, 0.492126 * 0.96, 1]] }));
     for (let x = 0; x < 20; x++) {
       for (let y = 0; y < 12; y++) {
         if (y === 3) {

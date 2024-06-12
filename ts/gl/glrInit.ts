@@ -63,6 +63,10 @@ export function initShaderProgram(gl: WebGLRenderingContext): [WebGLProgram, uni
                 pointer: gl.getUniformLocation(shaderProgram, "uOpacity"),
                 type: 'float'
             },
+            'uIntensity':{
+                pointer: gl.getUniformLocation(shaderProgram, "uIntensity"),
+                type: 'float'
+            },
             'uSampler':{
                 pointer: gl.getUniformLocation(shaderProgram, "uSampler"),
                 type: 'int'

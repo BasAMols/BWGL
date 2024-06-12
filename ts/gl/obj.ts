@@ -11,6 +11,8 @@ export type matData = Record<string, string[]>;
 export type GLobjAttributes = GlElementAttributes & {
     url?: string;
     storage?: ObjStorage;
+    opacity?: number;
+    colorIntensity?: number;
 };
 export type textureCoords = [number, number];
 export type vertexCoords = [number, number, number];
@@ -64,6 +66,9 @@ export class GLobj extends GLRendable {
 
     constructor(attr: GLobjAttributes = {}) {
         super({ ...attr, ...{ autoReady: false } });
+        
+        this.opacity = attr.opacity !== undefined ? attr.opacity : 1;
+        this.colorIntensity = attr.colorIntensity !== undefined ? attr.colorIntensity : 1;
 
         this.path = attr.url.split('/').slice(0, -1).join('/') + '/';
 

@@ -14,7 +14,7 @@ import { Sky } from './sky';
 
 export class World extends Level {
     public start = Vector2.zero;
-    public background: Color = [0.67451, 0.603922, 0.968627, 1];
+    public background: Color = [0.67451*0.6, 0.603922*0.6, 0.968627*0.9, 1];
     public character: Player;
     public mo: DomText;
     public st: ObjStorage;
@@ -47,9 +47,9 @@ export class World extends Level {
             200 * y - 100
         );
         if (Math.random() < 0.5) {
-            this.addChild(new GLobj({ storage: this.mode.storage, url: 'CountrySide-3-GroundTile1.obj', size: v3(20, 20, 20), position: p }));
+            this.addChild(new GLobj({ colorIntensity: 1.2, storage: this.mode.storage, url: 'CountrySide-3-GroundTile1.obj', size: v3(20, 20, 20), position: p }));
         } else {
-            this.addChild(new GLobj({ storage: this.mode.storage, url: 'CountrySide-2-GroundTile2.obj', size: v3(20, 20, 20), position: p }));
+            this.addChild(new GLobj({ colorIntensity: 1.2, storage: this.mode.storage, url: 'CountrySide-2-GroundTile2.obj', size: v3(20, 20, 20), position: p }));
         }
 
         if (![9, 10, 11].includes(x) || ![3, 4].includes(y)) {
@@ -120,11 +120,10 @@ export class World extends Level {
         });
         this.addChild(this.car);
         this.car.active = false;
-
-        this.addChild(new GLCuboid({ size: v3(3500, 1, 5000), position: v3(-5600, -2, -2000), colors: [[0.317, 0.362, 0.298, 1]] }));
-        this.addChild(new GLCuboid({ size: v3(4000, 1, 5000), position: v3(1900, -2, -2000), colors: [[0.317, 0.362, 0.298, 1]] }));
-        this.addChild(new GLCuboid({ size: v3(4000, 1, 1800), position: v3(-2100, -2, -2000), colors: [[0.317, 0.362, 0.298, 1]] }));
-        this.addChild(new GLCuboid({ size: v3(4000, 1, 800), position: v3(-2100, -2, 2200), colors: [[0.317, 0.362, 0.298, 1]] }));
+        this.addChild(new GLCuboid({ size: v3(3500, 1, 5000), position: v3(-5600, -2, -2000), colors: [[0.476378*0.96, 0.547244*0.96, 0.492126*0.96, 1]] }));
+        this.addChild(new GLCuboid({ size: v3(4000, 1, 5000), position: v3(1900, -2, -2000), colors: [[0.476378*0.96, 0.547244*0.96, 0.492126*0.96, 1]] }));
+        this.addChild(new GLCuboid({ size: v3(4000, 1, 1800), position: v3(-2100, -2, -2000), colors: [[0.476378*0.96, 0.547244*0.96, 0.492126*0.96, 1]] }));
+        this.addChild(new GLCuboid({ size: v3(4000, 1, 800), position: v3(-2100, -2, 2200), colors: [[0.476378*0.96, 0.547244*0.96, 0.492126*0.96, 1]] }));
 
         for (let x = 0; x < 20; x++) {
             for (let y = 0; y < 12; y++) {

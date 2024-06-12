@@ -25,17 +25,17 @@ export class npcSkeleton extends HumanSkeleton{
 
     public build(): void {
         super.build();
-        this.head.addChild(new GLobj({url: 'worker/worker-10-Head.obj', size: v3(6,6,6), rotation: v3(0,Math.PI,0), position: v3(2,-9.5,2)}));
-        this.torso.addChild(new GLobj({url: 'worker/worker-8-TorsoUpper.obj', size: v3(6,6,6), rotation: v3(0,Math.PI,0), position: v3(this.sizes.shoulderWidth/2,-3,1)}));
-        this.hips.addChild(new GLobj({url: 'worker/worker-9-TorsoLower.obj', size: v3(6,6,6), rotation: v3(0,Math.PI,0), position: v3(3,0,1)}));
-        this.lLegUpper.addChild(new GLobj({url: 'worker/worker-0-lLegUpper.obj', size: v3(6,6,6), rotation: v3(0,Math.PI,0), position: v3(3,9,1)}));
-        this.rLegUpper.addChild(new GLobj({url: 'worker/worker-1-rLegUpper.obj', size: v3(6,6,6), rotation: v3(0,Math.PI,0), position: v3(-2,9,1)}));
-        this.lLegLower.addChild(new GLobj({url: 'worker/worker-2-lLegLower.obj', size: v3(6,6,6), rotation: v3(0,Math.PI,0), position: v3(3,14.4,1.5)}));
-        this.rLegLower.addChild(new GLobj({url: 'worker/worker-3-rLegLower.obj', size: v3(6,6,6), rotation: v3(0,Math.PI,0), position: v3(-2,14.4,1.5)}));
-        this.lArmUpper.addChild(new GLobj({url: 'worker/worker-4-lArmUpper.obj', size: v3(6,6,6), rotation: v3(0,Math.PI,Math.PI/2), position: v3(8.5,7,1)}));
-        this.rArmUpper.addChild(new GLobj({url: 'worker/worker-5-rArmUpper.obj', size: v3(6,6,6), rotation: v3(0,Math.PI,-Math.PI/2), position: v3(-7.5,7,1)}));
-        this.lArmLower.addChild(new GLobj({url: 'worker/worker-6-lArmLower.obj', size: v3(6,6,6), rotation: v3(0,Math.PI,Math.PI/2), position: v3(8.5,16,1)}));
-        this.rArmLower.addChild(new GLobj({url: 'worker/worker-7-rArmLower.obj', size: v3(6,6,6), rotation: v3(0,Math.PI,-Math.PI/2), position: v3(-7.5,16,1)}));
+        this.head.addChild(new GLobj({colorIntensity: 0.7, url: 'worker/worker-10-Head.obj', size: v3(6,6,6), rotation: v3(0,Math.PI,0), position: v3(2,-9.5,2)}));
+        this.torso.addChild(new GLobj({colorIntensity: 0.7, url: 'worker/worker-8-TorsoUpper.obj', size: v3(6,6,6), rotation: v3(0,Math.PI,0), position: v3(this.sizes.shoulderWidth/2,-3,1)}));
+        this.hips.addChild(new GLobj({colorIntensity: 0.7, url: 'worker/worker-9-TorsoLower.obj', size: v3(6,6,6), rotation: v3(0,Math.PI,0), position: v3(3,0,1)}));
+        this.lLegUpper.addChild(new GLobj({colorIntensity: 0.7, url: 'worker/worker-0-lLegUpper.obj', size: v3(6,6,6), rotation: v3(0,Math.PI,0), position: v3(3,9,1)}));
+        this.rLegUpper.addChild(new GLobj({colorIntensity: 0.7, url: 'worker/worker-1-rLegUpper.obj', size: v3(6,6,6), rotation: v3(0,Math.PI,0), position: v3(-2,9,1)}));
+        this.lLegLower.addChild(new GLobj({colorIntensity: 0.7, url: 'worker/worker-2-lLegLower.obj', size: v3(6,6,6), rotation: v3(0,Math.PI,0), position: v3(3,14.4,1.5)}));
+        this.rLegLower.addChild(new GLobj({colorIntensity: 0.7, url: 'worker/worker-3-rLegLower.obj', size: v3(6,6,6), rotation: v3(0,Math.PI,0), position: v3(-2,14.4,1.5)}));
+        this.lArmUpper.addChild(new GLobj({colorIntensity: 0.7, url: 'worker/worker-4-lArmUpper.obj', size: v3(6,6,6), rotation: v3(0,Math.PI,Math.PI/2), position: v3(8.5,7,1)}));
+        this.rArmUpper.addChild(new GLobj({colorIntensity: 0.7, url: 'worker/worker-5-rArmUpper.obj', size: v3(6,6,6), rotation: v3(0,Math.PI,-Math.PI/2), position: v3(-7.5,7,1)}));
+        this.lArmLower.addChild(new GLobj({colorIntensity: 0.7, url: 'worker/worker-6-lArmLower.obj', size: v3(6,6,6), rotation: v3(0,Math.PI,Math.PI/2), position: v3(8.5,16,1)}));
+        this.rArmLower.addChild(new GLobj({colorIntensity: 0.7, url: 'worker/worker-7-rArmLower.obj', size: v3(6,6,6), rotation: v3(0,Math.PI,-Math.PI/2), position: v3(-7.5,16,1)}));
         this.animation = {
             idle: {
                 torso: [0.02, []],

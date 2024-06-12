@@ -33,6 +33,7 @@ export abstract class GlElement extends Element {
     public size: Vector3 = v3(0);
     public rotation: Vector3 = v3(0);
     private _active: boolean = true;
+    public readyState: boolean = false;
     public get active(): boolean {
         return this._active;
     }
@@ -92,6 +93,8 @@ export abstract class GlElement extends Element {
         if (child.type === 'collider' && this.level) {
             this.level.colliders.push(child as Collider);
         }
+
+        child.readyState = true;
 
         return child;
     }

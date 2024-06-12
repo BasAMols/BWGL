@@ -117,6 +117,7 @@ export class GLRenderer {
 
         this.glt.sendUniform('uModelViewMatrix', currentModelview.mat4);
         this.glt.sendUniform('uOpacity', mesh.opacity);
+        this.glt.sendUniform('uIntensity', mesh.colorIntensity);
         this.glt.sendUniform('uNormalMatrix', new Matrix4()
             .invert(currentModelview)
             .transpose()

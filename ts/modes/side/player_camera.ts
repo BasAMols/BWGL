@@ -30,16 +30,16 @@ export class FreeCamera extends GlController {
     mouseMove(e: MouseEvent): void {
         const r = v2(e.movementX, e.movementY).scale(0.005);
         this.camera.rotation = v3(
-            Util.clamp(this.camera.rotation.x + r.y, -0.1, Math.PI / 2),
+            Util.clamp(this.camera.rotation.x + r.y, -1, Math.PI / 2),
             this.camera.rotation.y + r.x,
             this.camera.rotation.z
         );
     }
 
     drag(d: Vector2): void {
-        const r = d.scale(0.005);
+        const r = d.scale(0.01);
         this.camera.rotation = v3(
-            Util.clamp(this.camera.rotation.x + r.y, -0.1, Math.PI / 2),
+            Util.clamp(this.camera.rotation.x + r.y, -1, Math.PI / 2),
             this.camera.rotation.y + r.x,
             this.camera.rotation.z
         );
