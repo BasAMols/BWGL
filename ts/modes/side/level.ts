@@ -10,6 +10,7 @@ import { GLCuboid } from '../../gl/cuboid';
 import { ObjStorage } from '../../gl/objStorage';
 import { Driver } from './car_actor';
 import { NPC } from './npc_actor';
+import { Sky } from './sky';
 
 export class World extends Level {
     public start = Vector2.zero;
@@ -20,6 +21,7 @@ export class World extends Level {
     public driving: boolean;
     car: Driver;
     player: Player;
+    sky: Sky;
 
     keyDown(e: KeyboardEvent): void {
         if (e.key === "Enter") {
@@ -152,6 +154,8 @@ export class World extends Level {
         ]) as ([Vector3, Vector3, Vector3, boolean?])[]).forEach(([position, size, direction, show]) => {
             this.addChild(new Collider({ position, size, direction, showMesh: show === undefined ? false : show, showArrows: false }));
         });
+
+        this.sky = this.addChild(new Sky()) as Sky;
 
     }
 

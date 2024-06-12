@@ -33,8 +33,6 @@ export class Driver extends Character {
     }
 
     build() {
-            // this.addChild(this.mesh = new GLCuboid({ size: this.size, colors: [[0.3,0.4,0.2,1], [0.3,0.4,0.2,1], [0.3,0.4,0.2,1], [0.3,0.4,0.2,1], [0.3,0.4,0.2,1], [0.3,0.4,0.2,1]] }));
-
         GlElement.registerControllers(this);
         this.addChild(new GLobj({ storage: this.mode.storage, url: 'Shop-3-Car.obj', size: v3(18, 18, 18), position: v3(18, 12, 47), rotation: v3(0, -Math.PI / 2, 0) }));
     }

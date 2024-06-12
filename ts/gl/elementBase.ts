@@ -94,7 +94,12 @@ export abstract class GlElement extends Element {
         }
 
         return child;
+    }
 
+    public removeChild(child: GlElement) {
+        if (this.children.includes(child)){
+            this.children.splice(this.children.indexOf(child), 1);
+        }
     }
 
     public addControllers(c: GlController[]) {

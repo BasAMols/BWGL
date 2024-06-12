@@ -834,7 +834,7 @@ var Vector3 = class _Vector3 {
 };
 
 // ts/gl/shaders/vertexShader.ts
-var vertexShader_default = "\nattribute vec4 aVertexPosition;\nattribute vec3 aVertexNormal;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uModelViewMatrix;\nuniform mat4 uProjectionMatrix;\nuniform mat4 uNormalMatrix;\n\nvarying highp vec2 vTextureCoord;\nvarying highp vec3 vLighting;\n\nvoid main(void) {\n  gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;\n  vTextureCoord = aTextureCoord;\n\n  highp vec3 ambientLight = vec3(1, 1, 1) *0.3;\n  highp vec3 directionalLightColor = vec3(1, 1, 1)*1.0;\n  highp vec3 directionalVector = normalize(vec3(-0.7, .7, 0.3));\n\n  highp vec4 transformedNormal = uNormalMatrix * vec4(aVertexNormal, 1.0);\n\n  highp float directional = max(dot(transformedNormal.xyz, directionalVector), 0.0);\n  vLighting = ambientLight + (directionalLightColor * directional);\n}";
+var vertexShader_default = "\nattribute vec4 aVertexPosition;\nattribute vec3 aVertexNormal;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uModelViewMatrix;\nuniform mat4 uProjectionMatrix;\nuniform mat4 uNormalMatrix;\n\nvarying highp vec2 vTextureCoord;\nvarying highp vec3 vLighting;\nvarying highp vec3 vCloudLighting;\n\nvoid main(void) {\n  gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;\n  vTextureCoord = aTextureCoord;\n\n  highp vec3 ambientLight = vec3(1, 1, 1) *0.3;\n  highp vec3 directionalLightColor = vec3(1, 1, 1)*1.0;\n  highp vec3 directionalVector = normalize(vec3(-0.7, .7, 0.3));\n\n  highp vec4 transformedNormal = uNormalMatrix * vec4(aVertexNormal, 1.0);\n  highp float directional = max(dot(transformedNormal.xyz, directionalVector), 0.0);\n  lowp vec3 vCloudLighting = vec3(1, 1, 1)*0.4 + (vec3(1, 1, 1) * max(dot(transformedNormal.xyz, normalize(vec3(-0.7, -1, 0.3))), 0.0)*0.6);\n\n  if ((uModelViewMatrix * aVertexPosition).y > 100.0) {\n    vLighting = vCloudLighting;\n  } else {\n    vLighting = ambientLight + (directionalLightColor * directional);\n  }\n}";
 
 // ts/gl/shaders/fragmentShader.ts
 var fragmentShader_default = "\nvarying highp vec2 vTextureCoord;\nvarying highp vec3 vLighting;\n\nuniform sampler2D uSampler;\nuniform lowp float uOpacity;\n\nvoid main(void) {\n    highp vec4 texelColor = texture2D(uSampler, vTextureCoord);\n    gl_FragColor = vec4(texelColor.rgb * vLighting, texelColor.a*uOpacity);\n}\n";
@@ -2349,7 +2349,9 @@ var GLRenderer = class {
     this.glt.sendUniform(
       "uProjectionMatrix",
       new Matrix4().perspective(
-        this.game.mode.camera.fov * Math.PI / 180
+        this.game.mode.camera.fov * Math.PI / 180,
+        1,
+        2e4
       ).translate(this.game.mode.camera.offset.multiply(1, 1, -1)).rotate(this.game.mode.camera.rotation).mat4
     );
     this.drawChildren(this.game.level, new Matrix4().translate(this.game.mode.camera.target.multiply(-1, 1, 1)));
@@ -2446,6 +2448,11 @@ var GlElement = class _GlElement extends Element {
       this.level.colliders.push(child);
     }
     return child;
+  }
+  removeChild(child) {
+    if (this.children.includes(child)) {
+      this.children.splice(this.children.indexOf(child), 1);
+    }
   }
   addControllers(c) {
     if (c.length > 0) {
@@ -3389,10 +3396,10 @@ var PlayerSkel = class extends HumanSkeleton {
         rArmUpper: [0.015, [1.2, 0, -0.1]],
         rArmLower: [0.01, [1.2, 0, 1.2]],
         rHand: [0.015, []],
-        lLegUpper: [0.015, [1.2, 0, 0]],
+        lLegUpper: [0.01, [1.2, 0, 0]],
         lLegLower: [0.03, [-0.3, 0, 0]],
         lFoot: [0.015, [-0.2, 0, 0]],
-        rLegUpper: [0.015, []],
+        rLegUpper: [0.01, []],
         rLegLower: [0.03, [-2, 0, 0]],
         rFoot: [0.015, [-0.2, 0, 0]]
       },
@@ -3406,10 +3413,10 @@ var PlayerSkel = class extends HumanSkeleton {
         rArmUpper: [0.015, [-0.8, 0, -0.1]],
         rArmLower: [0.01, [0.3, 0, 0]],
         rHand: [0.015, []],
-        lLegUpper: [0.03, []],
+        lLegUpper: [0.01, []],
         lLegLower: [0.015, [-2, 0, 0]],
         lFoot: [0.015, [-0.2, 0, 0]],
-        rLegUpper: [0.03, [1.2, 0, 0]],
+        rLegUpper: [0.01, [1.2, 0, 0]],
         rLegLower: [0.015, [-0.3, 0, 0]],
         rFoot: [0.015, [-0.2, 0, 0]]
       },
@@ -3464,42 +3471,8 @@ var PlayerSkel = class extends HumanSkeleton {
         rLegLower: [0.03, []],
         rFoot: [0.03, []]
       },
-      // idle: {
-      //     torso: [0.02, []],
-      //     hips: [0.02, []],
-      //     head: [0.005, [0, 0.5]],
-      //     lArmUpper: [0.03, [0.8, 0.2, -0.4]],
-      //     lArmLower: [0.03, [0, 0.2, -0.8]],
-      //     lHand: [0.03, []],
-      //     rArmUpper: [0.03, [.4, -0.2, 0.4]],
-      //     rArmLower: [0.03, [0, 0, 0.7]],
-      //     rHand: [0.03, []],
-      //     lLegUpper: [0.04, []],
-      //     lLegLower: [0.05, []],
-      //     lFoot: [0.03, []],
-      //     rLegUpper: [0.03, []],
-      //     rLegLower: [0.03, []],
-      //     rFoot: [0.03, []],
-      // },
-      // idle2: {
-      //     torso: [0.02, []],
-      //     hips: [0.02, []],
-      //     head: [0.005, [0, -0.5]],
-      //     lArmUpper: [0.03, [0.8, 0.2, -0.4]],
-      //     lArmLower: [0.03, [0, 0.2, -0.8]],
-      //     lHand: [0.03, []],
-      //     rArmUpper: [0.03, [.4, -0.2, 0.4]],
-      //     rArmLower: [0.03, [0, 0, 0.7]],
-      //     rHand: [0.03, []],
-      //     lLegUpper: [0.04, []],
-      //     lLegLower: [0.05, []],
-      //     lFoot: [0.03, []],
-      //     rLegUpper: [0.03, []],
-      //     rLegLower: [0.03, []],
-      //     rFoot: [0.03, []],
-      // },
       jump: {
-        torso: [0.03, [-0.1, -0.1, 0.15]],
+        torso: [0.03, []],
         hips: [0.03, [-0.1, -0.1, 0.15]],
         head: [0.03, [0.3, 0, 0]],
         lArmUpper: [0.03, [-0.2, 0, 0.1]],
@@ -3508,10 +3481,10 @@ var PlayerSkel = class extends HumanSkeleton {
         rArmUpper: [0.03, [-0.1, 0, -0.3]],
         rArmLower: [0.03, [0, 0, 0.2]],
         rHand: [0.03, []],
-        lLegUpper: [0.06, [2, 0, 0]],
+        lLegUpper: [0.02, [2, 0, 0]],
         lLegLower: [0.08, [-2.4, 0, 0]],
         lFoot: [0.03, []],
-        rLegUpper: [0.03, [-0.2, 0, 0]],
+        rLegUpper: [0.02, [-0.2, 0, 0]],
         rLegLower: [0.03, [-0.3, 0, 0]],
         rFoot: [0.03, [-0.6, 0, 0]]
       }
@@ -4357,6 +4330,89 @@ var NPC = class extends Character {
   }
 };
 
+// ts/modes/side/sky.ts
+var Sky = class extends GLGroup {
+  constructor() {
+    super(...arguments);
+    this.clouds = [];
+    this.bigClouds = [];
+  }
+  // constructor(attr: GlElementAttributes ) {
+  //     super(attr);
+  // }
+  createBigCloud(p = v3(0), s = v3(2e3, 0, 2e3)) {
+    const c = new GLCuboid({ position: p, size: s, colors: [[0.9, 0.9, 0.9, 1]], opacity: 0.9 });
+    this.bigClouds.push(c);
+    this.addChild(c);
+  }
+  createCloud(p = v3(0), s = v3(500, 0, 500)) {
+    const c = new GLCuboid({ position: p, size: s, colors: [[1, 1, 1, 1]], opacity: 0.9 });
+    this.clouds.push(c);
+    this.addChild(c);
+  }
+  spawnBigCloudLayerZ(z = 0) {
+    for (let x = 0; x < 10; x++) {
+      if (Math.random() < 0.15) {
+        this.createBigCloud(v3(x * 2e3 - 1e4, 2e3, z * 2e3 - 1e4));
+      }
+    }
+  }
+  spawnBigCloudLayerX(x = 0) {
+    for (let z = 0; z < 10; z++) {
+      if (Math.random() < 0.15) {
+        this.createBigCloud(v3(x * 2e3 - 1e4, 2e3, z * 2e3 - 1e4));
+      }
+    }
+  }
+  spawnCloudLayerZ(z = 0) {
+    for (let x = 0; x < 40; x++) {
+      if (Math.random() < 0.1) {
+        this.createCloud(v3(x * 500 - 1e4, 900, z * 500 - 1e4));
+      }
+    }
+  }
+  spawnCloudLayerX(x = 0) {
+    for (let z = 0; z < 40; z++) {
+      if (Math.random() < 0.1) {
+        this.createCloud(v3(x * 500 - 1e4, 900, z * 500 - 1e4));
+      }
+    }
+  }
+  build() {
+    for (let x = 0; x < 40; x++) {
+      this.spawnCloudLayerX(x);
+    }
+    for (let x = 0; x < 40; x++) {
+      this.spawnBigCloudLayerX(x);
+    }
+  }
+  tick(obj) {
+    super.tick(obj);
+    this.clouds.forEach((c) => {
+      c.position.x += obj.interval / 60;
+    });
+    this.bigClouds.forEach((c) => {
+      c.position.x += obj.interval / 90;
+    });
+    const Xend = this.clouds.filter((c) => c.position.x > 1e4);
+    if (Xend.length > 0) {
+      Xend.forEach((c) => {
+        this.clouds.splice(this.clouds.indexOf(c), 1);
+        this.removeChild(c);
+      });
+      this.spawnCloudLayerX();
+    }
+    const bigXend = this.bigClouds.filter((c) => c.position.x > 3e4);
+    if (bigXend.length > 0) {
+      bigXend.forEach((c) => {
+        this.bigClouds.splice(this.bigClouds.indexOf(c), 1);
+        this.removeChild(c);
+      });
+      this.spawnBigCloudLayerX();
+    }
+  }
+};
+
 // ts/modes/side/level.ts
 var World = class extends Level {
   constructor() {
@@ -4479,6 +4535,7 @@ var World = class extends Level {
     ].forEach(([position, size, direction, show]) => {
       this.addChild(new Collider({ position, size, direction, showMesh: show === void 0 ? false : show, showArrows: false }));
     });
+    this.sky = this.addChild(new Sky());
   }
 };
 
