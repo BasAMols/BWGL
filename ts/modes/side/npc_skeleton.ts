@@ -35,22 +35,22 @@ export class npcSkeleton extends HumanSkeleton{
         this.bones['rArmLower'].addChild(new GLobj({ colorIntensity: 0.7, url: 'worker/worker-7-rArmLower.obj', size: v3(6, 6, 6), rotation: v3(0, Math.PI, -Math.PI / 2), position: v3(-7.5, 16, 1) }));
 
         this.animator.add('idle', 15000, {
-            torso: [[0]],
-            hips: [[0]],
-            head: [[0, 0, 0.5], [0.4, 0, 0.5],[0.5, 0, -0.5],[0.9, 0, -0.5], [1, 0, 0.5]],
-            lArmUpper: [[0]],
-            lArmLower: [[0]],
-            lHand: [[0]],
-            rArmUpper: [[0]],
-            rArmLower: [[0]],
-            rHand: [[0]],
-            lLegUpper: [[0]],
-            lLegLower: [[0]],
-            lFoot: [[0]],
-            rLegUpper: [[0]],
-            rLegLower: [[0]],
-            rFoot: [[0]],
-        }, { loop: true, dynamic: true });
+            torso: [],
+            hips: [],
+            head: [[0.4, [0, 0.5]], [0.5, [0, -0.5]], [0.9, [0, -0.5]], [1, [0, 0.5]]],
+            lArmUpper: [],
+            lArmLower: [],
+            lHand: [],
+            rArmUpper: [],
+            rArmLower: [],
+            rHand: [],
+            lLegUpper: [],
+            lLegLower: [],
+            lFoot: [],
+            rLegUpper: [],
+            rLegLower: [],
+            rFoot: [],
+        }, { loop: true, dynamic: true, ease: 'easeInOutSine' });
 
         this.animator.play('idle');
     }

@@ -3338,6 +3338,85 @@ var Bone = class extends GLGroup {
   }
 };
 
+// ts/utils/ease.ts
+var Ease = class {
+  static linear(x) {
+    return x;
+  }
+  static easeInQuad(x) {
+    return x * x;
+  }
+  static easeOutQuad(x) {
+    return 1 - (1 - x) * (1 - x);
+  }
+  static easeInOutQuad(x) {
+    return x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2;
+  }
+  static easeInCubic(x) {
+    return x * x * x;
+  }
+  static easeOutCubic(x) {
+    return 1 - Math.pow(1 - x, 3);
+  }
+  static easeInOutCubic(x) {
+    return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+  }
+  static easeInQuart(x) {
+    return x * x * x * x;
+  }
+  static easeOutQuart(x) {
+    return 1 - Math.pow(1 - x, 4);
+  }
+  static easeInOutQuart(x) {
+    return x < 0.5 ? 8 * x * x * x * x : 1 - Math.pow(-2 * x + 2, 4) / 2;
+  }
+  static easeInQuint(x) {
+    return x * x * x * x * x;
+  }
+  static easeOutQuint(x) {
+    return 1 - Math.pow(1 - x, 5);
+  }
+  static easeInOutQuint(x) {
+    return x < 0.5 ? 16 * x * x * x * x * x : 1 - Math.pow(-2 * x + 2, 5) / 2;
+  }
+  static easeInSine(x) {
+    return 1 - Math.cos(x * Math.PI / 2);
+  }
+  static easeOutSine(x) {
+    return Math.sin(x * Math.PI / 2);
+  }
+  static easeInOutSine(x) {
+    return -(Math.cos(Math.PI * x) - 1) / 2;
+  }
+  static easeInExpo(x) {
+    return x === 0 ? 0 : Math.pow(2, 10 * x - 10);
+  }
+  static easeOutExpo(x) {
+    return x === 1 ? 1 : 1 - Math.pow(2, -10 * x);
+  }
+  static easeInOutExpo(x) {
+    return x === 0 ? 0 : x === 1 ? 1 : x < 0.5 ? Math.pow(2, 20 * x - 10) / 2 : (2 - Math.pow(2, -20 * x + 10)) / 2;
+  }
+  static easeInCirc(x) {
+    return 1 - Math.sqrt(1 - Math.pow(x, 2));
+  }
+  static easeOutCirc(x) {
+    return Math.sqrt(1 - Math.pow(x - 1, 2));
+  }
+  static easeInOutCirc(x) {
+    return x < 0.5 ? (1 - Math.sqrt(1 - Math.pow(2 * x, 2))) / 2 : (Math.sqrt(1 - Math.pow(-2 * x + 2, 2)) + 1) / 2;
+  }
+  static easeInBack(x) {
+    return 2.70158 * x * x * x - 1.70158 * x * x;
+  }
+  static easeOutBack(x) {
+    return 1 + 2.70158 * Math.pow(x - 1, 3) + 1.70158 * Math.pow(x - 1, 2);
+  }
+  static easeInOutBack(x) {
+    return x < 0.5 ? Math.pow(2 * x, 2) * (7.18982 * x - 2.59491) / 2 : (Math.pow(2 * x - 2, 2) * (3.59491 * (x * 2 - 2) + 2.59491) + 2) / 2;
+  }
+};
+
 // ts/utils/animation.ts
 var Animation = class {
   constructor(attr) {
@@ -3349,6 +3428,7 @@ var Animation = class {
     this.loop = attr.loop || false;
     this.once = attr.once || false;
     this.dynamic = attr.dynamic || false;
+    this.defaultEase = attr.defaultEase || "linear";
     Object.entries(attr.data).forEach(([key, d]) => {
       if (d.length === 0) {
         d = [[0], [1]];
@@ -3383,22 +3463,20 @@ var Animation = class {
     let after = this.data[key][this.data[key].length - 1];
     this.data[key].forEach((d) => {
       if (d[0] >= before[0] && d[0] <= value) {
-        before = Util.padArray(d, 0, 7);
+        before = [d[0], Util.padArray(d[1] || [], 0, 7)];
       }
       if (d[0] <= after[0] && d[0] >= value) {
-        after = Util.padArray(d, 0, 7);
+        after = [d[0], Util.padArray(d[1] || [], 0, 7)];
       }
     });
-    const [[startNumber, ...start], [endNumber, ...end]] = [before, after];
-    const dis = endNumber - startNumber;
-    const f = value - startNumber;
-    const factor = f / dis;
+    const [[startNumber, start], [endNumber, end, ease]] = [before, after];
+    const factor = Ease[ease || this.defaultEase]((value - startNumber) / (endNumber - startNumber));
     this.setBoneTransform(
       key,
       Util.addArrays(
-        start,
+        start || [],
         Util.scaleArrays(
-          Util.subtractArrays(end, start),
+          Util.subtractArrays(end || [], start || []),
           factor
         )
       )
@@ -3445,6 +3523,7 @@ var Animator = class {
       loop: attr.loop || false,
       once: attr.once || false,
       dynamic: attr.dynamic || false,
+      defaultEase: attr.ease || "linear",
       time,
       data
     });
@@ -3560,102 +3639,86 @@ var PlayerSkel = class extends HumanSkeleton {
     this.bones["rArmLower"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-7-rArmLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, -Math.PI / 2), position: v3(-7.5, 16, 1) }));
     this.animator.add("running", 2e3, {
       torso: [
-        [0, -0.3, -0.3, 0],
-        [0.5, -0.3, 0.3, 0],
-        [1, -0.3, -0.3, 0]
+        [0, [-0.3, -0.3, 0]],
+        [0.5, [-0.3, 0.3, 0]],
+        [1, [-0.3, -0.3, 0]]
       ],
-      hips: [
-        [0, -0.3, 0, 0],
-        [0.5, -0.3, 0, 0],
-        [1, -0.3, 0, 0]
-      ],
+      hips: [],
       head: [
-        [0, 0.2, 0.2, 0],
-        [0.5, 0.2, -0.2, 0],
-        [1, 0.2, 0.2, 0]
+        [0, [0.2, 0.2, 0]],
+        [0.5, [0.2, -0.2, 0]],
+        [1, [0.2, 0.2, 0]]
       ],
       lArmUpper: [
-        [0, -0.8, 0, 0.1],
-        [0.5, 1.2, 0, 0.1],
-        [1, -0.8, 0, 0.1]
+        [0, [-0.8, 0, 0.1]],
+        [0.5, [1.2, 0, 0.1]],
+        [1, [-0.8, 0, 0.1]]
       ],
       lArmLower: [
-        [0, 0.3, 0, 0],
-        [0.5, 1.2, 0, -1.2],
-        [1, 0.3, 0, 0]
+        [0, [0.3, 0, 0]],
+        [0.5, [1.2, 0, -1.2]],
+        [1, [0.3, 0, 0]]
       ],
-      lHand: [
-        [0],
-        [0.5],
-        [1]
-      ],
+      lHand: [],
       rArmUpper: [
-        [0, 1.2, 0, -0.1],
-        [0.5, -0.8, 0, -0.1],
-        [1, 1.2, 0, -0.1]
+        [0, [1.2, 0, -0.1]],
+        [0.5, [-0.8, 0, -0.1]],
+        [1, [1.2, 0, -0.1]]
       ],
       rArmLower: [
-        [0, 1.2, 0, 1.2],
-        [0.5, 0.3, 0, 0],
-        [1, 1.2, 0, 1.2]
+        [0, [1.2, 0, 1.2]],
+        [0.5, [0.3, 0, 0]],
+        [1, [1.2, 0, 1.2]]
       ],
-      rHand: [
-        [0],
-        [0.5],
-        [1]
-      ],
+      rHand: [],
       lLegUpper: [
-        [0, 1.2, 0, 0],
+        [0, [1.2, 0, 0]],
         [0.5],
-        [1, 1.2, 0, 0]
+        [1, [1.2, 0, 0]]
       ],
       lLegLower: [
-        [0, -0.3, 0, 0],
-        [0.5, -2, 0, 0],
-        [1, -0.3, 0, 0]
+        [0, [-0.3, 0, 0]],
+        [0.5, [-2, 0, 0]],
+        [1, [-0.3, 0, 0]]
       ],
       lFoot: [
-        [0, -0.2, 0, 0],
-        [0.5, -0.2, 0, 0],
-        [1, -0.2, 0, 0]
+        [0, [-0.2, 0, 0]]
       ],
       rLegUpper: [
         [0],
-        [0.5, 1.2, 0, 0],
+        [0.5, [1.2, 0, 0]],
         [1]
       ],
       rLegLower: [
-        [0, -2, 0, 0],
-        [0.5, -0.3, 0, 0],
-        [1, -2, 0, 0]
+        [0, [-2, 0, 0]],
+        [0.5, [-0.3, 0, 0]],
+        [1, [-2, 0, 0]]
       ],
       rFoot: [
-        [0, -0.2, 0, 0],
-        [0.5, -0.2, 0, 0],
-        [1, -0.2, 0, 0]
+        [0, [-0.2, 0, 0]]
       ]
-    }, { loop: true });
+    }, { loop: true, ease: "easeInOutSine" });
     this.animator.add("jumping", 500, {
       torso: [[0], [1]],
-      hips: [[0], [1, -0.1, -0.1, 0.15]],
-      head: [[0], [1, 0.3, 0, 0]],
-      lArmUpper: [[0], [1, -0.2, 0, 0.1]],
-      lArmLower: [[0], [1, 0, 0, 0.2]],
+      hips: [[0], [1, [-0.1, -0.1, -0.15]]],
+      head: [[0], [1, [0.3, 0, 0]]],
+      lArmUpper: [[0], [1, [-0.2, 0, 0.1]]],
+      lArmLower: [[0], [1, [0, 0, 0.2]]],
       lHand: [[0], [1]],
-      rArmUpper: [[0], [1, -0.1, 0, -0.3]],
-      rArmLower: [[0], [1, 0, 0, 0.2]],
+      rArmUpper: [[0], [1, [3, 0, 0.3]]],
+      rArmLower: [[0], [1, [0, 0, 0.2]]],
       rHand: [[0], [1]],
-      lLegUpper: [[0], [1, 2, 0, 0]],
-      lLegLower: [[0], [1, -2.4, 0, 0]],
+      lLegUpper: [[0], [1, [2, 0, 0]]],
+      lLegLower: [[0], [1, [-2.4, 0, 0]]],
       lFoot: [[0], [1]],
-      rLegUpper: [[0], [1, -0.2, 0, 0]],
-      rLegLower: [[0], [1, -0.3, 0, 0]],
-      rFoot: [[0], [1, -0.6, 0, 0]]
-    }, { once: true });
+      rLegUpper: [[0], [1, [-0.2, 0, 0]]],
+      rLegLower: [[0], [1, [-0.3, 0, 0]]],
+      rFoot: [[0], [1, [-0.6, 0, 0]]]
+    }, { once: true, ease: "easeInOutSine" });
     this.animator.add("idle", 15e3, {
       torso: [],
       hips: [],
-      head: [[0, 0, 0.5], [0.4, 0, 0.5], [0.5, 0, -0.5], [0.9, 0, -0.5], [1, 0, 0.5]],
+      head: [[0.4, [0, 0.5]], [0.5, [0, -0.5]], [0.9, [0, -0.5]], [1, [0, 0.5]]],
       lArmUpper: [],
       lArmLower: [],
       lHand: [],
@@ -3668,24 +3731,24 @@ var PlayerSkel = class extends HumanSkeleton {
       rLegUpper: [],
       rLegLower: [],
       rFoot: []
-    }, { loop: true, dynamic: true });
+    }, { loop: true, dynamic: true, ease: "easeInOutSine" });
     this.animator.add("aim", 1e3, {
       torso: [],
-      hips: [[0], [1, 0, Math.PI / 2, 0]],
-      head: [[0], [1, 0, -1.1, 0]],
-      lArmUpper: [[0], [1, Math.PI / 2, 0, Math.PI / 2 - 0.1]],
-      lArmLower: [[0], [1, 0, 0, -0.2]],
+      hips: [[0], [1, [0, Math.PI / 2, 0]]],
+      head: [[0], [1, [0, -1.1, 0]]],
+      lArmUpper: [[0], [1, [Math.PI / 2, 0, Math.PI / 2 - 0.1]]],
+      lArmLower: [[0], [1, [0, 0, -0.2]]],
       lHand: [],
-      rArmUpper: [[0], [1, 1.5, 0, -0.8]],
-      rArmLower: [[0], [1, -0.3, 0, 2.2]],
+      rArmUpper: [[0], [1, [1.5, 0, -0.8]]],
+      rArmLower: [[0], [1, [-0.3, 0, 2.2]]],
       rHand: [],
-      lLegUpper: [[0], [1, 0, 0, 0.15]],
+      lLegUpper: [[0], [1, [0, 0, 0.15]]],
       lLegLower: [],
       lFoot: [],
-      rLegUpper: [[0], [1, 0, 0, -0.15]],
+      rLegUpper: [[0], [1, [0, 0, -0.15]]],
       rLegLower: [],
       rFoot: []
-    }, { once: true });
+    }, { once: true, ease: "easeInOutSine" });
     this.animator.play("aim");
   }
   tick(obj) {
@@ -4495,22 +4558,22 @@ var npcSkeleton = class extends HumanSkeleton {
     this.bones["lArmLower"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-6-lArmLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, Math.PI / 2), position: v3(8.5, 16, 1) }));
     this.bones["rArmLower"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-7-rArmLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, -Math.PI / 2), position: v3(-7.5, 16, 1) }));
     this.animator.add("idle", 15e3, {
-      torso: [[0]],
-      hips: [[0]],
-      head: [[0, 0, 0.5], [0.4, 0, 0.5], [0.5, 0, -0.5], [0.9, 0, -0.5], [1, 0, 0.5]],
-      lArmUpper: [[0]],
-      lArmLower: [[0]],
-      lHand: [[0]],
-      rArmUpper: [[0]],
-      rArmLower: [[0]],
-      rHand: [[0]],
-      lLegUpper: [[0]],
-      lLegLower: [[0]],
-      lFoot: [[0]],
-      rLegUpper: [[0]],
-      rLegLower: [[0]],
-      rFoot: [[0]]
-    }, { loop: true, dynamic: true });
+      torso: [],
+      hips: [],
+      head: [[0.4, [0, 0.5]], [0.5, [0, -0.5]], [0.9, [0, -0.5]], [1, [0, 0.5]]],
+      lArmUpper: [],
+      lArmLower: [],
+      lHand: [],
+      rArmUpper: [],
+      rArmLower: [],
+      rHand: [],
+      lLegUpper: [],
+      lLegLower: [],
+      lFoot: [],
+      rLegUpper: [],
+      rLegLower: [],
+      rFoot: []
+    }, { loop: true, dynamic: true, ease: "easeInOutSine" });
     this.animator.play("idle");
   }
 };

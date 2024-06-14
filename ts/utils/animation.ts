@@ -1,9 +1,10 @@
+import { Ease, EaseKeys } from './ease';
 import { Bone } from './skeleton_bone';
 import { Util } from './utils';
 import { v3 } from './vector3';
 
 export type aniBoneTransform = [number?, number?, number?, number?, number?, number?];
-export type aniBoneData = [number, ...aniBoneTransform];
+export type aniBoneData = [number, aniBoneTransform?, EaseKeys?];
 export type aniBones = Record<string, Bone>;
 export type aniData = Record<string, aniBoneData[]>;
 
@@ -13,6 +14,7 @@ export type AnimationAttributes = {
     once: boolean,
     dynamic: boolean,
     bones: Record<string, Bone>,
+    defaultEase: EaseKeys,
     data: Record<string, aniBoneData[]>,
 };
 
@@ -21,11 +23,12 @@ export class Animation {
     public loop: boolean;
     public once: boolean;
     public dynamic: boolean;
+    public defaultEase: EaseKeys;
 
     private bones: aniBones;
     private data: aniData = {};
     private time: number;
-    
+
     private _active: boolean = false;
     public get active(): boolean {
         return this._active;
@@ -43,27 +46,27 @@ export class Animation {
         this.loop = attr.loop || false;
         this.once = attr.once || false;
         this.dynamic = attr.dynamic || false;
+        this.defaultEase = attr.defaultEase || 'linear';
 
-        Object.entries(attr.data).forEach(([key,d])=>{
-            if (d.length === 0){
-                d = [[0],[1]]
+        Object.entries(attr.data).forEach(([key, d]) => {
+            if (d.length === 0) {
+                d = [[0], [1]];
             }
 
-            if (d[0][0] !== 0){
-                d.unshift([0,...d[0].slice(1)] as aniBoneData);
+            if (d[0][0] !== 0) {
+                d.unshift([0, ...d[0].slice(1)] as aniBoneData);
             }
 
-            if (d[d.length-1][0] !== 1){
-                d.push([1,...d[d.length-1].slice(1)] as aniBoneData);
+            if (d[d.length - 1][0] !== 1) {
+                d.push([1, ...d[d.length - 1].slice(1)] as aniBoneData);
             }
 
             this.data[key] = d;
         });
-        
+
     }
 
     private setBoneTransform(key: string, transform: aniBoneTransform) {
-        // console.log(transform);
         const bone = this.bones[key];
         if (bone) {
             bone.setRotation(v3(transform[0] || 0, transform[1] || 0, transform[2] || 0), this.dynamic);
@@ -78,25 +81,23 @@ export class Animation {
 
         this.data[key].forEach((d) => {
             if (d[0] >= before[0] && d[0] <= value) {
-                before = Util.padArray(d, 0, 7) as typeof before;
+                before = [d[0], Util.padArray(d[1] || [], 0, 7) as aniBoneTransform];
             }
             if (d[0] <= after[0] && d[0] >= value) {
-                after = Util.padArray(d, 0, 7) as typeof after;
+                after = [d[0], Util.padArray(d[1] || [], 0, 7) as aniBoneTransform];
             }
         });
 
-        const [[startNumber, ...start], [endNumber, ...end]] = [before, after];
+        const [[startNumber, start], [endNumber, end, ease]] = [before, after];
 
-        const dis = endNumber - startNumber;
-        const f = value - startNumber;
-        const factor = f / dis;
+        const factor = Ease[ease || this.defaultEase]((value - startNumber) / (endNumber - startNumber));
 
         this.setBoneTransform(
             key,
             Util.addArrays(
-                start,
+                start || [],
                 Util.scaleArrays(
-                    Util.subtractArrays(end, start),
+                    Util.subtractArrays(end || [], start || []),
                     factor
                 )
             ) as aniBoneTransform
@@ -148,13 +149,14 @@ export class Animator {
         this.bones = attr.bones || {};
     }
 
-    public add(key: string, time: number, data: aniData, attr: { loop?: boolean, once?: boolean, dynamic?: boolean; } = {}) {
+    public add(key: string, time: number, data: aniData, attr: { loop?: boolean, once?: boolean, dynamic?: boolean; ease?: EaseKeys } = {}) {
 
         this.animations[key] = new Animation({
             bones: this.bones,
             loop: attr.loop || false,
             once: attr.once || false,
             dynamic: attr.dynamic || false,
+            defaultEase: attr.ease || 'linear',
             time, data,
         });
         return this.get(key);
