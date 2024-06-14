@@ -13,6 +13,7 @@ export type AnimationAttributes = {
     loop: boolean,
     once: boolean,
     dynamic: boolean,
+    bounce: boolean,
     bones: Record<string, Bone>,
     defaultEase: EaseKeys,
     data: Record<string, aniBoneData[]>,
@@ -24,6 +25,8 @@ export class Animation {
     public once: boolean;
     public dynamic: boolean;
     public defaultEase: EaseKeys;
+    public bounce: boolean;
+    public direction: -1|1 = 1;
 
     private bones: aniBones;
     private data: aniData = {};
@@ -46,6 +49,7 @@ export class Animation {
         this.loop = attr.loop || false;
         this.once = attr.once || false;
         this.dynamic = attr.dynamic || false;
+        this.bounce = attr.bounce || false;
         this.defaultEase = attr.defaultEase || 'linear';
 
         Object.entries(attr.data).forEach(([key, d]) => {
@@ -64,6 +68,12 @@ export class Animation {
             this.data[key] = d;
         });
 
+    }
+
+    public setTime(t: number) {
+        const f = this.interval / this.time;
+        this.time = t;
+        this.interval = t*f;
     }
 
     private setBoneTransform(key: string, transform: aniBoneTransform) {
@@ -118,20 +128,35 @@ export class Animation {
 
     public tick(interval: number) {
         if (this.active) {
-            this.interval = this.interval + interval;
+            this.interval = this.interval + (interval*this.direction);
+
 
             if (this.interval >= this.time) {
-                if (this.loop) {
+                if (this.bounce) {
+                    this.interval = this.time - (this.interval % this.time);
+                    this.direction = -1;
+                } else if (this.loop) {
                     this.interval = this.interval % this.time;
                 } else if (this.once) {
-                    this.setBonesToValue(0.999);
-                    return;
+                    this.interval = this.time - 1
                 } else {
                     this.active = false;
                     this.interval = 0;
                     return;
                 }
             }
+            
+            if (this.interval < 0) {
+                if (this.loop) {
+                    this.interval = Math.abs(this.interval);
+                    this.direction = 1;
+                } else {
+                    this.active = false;
+                    this.interval = 0;
+                    return
+                }
+            }
+
             this.setBonesToValue(this.interval / this.time);
         }
     }
@@ -149,12 +174,13 @@ export class Animator {
         this.bones = attr.bones || {};
     }
 
-    public add(key: string, time: number, data: aniData, attr: { loop?: boolean, once?: boolean, dynamic?: boolean; ease?: EaseKeys } = {}) {
+    public add(key: string, time: number, data: aniData, attr: { loop?: boolean, once?: boolean, dynamic?: boolean; ease?: EaseKeys, bounce?: boolean } = {}) {
 
         this.animations[key] = new Animation({
             bones: this.bones,
             loop: attr.loop || false,
             once: attr.once || false,
+            bounce: attr.bounce || false,
             dynamic: attr.dynamic || false,
             defaultEase: attr.ease || 'linear',
             time, data,

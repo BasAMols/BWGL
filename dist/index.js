@@ -3421,6 +3421,7 @@ var Ease = class {
 var Animation = class {
   constructor(attr) {
     this.interval = 0;
+    this.direction = 1;
     this.data = {};
     this._active = false;
     this.bones = attr.bones || {};
@@ -3428,6 +3429,7 @@ var Animation = class {
     this.loop = attr.loop || false;
     this.once = attr.once || false;
     this.dynamic = attr.dynamic || false;
+    this.bounce = attr.bounce || false;
     this.defaultEase = attr.defaultEase || "linear";
     Object.entries(attr.data).forEach(([key, d]) => {
       if (d.length === 0) {
@@ -3450,6 +3452,11 @@ var Animation = class {
     if (!value) {
       this.interval = 0;
     }
+  }
+  setTime(t) {
+    const f = this.interval / this.time;
+    this.time = t;
+    this.interval = t * f;
   }
   setBoneTransform(key, transform) {
     const bone = this.bones[key];
@@ -3494,13 +3501,25 @@ var Animation = class {
   }
   tick(interval) {
     if (this.active) {
-      this.interval = this.interval + interval;
+      this.interval = this.interval + interval * this.direction;
       if (this.interval >= this.time) {
-        if (this.loop) {
+        if (this.bounce) {
+          this.interval = this.time - this.interval % this.time;
+          this.direction = -1;
+        } else if (this.loop) {
           this.interval = this.interval % this.time;
         } else if (this.once) {
-          this.setBonesToValue(0.999);
+          this.interval = this.time - 1;
+        } else {
+          this.active = false;
+          this.interval = 0;
           return;
+        }
+      }
+      if (this.interval < 0) {
+        if (this.loop) {
+          this.interval = Math.abs(this.interval);
+          this.direction = 1;
         } else {
           this.active = false;
           this.interval = 0;
@@ -3522,6 +3541,7 @@ var Animator = class {
       bones: this.bones,
       loop: attr.loop || false,
       once: attr.once || false,
+      bounce: attr.bounce || false,
       dynamic: attr.dynamic || false,
       defaultEase: attr.ease || "linear",
       time,
@@ -3638,66 +3658,22 @@ var PlayerSkel = class extends HumanSkeleton {
     this.bones["lArmLower"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-6-lArmLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, Math.PI / 2), position: v3(8.5, 16, 1) }));
     this.bones["rArmLower"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-7-rArmLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, -Math.PI / 2), position: v3(-7.5, 16, 1) }));
     this.animator.add("running", 2e3, {
-      torso: [
-        [0, [-0.3, -0.3, 0]],
-        [0.5, [-0.3, 0.3, 0]],
-        [1, [-0.3, -0.3, 0]]
-      ],
+      torso: [[0, [-0.3, -0.3, 0]], [1, [-0.3, 0.3, 0]]],
       hips: [],
-      head: [
-        [0, [0.2, 0.2, 0]],
-        [0.5, [0.2, -0.2, 0]],
-        [1, [0.2, 0.2, 0]]
-      ],
-      lArmUpper: [
-        [0, [-0.8, 0, 0.1]],
-        [0.5, [1.2, 0, 0.1]],
-        [1, [-0.8, 0, 0.1]]
-      ],
-      lArmLower: [
-        [0, [0.3, 0, 0]],
-        [0.5, [1.2, 0, -1.2]],
-        [1, [0.3, 0, 0]]
-      ],
+      head: [[0, [0.2, 0.2, 0]], [1, [0.2, -0.2, 0]]],
+      lArmUpper: [[0, [-0.8, 0, 0.1]], [1, [1.2, 0, 0.1]]],
+      lArmLower: [[0, [0.3, 0, 0]], [1, [1.2, 0, -1.2]]],
       lHand: [],
-      rArmUpper: [
-        [0, [1.2, 0, -0.1]],
-        [0.5, [-0.8, 0, -0.1]],
-        [1, [1.2, 0, -0.1]]
-      ],
-      rArmLower: [
-        [0, [1.2, 0, 1.2]],
-        [0.5, [0.3, 0, 0]],
-        [1, [1.2, 0, 1.2]]
-      ],
+      rArmUpper: [[0, [1.2, 0, -0.1]], [1, [-0.8, 0, -0.1]]],
+      rArmLower: [[0, [1.2, 0, 1.2]], [1, [0.3, 0, 0]]],
       rHand: [],
-      lLegUpper: [
-        [0, [1.2, 0, 0]],
-        [0.5],
-        [1, [1.2, 0, 0]]
-      ],
-      lLegLower: [
-        [0, [-0.3, 0, 0]],
-        [0.5, [-2, 0, 0]],
-        [1, [-0.3, 0, 0]]
-      ],
-      lFoot: [
-        [0, [-0.2, 0, 0]]
-      ],
-      rLegUpper: [
-        [0],
-        [0.5, [1.2, 0, 0]],
-        [1]
-      ],
-      rLegLower: [
-        [0, [-2, 0, 0]],
-        [0.5, [-0.3, 0, 0]],
-        [1, [-2, 0, 0]]
-      ],
-      rFoot: [
-        [0, [-0.2, 0, 0]]
-      ]
-    }, { loop: true, ease: "easeInOutSine" });
+      lLegUpper: [[0, [1.2, 0, 0]], [1]],
+      lLegLower: [[0, [-0.3, 0, 0]], [1, [-2, 0, 0]]],
+      lFoot: [[0, [-0.2, 0, 0]]],
+      rLegUpper: [[0], [1, [1.2, 0, 0]]],
+      rLegLower: [[0, [-2, 0, 0]], [1, [-0.3, 0, 0]]],
+      rFoot: [[0, [-0.2, 0, 0]]]
+    }, { loop: true, ease: "easeInOutSine", bounce: true });
     this.animator.add("jumping", 500, {
       torso: [[0], [1]],
       hips: [[0], [1, [-0.1, -0.1, -0.15]]],
