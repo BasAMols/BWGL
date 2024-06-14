@@ -4,14 +4,17 @@ import { Vector3 } from '../../utils/vector3';
 import { GlElement } from '../../gl/elementBase';
 import { HumanSkeleton } from '../../utils/skeleton_human';
 import { PlayerSkel } from './player_skeleton';
-import { MovementController } from './player_controller';
+import { PlayerController } from './player_controller';
 import { FreeCamera } from './player_camera';
 
 export class Player extends Character {
     public stat: Record<string, boolean> = { jumping: false, falling: false, running: false, fallAnimation: false };
     public mesh: GLCuboid;
     public skeleton: HumanSkeleton;
-    public aiming: boolean = false;
+
+    public get aiming() {
+        return (this.controllers[1] as PlayerController).aiming
+    }
 
     constructor({
         position = Vector3.f(0),
@@ -28,19 +31,7 @@ export class Player extends Character {
             rotation: rotation,
             anchorPoint: size.multiply(0.5, 0, 0.5),
         });
-        this.addControllers([new FreeCamera(this), new MovementController(this)]);
-    }
-
-    keyDown(e: KeyboardEvent): void {
-        if (e.key === 'e' || e.key === 'E'){
-            this.aiming = true;
-        }
-    }
-
-    keyUp(e: KeyboardEvent): void {
-        if (e.key === 'e' || e.key === 'E'){
-            this.aiming = false;
-        }
+        this.addControllers([new FreeCamera(this), new PlayerController(this)]);
     }
 
     build() {
@@ -48,5 +39,4 @@ export class Player extends Character {
         this.skeleton = new PlayerSkel();
         this.addChild(this.skeleton);
     }
-
 }

@@ -6,13 +6,27 @@ import { Collisions } from '../../utils/collisions';
 import { v2 } from '../../utils/vector2';
 import { Player } from './player_actor';
 
-export class MovementController extends GlController {
+export class PlayerController extends GlController {
     private intr: Record<string, number> = { fall: 0, jump: 0, landDelay: 0 };
     private stat: Record<string, boolean> = { jumping: false, falling: false, running: false };
     private cnst = { runTime: 250, runSlowDownFactor: 0.7, runSpeed: 0.5, minJumpTime: 200, jumpTime: 300, jumpSpeed: 0.6 } as const;
     private velocity: Vector3 = Vector3.f(0);
     private newPosition: Vector3;
     public parent: Player;
+    public aiming: boolean = false;
+
+    keyDown(e: KeyboardEvent): void {
+        if (e.key === 'e' || e.key === 'E'){
+            this.aiming = true;
+        }
+    }
+
+    keyUp(e: KeyboardEvent): void {
+        if (e.key === 'e' || e.key === 'E'){
+            this.aiming = false;
+        }
+    }
+
 
     public setMovementVelocity(interval: number) {
         const setter = (key: string, cond: boolean, interval: number) => {
@@ -24,16 +38,22 @@ export class MovementController extends GlController {
         setter('up', this.mode.input.up && !this.mode.input.down, interval);
         setter('down', this.mode.input.down && !this.mode.input.up, interval);
 
-        const plane = v2(
-            (this.intr.right - this.intr.left) / this.cnst.runTime,
-            (this.intr.up - this.intr.down) / this.cnst.runTime,
-        ).clampMagnitude(1).scale(this.cnst.runSpeed);
+        if (!this.aiming) {
 
-        this.velocity = v3(
-            plane.x,
-            0,
-            plane.y
-        );
+            const plane = v2(
+                (this.intr.right - this.intr.left) / this.cnst.runTime,
+                (this.intr.up - this.intr.down) / this.cnst.runTime,
+            ).clampMagnitude(1).scale(this.cnst.runSpeed);
+
+            this.velocity = v3(
+                plane.x,
+                0,
+                plane.y
+            );
+        } else {
+            this.velocity = v3(0);
+        }
+
     }
 
     private determineStates(interval: number) {
@@ -95,11 +115,12 @@ export class MovementController extends GlController {
             this.parent.stat.running = false;
         }
 
-        if (this.parent.aiming){
+        if (this.aiming) {
             this.parent.rotation = this.camera.rotation.multiply(0, 1, 0);
-            
-        } 
+
+        }
     }
+
 
     public colliders(obj: TickerReturnData) {
         this.parent.stat.ground = false;

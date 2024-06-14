@@ -3747,13 +3747,24 @@ var Collisions = class _Collisions {
 };
 
 // ts/modes/side/player_controller.ts
-var MovementController = class extends GlController {
+var PlayerController = class extends GlController {
   constructor() {
     super(...arguments);
     this.intr = { fall: 0, jump: 0, landDelay: 0 };
     this.stat = { jumping: false, falling: false, running: false };
     this.cnst = { runTime: 250, runSlowDownFactor: 0.7, runSpeed: 0.5, minJumpTime: 200, jumpTime: 300, jumpSpeed: 0.6 };
     this.velocity = Vector3.f(0);
+    this.aiming = false;
+  }
+  keyDown(e) {
+    if (e.key === "e" || e.key === "E") {
+      this.aiming = true;
+    }
+  }
+  keyUp(e) {
+    if (e.key === "e" || e.key === "E") {
+      this.aiming = false;
+    }
   }
   setMovementVelocity(interval) {
     const setter = (key, cond, interval2) => {
@@ -3763,15 +3774,19 @@ var MovementController = class extends GlController {
     setter("left", this.mode.input.left && !this.mode.input.right, interval);
     setter("up", this.mode.input.up && !this.mode.input.down, interval);
     setter("down", this.mode.input.down && !this.mode.input.up, interval);
-    const plane = v2(
-      (this.intr.right - this.intr.left) / this.cnst.runTime,
-      (this.intr.up - this.intr.down) / this.cnst.runTime
-    ).clampMagnitude(1).scale(this.cnst.runSpeed);
-    this.velocity = v3(
-      plane.x,
-      0,
-      plane.y
-    );
+    if (!this.aiming) {
+      const plane = v2(
+        (this.intr.right - this.intr.left) / this.cnst.runTime,
+        (this.intr.up - this.intr.down) / this.cnst.runTime
+      ).clampMagnitude(1).scale(this.cnst.runSpeed);
+      this.velocity = v3(
+        plane.x,
+        0,
+        plane.y
+      );
+    } else {
+      this.velocity = v3(0);
+    }
   }
   determineStates(interval) {
     if (this.parent.stat.falling) {
@@ -3823,7 +3838,7 @@ var MovementController = class extends GlController {
       this.newPosition = this.parent.absolutePosition.add(v3(0, sc.y, 0));
       this.parent.stat.running = false;
     }
-    if (this.parent.aiming) {
+    if (this.aiming) {
       this.parent.rotation = this.camera.rotation.multiply(0, 1, 0);
     }
   }
@@ -3933,18 +3948,10 @@ var Player = class extends Character {
       anchorPoint: size.multiply(0.5, 0, 0.5)
     });
     this.stat = { jumping: false, falling: false, running: false, fallAnimation: false };
-    this.aiming = false;
-    this.addControllers([new FreeCamera(this), new MovementController(this)]);
+    this.addControllers([new FreeCamera(this), new PlayerController(this)]);
   }
-  keyDown(e) {
-    if (e.key === "e" || e.key === "E") {
-      this.aiming = true;
-    }
-  }
-  keyUp(e) {
-    if (e.key === "e" || e.key === "E") {
-      this.aiming = false;
-    }
+  get aiming() {
+    return this.controllers[1].aiming;
   }
   build() {
     GlElement.registerControllers(this);

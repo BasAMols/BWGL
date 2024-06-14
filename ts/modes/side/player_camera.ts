@@ -10,7 +10,7 @@ import { Player } from './player_actor';
 export class FreeCamera extends GlController {
     public type: GlElementType = 'controller';
     public order: GlControllerOrder = 'after';
-    private lagList: Vector3[] = [];
+    public lagList: Vector3[] = [];
     private lagCount: number = 8;
     public parent: Player;
     public get active(): boolean {
