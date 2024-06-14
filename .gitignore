@@ -1,7 +1,4 @@
 node_modules
 .vscode
-/dist/favicon
-/dist/index.js
-/dist
-dist/index.js
-dist/index.js.map
+dist
+*bu/
