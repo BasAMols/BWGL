@@ -141,11 +141,16 @@ export class World extends Level {
         // this.addChild(new GLobj({ storage: this.mode.storage, url: 'apoc/VoxelNuke-23-ConcreteGroundTile.obj', size: v3(50, 50, 50), position: v3(100, -3, 750) }));
         // this.addChild(new GLobj({ storage: this.mode.storage, url: 'apoc/VoxelNuke-23-ConcreteGroundTile.obj', size: v3(50, 50, 50), position: v3(300, -3, 750) }));
 
+        this.addChild(new GLobj({ storage: this.mode.storage, url: 'CountrySide-5-House.obj', size: v3(18, 18, 18), position: v3(200, 43, 800), rotation: v3(0, -Math.PI / 2, 0) }));
         this.addChild(new GLobj({ storage: this.mode.storage, url: 'CountrySide-4-Vegetation1.obj', size: v3(20, 20, 20), rotation: v3(0, Math.PI, 0), position: v3(-100 - 20, 5, 670) }));
         this.addChild(new GLobj({ storage: this.mode.storage, url: 'CountrySide-4-Vegetation1.obj', size: v3(25, 25, 25), rotation: v3(0, 0, 0), position: v3(-20 - 20, 6, 760) }));
         this.addChild(new GLobj({ storage: this.mode.storage, url: 'CountrySide-4-Vegetation1.obj', size: v3(25, 25, 25), rotation: v3(0, Math.PI / 2, 0), position: v3(0 - 20, 3, 670) }));
         this.addChild(new GLobj({ storage: this.mode.storage, url: 'Plane01.obj', size: v3(30, 30, 30), position: v3(420, 16, 720), rotation: v3(0, Math.PI / 4 + Math.PI / 2, -0.12) }));
-        this.addChild(new GLobj({ storage: this.mode.storage, url: 'CountrySide-5-House.obj', size: v3(18, 18, 18), position: v3(200, 43, 800), rotation: v3(0, -Math.PI / 2, 0) }));
+
+        this.addChild(new GLobj({ storage: this.mode.storage, url: 'Medieval Town - Pack 1-0.obj', size: v3(10, 10, 10), position: v3(0, -1, 500)}));
+        this.addChild(new GLobj({ storage: this.mode.storage, url: 'Medieval Town - Pack 1-1.obj', size: v3(10, 10, 10), position: v3(0, -1, 500)}));
+        this.addChild(new GLobj({ storage: this.mode.storage, url: 'Medieval Town - Pack 1-2.obj', size: v3(10, 10, 10), position: v3(0, -1, 500)}));
+        this.addChild(new GLobj({ storage: this.mode.storage, url: 'Nuclear Survival - Pack 6 - m.obj', size: v3(10, 10, 10), position: v3(0, -6, 300), rotation: v3(0, -Math.PI / 2, 0) }));
 
         (([
             [v3(-5000, -1000, -2000), v3(10000, 1000, 4000), Vector3.up, false], // floor
@@ -154,7 +159,7 @@ export class World extends Level {
             this.addChild(new Collider({ position, size, direction, showMesh: show === undefined ? false : show, showArrows: false }));
         });
 
-        this.sky = this.addChild(new Sky()) as Sky;
+        // this.sky = this.addChild(new Sky()) as Sky;
 
     }
 

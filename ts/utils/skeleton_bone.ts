@@ -21,14 +21,17 @@ export class Bone extends GLGroup {
     private mesh: boolean;
     public speed: number;
     private baseRotation: Vector3;
+    private basePosition: Vector3;
+
     private target: Vector3;
     constructor(attr: BoneAttributes = {}) {
         super(attr);
         this.mesh = attr.mesh === undefined ? false : attr.mesh;
         this.length = attr.length === undefined ? 10 : attr.length;
         this.profile = attr.profile || v2(0);
-        this.speed = attr.speed === undefined ? 0.015 : attr.speed;
+        this.speed = attr.speed === undefined ? 0.02 : attr.speed;
         this.baseRotation = attr.baseRotation || v3(0);
+        this.basePosition = this.position || v3(0);
         this.size = v3(this.profile.x, this.length, this.profile.y);
 
         if (!attr.anchorPoint) {
@@ -40,8 +43,14 @@ export class Bone extends GLGroup {
         }
         this.rotation = this.baseRotation;
     }
-    public setRotation(r: Vector3) {
+    public setRotation(r: Vector3, dynamically: boolean = false) {
         this.target = this.baseRotation.add(r.clone());
+        if (!dynamically){
+            this.rotation = this.target.clone();
+        }
+    }
+    public setPosition(r: Vector3, dynamically: boolean = false) {
+        this.position = this.basePosition.add(r.clone());
     }
     public tick(obj: TickerReturnData): void {
         super.tick(obj);
@@ -49,10 +58,6 @@ export class Bone extends GLGroup {
         if (!this.target) return;
 
         const dif = this.rotation.subtract(this.target);
-
-        if (this.length === 13) {
-            // console.log(this.rotation.array);
-        }
 
         if (dif.magnitude() === 0) return;
 

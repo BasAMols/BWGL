@@ -23,7 +23,7 @@ void main(void) {
   highp float directional = max(dot(transformedNormal.xyz, directionalVector), 0.0);
   lowp vec3 vCloudLighting = vec3(1, 1, 1)*0.9 + (vec3(1, 1, 1) * max(dot(transformedNormal.xyz, normalize(vec3(0, -1, 0))), 0.0)*0.0)*0.6;
 
-  if ((uModelViewMatrix * aVertexPosition).y > 100.0) {
+  if ((uModelViewMatrix * aVertexPosition).y > 600.0) {
     vLighting = vCloudLighting * 0.9;
   } else {
     vLighting = ambientLight + (directionalLightColor * directional);

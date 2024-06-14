@@ -629,6 +629,21 @@ var Util = class {
   static to0(value, tolerance = 0.1) {
     return Math.abs(value) < tolerance ? 0 : value;
   }
+  static padArray(ar, b, len) {
+    return ar.concat(Array.from(Array(len).fill(b))).slice(0, len);
+  }
+  static addArrays(ar, br) {
+    return ar.map((a, i) => a + br[i]);
+  }
+  static subtractArrays(ar, br) {
+    return ar.map((a, i) => a - br[i]);
+  }
+  static multiplyArrays(ar, br) {
+    return ar.map((a, i) => a * br[i]);
+  }
+  static scaleArrays(ar, b) {
+    return ar.map((a, i) => a * b);
+  }
 };
 
 // ts/utils/vector3.ts
@@ -834,7 +849,7 @@ var Vector3 = class _Vector3 {
 };
 
 // ts/gl/shaders/vertexShader.ts
-var vertexShader_default = "\nattribute vec4 aVertexPosition;\nattribute vec3 aVertexNormal;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uModelViewMatrix;\nuniform mat4 uProjectionMatrix;\nuniform mat4 uNormalMatrix;\n\nvarying highp vec2 vTextureCoord;\nvarying highp vec3 vLighting;\nvarying highp vec3 vCloudLighting;\n\nvoid main(void) {\n  gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;\n  vTextureCoord = aTextureCoord;\n\n  highp vec3 ambientLight = vec3(0.8, 0.8, 1) *0.5;\n  highp vec3 directionalLightColor = vec3(1, 1, 1);\n  highp vec3 directionalVector = normalize(vec3(-0.7, .7, 0.3));\n\n  highp vec4 transformedNormal = uNormalMatrix * vec4(aVertexNormal, 1.0);\n  highp float directional = max(dot(transformedNormal.xyz, directionalVector), 0.0);\n  lowp vec3 vCloudLighting = vec3(1, 1, 1)*0.9 + (vec3(1, 1, 1) * max(dot(transformedNormal.xyz, normalize(vec3(0, -1, 0))), 0.0)*0.0)*0.6;\n\n  if ((uModelViewMatrix * aVertexPosition).y > 100.0) {\n    vLighting = vCloudLighting * 0.9;\n  } else {\n    vLighting = ambientLight + (directionalLightColor * directional);\n  }\n}";
+var vertexShader_default = "\nattribute vec4 aVertexPosition;\nattribute vec3 aVertexNormal;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uModelViewMatrix;\nuniform mat4 uProjectionMatrix;\nuniform mat4 uNormalMatrix;\n\nvarying highp vec2 vTextureCoord;\nvarying highp vec3 vLighting;\nvarying highp vec3 vCloudLighting;\n\nvoid main(void) {\n  gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;\n  vTextureCoord = aTextureCoord;\n\n  highp vec3 ambientLight = vec3(0.8, 0.8, 1) *0.5;\n  highp vec3 directionalLightColor = vec3(1, 1, 1);\n  highp vec3 directionalVector = normalize(vec3(-0.7, .7, 0.3));\n\n  highp vec4 transformedNormal = uNormalMatrix * vec4(aVertexNormal, 1.0);\n  highp float directional = max(dot(transformedNormal.xyz, directionalVector), 0.0);\n  lowp vec3 vCloudLighting = vec3(1, 1, 1)*0.9 + (vec3(1, 1, 1) * max(dot(transformedNormal.xyz, normalize(vec3(0, -1, 0))), 0.0)*0.0)*0.6;\n\n  if ((uModelViewMatrix * aVertexPosition).y > 600.0) {\n    vLighting = vCloudLighting * 0.9;\n  } else {\n    vLighting = ambientLight + (directionalLightColor * directional);\n  }\n}";
 
 // ts/gl/shaders/fragmentShader.ts
 var fragmentShader_default = "\nvarying highp vec2 vTextureCoord;\nvarying highp vec3 vLighting;\n\nuniform sampler2D uSampler;\nuniform lowp float uOpacity;\nuniform lowp float uIntensity;\n\nvoid main(void) {\n    highp vec4 texelColor = texture2D(uSampler, vTextureCoord);\n    gl_FragColor = vec4((texelColor.rgb+texelColor.rgb * (uIntensity-1.0)) * vLighting, texelColor.a*uOpacity);\n}\n";
@@ -3267,8 +3282,9 @@ var Bone = class extends GLGroup {
     this.mesh = attr.mesh === void 0 ? false : attr.mesh;
     this.length = attr.length === void 0 ? 10 : attr.length;
     this.profile = attr.profile || v2(0);
-    this.speed = attr.speed === void 0 ? 0.015 : attr.speed;
+    this.speed = attr.speed === void 0 ? 0.02 : attr.speed;
     this.baseRotation = attr.baseRotation || v3(0);
+    this.basePosition = this.position || v3(0);
     this.size = v3(this.profile.x, this.length, this.profile.y);
     if (!attr.anchorPoint) {
       this.anchorPoint = v3(
@@ -3279,16 +3295,20 @@ var Bone = class extends GLGroup {
     }
     this.rotation = this.baseRotation;
   }
-  setRotation(r) {
+  setRotation(r, dynamically = false) {
     this.target = this.baseRotation.add(r.clone());
+    if (!dynamically) {
+      this.rotation = this.target.clone();
+    }
+  }
+  setPosition(r, dynamically = false) {
+    this.position = this.basePosition.add(r.clone());
   }
   tick(obj) {
     super.tick(obj);
     if (!this.target)
       return;
     const dif = this.rotation.subtract(this.target);
-    if (this.length === 13) {
-    }
     if (dif.magnitude() === 0)
       return;
     const movement = v3(
@@ -3312,57 +3332,181 @@ var Bone = class extends GLGroup {
   }
 };
 
-// ts/utils/skeleton_human.ts
-var HumanSkeleton = class extends GLGroup {
+// ts/utils/animation.ts
+var Animation = class {
+  constructor(attr) {
+    this.interval = 0;
+    this._active = false;
+    this.bones = attr.bones || {};
+    this.data = attr.data || {};
+    this.time = attr.time || 0;
+    this.loop = attr.loop || false;
+    this.once = attr.once || false;
+    this.dynamic = attr.dynamic || false;
+  }
+  get active() {
+    return this._active;
+  }
+  set active(value) {
+    this._active = value;
+    if (!value) {
+      this.interval = 0;
+    }
+  }
+  setBoneTransform(key, transform) {
+    const bone = this.bones[key];
+    if (bone) {
+      bone.setRotation(v3(transform[0] || 0, transform[1] || 0, transform[2] || 0), this.dynamic);
+      bone.setPosition(v3(transform[3] || 0, transform[4] || 0, transform[5] || 0), this.dynamic);
+    }
+  }
+  setBoneToValue(key, value) {
+    let before = this.data[key][0];
+    let after = this.data[key][this.data[key].length - 1];
+    this.data[key].forEach((d) => {
+      if (d[0] >= before[0] && d[0] <= value) {
+        before = Util.padArray(d, 0, 7);
+      }
+      if (d[0] <= after[0] && d[0] >= value) {
+        after = Util.padArray(d, 0, 7);
+      }
+    });
+    const [[startNumber, ...start], [endNumber, ...end]] = [before, after];
+    const dis = endNumber - startNumber;
+    const f = value - startNumber;
+    const factor = f / dis;
+    this.setBoneTransform(
+      key,
+      Util.addArrays(
+        start,
+        Util.scaleArrays(
+          Util.subtractArrays(end, start),
+          factor
+        )
+      )
+    );
+  }
+  setBonesToValue(n) {
+    Object.keys(this.bones).forEach((b) => {
+      this.setBoneToValue(b, n);
+    });
+  }
+  stop() {
+    Object.values(this.bones).forEach((b) => {
+      b.active = true;
+    });
+  }
+  tick(interval) {
+    if (this.active) {
+      this.interval = this.interval + interval;
+      if (this.interval >= this.time) {
+        if (this.loop) {
+          this.interval = this.interval % this.time;
+        } else if (this.once) {
+          this.setBonesToValue(0.999);
+          return;
+        } else {
+          this.active = false;
+          this.interval = 0;
+          return;
+        }
+      }
+      this.setBonesToValue(this.interval / this.time);
+    }
+  }
+};
+var Animator = class {
+  constructor(attr) {
+    this.animations = {};
+    this.bones = {};
+    this.bones = attr.bones || {};
+  }
+  add(key, time, data, attr = {}) {
+    this.animations[key] = new Animation({
+      bones: this.bones,
+      loop: attr.loop || false,
+      once: attr.once || false,
+      dynamic: attr.dynamic || false,
+      time,
+      data
+    });
+    return this.get(key);
+  }
+  get(key) {
+    return this.animations[key];
+  }
+  stop() {
+    Object.values(this.animations).forEach((a) => {
+      a.active = false;
+    });
+  }
+  play(key) {
+    Object.entries(this.animations).forEach(([k, a]) => {
+      a.active = k === key;
+    });
+  }
+  replay(key) {
+    this.stop();
+    Object.entries(this.animations).find((k) => k[0] === key)[1].active = true;
+  }
+  tick(interval) {
+    Object.values(this.animations).forEach((a) => a.tick(interval));
+  }
+};
+
+// ts/utils/skeleton.ts
+var Skeleton = class extends GLGroup {
   constructor(attr = {}) {
     super(attr);
-    this.animation = {};
-    this.sizes = attr.boneSizes || {
-      "head": 6,
-      "armUpper": 6,
-      "armLower": 3,
-      "hand": 3,
-      "legUpper": 5,
-      "legLower": 4,
-      "foot": 2,
-      "torso": 8,
-      "hips": 5,
-      "hipsWidth": 4,
-      "shoulderWidth": 4
-    };
+    this.bones = {};
+    this.parentage = {};
+    attr.bones.forEach((o) => {
+      this.bones[o[0]] = o[1];
+      if (o[2]) {
+        this.parentage[o[0]] = o[2];
+      }
+    });
   }
   build() {
     super.build();
-    this.hips = this.addChild(new Bone({ speed: 0.01, profile: v2(this.sizes.hipsWidth, 1), length: this.sizes.hips, position: v3(0, this.sizes.legUpper + this.sizes.legLower + this.sizes.foot, 2) }));
-    this.torso = this.hips.addChild(new Bone({ speed: 0.01, anchorPoint: v3(this.sizes.shoulderWidth / 2, 0, 0), baseRotation: v3(0, 0, 0), profile: v2(this.sizes.shoulderWidth, 1), length: this.sizes.torso, position: v3(-(this.sizes.shoulderWidth - this.sizes.hipsWidth) / 2, this.sizes.hips, 0) }));
-    this.head = this.torso.addChild(new Bone({ speed: 5e-3, profile: v2(4, 3), length: this.sizes.head, anchorPoint: v3(2, 0, 1), position: v3((this.sizes.shoulderWidth - 4) / 2, this.sizes.torso + 1, -1) }));
-    this.lArmUpper = this.torso.addChild(new Bone({ profile: v2(1), baseRotation: v3(-0.1, 0, 0.4), length: this.sizes.armUpper, position: v3(0, this.sizes.torso - this.sizes.armUpper, 0) }));
-    this.rArmUpper = this.torso.addChild(new Bone({ profile: v2(1), baseRotation: v3(-0.1, 0, -0.4), length: this.sizes.armUpper, position: v3(this.sizes.shoulderWidth - 1, this.sizes.torso - this.sizes.armUpper, 0) }));
-    this.lArmLower = this.lArmUpper.addChild(new Bone({ speed: 0.03, baseRotation: v3(0.2, 0, -0.3), profile: v2(1), length: this.sizes.armLower, position: v3(0, -this.sizes.armLower, 0) }));
-    this.rArmLower = this.rArmUpper.addChild(new Bone({ speed: 0.03, baseRotation: v3(0.2, 0, 0.3), profile: v2(1), length: this.sizes.armLower, position: v3(0, -this.sizes.armLower, 0) }));
-    this.lHand = this.lArmLower.addChild(new Bone({ profile: v2(1), length: this.sizes.hand, position: v3(0, -this.sizes.hand, 0) }));
-    this.rHand = this.rArmLower.addChild(new Bone({ profile: v2(1), length: this.sizes.hand, position: v3(0, -this.sizes.hand, 0) }));
-    this.lLegUpper = this.hips.addChild(new Bone({ profile: v2(1), length: this.sizes.legUpper, position: v3(0, -this.sizes.legUpper, 0) }));
-    this.rLegUpper = this.hips.addChild(new Bone({ profile: v2(1), length: this.sizes.legUpper, position: v3(this.sizes.hipsWidth - 1, -this.sizes.legUpper, 0) }));
-    this.lLegLower = this.lLegUpper.addChild(new Bone({ speed: 0.03, profile: v2(1), length: this.sizes.legLower, position: v3(0, -this.sizes.legLower, 0) }));
-    this.rLegLower = this.rLegUpper.addChild(new Bone({ speed: 0.03, profile: v2(1), length: this.sizes.legLower, position: v3(0, -this.sizes.legLower, 0) }));
-    this.lFoot = this.lLegLower.addChild(new Bone({ profile: v2(1, 3), length: this.sizes.foot, position: v3(-0, -this.sizes.foot, -0) }));
-    this.rFoot = this.rLegLower.addChild(new Bone({ profile: v2(1, 3), length: this.sizes.foot, position: v3(-0, -this.sizes.foot, -0) }));
+    Object.entries(this.bones).forEach(([key, b]) => {
+      if (this.parentage[key]) {
+        this.bones[this.parentage[key]].addChild(b);
+      } else {
+        this.addChild(b);
+      }
+    });
+    this.animator = new Animator({ bones: this.bones });
   }
-  setLimbRotation(key, time, rotation = v3(0)) {
-    const bone = this[key];
-    if (bone) {
-      bone.speed = time;
-      bone.setRotation(rotation);
-    }
+  tick(obj) {
+    super.tick(obj);
+    this.animator.tick(obj.interval);
   }
-  setPose(p = "") {
-    const a = this.animation[p];
-    if (a) {
-      Object.entries(a).forEach(([key, [time, val]]) => {
-        this.setLimbRotation(key, time, v3(val));
-      });
-    }
+};
+
+// ts/utils/skeleton_human.ts
+var HumanSkeleton = class extends Skeleton {
+  constructor(attr) {
+    super({
+      bones: [
+        ["hips", new Bone({ profile: v2(attr.hipsWidth, 1), length: attr.hips, position: v3(0, attr.legUpper + attr.legLower + attr.foot, 2) }), ""],
+        ["torso", new Bone({ anchorPoint: v3(attr.shoulderWidth / 2, 0, 0), baseRotation: v3(0, 0, 0), profile: v2(attr.shoulderWidth, 1), length: attr.torso, position: v3(-(attr.shoulderWidth - attr.hipsWidth) / 2, attr.hips, 0) }), "hips"],
+        ["head", new Bone({ profile: v2(4, 3), length: attr.head, anchorPoint: v3(2, 0, 1), position: v3((attr.shoulderWidth - 4) / 2, attr.torso + 1, -1) }), "torso"],
+        ["lArmUpper", new Bone({ profile: v2(1), baseRotation: v3(-0.1, 0, 0.4), length: attr.armUpper, position: v3(0, attr.torso - attr.armUpper, 0) }), "torso"],
+        ["rArmUpper", new Bone({ profile: v2(1), baseRotation: v3(-0.1, 0, -0.4), length: attr.armUpper, position: v3(attr.shoulderWidth - 1, attr.torso - attr.armUpper, 0) }), "torso"],
+        ["lArmLower", new Bone({ baseRotation: v3(0.2, 0, -0.3), profile: v2(1), length: attr.armLower, position: v3(0, -attr.armLower, 0) }), "lArmUpper"],
+        ["rArmLower", new Bone({ baseRotation: v3(0.2, 0, 0.3), profile: v2(1), length: attr.armLower, position: v3(0, -attr.armLower, 0) }), "rArmUpper"],
+        ["lHand", new Bone({ profile: v2(1), length: attr.hand, position: v3(0, -attr.hand, 0) }), "lArmLower"],
+        ["rHand", new Bone({ profile: v2(1), length: attr.hand, position: v3(0, -attr.hand, 0) }), "rArmLower"],
+        ["lLegUpper", new Bone({ profile: v2(1), length: attr.legUpper, position: v3(0, -attr.legUpper, 0) }), "hips"],
+        ["rLegUpper", new Bone({ profile: v2(1), length: attr.legUpper, position: v3(attr.hipsWidth - 1, -attr.legUpper, 0) }), "hips"],
+        ["lLegLower", new Bone({ profile: v2(1), length: attr.legLower, position: v3(0, -attr.legLower, 0) }), "lLegUpper"],
+        ["rLegLower", new Bone({ profile: v2(1), length: attr.legLower, position: v3(0, -attr.legLower, 0) }), "rLegUpper"],
+        ["lFoot", new Bone({ profile: v2(1, 3), length: attr.foot, position: v3(-0, -attr.foot, -0) }), "lLegLower"],
+        ["rFoot", new Bone({ profile: v2(1, 3), length: attr.foot, position: v3(-0, -attr.foot, -0) }), "rLegLower"]
+      ]
+    });
+    this.sizes = attr;
   }
 };
 
@@ -3370,152 +3514,154 @@ var HumanSkeleton = class extends GLGroup {
 var PlayerSkel = class extends HumanSkeleton {
   constructor() {
     super({
-      boneSizes: {
-        "head": 6,
-        "armUpper": 5,
-        "armLower": 9,
-        "hand": 0,
-        "legUpper": 9,
-        "legLower": 5,
-        "foot": 1,
-        "torso": 5.5,
-        "hips": 3,
-        "hipsWidth": 6,
-        "shoulderWidth": 8
-      }
+      "head": 6,
+      "armUpper": 5,
+      "armLower": 9,
+      "hand": 0,
+      "legUpper": 9,
+      "legLower": 5,
+      "foot": 1,
+      "torso": 5.5,
+      "hips": 3,
+      "hipsWidth": 6,
+      "shoulderWidth": 8
     });
-    this.runTime = 0;
-    this.idleTime = 0;
   }
   build() {
     super.build();
-    this.head.addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-10-Head.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(2, -9.5, 2) }));
-    this.torso.addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-8-TorsoUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(this.sizes.shoulderWidth / 2, -3, 1) }));
-    this.hips.addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-9-TorsoLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(3, 0, 1) }));
-    this.lLegUpper.addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-0-lLegUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(3, 9, 1) }));
-    this.rLegUpper.addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-1-rLegUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(-2, 9, 1) }));
-    this.lLegLower.addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-2-lLegLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(3, 14.4, 1.5) }));
-    this.rLegLower.addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-3-rLegLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(-2, 14.4, 1.5) }));
-    this.lArmUpper.addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-4-lArmUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, Math.PI / 2), position: v3(8.5, 7, 1) }));
-    this.rArmUpper.addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-5-rArmUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, -Math.PI / 2), position: v3(-7.5, 7, 1) }));
-    this.lArmLower.addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-6-lArmLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, Math.PI / 2), position: v3(8.5, 16, 1) }));
-    this.rArmLower.addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-7-rArmLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, -Math.PI / 2), position: v3(-7.5, 16, 1) }));
-    this.animation = {
-      running1: {
-        torso: [0.01, [-0.3, -0.3, 0]],
-        hips: [0.01, [-0.3, 0, 0]],
-        head: [5e-3, [0.2, 0.2, 0]],
-        lArmUpper: [0.015, [-0.8, 0, 0.1]],
-        lArmLower: [0.01, [0.3, 0, 0]],
-        lHand: [0.015, []],
-        rArmUpper: [0.015, [1.2, 0, -0.1]],
-        rArmLower: [0.01, [1.2, 0, 1.2]],
-        rHand: [0.015, []],
-        lLegUpper: [0.01, [1.2, 0, 0]],
-        lLegLower: [0.03, [-0.3, 0, 0]],
-        lFoot: [0.015, [-0.2, 0, 0]],
-        rLegUpper: [0.01, []],
-        rLegLower: [0.03, [-2, 0, 0]],
-        rFoot: [0.015, [-0.2, 0, 0]]
-      },
-      running2: {
-        torso: [0.01, [-0.3, 0.3, 0]],
-        hips: [0.01, [-0.3, 0, 0]],
-        head: [5e-3, [0.2, -0.2, 0]],
-        lArmUpper: [0.015, [1.2, 0, 0.1]],
-        lArmLower: [0.01, [1.2, 0, -1.2]],
-        lHand: [0.015, []],
-        rArmUpper: [0.015, [-0.8, 0, -0.1]],
-        rArmLower: [0.01, [0.3, 0, 0]],
-        rHand: [0.015, []],
-        lLegUpper: [0.01, []],
-        lLegLower: [0.015, [-2, 0, 0]],
-        lFoot: [0.015, [-0.2, 0, 0]],
-        rLegUpper: [0.01, [1.2, 0, 0]],
-        rLegLower: [0.015, [-0.3, 0, 0]],
-        rFoot: [0.015, [-0.2, 0, 0]]
-      },
-      T: {
-        torso: [0.02, []],
-        hips: [0.02, []],
-        head: [0.02, []],
-        lArmUpper: [0.02, [0, 0, Math.PI / 2]],
-        lArmLower: [0.02, []],
-        lHand: [0.02, []],
-        rArmUpper: [0.02, [0, 0, -Math.PI / 2]],
-        rArmLower: [0.02, []],
-        rHand: [0.02, []],
-        lLegUpper: [0.02, []],
-        lLegLower: [0.02, []],
-        lFoot: [0.02, []],
-        rLegUpper: [0.02, []],
-        rLegLower: [0.02, []],
-        rFoot: [0.02, []]
-      },
-      idle: {
-        torso: [0.02, []],
-        hips: [0.02, []],
-        head: [5e-3, [0, 0.5]],
-        lArmUpper: [0.03, []],
-        lArmLower: [0.03, []],
-        lHand: [0.03, []],
-        rArmUpper: [0.03, []],
-        rArmLower: [0.03, []],
-        rHand: [0.03, []],
-        lLegUpper: [0.04, []],
-        lLegLower: [0.05, []],
-        lFoot: [0.03, []],
-        rLegUpper: [0.03, []],
-        rLegLower: [0.03, []],
-        rFoot: [0.03, []]
-      },
-      idle2: {
-        torso: [0.02, []],
-        hips: [0.02, []],
-        head: [5e-3, [0, -0.5]],
-        lArmUpper: [0.03, []],
-        lArmLower: [0.03, []],
-        lHand: [0.03, []],
-        rArmUpper: [0.03, []],
-        rArmLower: [0.03, []],
-        rHand: [0.03, []],
-        lLegUpper: [0.04, []],
-        lLegLower: [0.05, []],
-        lFoot: [0.03, []],
-        rLegUpper: [0.03, []],
-        rLegLower: [0.03, []],
-        rFoot: [0.03, []]
-      },
-      jump: {
-        torso: [0.03, []],
-        hips: [0.03, [-0.1, -0.1, 0.15]],
-        head: [0.03, [0.3, 0, 0]],
-        lArmUpper: [0.03, [-0.2, 0, 0.1]],
-        lArmLower: [0.03, [0, 0, 0.2]],
-        lHand: [0.03, []],
-        rArmUpper: [0.03, [-0.1, 0, -0.3]],
-        rArmLower: [0.03, [0, 0, 0.2]],
-        rHand: [0.03, []],
-        lLegUpper: [0.02, [2, 0, 0]],
-        lLegLower: [0.08, [-2.4, 0, 0]],
-        lFoot: [0.03, []],
-        rLegUpper: [0.02, [-0.2, 0, 0]],
-        rLegLower: [0.03, [-0.3, 0, 0]],
-        rFoot: [0.03, [-0.6, 0, 0]]
-      }
-    };
+    this.bones["head"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-10-Head.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(2, -9.5, 2) }));
+    this.bones["torso"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-8-TorsoUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(this.sizes.shoulderWidth / 2, -3, 1) }));
+    this.bones["hips"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-9-TorsoLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(3, 0, 1) }));
+    this.bones["lLegUpper"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-0-lLegUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(3, 9, 1) }));
+    this.bones["rLegUpper"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-1-rLegUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(-2, 9, 1) }));
+    this.bones["lLegLower"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-2-lLegLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(3, 14.4, 1.5) }));
+    this.bones["rLegLower"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-3-rLegLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(-2, 14.4, 1.5) }));
+    this.bones["lArmUpper"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-4-lArmUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, Math.PI / 2), position: v3(8.5, 7, 1) }));
+    this.bones["rArmUpper"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-5-rArmUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, -Math.PI / 2), position: v3(-7.5, 7, 1) }));
+    this.bones["lArmLower"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-6-lArmLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, Math.PI / 2), position: v3(8.5, 16, 1) }));
+    this.bones["rArmLower"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-7-rArmLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, -Math.PI / 2), position: v3(-7.5, 16, 1) }));
+    this.animator.add("running", 2e3, {
+      torso: [
+        [0, -0.3, -0.3, 0],
+        [0.5, -0.3, 0.3, 0],
+        [1, -0.3, -0.3, 0]
+      ],
+      hips: [
+        [0, -0.3, 0, 0],
+        [0.5, -0.3, 0, 0],
+        [1, -0.3, 0, 0]
+      ],
+      head: [
+        [0, 0.2, 0.2, 0],
+        [0.5, 0.2, -0.2, 0],
+        [1, 0.2, 0.2, 0]
+      ],
+      lArmUpper: [
+        [0, -0.8, 0, 0.1],
+        [0.5, 1.2, 0, 0.1],
+        [1, -0.8, 0, 0.1]
+      ],
+      lArmLower: [
+        [0, 0.3, 0, 0],
+        [0.5, 1.2, 0, -1.2],
+        [1, 0.3, 0, 0]
+      ],
+      lHand: [
+        [0],
+        [0.5],
+        [1]
+      ],
+      rArmUpper: [
+        [0, 1.2, 0, -0.1],
+        [0.5, -0.8, 0, -0.1],
+        [1, 1.2, 0, -0.1]
+      ],
+      rArmLower: [
+        [0, 1.2, 0, 1.2],
+        [0.5, 0.3, 0, 0],
+        [1, 1.2, 0, 1.2]
+      ],
+      rHand: [
+        [0],
+        [0.5],
+        [1]
+      ],
+      lLegUpper: [
+        [0, 1.2, 0, 0],
+        [0.5],
+        [1, 1.2, 0, 0]
+      ],
+      lLegLower: [
+        [0, -0.3, 0, 0],
+        [0.5, -2, 0, 0],
+        [1, -0.3, 0, 0]
+      ],
+      lFoot: [
+        [0, -0.2, 0, 0],
+        [0.5, -0.2, 0, 0],
+        [1, -0.2, 0, 0]
+      ],
+      rLegUpper: [
+        [0],
+        [0.5, 1.2, 0, 0],
+        [1]
+      ],
+      rLegLower: [
+        [0, -2, 0, 0],
+        [0.5, -0.3, 0, 0],
+        [1, -2, 0, 0]
+      ],
+      rFoot: [
+        [0, -0.2, 0, 0],
+        [0.5, -0.2, 0, 0],
+        [1, -0.2, 0, 0]
+      ]
+    }, { loop: true });
+    this.animator.add("jumping", 500, {
+      torso: [[0], [1]],
+      hips: [[0], [1, -0.1, -0.1, 0.15]],
+      head: [[0], [1, 0.3, 0, 0]],
+      lArmUpper: [[0], [1, -0.2, 0, 0.1]],
+      lArmLower: [[0], [1, 0, 0, 0.2]],
+      lHand: [[0], [1]],
+      rArmUpper: [[0], [1, -0.1, 0, -0.3]],
+      rArmLower: [[0], [1, 0, 0, 0.2]],
+      rHand: [[0], [1]],
+      lLegUpper: [[0], [1, 2, 0, 0]],
+      lLegLower: [[0], [1, -2.4, 0, 0]],
+      lFoot: [[0], [1]],
+      rLegUpper: [[0], [1, -0.2, 0, 0]],
+      rLegLower: [[0], [1, -0.3, 0, 0]],
+      rFoot: [[0], [1, -0.6, 0, 0]]
+    }, { once: true });
+    this.animator.add("idle", 15e3, {
+      torso: [[0]],
+      hips: [[0]],
+      head: [[0, 0, 0.5], [0.4, 0, 0.5], [0.5, 0, -0.5], [0.9, 0, -0.5], [1, 0, 0.5]],
+      lArmUpper: [[0]],
+      lArmLower: [[0]],
+      lHand: [[0]],
+      rArmUpper: [[0]],
+      rArmLower: [[0]],
+      rHand: [[0]],
+      lLegUpper: [[0]],
+      lLegLower: [[0]],
+      lFoot: [[0]],
+      rLegUpper: [[0]],
+      rLegLower: [[0]],
+      rFoot: [[0]]
+    }, { loop: true, dynamic: true });
+    this.animator.play("running");
   }
   tick(obj) {
     super.tick(obj);
-    this.runTime = (this.runTime + obj.interval) % 1400;
-    this.idleTime = (this.idleTime + obj.interval) % 12e3;
     if (!this.parent.stat.ground) {
-      this.setPose("jump");
+      this.animator.play("jumping");
     } else {
       if (this.parent.stat.running) {
-        this.setPose(this.runTime < 700 ? "running1" : "running2");
+        this.animator.play("running");
       } else {
-        this.setPose(this.idleTime < 6e3 ? "idle" : "idle2");
+        this.animator.play("idle");
       }
     }
   }
@@ -4250,76 +4396,50 @@ var Driver = class extends Character {
 var npcSkeleton = class extends HumanSkeleton {
   constructor() {
     super({
-      boneSizes: {
-        "head": 6,
-        "armUpper": 5,
-        "armLower": 9,
-        "hand": 0,
-        "legUpper": 9,
-        "legLower": 5,
-        "foot": 1,
-        "torso": 5.5,
-        "hips": 3,
-        "hipsWidth": 6,
-        "shoulderWidth": 8
-      }
+      "head": 6,
+      "armUpper": 5,
+      "armLower": 9,
+      "hand": 0,
+      "legUpper": 9,
+      "legLower": 5,
+      "foot": 1,
+      "torso": 5.5,
+      "hips": 3,
+      "hipsWidth": 6,
+      "shoulderWidth": 8
     });
-    this.idleTime = 0;
   }
   build() {
     super.build();
-    this.head.addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-10-Head.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(2, -9.5, 2) }));
-    this.torso.addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-8-TorsoUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(this.sizes.shoulderWidth / 2, -3, 1) }));
-    this.hips.addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-9-TorsoLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(3, 0, 1) }));
-    this.lLegUpper.addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-0-lLegUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(3, 9, 1) }));
-    this.rLegUpper.addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-1-rLegUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(-2, 9, 1) }));
-    this.lLegLower.addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-2-lLegLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(3, 14.4, 1.5) }));
-    this.rLegLower.addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-3-rLegLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(-2, 14.4, 1.5) }));
-    this.lArmUpper.addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-4-lArmUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, Math.PI / 2), position: v3(8.5, 7, 1) }));
-    this.rArmUpper.addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-5-rArmUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, -Math.PI / 2), position: v3(-7.5, 7, 1) }));
-    this.lArmLower.addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-6-lArmLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, Math.PI / 2), position: v3(8.5, 16, 1) }));
-    this.rArmLower.addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-7-rArmLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, -Math.PI / 2), position: v3(-7.5, 16, 1) }));
-    this.animation = {
-      idle: {
-        torso: [0.02, []],
-        hips: [0.02, []],
-        head: [5e-3, [0, 0.5]],
-        lArmUpper: [0.03, []],
-        lArmLower: [0.03, []],
-        lHand: [0.03, []],
-        rArmUpper: [0.03, []],
-        rArmLower: [0.03, []],
-        rHand: [0.03, []],
-        lLegUpper: [0.04, []],
-        lLegLower: [0.05, []],
-        lFoot: [0.03, []],
-        rLegUpper: [0.03, []],
-        rLegLower: [0.03, []],
-        rFoot: [0.03, []]
-      },
-      idle2: {
-        torso: [0.02, []],
-        hips: [0.02, []],
-        head: [5e-3, [0, -0.5]],
-        lArmUpper: [0.03, []],
-        lArmLower: [0.03, []],
-        lHand: [0.03, []],
-        rArmUpper: [0.03, []],
-        rArmLower: [0.03, []],
-        rHand: [0.03, []],
-        lLegUpper: [0.04, []],
-        lLegLower: [0.05, []],
-        lFoot: [0.03, []],
-        rLegUpper: [0.03, []],
-        rLegLower: [0.03, []],
-        rFoot: [0.03, []]
-      }
-    };
-  }
-  tick(obj) {
-    super.tick(obj);
-    this.idleTime = (this.idleTime + obj.interval) % 12e3;
-    this.setPose(this.idleTime < 6e3 ? "idle" : "idle2");
+    this.bones["head"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-10-Head.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(2, -9.5, 2) }));
+    this.bones["torso"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-8-TorsoUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(this.sizes.shoulderWidth / 2, -3, 1) }));
+    this.bones["hips"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-9-TorsoLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(3, 0, 1) }));
+    this.bones["lLegUpper"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-0-lLegUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(3, 9, 1) }));
+    this.bones["rLegUpper"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-1-rLegUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(-2, 9, 1) }));
+    this.bones["lLegLower"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-2-lLegLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(3, 14.4, 1.5) }));
+    this.bones["rLegLower"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-3-rLegLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(-2, 14.4, 1.5) }));
+    this.bones["lArmUpper"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-4-lArmUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, Math.PI / 2), position: v3(8.5, 7, 1) }));
+    this.bones["rArmUpper"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-5-rArmUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, -Math.PI / 2), position: v3(-7.5, 7, 1) }));
+    this.bones["lArmLower"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-6-lArmLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, Math.PI / 2), position: v3(8.5, 16, 1) }));
+    this.bones["rArmLower"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-7-rArmLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, -Math.PI / 2), position: v3(-7.5, 16, 1) }));
+    this.animator.add("idle", 15e3, {
+      torso: [[0]],
+      hips: [[0]],
+      head: [[0, 0, 0.5], [0.4, 0, 0.5], [0.5, 0, -0.5], [0.9, 0, -0.5], [1, 0, 0.5]],
+      lArmUpper: [[0]],
+      lArmLower: [[0]],
+      lHand: [[0]],
+      rArmUpper: [[0]],
+      rArmLower: [[0]],
+      rHand: [[0]],
+      lLegUpper: [[0]],
+      lLegLower: [[0]],
+      lFoot: [[0]],
+      rLegUpper: [[0]],
+      rLegLower: [[0]],
+      rFoot: [[0]]
+    }, { loop: true, dynamic: true });
+    this.animator.play("idle");
   }
 };
 
@@ -4342,101 +4462,6 @@ var NPC = class extends Character {
     GlElement.registerControllers(this);
     this.skeleton = new npcSkeleton();
     this.addChild(this.skeleton);
-  }
-};
-
-// ts/modes/side/sky.ts
-var Sky = class extends GLGroup {
-  constructor() {
-    super(...arguments);
-    this.clouds = [];
-    this.bigClouds = [];
-  }
-  // constructor(attr: GlElementAttributes ) {
-  //     super(attr);
-  // }
-  createBigCloud(p = v3(0), s = v3(2e3, 0, 2e3)) {
-    const sc = 200 + 100 * Math.random();
-    const c = new GLobj({ storage: this.mode.storage, position: p, rotation: v3(0, Math.random() * Math.PI * 2, 0), size: v3(sc, sc, sc), url: "cloud2.obj" });
-    this.bigClouds.push(c);
-    c.opacity = 0.5;
-    this.addChild(c);
-  }
-  createCloud(p = v3(0), s = v3(500, 0, 500)) {
-    const sc = 50 + 50 * Math.random();
-    const c = new GLobj({ storage: this.mode.storage, position: p, rotation: v3(0, Math.random() * Math.PI * 2, 0), size: v3(sc, sc, sc), url: "cloud2.obj" });
-    this.addChild(c);
-    c.opacity = 0.5;
-    this.clouds.push(c);
-  }
-  spawnBigCloudLayerZ(z = 0) {
-    for (let x = 0; x < Math.random() * 2; x++) {
-      this.createBigCloud(v3(
-        Math.random() * 2e4 - 1e4,
-        500 + Math.random() * 1e3,
-        2e3 + z * 2e3 - 1e4
-      ));
-    }
-  }
-  spawnBigCloudLayerX(x = 0) {
-    for (let z = 0; z < Math.random() * 2; z++) {
-      this.createBigCloud(v3(
-        x * 2e3 - 1e4,
-        500 + Math.random() * 1e3,
-        Math.random() * 2e4 - 1e4
-      ));
-    }
-  }
-  spawnCloudLayerZ(z = 0) {
-    for (let x = 0; x < Math.random() * 3; x++) {
-      this.createCloud(v3(
-        Math.random() * 2e4 - 1e4,
-        1e3 + Math.random() * 200,
-        z * 500 - 1e4
-      ));
-    }
-  }
-  spawnCloudLayerX(x = 0) {
-    for (let z = 0; z < Math.random() * 3; z++) {
-      this.createCloud(v3(
-        x * 500 - 1e4,
-        1e3 + Math.random() * 200,
-        Math.random() * 2e4 - 1e4
-      ));
-    }
-  }
-  build() {
-    for (let x = 0; x < 40; x++) {
-      this.spawnCloudLayerX(x);
-    }
-    for (let x = 0; x < 40; x++) {
-      this.spawnBigCloudLayerX(x);
-    }
-  }
-  tick(obj) {
-    super.tick(obj);
-    this.clouds.forEach((c) => {
-      c.position.x += obj.interval / 60;
-    });
-    this.bigClouds.forEach((c) => {
-      c.position.x += obj.interval / 90;
-    });
-    const Xend = this.clouds.filter((c) => c.position.x > 1e4);
-    if (Xend.length > 0) {
-      Xend.forEach((c) => {
-        this.clouds.splice(this.clouds.indexOf(c), 1);
-        this.removeChild(c);
-      });
-      this.spawnCloudLayerX();
-    }
-    const bigXend = this.bigClouds.filter((c) => c.position.x > 3e4);
-    if (bigXend.length > 0) {
-      bigXend.forEach((c) => {
-        this.bigClouds.splice(this.bigClouds.indexOf(c), 1);
-        this.removeChild(c);
-      });
-      this.spawnBigCloudLayerX();
-    }
   }
 };
 
@@ -4549,11 +4574,15 @@ var World = class extends Level {
         }
       }
     }
+    this.addChild(new GLobj({ storage: this.mode.storage, url: "CountrySide-5-House.obj", size: v3(18, 18, 18), position: v3(200, 43, 800), rotation: v3(0, -Math.PI / 2, 0) }));
     this.addChild(new GLobj({ storage: this.mode.storage, url: "CountrySide-4-Vegetation1.obj", size: v3(20, 20, 20), rotation: v3(0, Math.PI, 0), position: v3(-100 - 20, 5, 670) }));
     this.addChild(new GLobj({ storage: this.mode.storage, url: "CountrySide-4-Vegetation1.obj", size: v3(25, 25, 25), rotation: v3(0, 0, 0), position: v3(-20 - 20, 6, 760) }));
     this.addChild(new GLobj({ storage: this.mode.storage, url: "CountrySide-4-Vegetation1.obj", size: v3(25, 25, 25), rotation: v3(0, Math.PI / 2, 0), position: v3(0 - 20, 3, 670) }));
     this.addChild(new GLobj({ storage: this.mode.storage, url: "Plane01.obj", size: v3(30, 30, 30), position: v3(420, 16, 720), rotation: v3(0, Math.PI / 4 + Math.PI / 2, -0.12) }));
-    this.addChild(new GLobj({ storage: this.mode.storage, url: "CountrySide-5-House.obj", size: v3(18, 18, 18), position: v3(200, 43, 800), rotation: v3(0, -Math.PI / 2, 0) }));
+    this.addChild(new GLobj({ storage: this.mode.storage, url: "Medieval Town - Pack 1-0.obj", size: v3(10, 10, 10), position: v3(0, -1, 500) }));
+    this.addChild(new GLobj({ storage: this.mode.storage, url: "Medieval Town - Pack 1-1.obj", size: v3(10, 10, 10), position: v3(0, -1, 500) }));
+    this.addChild(new GLobj({ storage: this.mode.storage, url: "Medieval Town - Pack 1-2.obj", size: v3(10, 10, 10), position: v3(0, -1, 500) }));
+    this.addChild(new GLobj({ storage: this.mode.storage, url: "Nuclear Survival - Pack 6 - m.obj", size: v3(10, 10, 10), position: v3(0, -6, 300), rotation: v3(0, -Math.PI / 2, 0) }));
     [
       [v3(-5e3, -1e3, -2e3), v3(1e4, 1e3, 4e3), Vector3.up, false],
       // floor
@@ -4562,7 +4591,6 @@ var World = class extends Level {
     ].forEach(([position, size, direction, show]) => {
       this.addChild(new Collider({ position, size, direction, showMesh: show === void 0 ? false : show, showArrows: false }));
     });
-    this.sky = this.addChild(new Sky());
   }
 };
 
