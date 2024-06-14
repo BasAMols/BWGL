@@ -133,7 +133,7 @@ export class Animation {
 
             if (this.interval >= this.time) {
                 if (this.bounce) {
-                    this.interval = this.time - (this.interval % this.time);
+                    this.interval = this.time -1;
                     this.direction = -1;
                 } else if (this.loop) {
                     this.interval = this.interval % this.time;
@@ -141,14 +141,14 @@ export class Animation {
                     this.interval = this.time - 1
                 } else {
                     this.active = false;
-                    this.interval = 0;
+                    this.interval = 1;
                     return;
                 }
             }
             
             if (this.interval < 0) {
                 if (this.loop) {
-                    this.interval = Math.abs(this.interval);
+                    this.interval = 0;
                     this.direction = 1;
                 } else {
                     this.active = false;
@@ -157,7 +157,7 @@ export class Animation {
                 }
             }
 
-            this.setBonesToValue(this.interval / this.time);
+            this.setBonesToValue(Util.clamp(this.interval / this.time, 0.0001, 0.9999));
         }
     }
 }

@@ -356,6 +356,7 @@ var Ticker = class {
     this._running = false;
     this.started = false;
     this.pauzedTime = 0;
+    this.intervalKeeper = [];
     this.callbacks = [];
     this.frameN = 0;
     document.addEventListener("visibilitychange", () => {
@@ -380,16 +381,28 @@ var Ticker = class {
   get startTime() {
     return this.sTime;
   }
+  averagedInterval(count, interval) {
+    const average = this.intervalKeeper.slice(0, count).reduce((partialSum, a) => partialSum + a, 0) / count;
+    return Math.abs(interval - average) > 10 ? interval : average;
+  }
   frame(timeStamp) {
     if (this.running) {
       const interval = timeStamp - this.pTime;
+      this.intervalKeeper.push(interval);
+      this.intervalKeeper = this.intervalKeeper.slice(0, 20);
+      while (this.intervalKeeper.length < 20) {
+        this.intervalKeeper.push(this.intervalKeeper[0]);
+      }
       this.pTime = timeStamp;
       this.frameN++;
       const o = {
         interval,
         total: this.eTime,
         frameRate: 1e3 / interval,
-        frame: this.frameN
+        frame: this.frameN,
+        intervalS3: this.averagedInterval(3, interval),
+        intervalS10: this.averagedInterval(5, interval),
+        intervalS20: this.averagedInterval(20, interval)
       };
       this.callbacks.forEach((c) => {
         c(o);
@@ -3504,7 +3517,7 @@ var Animation = class {
       this.interval = this.interval + interval * this.direction;
       if (this.interval >= this.time) {
         if (this.bounce) {
-          this.interval = this.time - this.interval % this.time;
+          this.interval = this.time - 1;
           this.direction = -1;
         } else if (this.loop) {
           this.interval = this.interval % this.time;
@@ -3512,13 +3525,13 @@ var Animation = class {
           this.interval = this.time - 1;
         } else {
           this.active = false;
-          this.interval = 0;
+          this.interval = 1;
           return;
         }
       }
       if (this.interval < 0) {
         if (this.loop) {
-          this.interval = Math.abs(this.interval);
+          this.interval = 0;
           this.direction = 1;
         } else {
           this.active = false;
@@ -3526,7 +3539,7 @@ var Animation = class {
           return;
         }
       }
-      this.setBonesToValue(this.interval / this.time);
+      this.setBonesToValue(Util.clamp(this.interval / this.time, 1e-4, 0.9999));
     }
   }
 };
@@ -3597,7 +3610,7 @@ var Skeleton = class extends GLGroup {
   }
   tick(obj) {
     super.tick(obj);
-    this.animator.tick(obj.interval);
+    this.animator.tick(obj.intervalS10);
   }
 };
 
@@ -3657,7 +3670,7 @@ var PlayerSkel = class extends HumanSkeleton {
     this.bones["rArmUpper"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-5-rArmUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, -Math.PI / 2), position: v3(-7.5, 7, 1) }));
     this.bones["lArmLower"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-6-lArmLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, Math.PI / 2), position: v3(8.5, 16, 1) }));
     this.bones["rArmLower"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-7-rArmLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, -Math.PI / 2), position: v3(-7.5, 16, 1) }));
-    this.animator.add("running", 2e3, {
+    this.animator.add("running", 1e3, {
       torso: [[0, [-0.3, -0.3, 0]], [1, [-0.3, 0.3, 0]]],
       hips: [],
       head: [[0, [0.2, 0.2, 0]], [1, [0.2, -0.2, 0]]],
@@ -4576,6 +4589,101 @@ var NPC = class extends Character {
   }
 };
 
+// ts/modes/side/sky.ts
+var Sky = class extends GLGroup {
+  constructor() {
+    super(...arguments);
+    this.clouds = [];
+    this.bigClouds = [];
+  }
+  // constructor(attr: GlElementAttributes ) {
+  //     super(attr);
+  // }
+  createBigCloud(p = v3(0), s = v3(2e3, 0, 2e3)) {
+    const sc = 200 + 100 * Math.random();
+    const c = new GLobj({ storage: this.mode.storage, position: p, rotation: v3(0, Math.random() * Math.PI * 2, 0), size: v3(sc, sc, sc), url: "cloud2.obj" });
+    this.bigClouds.push(c);
+    c.opacity = 0.5;
+    this.addChild(c);
+  }
+  createCloud(p = v3(0), s = v3(500, 0, 500)) {
+    const sc = 50 + 50 * Math.random();
+    const c = new GLobj({ storage: this.mode.storage, position: p, rotation: v3(0, Math.random() * Math.PI * 2, 0), size: v3(sc, sc, sc), url: "cloud2.obj" });
+    this.addChild(c);
+    c.opacity = 0.5;
+    this.clouds.push(c);
+  }
+  spawnBigCloudLayerZ(z = 0) {
+    for (let x = 0; x < Math.random() * 2; x++) {
+      this.createBigCloud(v3(
+        Math.random() * 2e4 - 1e4,
+        500 + Math.random() * 1e3,
+        2e3 + z * 2e3 - 1e4
+      ));
+    }
+  }
+  spawnBigCloudLayerX(x = 0) {
+    for (let z = 0; z < Math.random() * 2; z++) {
+      this.createBigCloud(v3(
+        x * 2e3 - 1e4,
+        500 + Math.random() * 1e3,
+        Math.random() * 2e4 - 1e4
+      ));
+    }
+  }
+  spawnCloudLayerZ(z = 0) {
+    for (let x = 0; x < Math.random() * 3; x++) {
+      this.createCloud(v3(
+        Math.random() * 2e4 - 1e4,
+        1e3 + Math.random() * 200,
+        z * 500 - 1e4
+      ));
+    }
+  }
+  spawnCloudLayerX(x = 0) {
+    for (let z = 0; z < Math.random() * 3; z++) {
+      this.createCloud(v3(
+        x * 500 - 1e4,
+        1e3 + Math.random() * 200,
+        Math.random() * 2e4 - 1e4
+      ));
+    }
+  }
+  build() {
+    for (let x = 0; x < 40; x++) {
+      this.spawnCloudLayerX(x);
+    }
+    for (let x = 0; x < 40; x++) {
+      this.spawnBigCloudLayerX(x);
+    }
+  }
+  tick(obj) {
+    super.tick(obj);
+    this.clouds.forEach((c) => {
+      c.position.x += obj.interval / 60;
+    });
+    this.bigClouds.forEach((c) => {
+      c.position.x += obj.interval / 90;
+    });
+    const Xend = this.clouds.filter((c) => c.position.x > 1e4);
+    if (Xend.length > 0) {
+      Xend.forEach((c) => {
+        this.clouds.splice(this.clouds.indexOf(c), 1);
+        this.removeChild(c);
+      });
+      this.spawnCloudLayerX();
+    }
+    const bigXend = this.bigClouds.filter((c) => c.position.x > 3e4);
+    if (bigXend.length > 0) {
+      bigXend.forEach((c) => {
+        this.bigClouds.splice(this.bigClouds.indexOf(c), 1);
+        this.removeChild(c);
+      });
+      this.spawnBigCloudLayerX();
+    }
+  }
+};
+
 // ts/modes/side/level.ts
 var World = class extends Level {
   constructor() {
@@ -4702,6 +4810,7 @@ var World = class extends Level {
     ].forEach(([position, size, direction, show]) => {
       this.addChild(new Collider({ position, size, direction, showMesh: show === void 0 ? false : show, showArrows: false }));
     });
+    this.sky = this.addChild(new Sky());
   }
 };
 

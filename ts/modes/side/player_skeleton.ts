@@ -41,7 +41,7 @@ export class PlayerSkel extends HumanSkeleton {
         this.bones['rArmLower'].addChild(new GLobj({ colorIntensity: 0.7, url: 'worker/worker-7-rArmLower.obj', size: v3(6, 6, 6), rotation: v3(0, Math.PI, -Math.PI / 2), position: v3(-7.5, 16, 1) }));
 
 
-        this.animator.add('running', 2000, {
+        this.animator.add('running', 1000, {
             torso: [[0, [-0.3, -0.3, 0]], [1, [-0.3, 0.3, 0]]], 
             hips: [],
             head: [[0, [0.2, 0.2, 0]], [1, [0.2, -0.2, 0]]],

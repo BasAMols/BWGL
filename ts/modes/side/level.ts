@@ -159,7 +159,7 @@ export class World extends Level {
             this.addChild(new Collider({ position, size, direction, showMesh: show === undefined ? false : show, showArrows: false }));
         });
 
-        // this.sky = this.addChild(new Sky()) as Sky;
+        this.sky = this.addChild(new Sky()) as Sky;
 
     }
 

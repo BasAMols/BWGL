@@ -1,9 +1,10 @@
-export type TickerReturnData = { interval: number, total: number, frameRate: number, frame: number; };
+export type TickerReturnData = { interval: number, intervalS3: number, intervalS10: number, intervalS20: number, total: number, frameRate: number, frame: number; };
 export type TickerCallback = (obj: TickerReturnData) => void;
 export class Ticker {
     private _running: boolean = false;
     private started: boolean = false;
     private pauzedTime: number = 0;
+    private intervalKeeper:number[] = []
     private id: number;
     public get running(): boolean {
         return this._running;
@@ -39,10 +40,21 @@ export class Ticker {
     private pTime: number;
     private frameN: number = 0;
 
+    private averagedInterval(count: number, interval: number){
+        const average = this.intervalKeeper.slice(0,count).reduce((partialSum, a) => partialSum + a, 0) / count;
+        return Math.abs(interval - average) > 10?interval: average;
+    }
+
     private frame(timeStamp: number) {
 
         if (this.running) {
             const interval = timeStamp - this.pTime;
+            this.intervalKeeper.push(interval);
+            this.intervalKeeper = this.intervalKeeper.slice(0,20);
+            while(this.intervalKeeper.length<20){
+                this.intervalKeeper.push(this.intervalKeeper[0]);
+            }
+
             this.pTime = timeStamp;
             this.frameN++;
 
@@ -51,6 +63,9 @@ export class Ticker {
                 total: this.eTime,
                 frameRate: 1000 / interval,
                 frame: this.frameN,
+                intervalS3: this.averagedInterval(3, interval),
+                intervalS10: this.averagedInterval(5, interval),
+                intervalS20: this.averagedInterval(20, interval),
             };
 
             this.callbacks.forEach((c) => {

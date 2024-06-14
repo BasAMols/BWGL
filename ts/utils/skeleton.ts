@@ -46,6 +46,6 @@ export abstract class Skeleton extends GLGroup {
 
     public tick(obj: TickerReturnData): void {
         super.tick(obj);
-        this.animator.tick(obj.interval);
+        this.animator.tick(obj.intervalS10);
     }
 }
