@@ -138,111 +138,59 @@ export class PlayerSkel extends HumanSkeleton {
         }, { once: true });
 
         this.animator.add('idle', 15000, {
-            torso: [[0]],
-            hips: [[0]],
-            head: [[0, 0, 0.5], [0.4, 0, 0.5],[0.5, 0, -0.5],[0.9, 0, -0.5], [1, 0, 0.5]],
-            lArmUpper: [[0]],
-            lArmLower: [[0]],
-            lHand: [[0]],
-            rArmUpper: [[0]],
-            rArmLower: [[0]],
-            rHand: [[0]],
-            lLegUpper: [[0]],
-            lLegLower: [[0]],
-            lFoot: [[0]],
-            rLegUpper: [[0]],
-            rLegLower: [[0]],
-            rFoot: [[0]],
+            torso: [],
+            hips: [],
+            head: [[0, 0, 0.5], [0.4, 0, 0.5], [0.5, 0, -0.5], [0.9, 0, -0.5], [1, 0, 0.5]],
+            lArmUpper: [],
+            lArmLower: [],
+            lHand: [],
+            rArmUpper: [],
+            rArmLower: [],
+            rHand: [],
+            lLegUpper: [],
+            lLegLower: [],
+            lFoot: [],
+            rLegUpper: [],
+            rLegLower: [],
+            rFoot: [],
         }, { loop: true, dynamic: true });
 
+        this.animator.add('aim', 1000, {
+            torso: [],
+            hips: [[0], [1, 0, Math.PI / 2, 0]],
+            head: [[0], [1, 0, -1.1, 0]],
+            lArmUpper: [[0], [1, Math.PI / 2, 0, Math.PI / 2 - 0.1]],
+            lArmLower: [[0], [1, 0, 0, -0.2]],
+            lHand: [],
+            rArmUpper: [[0], [1, 1.5, 0, -0.8]],
+            rArmLower: [[0], [1, -0.3, 0, 2.2]],
+            rHand: [],
+            lLegUpper: [[0], [1, 0, 0, 0.15]],
+            lLegLower: [],
+            lFoot: [],
+            rLegUpper: [[0], [1, 0, 0, -0.15]],
+            rLegLower: [],
+            rFoot: [],
+        }, { once: true });
 
-        this.animator.play('running');
-
-        // this.animation = {
-        //     T: {
-        //         torso: [0.02, []],
-        //         hips: [0.02, []],
-        //         head: [0.02, []],
-        //         lArmUpper: [0.02, [0, 0, Math.PI / 2]],
-        //         lArmLower: [0.02, []],
-        //         lHand: [0.02, []],
-        //         rArmUpper: [0.02, [0, 0, -Math.PI / 2]],
-        //         rArmLower: [0.02, []],
-        //         rHand: [0.02, []],
-        //         lLegUpper: [0.02, []],
-        //         lLegLower: [0.02, []],
-        //         lFoot: [0.02, []],
-        //         rLegUpper: [0.02, []],
-        //         rLegLower: [0.02, []],
-        //         rFoot: [0.02, []],
-        //     },
-        //     idle: {
-        //         torso: [0.02, []],
-        //         hips: [0.02, []],
-        //         head: [0.005, [0, 0.5]],
-        //         lArmUpper: [0.03, []],
-        //         lArmLower: [0.03, []],
-        //         lHand: [0.03, []],
-        //         rArmUpper: [0.03, []],
-        //         rArmLower: [0.03, []],
-        //         rHand: [0.03, []],
-        //         lLegUpper: [0.04, []],
-        //         lLegLower: [0.05, []],
-        //         lFoot: [0.03, []],
-        //         rLegUpper: [0.03, []],
-        //         rLegLower: [0.03, []],
-        //         rFoot: [0.03, []],
-        //     },
-        //     idle2: {
-        //         torso: [0.02, []],
-        //         hips: [0.02, []],
-        //         head: [0.005, [0, -0.5]],
-        //         lArmUpper: [0.03, []],
-        //         lArmLower: [0.03, []],
-        //         lHand: [0.03, []],
-        //         rArmUpper: [0.03, []],
-        //         rArmLower: [0.03, []],
-        //         rHand: [0.03, []],
-        //         lLegUpper: [0.04, []],
-        //         lLegLower: [0.05, []],
-        //         lFoot: [0.03, []],
-        //         rLegUpper: [0.03, []],
-        //         rLegLower: [0.03, []],
-        //         rFoot: [0.03, []],
-        //     },
-        //     jump: {
-        //         torso: [0.03, []],
-        //         hips: [0.03, [-0.1, -0.1, 0.15]],
-        //         head: [0.03, [0.3, 0, 0]],
-        //         lArmUpper: [0.03, [-0.2, 0, 0.1]],
-        //         lArmLower: [0.03, [0, 0, 0.2]],
-        //         lHand: [0.03, []],
-        //         rArmUpper: [0.03, [-0.1, 0, -0.3]],
-        //         rArmLower: [0.03, [0, 0, 0.2]],
-        //         rHand: [0.03, []],
-        //         lLegUpper: [0.02, [2, 0, 0]],
-        //         lLegLower: [0.08, [-2.4, 0, 0]],
-        //         lFoot: [0.03, []],
-        //         rLegUpper: [0.02, [-0.2, 0, 0]],
-        //         rLegLower: [0.03, [-0.3, 0, 0]],
-        //         rFoot: [0.03, [-0.6, 0, 0]],
-        //     }
-        // };
+        this.animator.play('aim');
     }
 
 
     public tick(obj: TickerReturnData): void {
         super.tick(obj);
 
-        // this.setPose(this.runTime < 800 ? 'running1' : 'running2');
         if (!this.parent.stat.ground) {
             this.animator.play('jumping');
         } else {
             if (this.parent.stat.running) {
                 this.animator.play('running');
             } else {
-                this.animator.play('idle');
-                // this.setPose(this.idleTime < 6000 ? 'idle' : 'idle2');
+                if (this.parent.aiming) {
+                    this.animator.play('aim');
+                } else {
+                    this.animator.play('idle');
+                }
             }
         }
     }

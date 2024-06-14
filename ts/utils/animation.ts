@@ -23,7 +23,7 @@ export class Animation {
     public dynamic: boolean;
 
     private bones: aniBones;
-    private data: aniData;
+    private data: aniData = {};
     private time: number;
     
     private _active: boolean = false;
@@ -39,11 +39,27 @@ export class Animation {
 
     public constructor(attr: AnimationAttributes) {
         this.bones = attr.bones || {};
-        this.data = attr.data || {};
         this.time = attr.time || 0;
         this.loop = attr.loop || false;
         this.once = attr.once || false;
         this.dynamic = attr.dynamic || false;
+
+        Object.entries(attr.data).forEach(([key,d])=>{
+            if (d.length === 0){
+                d = [[0],[1]]
+            }
+
+            if (d[0][0] !== 0){
+                d.unshift([0,...d[0].slice(1)] as aniBoneData);
+            }
+
+            if (d[d.length-1][0] !== 1){
+                d.push([1,...d[d.length-1].slice(1)] as aniBoneData);
+            }
+
+            this.data[key] = d;
+        });
+        
     }
 
     private setBoneTransform(key: string, transform: aniBoneTransform) {

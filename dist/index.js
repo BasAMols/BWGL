@@ -2507,6 +2507,9 @@ var GLGroup = class extends GlElement {
     super(...arguments);
     this.type = "group";
   }
+  get ani() {
+    return this.skeleton.animator;
+  }
 };
 
 // ts/gl/objStorage.ts
@@ -2644,6 +2647,9 @@ var Character = class extends GlElement {
     super(attr);
     this.type = "group";
     this.stat = {};
+  }
+  get ani() {
+    return this.skeleton.animator;
   }
 };
 
@@ -3336,13 +3342,25 @@ var Bone = class extends GLGroup {
 var Animation = class {
   constructor(attr) {
     this.interval = 0;
+    this.data = {};
     this._active = false;
     this.bones = attr.bones || {};
-    this.data = attr.data || {};
     this.time = attr.time || 0;
     this.loop = attr.loop || false;
     this.once = attr.once || false;
     this.dynamic = attr.dynamic || false;
+    Object.entries(attr.data).forEach(([key, d]) => {
+      if (d.length === 0) {
+        d = [[0], [1]];
+      }
+      if (d[0][0] !== 0) {
+        d.unshift([0, ...d[0].slice(1)]);
+      }
+      if (d[d.length - 1][0] !== 1) {
+        d.push([1, ...d[d.length - 1].slice(1)]);
+      }
+      this.data[key] = d;
+    });
   }
   get active() {
     return this._active;
@@ -3635,23 +3653,40 @@ var PlayerSkel = class extends HumanSkeleton {
       rFoot: [[0], [1, -0.6, 0, 0]]
     }, { once: true });
     this.animator.add("idle", 15e3, {
-      torso: [[0]],
-      hips: [[0]],
+      torso: [],
+      hips: [],
       head: [[0, 0, 0.5], [0.4, 0, 0.5], [0.5, 0, -0.5], [0.9, 0, -0.5], [1, 0, 0.5]],
-      lArmUpper: [[0]],
-      lArmLower: [[0]],
-      lHand: [[0]],
-      rArmUpper: [[0]],
-      rArmLower: [[0]],
-      rHand: [[0]],
-      lLegUpper: [[0]],
-      lLegLower: [[0]],
-      lFoot: [[0]],
-      rLegUpper: [[0]],
-      rLegLower: [[0]],
-      rFoot: [[0]]
+      lArmUpper: [],
+      lArmLower: [],
+      lHand: [],
+      rArmUpper: [],
+      rArmLower: [],
+      rHand: [],
+      lLegUpper: [],
+      lLegLower: [],
+      lFoot: [],
+      rLegUpper: [],
+      rLegLower: [],
+      rFoot: []
     }, { loop: true, dynamic: true });
-    this.animator.play("running");
+    this.animator.add("aim", 1e3, {
+      torso: [],
+      hips: [[0], [1, 0, Math.PI / 2, 0]],
+      head: [[0], [1, 0, -1.1, 0]],
+      lArmUpper: [[0], [1, Math.PI / 2, 0, Math.PI / 2 - 0.1]],
+      lArmLower: [[0], [1, 0, 0, -0.2]],
+      lHand: [],
+      rArmUpper: [[0], [1, 1.5, 0, -0.8]],
+      rArmLower: [[0], [1, -0.3, 0, 2.2]],
+      rHand: [],
+      lLegUpper: [[0], [1, 0, 0, 0.15]],
+      lLegLower: [],
+      lFoot: [],
+      rLegUpper: [[0], [1, 0, 0, -0.15]],
+      rLegLower: [],
+      rFoot: []
+    }, { once: true });
+    this.animator.play("aim");
   }
   tick(obj) {
     super.tick(obj);
@@ -3661,7 +3696,11 @@ var PlayerSkel = class extends HumanSkeleton {
       if (this.parent.stat.running) {
         this.animator.play("running");
       } else {
-        this.animator.play("idle");
+        if (this.parent.aiming) {
+          this.animator.play("aim");
+        } else {
+          this.animator.play("idle");
+        }
       }
     }
   }
@@ -3784,6 +3823,9 @@ var MovementController = class extends GlController {
       this.newPosition = this.parent.absolutePosition.add(v3(0, sc.y, 0));
       this.parent.stat.running = false;
     }
+    if (this.parent.aiming) {
+      this.parent.rotation = this.camera.rotation.multiply(0, 1, 0);
+    }
   }
   colliders(obj) {
     this.parent.stat.ground = false;
@@ -3849,11 +3891,23 @@ var FreeCamera = class extends GlController {
     );
   }
   scroll(e) {
-    this.camera.offset.z = Util.clamp(this.camera.offset.z + e.deltaY * 0.1, 10, 300);
+    if (!this.parent.aiming) {
+      this.camera.offset.z = Util.clamp(this.camera.offset.z + e.deltaY * 0.1, 10, 300);
+    }
   }
   build() {
     super.build();
     this.active = true;
+  }
+  keyUp(e) {
+    if (e.key === "e" || e.key === "E") {
+      this.camera.offset = v3(0, -15, 60);
+    }
+  }
+  keyDown(e) {
+    if (e.key === "e" || e.key === "E") {
+      this.camera.offset = v3(-15, -10, 30);
+    }
   }
   tick(o) {
     super.tick(o);
@@ -3879,7 +3933,18 @@ var Player = class extends Character {
       anchorPoint: size.multiply(0.5, 0, 0.5)
     });
     this.stat = { jumping: false, falling: false, running: false, fallAnimation: false };
+    this.aiming = false;
     this.addControllers([new FreeCamera(this), new MovementController(this)]);
+  }
+  keyDown(e) {
+    if (e.key === "e" || e.key === "E") {
+      this.aiming = true;
+    }
+  }
+  keyUp(e) {
+    if (e.key === "e" || e.key === "E") {
+      this.aiming = false;
+    }
   }
   build() {
     GlElement.registerControllers(this);

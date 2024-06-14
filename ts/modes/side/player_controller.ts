@@ -1,10 +1,10 @@
 import { GlController } from '../../gl/controller';
-import { Character } from '../../gl/character';
 import { TickerReturnData } from '../../utils/ticker';
 import { Util } from '../../utils/utils';
 import { Vector3, v3 } from '../../utils/vector3';
 import { Collisions } from '../../utils/collisions';
 import { v2 } from '../../utils/vector2';
+import { Player } from './player_actor';
 
 export class MovementController extends GlController {
     private intr: Record<string, number> = { fall: 0, jump: 0, landDelay: 0 };
@@ -12,7 +12,7 @@ export class MovementController extends GlController {
     private cnst = { runTime: 250, runSlowDownFactor: 0.7, runSpeed: 0.5, minJumpTime: 200, jumpTime: 300, jumpSpeed: 0.6 } as const;
     private velocity: Vector3 = Vector3.f(0);
     private newPosition: Vector3;
-    public parent: Character;
+    public parent: Player;
 
     public setMovementVelocity(interval: number) {
         const setter = (key: string, cond: boolean, interval: number) => {
@@ -93,8 +93,12 @@ export class MovementController extends GlController {
         } else {
             this.newPosition = this.parent.absolutePosition.add(v3(0, sc.y, 0));
             this.parent.stat.running = false;
-            
         }
+
+        if (this.parent.aiming){
+            this.parent.rotation = this.camera.rotation.multiply(0, 1, 0);
+            
+        } 
     }
 
     public colliders(obj: TickerReturnData) {

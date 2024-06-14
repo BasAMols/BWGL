@@ -11,6 +11,7 @@ export class Player extends Character {
     public stat: Record<string, boolean> = { jumping: false, falling: false, running: false, fallAnimation: false };
     public mesh: GLCuboid;
     public skeleton: HumanSkeleton;
+    public aiming: boolean = false;
 
     constructor({
         position = Vector3.f(0),
@@ -28,6 +29,18 @@ export class Player extends Character {
             anchorPoint: size.multiply(0.5, 0, 0.5),
         });
         this.addControllers([new FreeCamera(this), new MovementController(this)]);
+    }
+
+    keyDown(e: KeyboardEvent): void {
+        if (e.key === 'e' || e.key === 'E'){
+            this.aiming = true;
+        }
+    }
+
+    keyUp(e: KeyboardEvent): void {
+        if (e.key === 'e' || e.key === 'E'){
+            this.aiming = false;
+        }
     }
 
     build() {
