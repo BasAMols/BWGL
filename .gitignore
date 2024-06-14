@@ -3,3 +3,5 @@ node_modules
 /dist/favicon
 /dist/index.js
 /dist
+dist/index.js
+dist/index.js.map
