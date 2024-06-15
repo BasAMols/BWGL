@@ -43,7 +43,7 @@ export class PlayerSkel extends HumanSkeleton {
 
         this.animator.add('running', 1000, {
             torso: [[0, [-0.3, -0.3, 0]], [1, [-0.3, 0.3, 0]]], 
-            hips: [],
+            hips: [[0,[0,0,0,0,2,0]], [.5,[0,0,0,0,0,0]],[1,[0,0,0,0,2,0]]],
             head: [[0, [0.2, 0.2, 0]], [1, [0.2, -0.2, 0]]],
             lArmUpper: [[0, [-0.8, 0, 0.1]], [1, [1.2, 0, 0.1]]],
             lArmLower: [[0, [0.3, 0, 0]], [1, [1.2, 0, -1.2]]], 
@@ -51,10 +51,10 @@ export class PlayerSkel extends HumanSkeleton {
             rArmUpper: [[0, [1.2, 0, -0.1]], [1, [-0.8, 0, -0.1]]],
             rArmLower: [[0, [1.2, 0, 1.2]], [1, [0.3, 0, 0]]], 
             rHand: [],
-            lLegUpper: [[0, [1.2, 0, 0]], [1]],
+            lLegUpper: [[0, [1.2, 0, 0]], [1, [-.6, 0, 0]]],
             lLegLower: [[0, [-0.3, 0, 0]], [1, [-2, 0, 0]]],
             lFoot: [[0, [-0.2, 0, 0]]],
-            rLegUpper: [[0], [1, [1.2, 0, 0]]],
+            rLegUpper: [[0,[-.6, 0, 0]], [1, [1.2, 0, 0]]],
             rLegLower: [[0, [-2, 0, 0]], [1, [-0.3, 0, 0]]],
             rFoot: [[0, [-0.2, 0, 0]]],
         }, { loop: true, ease: 'easeInOutSine', bounce: true });
