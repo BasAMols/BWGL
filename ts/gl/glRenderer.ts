@@ -68,7 +68,7 @@ export class GLRenderer {
 
     draw() {
         this.clear();
-        
+
         this.gl.useProgram(this.glt.program);
         this.glt.sendUniform('uSampler', 0);
         this.glt.sendUniform('uProjectionMatrix', new Matrix4()
@@ -92,19 +92,20 @@ export class GLRenderer {
     }
 
     drawObject(mesh: GlElement, currentModelview: Matrix4) {
+        if (mesh.visible) {
+            // position
+            currentModelview.translate(mesh.position.multiply(new Vector3(1, 1, -1)));
 
-        // position
-        currentModelview.translate(mesh.position.multiply(new Vector3(1, 1, -1)));
+            // rotate
+            currentModelview.translate(mesh.anchorPoint.multiply(1, 1, -1));
+            currentModelview.rotate(mesh.rotation.multiply(new Vector3(1, -1, -1)));
+            currentModelview.translate(mesh.anchorPoint.multiply(-1, -1, 1));
 
-        // rotate
-        currentModelview.translate(mesh.anchorPoint.multiply(1, 1, -1));
-        currentModelview.rotate(mesh.rotation.multiply(new Vector3(1, -1, -1)));
-        currentModelview.translate(mesh.anchorPoint.multiply(-1, -1, 1));
-
-        if ((mesh as GLRendable).buffer) {
-            this.renderMesh(mesh as GLRendable, currentModelview);
+            if ((mesh as GLRendable).buffer) {
+                this.renderMesh(mesh as GLRendable, currentModelview);
+            }
+            this.drawChildren(mesh, currentModelview);
         }
-        this.drawChildren(mesh, currentModelview);
 
     }
 

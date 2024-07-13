@@ -24,24 +24,36 @@ export abstract class Skeleton extends GLGroup {
 
     constructor(attr: SkeletonAttributes = {}) {
         super(attr);
-        attr.bones.forEach((o)=>{
-            this.bones[o[0]] = o[1]
-            if (o[2]){
-                this.parentage[o[0]] = o[2]
+        attr.bones.forEach((o) => {
+            this.addBone(o);
+        });
+    }
+    addBone(o: [string, Bone, string?]) {
+
+        this.bones[o[0]] = o[1];
+        if (o[2]) {
+            this.parentage[o[0]] = o[2];
+        }
+        if (this.readyState) {
+            if (this.parentage[o[0]]) {
+                this.bones[this.parentage[o[0]]].addChild(o[1]);
+            } else {
+                this.addChild(o[1]);
             }
-        })
+            this.animator.bones = this.bones;
+        }
     }
 
     public build(): void {
         super.build();
-        Object.entries(this.bones).forEach(([key,b])=>{
-            if (this.parentage[key]){
-                this.bones[this.parentage[key]].addChild(b)
+        Object.entries(this.bones).forEach(([key, b]) => {
+            if (this.parentage[key]) {
+                this.bones[this.parentage[key]].addChild(b);
             } else {
-                this.addChild(b)
+                this.addChild(b);
             }
         });
-        this.animator = new Animator({bones: this.bones});
+        this.animator = new Animator({ bones: this.bones });
     }
 
     public tick(obj: TickerReturnData): void {

@@ -26,11 +26,11 @@ export class Animation {
     public dynamic: boolean;
     public defaultEase: EaseKeys;
     public bounce: boolean;
-    public direction: -1|1 = 1;
+    public direction: -1 | 1 = 1;
 
     private bones: aniBones;
     private data: aniData = {};
-    private time: number;
+    public time: number;
 
     private _active: boolean = false;
     public get active(): boolean {
@@ -73,11 +73,12 @@ export class Animation {
     public setTime(t: number) {
         const f = this.interval / this.time;
         this.time = t;
-        this.interval = t*f;
+        this.interval = t * f;
     }
 
-    private setBoneTransform(key: string, transform: aniBoneTransform) {
+    public setBoneTransform(key: string, transform: aniBoneTransform) {
         const bone = this.bones[key];
+
         if (bone) {
             bone.setRotation(v3(transform[0] || 0, transform[1] || 0, transform[2] || 0), this.dynamic);
             bone.setPosition(v3(transform[3] || 0, transform[4] || 0, transform[5] || 0), this.dynamic);
@@ -86,32 +87,41 @@ export class Animation {
 
 
     private setBoneToValue(key: string, value: number) {
-        let before: aniBoneData = this.data[key][0];
-        let after: aniBoneData = this.data[key][this.data[key].length - 1];
+        // console.log(key);
+        
+        if (this.data[key]) {
 
-        this.data[key].forEach((d) => {
-            if (d[0] >= before[0] && d[0] <= value) {
-                before = [d[0], Util.padArray(d[1] || [], 0, 7) as aniBoneTransform];
+            let before: aniBoneData = this.data[key][0];
+            let after: aniBoneData = this.data[key][this.data[key].length - 1];
+
+            this.data[key].forEach((d) => {
+                if (d[0] >= before[0] && d[0] <= value) {
+                    before = [d[0], Util.padArray(d[1] || [], 0, 7) as aniBoneTransform];
+                }
+                if (d[0] <= after[0] && d[0] >= value) {
+                    after = [d[0], Util.padArray(d[1] || [], 0, 7) as aniBoneTransform];
+                }
+            });
+
+            const [[startNumber, start], [endNumber, end, ease]] = [before, after];
+
+            const factor = Ease[ease || this.defaultEase]((value - startNumber) / (endNumber - startNumber));
+            if (key === 'bowS1'){
+                // console.log(key, (value - startNumber));
             }
-            if (d[0] <= after[0] && d[0] >= value) {
-                after = [d[0], Util.padArray(d[1] || [], 0, 7) as aniBoneTransform];
-            }
-        });
 
-        const [[startNumber, start], [endNumber, end, ease]] = [before, after];
+            this.setBoneTransform(
+                key,
+                Util.addArrays(
+                    start || [],
+                    Util.scaleArrays(
+                        Util.subtractArrays(end || [], start || []),
+                        factor
+                    )
+                ) as aniBoneTransform
+            );
+        }
 
-        const factor = Ease[ease || this.defaultEase]((value - startNumber) / (endNumber - startNumber));
-
-        this.setBoneTransform(
-            key,
-            Util.addArrays(
-                start || [],
-                Util.scaleArrays(
-                    Util.subtractArrays(end || [], start || []),
-                    factor
-                )
-            ) as aniBoneTransform
-        );
     }
 
     public setBonesToValue(n: number) {
@@ -121,31 +131,31 @@ export class Animation {
     }
 
     public stop() {
-        Object.values(this.bones).forEach((b) => {
-            b.active = true;
-        });
+        // Object.values(this.bones).forEach((b) => {
+        //     b.active = true;
+        // });
     }
 
     public tick(interval: number) {
         if (this.active) {
-            this.interval = this.interval + (interval*this.direction);
+            this.interval = this.interval + (interval * this.direction);
 
 
             if (this.interval >= this.time) {
                 if (this.bounce) {
-                    this.interval = this.time -1;
+                    this.interval = this.time - 1;
                     this.direction = -1;
                 } else if (this.loop) {
                     this.interval = this.interval % this.time;
                 } else if (this.once) {
-                    this.interval = this.time - 1
+                    this.interval = this.time - 1;
                 } else {
                     this.active = false;
                     this.interval = 1;
                     return;
                 }
             }
-            
+
             if (this.interval < 0) {
                 if (this.loop) {
                     this.interval = 0;
@@ -153,11 +163,11 @@ export class Animation {
                 } else {
                     this.active = false;
                     this.interval = 0;
-                    return
+                    return;
                 }
             }
 
-            this.setBonesToValue(Util.clamp(this.interval / this.time, 0.0001, 0.9999));
+            this.setBonesToValue(Util.clamp(this.interval / this.time, 0.001, 0.999));
         }
     }
 }
@@ -168,13 +178,13 @@ export type AnimatorAttributes = {
 
 export class Animator {
     private animations: Record<string, Animation> = {};
-    private bones: Record<string, Bone> = {};
+    public bones: Record<string, Bone> = {};
 
     public constructor(attr: AnimatorAttributes) {
         this.bones = attr.bones || {};
     }
 
-    public add(key: string, time: number, data: aniData, attr: { loop?: boolean, once?: boolean, dynamic?: boolean; ease?: EaseKeys, bounce?: boolean } = {}) {
+    public add(key: string, time: number, data: aniData, attr: { loop?: boolean, once?: boolean, dynamic?: boolean; ease?: EaseKeys, bounce?: boolean; } = {}) {
 
         this.animations[key] = new Animation({
             bones: this.bones,
@@ -202,6 +212,13 @@ export class Animator {
         Object.entries(this.animations).forEach(([k, a]) => {
             a.active = (k === key);
         });
+    }
+
+    public setToInterval(key: string, n:number) {
+        const an = this.get(key);
+        if (an){
+            an.setBonesToValue(n * an.time);
+        }
     }
 
     public replay(key: string) {

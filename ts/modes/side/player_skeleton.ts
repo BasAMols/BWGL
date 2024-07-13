@@ -11,16 +11,16 @@ export class PlayerSkel extends HumanSkeleton {
     constructor() {
         super({
             'head': 6,
-            'armUpper': 5,
-            'armLower': 9,
+            'armUpper': 6,
+            'armLower': 6,
             'hand': 0,
-            'legUpper': 9,
-            'legLower': 5,
+            'legUpper': 4,
+            'legLower': 7,
             'foot': 1,
-            'torso': 5.5,
+            'torso': 9,
             'hips': 3,
             'hipsWidth': 6,
-            'shoulderWidth': 8,
+            'shoulderWidth': 6,
         });
     }
 
@@ -28,17 +28,22 @@ export class PlayerSkel extends HumanSkeleton {
     public build(): void {
         super.build();
 
-        this.bones['head'].addChild(new GLobj({ colorIntensity: 0.7, url: 'worker/worker-10-Head.obj', size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(2, -9.5, 2) }));
-        this.bones['torso'].addChild(new GLobj({ colorIntensity: 0.7, url: 'worker/worker-8-TorsoUpper.obj', size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(this.sizes.shoulderWidth / 2, -3, 1) }));
-        this.bones['hips'].addChild(new GLobj({ colorIntensity: 0.7, url: 'worker/worker-9-TorsoLower.obj', size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(3, 0, 1) }));
-        this.bones['lLegUpper'].addChild(new GLobj({ colorIntensity: 0.7, url: 'worker/worker-0-lLegUpper.obj', size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(3, 9, 1) }));
-        this.bones['rLegUpper'].addChild(new GLobj({ colorIntensity: 0.7, url: 'worker/worker-1-rLegUpper.obj', size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(-2, 9, 1) }));
-        this.bones['lLegLower'].addChild(new GLobj({ colorIntensity: 0.7, url: 'worker/worker-2-lLegLower.obj', size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(3, 14.4, 1.5) }));
-        this.bones['rLegLower'].addChild(new GLobj({ colorIntensity: 0.7, url: 'worker/worker-3-rLegLower.obj', size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(-2, 14.4, 1.5) }));
-        this.bones['lArmUpper'].addChild(new GLobj({ colorIntensity: 0.7, url: 'worker/worker-4-lArmUpper.obj', size: v3(6, 6, 6), rotation: v3(0, Math.PI, Math.PI / 2), position: v3(8.5, 7, 1) }));
-        this.bones['rArmUpper'].addChild(new GLobj({ colorIntensity: 0.7, url: 'worker/worker-5-rArmUpper.obj', size: v3(6, 6, 6), rotation: v3(0, Math.PI, -Math.PI / 2), position: v3(-7.5, 7, 1) }));
-        this.bones['lArmLower'].addChild(new GLobj({ colorIntensity: 0.7, url: 'worker/worker-6-lArmLower.obj', size: v3(6, 6, 6), rotation: v3(0, Math.PI, Math.PI / 2), position: v3(8.5, 16, 1) }));
-        this.bones['rArmLower'].addChild(new GLobj({ colorIntensity: 0.7, url: 'worker/worker-7-rArmLower.obj', size: v3(6, 6, 6), rotation: v3(0, Math.PI, -Math.PI / 2), position: v3(-7.5, 16, 1) }));
+        this.bones['head'].addChild(new GLobj({ colorIntensity: 1.3, url: 'RPGCharacters_Source-15-Head-7.obj', size: v3(10,10,10), rotation: v3(0, Math.PI, 0), position: v3(2, 3, 2) }));
+        this.bones['torso'].addChild(new GLobj({ colorIntensity: 1.3, url: 'RPGCharacters_Source-3-Spine3-2.obj', size: v3(10,10,10), rotation: v3(0, Math.PI, 0), position: v3(this.sizes.shoulderWidth / 2, 5, 0) }));
+        this.bones['torso'].addChild(new GLobj({ colorIntensity: 1.3, url: 'RPGCharacters_Source-2-Spine2-4.obj', size: v3(10,10,10), rotation: v3(0, Math.PI, 0), position: v3(this.sizes.shoulderWidth / 2-1, 2, 1) }));
+        this.bones['hips'].addChild(new GLobj({ colorIntensity: 1.3, url: 'RPGCharacters_Source-8-Spine1-3.obj', size: v3(10,10,10), rotation: v3(0, Math.PI, 0), position: v3(3, 2, 0) }));
+        this.bones['lLegUpper'].addChild(new GLobj({ colorIntensity: 1.3, url: 'RPGCharacters_Source-14-L_Thigh-3.obj', size: v3(10,10,10), rotation: v3(0, Math.PI, 0), position: v3(1, 3, 0) }));
+        this.bones['rLegUpper'].addChild(new GLobj({ colorIntensity: 1.3, url: 'RPGCharacters_Source-11-R_Thigh-2.obj', size: v3(10,10,10), rotation: v3(0, Math.PI, 0), position: v3(0, 3, 0) }));
+        this.bones['lLegLower'].addChild(new GLobj({ colorIntensity: 1.3, url: 'RPGCharacters_Source-13-L_Calf-3.obj', size: v3(10,10,10), rotation: v3(0, Math.PI, 0), position: v3(1,3,-0.5) }));
+        this.bones['rLegLower'].addChild(new GLobj({ colorIntensity: 1.3, url: 'RPGCharacters_Source-10-R_Calf-3.obj', size: v3(10,10,10), rotation: v3(0, Math.PI, 0), position: v3(0,3,-0.5) }));
+        this.bones['lLegLower'].addChild(new GLobj({ colorIntensity: 1.3, url: 'RPGCharacters_Source-12-L_Foot-3.obj', size: v3(10,10,10), rotation: v3(0, Math.PI, 0), position: v3(1,-0.5,0.5) }));
+        this.bones['rLegLower'].addChild(new GLobj({ colorIntensity: 1.3, url: 'RPGCharacters_Source-9-R_Foot-2.obj', size: v3(10,10,10), rotation: v3(0, Math.PI, 0), position: v3(0,-0.5,0.5) }));
+        this.bones['lArmUpper'].addChild(new GLobj({ colorIntensity: 1.3, url: 'RPGCharacters_Source-7-L_Arm-3.obj', size: v3(10,10,10), rotation: v3(0, Math.PI, Math.PI / 2), position: v3(0, 3, 1) }));
+        this.bones['rArmUpper'].addChild(new GLobj({ colorIntensity: 1.3, url: 'RPGCharacters_Source-1-R_Arm.obj', size: v3(10,10,10), rotation: v3(0, Math.PI, Math.PI / 2), position: v3(1, 3, 1) }));
+        this.bones['lArmLower'].addChild(new GLobj({ colorIntensity: 1.3, url: 'RPGCharacters_Source-6-L_ForeArm-3.obj', size: v3(10,10,10), rotation: v3(0, Math.PI, Math.PI / 2), position: v3(0, 4, 1) }));
+        this.bones['rArmLower'].addChild(new GLobj({ colorIntensity: 1.3, url: 'RPGCharacters_Source-0-R_ForeArm.obj', size: v3(10,10,10), rotation: v3(0, Math.PI, -Math.PI / 2), position: v3(1, 4, 1) }));
+        this.bones['lArmLower'].addChild(new GLobj({ colorIntensity: 1.3, url: 'RPGCharacters_Source-4-L_Hand-3.obj', size: v3(10,10,10), rotation: v3(0, Math.PI, Math.PI / 2), position: v3(-0.5, 0.5, 1) }));
+        this.bones['rArmLower'].addChild(new GLobj({ colorIntensity: 1.3, url: 'RPGCharacters_Source-5-R_Hand-3.obj', size: v3(10,10,10), rotation: v3(0, Math.PI, -Math.PI / 2), position: v3(1.5, 0.5, 1) }));
 
 
         this.animator.add('running', 1000, {

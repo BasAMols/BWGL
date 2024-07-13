@@ -33,6 +33,13 @@ export abstract class GlElement extends Element {
     public size: Vector3 = v3(0);
     public rotation: Vector3 = v3(0);
     private _active: boolean = true;
+    private _visible: boolean = true;
+    public get visible(): boolean {
+        return this._visible;
+    }
+    public set visible(value: boolean) {
+        this._visible = value;
+    }
     public readyState: boolean = false;
     public get active(): boolean {
         return this._active;

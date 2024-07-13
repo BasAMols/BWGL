@@ -6,14 +6,18 @@ import { HumanSkeleton } from '../../utils/skeleton_human';
 import { PlayerSkel } from './player_skeleton';
 import { PlayerController } from './player_controller';
 import { FreeCamera } from './player_camera';
+import { BowActor } from './bow';
 
 export class Player extends Character {
     public stat: Record<string, boolean> = { jumping: false, falling: false, running: false, fallAnimation: false };
     public mesh: GLCuboid;
     public skeleton: HumanSkeleton;
+    public bow: BowActor;
 
     public get aiming() {
-        return (this.controllers[1] as PlayerController).aiming
+        const a = (this.controllers[1] as PlayerController).aiming;
+        this.bow.holding = a;
+        return a
     }
 
     constructor({
@@ -38,5 +42,8 @@ export class Player extends Character {
         GlElement.registerControllers(this);
         this.skeleton = new PlayerSkel();
         this.addChild(this.skeleton);
+
+        this.bow = new BowActor();
+        this.addChild(this.bow)
     }
 }

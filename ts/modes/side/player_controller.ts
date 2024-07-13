@@ -99,10 +99,10 @@ export class PlayerController extends GlController {
     }
 
     public setVelocity(obj: TickerReturnData) {
-        this.setMovementVelocity(obj.interval);
-        this.setJumpVelocity(obj.interval);
+        this.setMovementVelocity(obj.intervalS10);
+        this.setJumpVelocity(obj.intervalS10);
 
-        const sc = this.velocity.scale(obj.interval / 6);
+        const sc = this.velocity.scale(obj.intervalS10 / 6);
         if (sc.xz.magnitude() > 0) {
             const [x, z] = sc.xz.rotate(-this.camera.rotation.y).array;
             this.newPosition = this.parent.absolutePosition.add(v3(x, sc.y, z));

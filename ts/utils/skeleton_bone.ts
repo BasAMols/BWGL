@@ -20,8 +20,8 @@ export class Bone extends GLGroup {
     private profile: Vector2;
     private mesh: boolean;
     public speed: number;
-    private baseRotation: Vector3;
-    private basePosition: Vector3;
+    public baseRotation: Vector3;
+    public basePosition: Vector3;
 
     private target: Vector3;
     constructor(attr: BoneAttributes = {}) {
