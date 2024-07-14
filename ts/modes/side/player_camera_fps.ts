@@ -5,7 +5,6 @@ import { Vector3, v3 } from '../../utils/vector3';
 import { GlController, GlControllerOrder } from '../../gl/controller';
 import { Util } from '../../utils/utils';
 import { Vector2, v2 } from '../../utils/vector2';
-import { Player } from './player_actor';
 
 export class fpsCamera extends GlController {
     public type: GlElementType = 'controller';
@@ -54,6 +53,6 @@ export class fpsCamera extends GlController {
     public tick(o: TickerReturnData) {
         super.tick(o);
         this.camera.target = this.target.position.add(this.target.size.multiply(0.5,0.9,0.5)).multiply(1,-1,1);
-        (this.target as Player).skeleton.head.position.y = -1000
+        // (this.target as Player).skeleton.head.position.y = -1000
     }
 }

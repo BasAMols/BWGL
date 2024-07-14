@@ -79,32 +79,25 @@ export class GLRenderer {
             )
             .translate(this.game.mode.camera.offset.multiply(1, 1, -1))
             .rotate(this.game.mode.camera.rotation)
+            .translate(this.game.mode.camera.target.multiply(-1, -1, 1))
             .mat4
         );
 
-        this.drawChildren(this.game.level, new Matrix4().translate(this.game.mode.camera.target.multiply(-1, 1, 1)));
+        this.drawChildren(this.game.level);
     }
 
-    drawChildren(element: GlElement, currentModelview: Matrix4) {
+    drawChildren(element: GlElement) {
         element.children.forEach((o) => {
-            this.drawObject(o, currentModelview.clone());
+            this.drawObject(o);
         });
     }
 
-    drawObject(mesh: GlElement, currentModelview: Matrix4) {
+    drawObject(mesh: GlElement) {
         if (mesh.visible) {
-            // position
-            currentModelview.translate(mesh.position.multiply(new Vector3(1, 1, -1)));
-
-            // rotate
-            currentModelview.translate(mesh.anchorPoint.multiply(1, 1, -1));
-            currentModelview.rotate(mesh.rotation.multiply(new Vector3(1, -1, -1)));
-            currentModelview.translate(mesh.anchorPoint.multiply(-1, -1, 1));
-
             if ((mesh as GLRendable).buffer) {
-                this.renderMesh(mesh as GLRendable, currentModelview);
+                this.renderMesh(mesh as GLRendable, mesh.worldMatrix);
             }
-            this.drawChildren(mesh, currentModelview);
+            this.drawChildren(mesh);
         }
 
     }
@@ -119,11 +112,7 @@ export class GLRenderer {
         this.glt.sendUniform('uModelViewMatrix', currentModelview.mat4);
         this.glt.sendUniform('uOpacity', mesh.opacity);
         this.glt.sendUniform('uIntensity', mesh.colorIntensity);
-        this.glt.sendUniform('uNormalMatrix', new Matrix4()
-            .invert(currentModelview)
-            .transpose()
-            .mat4
-        );
+        this.glt.sendUniform('uNormalMatrix', currentModelview.invert().transpose().mat4);
 
         this.glt.sendTexture(mesh.texture.texture);
         this.glt.drawElements(mesh.verticesCount);

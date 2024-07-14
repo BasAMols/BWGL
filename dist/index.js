@@ -634,233 +634,6 @@ var Loader = class extends DomElement {
   }
 };
 
-// ts/utils/utils.ts
-var Util = class {
-  static clamp(value, min, max) {
-    return Math.max(Math.min(value, max), min);
-  }
-  static to0(value, tolerance = 0.1) {
-    return Math.abs(value) < tolerance ? 0 : value;
-  }
-  static padArray(ar, b, len) {
-    return ar.concat(Array.from(Array(len).fill(b))).slice(0, len);
-  }
-  static addArrays(ar, br) {
-    return ar.map((a, i) => a + br[i]);
-  }
-  static subtractArrays(ar, br) {
-    return ar.map((a, i) => a - br[i]);
-  }
-  static multiplyArrays(ar, br) {
-    return ar.map((a, i) => a * br[i]);
-  }
-  static scaleArrays(ar, b) {
-    return ar.map((a, i) => a * b);
-  }
-};
-
-// ts/utils/vector3.ts
-function v3(a, b, c) {
-  if (typeof a === "number") {
-    return Vector3.f(a, b, c);
-  } else if (typeof a === "undefined") {
-    return Vector3.f(0);
-  } else {
-    return Vector3.f(...a);
-  }
-}
-var Vector3 = class _Vector3 {
-  get pitch() {
-    return this.x;
-  }
-  set pitch(value) {
-    this.x = value;
-  }
-  get yaw() {
-    return this.y;
-  }
-  set yaw(value) {
-    this.y = value;
-  }
-  get roll() {
-    return this.z;
-  }
-  set roll(value) {
-    this.z = value;
-  }
-  get x() {
-    return this.vec[0];
-  }
-  set x(value) {
-    this.vec[0] = value;
-  }
-  get y() {
-    return this.vec[1];
-  }
-  set y(value) {
-    this.vec[1] = value;
-  }
-  get z() {
-    return this.vec[2];
-  }
-  set z(value) {
-    this.vec[2] = value;
-  }
-  get xy() {
-    return v2(this.x, this.y);
-  }
-  get xz() {
-    return v2(this.x, this.z);
-  }
-  get yx() {
-    return v2(this.y, this.x);
-  }
-  get yz() {
-    return v2(this.y, this.z);
-  }
-  get zx() {
-    return v2(this.z, this.x);
-  }
-  get zy() {
-    return v2(this.z, this.y);
-  }
-  constructor(x = 0, y = 0, z = 0) {
-    this.vec = [x, y, z];
-  }
-  static from2(vector, z = 0) {
-    return new _Vector3(vector.x, vector.y, z);
-  }
-  static f(x = 0, y = x, z = x) {
-    return new _Vector3(x, y, z);
-  }
-  static get forwards() {
-    return new _Vector3(0, 0, 1);
-  }
-  static get backwards() {
-    return new _Vector3(0, 0, -1);
-  }
-  static get up() {
-    return new _Vector3(0, 1, 0);
-  }
-  static get down() {
-    return new _Vector3(0, -1, 0);
-  }
-  static get left() {
-    return new _Vector3(-1, 0, 0);
-  }
-  static get right() {
-    return new _Vector3(1, 0, 0);
-  }
-  static get PI() {
-    return new _Vector3(Math.PI, Math.PI, Math.PI);
-  }
-  static get TAU() {
-    return _Vector3.PI.scale(0.5);
-  }
-  get array() {
-    return [this.x, this.y, this.z];
-  }
-  set array(a) {
-    [this.x, this.y, this.z] = a;
-  }
-  forEach(callbackfn) {
-    this.array.forEach(callbackfn);
-  }
-  get c() {
-    return this.clone();
-  }
-  equals(vector) {
-    return this.x === vector.x && this.y === vector.y && this.z === vector.z;
-  }
-  clone() {
-    return new _Vector3(
-      this.x,
-      this.y,
-      this.z
-    );
-  }
-  add(vector) {
-    return new _Vector3(
-      this.x + vector.x,
-      this.y + vector.y,
-      this.z + vector.z
-    );
-  }
-  multiply(a, b, c) {
-    const [x, y, z] = typeof a === "number" ? [a, b, c] : a.array;
-    return new _Vector3(
-      this.x * x,
-      this.y * y,
-      this.z * z
-    );
-  }
-  subtract(vector) {
-    return new _Vector3(
-      this.x - vector.x,
-      this.y - vector.y,
-      this.z - vector.z
-    );
-  }
-  scale(scalar) {
-    return new _Vector3(
-      this.x * scalar,
-      this.y * scalar,
-      this.z * scalar
-    );
-  }
-  divide(vector) {
-    return new _Vector3(
-      this.x / vector.x,
-      this.y / vector.y,
-      this.z / vector.z
-    );
-  }
-  rotateXY(rad) {
-    const [a, b] = this.xy.rotate(rad).array;
-    return new _Vector3(
-      a,
-      this.y,
-      b
-    );
-  }
-  rotateXZ(rad) {
-    const [a, b] = this.xz.rotate(rad).array;
-    return new _Vector3(
-      a,
-      b,
-      this.z
-    );
-  }
-  rotateYZ(rad) {
-    const [a, b] = this.yz.rotate(rad).array;
-    return new _Vector3(
-      this.x,
-      a,
-      b
-    );
-  }
-  magnitude() {
-    return Math.sqrt(this.magnitudeSqr());
-  }
-  magnitudeSqr() {
-    return this.x * this.x + this.y * this.y + this.z * this.z;
-  }
-  mod(max) {
-    return new _Vector3(
-      this.x % max.x,
-      this.y % max.y,
-      this.z % max.z
-    );
-  }
-  clamp(min, max) {
-    return new _Vector3(
-      Util.clamp(this.x, min.x, max.x),
-      Util.clamp(this.y, min.y, max.y),
-      Util.clamp(this.z, min.z, max.z)
-    );
-  }
-};
-
 // ts/gl/shaders/vertexShader.ts
 var vertexShader_default = "\nattribute vec4 aVertexPosition;\nattribute vec3 aVertexNormal;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uModelViewMatrix;\nuniform mat4 uProjectionMatrix;\nuniform mat4 uNormalMatrix;\n\nvarying highp vec2 vTextureCoord;\nvarying highp vec3 vLighting;\nvarying highp vec3 vCloudLighting;\n\nvoid main(void) {\n  gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;\n  vTextureCoord = aTextureCoord;\n\n  highp vec3 ambientLight = vec3(0.8, 0.8, 1) *0.5;\n  highp vec3 directionalLightColor = vec3(1, 1, 1);\n  highp vec3 directionalVector = normalize(vec3(-0.7, .7, 0.3));\n\n  highp vec4 transformedNormal = uNormalMatrix * vec4(aVertexNormal, 1.0);\n  highp float directional = max(dot(transformedNormal.xyz, directionalVector), 0.0);\n  lowp vec3 vCloudLighting = vec3(1, 1, 1)*0.9 + (vec3(1, 1, 1) * max(dot(transformedNormal.xyz, normalize(vec3(0, -1, 0))), 0.0)*0.0)*0.6;\n\n  if ((uModelViewMatrix * aVertexPosition).y > 600.0) {\n    vLighting = vCloudLighting * 0.9;\n  } else {\n    vLighting = ambientLight + (directionalLightColor * directional);\n  }\n}";
 
@@ -2289,10 +2062,261 @@ function equals(a, b) {
 var mul = multiply;
 var sub = subtract;
 
+// ts/utils/utils.ts
+var Util = class {
+  static clamp(value, min, max) {
+    return Math.max(Math.min(value, max), min);
+  }
+  static to0(value, tolerance = 0.1) {
+    return Math.abs(value) < tolerance ? 0 : value;
+  }
+  static padArray(ar, b, len) {
+    return ar.concat(Array.from(Array(len).fill(b))).slice(0, len);
+  }
+  static addArrays(ar, br) {
+    return ar.map((a, i) => a + br[i]);
+  }
+  static subtractArrays(ar, br) {
+    return ar.map((a, i) => a - br[i]);
+  }
+  static multiplyArrays(ar, br) {
+    return ar.map((a, i) => a * br[i]);
+  }
+  static scaleArrays(ar, b) {
+    return ar.map((a, i) => a * b);
+  }
+};
+
+// ts/utils/vector3.ts
+function v3(a, b, c) {
+  if (typeof a === "number") {
+    return Vector3.f(a, b, c);
+  } else if (typeof a === "undefined") {
+    return Vector3.f(0);
+  } else {
+    return Vector3.f(...a);
+  }
+}
+var Vector3 = class _Vector3 {
+  get pitch() {
+    return this.x;
+  }
+  set pitch(value) {
+    this.x = value;
+  }
+  get yaw() {
+    return this.y;
+  }
+  set yaw(value) {
+    this.y = value;
+  }
+  get roll() {
+    return this.z;
+  }
+  set roll(value) {
+    this.z = value;
+  }
+  get x() {
+    return this.vec[0];
+  }
+  set x(value) {
+    this.vec[0] = value;
+  }
+  get y() {
+    return this.vec[1];
+  }
+  set y(value) {
+    this.vec[1] = value;
+  }
+  get z() {
+    return this.vec[2];
+  }
+  set z(value) {
+    this.vec[2] = value;
+  }
+  get xy() {
+    return v2(this.x, this.y);
+  }
+  get xz() {
+    return v2(this.x, this.z);
+  }
+  get yx() {
+    return v2(this.y, this.x);
+  }
+  get yz() {
+    return v2(this.y, this.z);
+  }
+  get zx() {
+    return v2(this.z, this.x);
+  }
+  get zy() {
+    return v2(this.z, this.y);
+  }
+  constructor(x = 0, y = 0, z = 0) {
+    this.vec = [x, y, z];
+  }
+  static from2(vector, z = 0) {
+    return new _Vector3(vector.x, vector.y, z);
+  }
+  static f(x = 0, y = x, z = x) {
+    return new _Vector3(x, y, z);
+  }
+  static get forwards() {
+    return new _Vector3(0, 0, 1);
+  }
+  static get backwards() {
+    return new _Vector3(0, 0, -1);
+  }
+  static get up() {
+    return new _Vector3(0, 1, 0);
+  }
+  static get down() {
+    return new _Vector3(0, -1, 0);
+  }
+  static get left() {
+    return new _Vector3(-1, 0, 0);
+  }
+  static get right() {
+    return new _Vector3(1, 0, 0);
+  }
+  static get PI() {
+    return new _Vector3(Math.PI, Math.PI, Math.PI);
+  }
+  static get TAU() {
+    return _Vector3.PI.scale(0.5);
+  }
+  get array() {
+    return [this.x, this.y, this.z];
+  }
+  set array(a) {
+    [this.x, this.y, this.z] = a;
+  }
+  forEach(callbackfn) {
+    this.array.forEach(callbackfn);
+  }
+  get c() {
+    return this.clone();
+  }
+  equals(vector) {
+    return this.x === vector.x && this.y === vector.y && this.z === vector.z;
+  }
+  clone() {
+    return new _Vector3(
+      this.x,
+      this.y,
+      this.z
+    );
+  }
+  add(vector) {
+    return new _Vector3(
+      this.x + vector.x,
+      this.y + vector.y,
+      this.z + vector.z
+    );
+  }
+  multiply(a, b, c) {
+    const [x, y, z] = typeof a === "number" ? [a, b, c] : a.array;
+    return new _Vector3(
+      this.x * x,
+      this.y * y,
+      this.z * z
+    );
+  }
+  subtract(vector) {
+    return new _Vector3(
+      this.x - vector.x,
+      this.y - vector.y,
+      this.z - vector.z
+    );
+  }
+  scale(scalar) {
+    return new _Vector3(
+      this.x * scalar,
+      this.y * scalar,
+      this.z * scalar
+    );
+  }
+  divide(vector) {
+    return new _Vector3(
+      this.x / vector.x,
+      this.y / vector.y,
+      this.z / vector.z
+    );
+  }
+  rotateXY(rad) {
+    const [a, b] = this.xy.rotate(rad).array;
+    return new _Vector3(
+      a,
+      this.y,
+      b
+    );
+  }
+  rotateXZ(rad) {
+    const [a, b] = this.xz.rotate(rad).array;
+    return new _Vector3(
+      a,
+      b,
+      this.z
+    );
+  }
+  rotateYZ(rad) {
+    const [a, b] = this.yz.rotate(rad).array;
+    return new _Vector3(
+      this.x,
+      a,
+      b
+    );
+  }
+  magnitude() {
+    return Math.sqrt(this.magnitudeSqr());
+  }
+  magnitudeSqr() {
+    return this.x * this.x + this.y * this.y + this.z * this.z;
+  }
+  mod(max) {
+    return new _Vector3(
+      this.x % max.x,
+      this.y % max.y,
+      this.z % max.z
+    );
+  }
+  clamp(min, max) {
+    return new _Vector3(
+      Util.clamp(this.x, min.x, max.x),
+      Util.clamp(this.y, min.y, max.y),
+      Util.clamp(this.z, min.z, max.z)
+    );
+  }
+};
+
 // ts/utils/matrix4.ts
 var Matrix4 = class _Matrix4 {
   constructor(source) {
     this.mat4 = source ? mat4_exports.clone(source) : mat4_exports.create();
+    return this;
+  }
+  add(mat) {
+    mat4_exports.add(
+      this.mat4,
+      this.mat4,
+      mat.mat4
+    );
+    return this;
+  }
+  subtract(mat) {
+    mat4_exports.subtract(
+      this.mat4,
+      this.mat4,
+      mat.mat4
+    );
+    return this;
+  }
+  multiply(mat) {
+    mat4_exports.multiply(
+      this.mat4,
+      this.mat4,
+      mat.mat4
+    );
     return this;
   }
   translate(vector) {
@@ -2303,10 +2327,10 @@ var Matrix4 = class _Matrix4 {
     );
     return this;
   }
-  invert(mat) {
+  invert() {
     mat4_exports.invert(
       this.mat4,
-      mat.mat4
+      this.mat4
     );
     return this;
   }
@@ -2344,6 +2368,9 @@ var Matrix4 = class _Matrix4 {
   }
   clone() {
     return new _Matrix4(this.mat4);
+  }
+  get position() {
+    return v3(this.mat4[8], this.mat4[9], this.mat4[10]);
   }
 };
 
@@ -2384,25 +2411,21 @@ var GLRenderer = class {
         this.game.mode.camera.fov * Math.PI / 180,
         1,
         2e4
-      ).translate(this.game.mode.camera.offset.multiply(1, 1, -1)).rotate(this.game.mode.camera.rotation).mat4
+      ).translate(this.game.mode.camera.offset.multiply(1, 1, -1)).rotate(this.game.mode.camera.rotation).translate(this.game.mode.camera.target.multiply(-1, -1, 1)).mat4
     );
-    this.drawChildren(this.game.level, new Matrix4().translate(this.game.mode.camera.target.multiply(-1, 1, 1)));
+    this.drawChildren(this.game.level);
   }
-  drawChildren(element, currentModelview) {
+  drawChildren(element) {
     element.children.forEach((o) => {
-      this.drawObject(o, currentModelview.clone());
+      this.drawObject(o);
     });
   }
-  drawObject(mesh, currentModelview) {
+  drawObject(mesh) {
     if (mesh.visible) {
-      currentModelview.translate(mesh.position.multiply(new Vector3(1, 1, -1)));
-      currentModelview.translate(mesh.anchorPoint.multiply(1, 1, -1));
-      currentModelview.rotate(mesh.rotation.multiply(new Vector3(1, -1, -1)));
-      currentModelview.translate(mesh.anchorPoint.multiply(-1, -1, 1));
       if (mesh.buffer) {
-        this.renderMesh(mesh, currentModelview);
+        this.renderMesh(mesh, mesh.worldMatrix);
       }
-      this.drawChildren(mesh, currentModelview);
+      this.drawChildren(mesh);
     }
   }
   renderMesh(mesh, currentModelview) {
@@ -2413,10 +2436,7 @@ var GLRenderer = class {
     this.glt.sendUniform("uModelViewMatrix", currentModelview.mat4);
     this.glt.sendUniform("uOpacity", mesh.opacity);
     this.glt.sendUniform("uIntensity", mesh.colorIntensity);
-    this.glt.sendUniform(
-      "uNormalMatrix",
-      new Matrix4().invert(currentModelview).transpose().mat4
-    );
+    this.glt.sendUniform("uNormalMatrix", currentModelview.invert().transpose().mat4);
     this.glt.sendTexture(mesh.texture.texture);
     this.glt.drawElements(mesh.verticesCount);
   }
@@ -2428,9 +2448,9 @@ var GlElement = class _GlElement extends Element {
     var _a;
     super();
     this.rendererType = "gl";
-    this.position = v3(0);
+    this._position = v3(0);
     this.size = v3(0);
-    this.rotation = v3(0);
+    this._rotation = v3(0);
     this._active = true;
     this._visible = true;
     this.readyState = false;
@@ -2443,6 +2463,34 @@ var GlElement = class _GlElement extends Element {
     this.position = attr.position || v3(0);
     this.rotation = attr.rotation || v3(0);
     this.anchorPoint = attr.anchorPoint || v3(0);
+  }
+  get position() {
+    return this._position;
+  }
+  set position(value) {
+    this._position = value;
+  }
+  get rotation() {
+    return this._rotation;
+  }
+  set rotation(value) {
+    this._rotation = value;
+  }
+  get matrix() {
+    return this.transposeMatrix();
+  }
+  transposeMatrix(m = new Matrix4()) {
+    return m.translate((this.position || v3(0)).multiply(new Vector3(1, 1, -1))).translate((this.anchorPoint || v3(0)).multiply(1, 1, -1)).rotate((this.rotation || v3(0)).multiply(new Vector3(1, -1, -1))).translate((this.anchorPoint || v3(0)).multiply(-1, -1, 1));
+  }
+  deTransposeMatrix(m = new Matrix4()) {
+    return m.translate((this.anchorPoint || v3(0)).multiply(1, 1, -1)).rotate((this.rotation || v3(0)).multiply(new Vector3(-1, 1, 1))).translate((this.anchorPoint || v3(0)).multiply(-1, -1, 1)).translate((this.position || v3(0)).multiply(new Vector3(-1, -1, 1)));
+  }
+  get worldMatrix() {
+    var _a;
+    return this.transposeMatrix(((_a = this.parent) == null ? void 0 : _a.worldMatrix) || new Matrix4());
+  }
+  get worldPosition() {
+    return this.worldMatrix.invert().position;
   }
   get visible() {
     return this._visible;
@@ -2461,13 +2509,6 @@ var GlElement = class _GlElement extends Element {
   }
   set camera(c) {
     this.mode.camera = c;
-  }
-  get absolutePosition() {
-    var _a;
-    return (((_a = this.parent) == null ? void 0 : _a.absolutePosition) || v3(0)).add(this.position);
-  }
-  set absolutePosition(v) {
-    this.position = v.subtract(this.parent.absolutePosition);
   }
   ready() {
     this.build();
@@ -2672,6 +2713,262 @@ var Character = class extends GlElement {
   }
   get ani() {
     return this.skeleton.animator;
+  }
+};
+
+// ts/gl/controller.ts
+var GlController = class extends GlElement {
+  constructor() {
+    super(...arguments);
+    this.type = "controller";
+    this.order = "before";
+  }
+};
+
+// ts/utils/collisions.ts
+var Collisions = class _Collisions {
+  static boxesOverlap(aP, aS, bP, bS) {
+    return aP.x < bP.x + bS.x && aP.x + aS.x > bP.x && aP.y < bP.y + bS.y && aP.y + aS.y > bP.y && aP.z < bP.z + bS.z && aP.z + aS.z > bP.z;
+  }
+  static pointInBox(p, bP, bS) {
+    return p.x < bP.x + bS.x && p.x > bP.x && p.y < bP.y + bS.y && p.y > bP.y && p.z < bP.z + bS.z && p.z > bP.z;
+  }
+  static edgeCrossesBox(p1, p2, boxPosition, boxSize) {
+    return p1.x < boxPosition.x + boxSize.x && p1.x > boxPosition.x && p1.y < boxPosition.y + boxSize.y && p1.y > boxPosition.y && p1.z < boxPosition.z + boxSize.z && p1.z > boxPosition.z;
+  }
+  static overlapDirection(aP, aS, bP, bS, v) {
+    let result = [];
+    if (_Collisions.boxesOverlap(aP, aS, new Vector3(bP.x, bP.y + v.y), bS)) {
+      result.push(v.y > 0 ? ["y", aP.y - bP.y - bS.y] : ["y", aP.y + aS.y - bP.y]);
+    }
+    if (_Collisions.boxesOverlap(aP, aS, new Vector3(bP.x + v.x, bP.y), bS)) {
+      result.push(v.x < 0 ? ["x", aP.x + aS.x - bP.x] : ["x", aP.x - bP.x - bS.x]);
+    }
+    return result;
+  }
+  static check(statics, dynamic, velocity) {
+    return statics.filter(
+      (s) => _Collisions.boxesOverlap(s.position, s.size, dynamic.position.add(velocity), dynamic.size)
+      // r.push(...Collisions.overlapDirection(s.position.add(s.parent instanceof Level ? v3(0) : s.parent.position), s.size, dynamic[0], dynamic[1], velocity));
+      // if (!s.condition || s.condition()){
+      // }
+    );
+  }
+};
+
+// ts/modes/side/player_controller.ts
+var PlayerController = class extends GlController {
+  constructor() {
+    super(...arguments);
+    this.intr = { fall: 0, jump: 0, landDelay: 0 };
+    this.stat = { jumping: false, falling: false, running: false };
+    this.cnst = { runTime: 250, runSlowDownFactor: 0.7, runSpeed: 0.5, minJumpTime: 200, jumpTime: 300, jumpSpeed: 0.6 };
+    this.velocity = Vector3.f(0);
+    this.aiming = false;
+  }
+  keyDown(e) {
+    if (e.key === "e" || e.key === "E") {
+      this.aiming = true;
+    }
+  }
+  keyUp(e) {
+    if (e.key === "e" || e.key === "E") {
+      this.aiming = false;
+    }
+  }
+  setMovementVelocity(interval) {
+    const setter = (key, cond, interval2) => {
+      this.intr[key] = Util.clamp((this.intr[key] || 0) + (cond ? interval2 : -(interval2 * this.cnst.runSlowDownFactor)), 0, this.cnst.runTime);
+    };
+    setter("right", this.mode.input.right && !this.mode.input.left, interval);
+    setter("left", this.mode.input.left && !this.mode.input.right, interval);
+    setter("up", this.mode.input.up && !this.mode.input.down, interval);
+    setter("down", this.mode.input.down && !this.mode.input.up, interval);
+    if (!this.aiming) {
+      const plane = v2(
+        (this.intr.right - this.intr.left) / this.cnst.runTime,
+        (this.intr.up - this.intr.down) / this.cnst.runTime
+      ).clampMagnitude(1).scale(this.cnst.runSpeed);
+      this.velocity = v3(
+        plane.x,
+        0,
+        plane.y
+      );
+    } else {
+      this.velocity = v3(0);
+    }
+  }
+  determineStates(interval) {
+    if (this.parent.stat.falling) {
+      this.parent.stat.jumping = false;
+    } else {
+      if (this.parent.stat.jumping) {
+        if (this.intr.jump < this.cnst.minJumpTime) {
+          this.parent.stat.jumping = true;
+          this.parent.stat.falling = false;
+        } else if (this.intr.jump < this.cnst.jumpTime) {
+          this.parent.stat.jumping = this.mode.input.space;
+        } else {
+          this.parent.stat.jumping = false;
+          this.parent.stat.falling = true;
+          this.intr.jump = this.cnst.jumpTime;
+        }
+      } else {
+        this.parent.stat.jumping = this.mode.input.space;
+      }
+    }
+  }
+  setJumpVelocity(interval) {
+    this.determineStates(interval);
+    if (this.parent.stat.jumping) {
+      this.intr.jump = Math.min(this.intr.jump + interval, this.cnst.jumpTime);
+      this.intr.fall = -this.intr.jump;
+    } else if (this.parent.stat.falling) {
+      this.intr.jump = this.cnst.jumpTime;
+      this.intr.fall += interval;
+    } else {
+      this.velocity.y = 0;
+      return;
+    }
+    const y = (this.cnst.jumpTime - this.intr.jump - this.intr.fall) / this.cnst.jumpTime * this.cnst.jumpSpeed;
+    this.velocity.y = y;
+  }
+  setVelocity(obj) {
+    this.setMovementVelocity(obj.intervalS10);
+    this.setJumpVelocity(obj.intervalS10);
+    const sc = this.velocity.scale(obj.intervalS10 / 6);
+    if (sc.xz.magnitude() > 0) {
+      const [x, z] = sc.xz.rotate(-this.camera.rotation.y).array;
+      this.newPosition = this.parent.position.add(v3(x, sc.y, z));
+      if (this.mode.input.right || this.mode.input.left || this.mode.input.up || this.mode.input.down) {
+        this.parent.rotation = this.camera.rotation.multiply(0, 1, 0).add(v3(0, Math.PI / 2, 0)).add(v3(0, -sc.xz.angle(), 0));
+      }
+      this.parent.stat.running = true;
+    } else {
+      this.newPosition = this.parent.position.add(v3(0, sc.y, 0));
+      this.parent.stat.running = false;
+    }
+    if (this.aiming) {
+      this.parent.rotation = this.camera.rotation.multiply(0, 1, 0);
+    }
+  }
+  colliders(obj) {
+    this.parent.stat.ground = false;
+    this.level.colliders.forEach((col) => {
+      if (Collisions.boxesOverlap(col.position, col.size, this.newPosition, this.parent.size)) {
+        if (col.direction.equals(Vector3.up) && this.velocity.y <= 0) {
+          this.velocity.y = Math.max(this.velocity.y, 0);
+          this.parent.stat.falling = false;
+          this.intr.fall = 0;
+          this.intr.jump = 0;
+          this.newPosition.y = col.position.y + col.size.y - 1;
+          this.parent.stat.ground = true;
+        }
+      }
+    });
+    if (!this.parent.stat.jumping) {
+      this.parent.stat.falling = !this.parent.stat.ground;
+    }
+  }
+  tick(obj) {
+    super.tick(obj);
+    this.setVelocity(obj);
+    this.colliders(obj);
+    this.parent.position = this.newPosition.clone();
+  }
+};
+
+// ts/modes/side/player_camera.ts
+var FreeCamera = class extends GlController {
+  constructor(target) {
+    super({ autoReady: false });
+    this.target = target;
+    this.type = "controller";
+    this.order = "after";
+    this.lagList = [];
+    this.lagCount = 8;
+  }
+  get active() {
+    return super.active;
+  }
+  set active(value) {
+    super.active = value;
+    if (value) {
+      this.camera.offset = v3(0, -15, 60);
+      this.camera.rotation = v3(0.3, Math.PI / 8, 0);
+      this.camera.fov = 60;
+    }
+  }
+  mouseMove(e) {
+    const r = v2(e.movementX, e.movementY).scale(5e-3);
+    this.camera.rotation = v3(
+      Util.clamp(this.camera.rotation.x + r.y, -1, Math.PI / 2),
+      this.camera.rotation.y + r.x,
+      this.camera.rotation.z
+    );
+  }
+  drag(d) {
+    const r = d.scale(0.01);
+    this.camera.rotation = v3(
+      Util.clamp(this.camera.rotation.x + r.y, -1, Math.PI / 2),
+      this.camera.rotation.y + r.x,
+      this.camera.rotation.z
+    );
+  }
+  scroll(e) {
+    if (!this.parent.aiming) {
+      this.camera.offset.z = Util.clamp(this.camera.offset.z + e.deltaY * 0.1, 10, 300);
+    }
+  }
+  build() {
+    super.build();
+    this.active = true;
+  }
+  keyUp(e) {
+    if (e.key === "e" || e.key === "E") {
+      this.camera.offset = v3(0, -15, 60);
+    }
+  }
+  keyDown(e) {
+    if (e.key === "e" || e.key === "E") {
+      this.camera.offset = v3(-15, -10, 30);
+    }
+  }
+  tick(o) {
+    super.tick(o);
+    const nP = this.target.position.add(this.target.size.multiply(0.5, 0.3, 0.5));
+    while (this.lagList.length < this.lagCount) {
+      this.lagList.push(nP);
+    }
+    this.camera.target = this.lagList.shift();
+  }
+};
+
+// ts/modes/side/player_actor.ts
+var Player = class extends Character {
+  constructor({
+    position = Vector3.f(0),
+    size = Vector3.f(0),
+    rotation = Vector3.f(0)
+  } = {}) {
+    super({
+      position,
+      size,
+      rotation,
+      anchorPoint: size.multiply(0.5, 0, 0.5)
+    });
+    this.stat = { jumping: false, falling: false, running: false, fallAnimation: false };
+    this.addControllers([new FreeCamera(this), new PlayerController(this)]);
+  }
+  get aiming() {
+    const a = this.controllers[1].aiming;
+    return a;
+  }
+  build() {
+    GlElement.registerControllers(this);
+  }
+  tick(obj) {
+    super.tick(obj);
   }
 };
 
@@ -3303,836 +3600,40 @@ var GLCuboid = class _GLCuboid extends GLRendable {
   }
 };
 
-// ts/utils/skeleton_bone.ts
-var Bone = class extends GLGroup {
-  constructor(attr = {}) {
-    super(attr);
-    this.mesh = attr.mesh === void 0 ? false : attr.mesh;
-    this.length = attr.length === void 0 ? 10 : attr.length;
-    this.profile = attr.profile || v2(0);
-    this.speed = attr.speed === void 0 ? 0.02 : attr.speed;
-    this.baseRotation = attr.baseRotation || v3(0);
-    this.basePosition = this.position || v3(0);
-    this.size = v3(this.profile.x, this.length, this.profile.y);
-    if (!attr.anchorPoint) {
-      this.anchorPoint = v3(
-        this.profile.x / 2,
-        this.length,
-        this.profile.y / 2
-      );
-    }
-    this.rotation = this.baseRotation;
-  }
-  setRotation(r, dynamically = false) {
-    this.target = this.baseRotation.add(r.clone());
-    if (!dynamically) {
-      this.rotation = this.target.clone();
-    }
-  }
-  setPosition(r, dynamically = false) {
-    this.position = this.basePosition.add(r.clone());
-  }
-  tick(obj) {
-    super.tick(obj);
-    if (!this.target)
-      return;
-    const dif = this.rotation.subtract(this.target);
-    if (dif.magnitude() === 0)
-      return;
-    const movement = v3(
-      this.target.x > this.rotation.x ? Math.abs(dif.x) : -Math.abs(dif.x),
-      this.target.y > this.rotation.y ? Math.abs(dif.y) : -Math.abs(dif.y),
-      this.target.z > this.rotation.z ? Math.abs(dif.z) : -Math.abs(dif.z)
-    ).clamp(
-      v3(-this.speed, -this.speed, -this.speed).scale(obj.interval / 6),
-      v3(this.speed, this.speed, this.speed).scale(obj.interval / 6)
-    );
-    this.rotation = this.rotation.add(movement);
-  }
-  build() {
-    super.build();
-    if (this.mesh) {
-      this.addChild(new GLCuboid({
-        colors: [[0.8, 0.8, 0.8, 1], [0.8, 0.8, 0.8, 1], [0.8, 0.8, 0.8, 1], [0.8, 0.8, 0.8, 1], [0.8, 0.8, 0.8, 1], [0.8, 0.8, 0.8, 1]],
-        size: this.size
-      }));
-    }
-  }
-};
-
-// ts/utils/ease.ts
-var Ease = class {
-  static linear(x) {
-    return x;
-  }
-  static easeInQuad(x) {
-    return x * x;
-  }
-  static easeOutQuad(x) {
-    return 1 - (1 - x) * (1 - x);
-  }
-  static easeInOutQuad(x) {
-    return x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2;
-  }
-  static easeInCubic(x) {
-    return x * x * x;
-  }
-  static easeOutCubic(x) {
-    return 1 - Math.pow(1 - x, 3);
-  }
-  static easeInOutCubic(x) {
-    return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
-  }
-  static easeInQuart(x) {
-    return x * x * x * x;
-  }
-  static easeOutQuart(x) {
-    return 1 - Math.pow(1 - x, 4);
-  }
-  static easeInOutQuart(x) {
-    return x < 0.5 ? 8 * x * x * x * x : 1 - Math.pow(-2 * x + 2, 4) / 2;
-  }
-  static easeInQuint(x) {
-    return x * x * x * x * x;
-  }
-  static easeOutQuint(x) {
-    return 1 - Math.pow(1 - x, 5);
-  }
-  static easeInOutQuint(x) {
-    return x < 0.5 ? 16 * x * x * x * x * x : 1 - Math.pow(-2 * x + 2, 5) / 2;
-  }
-  static easeInSine(x) {
-    return 1 - Math.cos(x * Math.PI / 2);
-  }
-  static easeOutSine(x) {
-    return Math.sin(x * Math.PI / 2);
-  }
-  static easeInOutSine(x) {
-    return -(Math.cos(Math.PI * x) - 1) / 2;
-  }
-  static easeInExpo(x) {
-    return x === 0 ? 0 : Math.pow(2, 10 * x - 10);
-  }
-  static easeOutExpo(x) {
-    return x === 1 ? 1 : 1 - Math.pow(2, -10 * x);
-  }
-  static easeInOutExpo(x) {
-    return x === 0 ? 0 : x === 1 ? 1 : x < 0.5 ? Math.pow(2, 20 * x - 10) / 2 : (2 - Math.pow(2, -20 * x + 10)) / 2;
-  }
-  static easeInCirc(x) {
-    return 1 - Math.sqrt(1 - Math.pow(x, 2));
-  }
-  static easeOutCirc(x) {
-    return Math.sqrt(1 - Math.pow(x - 1, 2));
-  }
-  static easeInOutCirc(x) {
-    return x < 0.5 ? (1 - Math.sqrt(1 - Math.pow(2 * x, 2))) / 2 : (Math.sqrt(1 - Math.pow(-2 * x + 2, 2)) + 1) / 2;
-  }
-  static easeInBack(x) {
-    return 2.70158 * x * x * x - 1.70158 * x * x;
-  }
-  static easeOutBack(x) {
-    return 1 + 2.70158 * Math.pow(x - 1, 3) + 1.70158 * Math.pow(x - 1, 2);
-  }
-  static easeInOutBack(x) {
-    return x < 0.5 ? Math.pow(2 * x, 2) * (7.18982 * x - 2.59491) / 2 : (Math.pow(2 * x - 2, 2) * (3.59491 * (x * 2 - 2) + 2.59491) + 2) / 2;
-  }
-};
-
-// ts/utils/animation.ts
-var Animation = class {
-  constructor(attr) {
-    this.interval = 0;
-    this.direction = 1;
-    this.data = {};
-    this._active = false;
-    this.bones = attr.bones || {};
-    this.time = attr.time || 0;
-    this.loop = attr.loop || false;
-    this.once = attr.once || false;
-    this.dynamic = attr.dynamic || false;
-    this.bounce = attr.bounce || false;
-    this.defaultEase = attr.defaultEase || "linear";
-    Object.entries(attr.data).forEach(([key, d]) => {
-      if (d.length === 0) {
-        d = [[0], [1]];
-      }
-      if (d[0][0] !== 0) {
-        d.unshift([0, ...d[0].slice(1)]);
-      }
-      if (d[d.length - 1][0] !== 1) {
-        d.push([1, ...d[d.length - 1].slice(1)]);
-      }
-      this.data[key] = d;
-    });
-  }
-  get active() {
-    return this._active;
-  }
-  set active(value) {
-    this._active = value;
-    if (!value) {
-      this.interval = 0;
-    }
-  }
-  setTime(t) {
-    const f = this.interval / this.time;
-    this.time = t;
-    this.interval = t * f;
-  }
-  setBoneTransform(key, transform) {
-    const bone = this.bones[key];
-    if (bone) {
-      bone.setRotation(v3(transform[0] || 0, transform[1] || 0, transform[2] || 0), this.dynamic);
-      bone.setPosition(v3(transform[3] || 0, transform[4] || 0, transform[5] || 0), this.dynamic);
-    }
-  }
-  setBoneToValue(key, value) {
-    if (this.data[key]) {
-      let before = this.data[key][0];
-      let after = this.data[key][this.data[key].length - 1];
-      this.data[key].forEach((d) => {
-        if (d[0] >= before[0] && d[0] <= value) {
-          before = [d[0], Util.padArray(d[1] || [], 0, 7)];
-        }
-        if (d[0] <= after[0] && d[0] >= value) {
-          after = [d[0], Util.padArray(d[1] || [], 0, 7)];
-        }
-      });
-      const [[startNumber, start], [endNumber, end, ease]] = [before, after];
-      const factor = Ease[ease || this.defaultEase]((value - startNumber) / (endNumber - startNumber));
-      if (key === "bowS1") {
-      }
-      this.setBoneTransform(
-        key,
-        Util.addArrays(
-          start || [],
-          Util.scaleArrays(
-            Util.subtractArrays(end || [], start || []),
-            factor
-          )
-        )
-      );
-    }
-  }
-  setBonesToValue(n) {
-    Object.keys(this.bones).forEach((b) => {
-      this.setBoneToValue(b, n);
-    });
-  }
-  stop() {
-  }
-  tick(interval) {
-    if (this.active) {
-      this.interval = this.interval + interval * this.direction;
-      if (this.interval >= this.time) {
-        if (this.bounce) {
-          this.interval = this.time - 1;
-          this.direction = -1;
-        } else if (this.loop) {
-          this.interval = this.interval % this.time;
-        } else if (this.once) {
-          this.interval = this.time - 1;
-        } else {
-          this.active = false;
-          this.interval = 1;
-          return;
-        }
-      }
-      if (this.interval < 0) {
-        if (this.loop) {
-          this.interval = 0;
-          this.direction = 1;
-        } else {
-          this.active = false;
-          this.interval = 0;
-          return;
-        }
-      }
-      this.setBonesToValue(Util.clamp(this.interval / this.time, 1e-3, 0.999));
-    }
-  }
-};
-var Animator = class {
-  constructor(attr) {
-    this.animations = {};
-    this.bones = {};
-    this.bones = attr.bones || {};
-  }
-  add(key, time, data, attr = {}) {
-    this.animations[key] = new Animation({
-      bones: this.bones,
-      loop: attr.loop || false,
-      once: attr.once || false,
-      bounce: attr.bounce || false,
-      dynamic: attr.dynamic || false,
-      defaultEase: attr.ease || "linear",
-      time,
-      data
-    });
-    return this.get(key);
-  }
-  get(key) {
-    return this.animations[key];
-  }
-  stop() {
-    Object.values(this.animations).forEach((a) => {
-      a.active = false;
-    });
-  }
-  play(key) {
-    Object.entries(this.animations).forEach(([k, a]) => {
-      a.active = k === key;
-    });
-  }
-  setToInterval(key, n) {
-    const an = this.get(key);
-    if (an) {
-      an.setBonesToValue(n * an.time);
-    }
-  }
-  replay(key) {
-    this.stop();
-    Object.entries(this.animations).find((k) => k[0] === key)[1].active = true;
-  }
-  tick(interval) {
-    Object.values(this.animations).forEach((a) => a.tick(interval));
-  }
-};
-
-// ts/utils/skeleton.ts
-var Skeleton = class extends GLGroup {
-  constructor(attr = {}) {
-    super(attr);
-    this.bones = {};
-    this.parentage = {};
-    attr.bones.forEach((o) => {
-      this.addBone(o);
-    });
-  }
-  addBone(o) {
-    this.bones[o[0]] = o[1];
-    if (o[2]) {
-      this.parentage[o[0]] = o[2];
-    }
-    if (this.readyState) {
-      if (this.parentage[o[0]]) {
-        this.bones[this.parentage[o[0]]].addChild(o[1]);
-      } else {
-        this.addChild(o[1]);
-      }
-      this.animator.bones = this.bones;
-    }
-  }
-  build() {
-    super.build();
-    Object.entries(this.bones).forEach(([key, b]) => {
-      if (this.parentage[key]) {
-        this.bones[this.parentage[key]].addChild(b);
-      } else {
-        this.addChild(b);
-      }
-    });
-    this.animator = new Animator({ bones: this.bones });
-  }
-  tick(obj) {
-    super.tick(obj);
-    this.animator.tick(obj.intervalS10);
-  }
-};
-
-// ts/utils/skeleton_human.ts
-var HumanSkeleton = class extends Skeleton {
-  constructor(attr) {
-    super({
-      bones: [
-        ["hips", new Bone({ profile: v2(attr.hipsWidth, 1), length: attr.hips, position: v3(0, attr.legUpper + attr.legLower + attr.foot, 2) }), ""],
-        ["torso", new Bone({ anchorPoint: v3(attr.shoulderWidth / 2, 0, 0), baseRotation: v3(0, 0, 0), profile: v2(attr.shoulderWidth, 1), length: attr.torso, position: v3(-(attr.shoulderWidth - attr.hipsWidth) / 2, attr.hips, 0) }), "hips"],
-        ["head", new Bone({ profile: v2(4, 3), length: attr.head, anchorPoint: v3(2, 0, 1), position: v3((attr.shoulderWidth - 4) / 2, attr.torso + 1, -1) }), "torso"],
-        ["lArmUpper", new Bone({ profile: v2(1), baseRotation: v3(-0.1, 0, 0.4), length: attr.armUpper, position: v3(0, attr.torso - attr.armUpper, 0) }), "torso"],
-        ["rArmUpper", new Bone({ profile: v2(1), baseRotation: v3(-0.1, 0, -0.4), length: attr.armUpper, position: v3(attr.shoulderWidth - 1, attr.torso - attr.armUpper, 0) }), "torso"],
-        ["lArmLower", new Bone({ baseRotation: v3(0.2, 0, -0.3), profile: v2(1), length: attr.armLower, position: v3(0, -attr.armLower, 0) }), "lArmUpper"],
-        ["rArmLower", new Bone({ baseRotation: v3(0.2, 0, 0.3), profile: v2(1), length: attr.armLower, position: v3(0, -attr.armLower, 0) }), "rArmUpper"],
-        ["lHand", new Bone({ profile: v2(1), length: attr.hand, position: v3(0, -attr.hand, 0) }), "lArmLower"],
-        ["rHand", new Bone({ profile: v2(1), length: attr.hand, position: v3(0, -attr.hand, 0) }), "rArmLower"],
-        ["lLegUpper", new Bone({ profile: v2(1), length: attr.legUpper, position: v3(0, -attr.legUpper, 0) }), "hips"],
-        ["rLegUpper", new Bone({ profile: v2(1), length: attr.legUpper, position: v3(attr.hipsWidth - 1, -attr.legUpper, 0) }), "hips"],
-        ["lLegLower", new Bone({ profile: v2(1), length: attr.legLower, position: v3(0, -attr.legLower, 0) }), "lLegUpper"],
-        ["rLegLower", new Bone({ profile: v2(1), length: attr.legLower, position: v3(0, -attr.legLower, 0) }), "rLegUpper"],
-        ["lFoot", new Bone({ profile: v2(1, 3), length: attr.foot, position: v3(-0, -attr.foot, -0) }), "lLegLower"],
-        ["rFoot", new Bone({ profile: v2(1, 3), length: attr.foot, position: v3(-0, -attr.foot, -0) }), "rLegLower"]
-      ]
-    });
-    this.sizes = attr;
-  }
-};
-
-// ts/modes/side/player_skeleton.ts
-var PlayerSkel = class extends HumanSkeleton {
-  constructor() {
-    super({
-      "head": 6,
-      "armUpper": 6,
-      "armLower": 6,
-      "hand": 0,
-      "legUpper": 4,
-      "legLower": 7,
-      "foot": 1,
-      "torso": 9,
-      "hips": 3,
-      "hipsWidth": 6,
-      "shoulderWidth": 6
-    });
-  }
-  build() {
-    super.build();
-    this.bones["head"].addChild(new GLobj({ colorIntensity: 1.3, url: "RPGCharacters_Source-15-Head-7.obj", size: v3(10, 10, 10), rotation: v3(0, Math.PI, 0), position: v3(2, 3, 2) }));
-    this.bones["torso"].addChild(new GLobj({ colorIntensity: 1.3, url: "RPGCharacters_Source-3-Spine3-2.obj", size: v3(10, 10, 10), rotation: v3(0, Math.PI, 0), position: v3(this.sizes.shoulderWidth / 2, 5, 0) }));
-    this.bones["torso"].addChild(new GLobj({ colorIntensity: 1.3, url: "RPGCharacters_Source-2-Spine2-4.obj", size: v3(10, 10, 10), rotation: v3(0, Math.PI, 0), position: v3(this.sizes.shoulderWidth / 2 - 1, 2, 1) }));
-    this.bones["hips"].addChild(new GLobj({ colorIntensity: 1.3, url: "RPGCharacters_Source-8-Spine1-3.obj", size: v3(10, 10, 10), rotation: v3(0, Math.PI, 0), position: v3(3, 2, 0) }));
-    this.bones["lLegUpper"].addChild(new GLobj({ colorIntensity: 1.3, url: "RPGCharacters_Source-14-L_Thigh-3.obj", size: v3(10, 10, 10), rotation: v3(0, Math.PI, 0), position: v3(1, 3, 0) }));
-    this.bones["rLegUpper"].addChild(new GLobj({ colorIntensity: 1.3, url: "RPGCharacters_Source-11-R_Thigh-2.obj", size: v3(10, 10, 10), rotation: v3(0, Math.PI, 0), position: v3(0, 3, 0) }));
-    this.bones["lLegLower"].addChild(new GLobj({ colorIntensity: 1.3, url: "RPGCharacters_Source-13-L_Calf-3.obj", size: v3(10, 10, 10), rotation: v3(0, Math.PI, 0), position: v3(1, 3, -0.5) }));
-    this.bones["rLegLower"].addChild(new GLobj({ colorIntensity: 1.3, url: "RPGCharacters_Source-10-R_Calf-3.obj", size: v3(10, 10, 10), rotation: v3(0, Math.PI, 0), position: v3(0, 3, -0.5) }));
-    this.bones["lLegLower"].addChild(new GLobj({ colorIntensity: 1.3, url: "RPGCharacters_Source-12-L_Foot-3.obj", size: v3(10, 10, 10), rotation: v3(0, Math.PI, 0), position: v3(1, -0.5, 0.5) }));
-    this.bones["rLegLower"].addChild(new GLobj({ colorIntensity: 1.3, url: "RPGCharacters_Source-9-R_Foot-2.obj", size: v3(10, 10, 10), rotation: v3(0, Math.PI, 0), position: v3(0, -0.5, 0.5) }));
-    this.bones["lArmUpper"].addChild(new GLobj({ colorIntensity: 1.3, url: "RPGCharacters_Source-7-L_Arm-3.obj", size: v3(10, 10, 10), rotation: v3(0, Math.PI, Math.PI / 2), position: v3(0, 3, 1) }));
-    this.bones["rArmUpper"].addChild(new GLobj({ colorIntensity: 1.3, url: "RPGCharacters_Source-1-R_Arm.obj", size: v3(10, 10, 10), rotation: v3(0, Math.PI, Math.PI / 2), position: v3(1, 3, 1) }));
-    this.bones["lArmLower"].addChild(new GLobj({ colorIntensity: 1.3, url: "RPGCharacters_Source-6-L_ForeArm-3.obj", size: v3(10, 10, 10), rotation: v3(0, Math.PI, Math.PI / 2), position: v3(0, 4, 1) }));
-    this.bones["rArmLower"].addChild(new GLobj({ colorIntensity: 1.3, url: "RPGCharacters_Source-0-R_ForeArm.obj", size: v3(10, 10, 10), rotation: v3(0, Math.PI, -Math.PI / 2), position: v3(1, 4, 1) }));
-    this.bones["lArmLower"].addChild(new GLobj({ colorIntensity: 1.3, url: "RPGCharacters_Source-4-L_Hand-3.obj", size: v3(10, 10, 10), rotation: v3(0, Math.PI, Math.PI / 2), position: v3(-0.5, 0.5, 1) }));
-    this.bones["rArmLower"].addChild(new GLobj({ colorIntensity: 1.3, url: "RPGCharacters_Source-5-R_Hand-3.obj", size: v3(10, 10, 10), rotation: v3(0, Math.PI, -Math.PI / 2), position: v3(1.5, 0.5, 1) }));
-    this.animator.add("running", 1e3, {
-      torso: [[0, [-0.3, -0.3, 0]], [1, [-0.3, 0.3, 0]]],
-      hips: [[0, [0, 0, 0, 0, 2, 0]], [0.5, [0, 0, 0, 0, 0, 0]], [1, [0, 0, 0, 0, 2, 0]]],
-      head: [[0, [0.2, 0.2, 0]], [1, [0.2, -0.2, 0]]],
-      lArmUpper: [[0, [-0.8, 0, 0.1]], [1, [1.2, 0, 0.1]]],
-      lArmLower: [[0, [0.3, 0, 0]], [1, [1.2, 0, -1.2]]],
-      lHand: [],
-      rArmUpper: [[0, [1.2, 0, -0.1]], [1, [-0.8, 0, -0.1]]],
-      rArmLower: [[0, [1.2, 0, 1.2]], [1, [0.3, 0, 0]]],
-      rHand: [],
-      lLegUpper: [[0, [1.2, 0, 0]], [1, [-0.6, 0, 0]]],
-      lLegLower: [[0, [-0.3, 0, 0]], [1, [-2, 0, 0]]],
-      lFoot: [[0, [-0.2, 0, 0]]],
-      rLegUpper: [[0, [-0.6, 0, 0]], [1, [1.2, 0, 0]]],
-      rLegLower: [[0, [-2, 0, 0]], [1, [-0.3, 0, 0]]],
-      rFoot: [[0, [-0.2, 0, 0]]]
-    }, { loop: true, ease: "easeInOutSine", bounce: true });
-    this.animator.add("jumping", 500, {
-      torso: [[0], [1]],
-      hips: [[0], [1, [-0.1, -0.1, -0.15]]],
-      head: [[0], [1, [0.3, 0, 0]]],
-      lArmUpper: [[0], [1, [-0.2, 0, 0.1]]],
-      lArmLower: [[0], [1, [0, 0, 0.2]]],
-      lHand: [[0], [1]],
-      rArmUpper: [[0], [1, [3, 0, 0.3]]],
-      rArmLower: [[0], [1, [0, 0, 0.2]]],
-      rHand: [[0], [1]],
-      lLegUpper: [[0], [1, [2, 0, 0]]],
-      lLegLower: [[0], [1, [-2.4, 0, 0]]],
-      lFoot: [[0], [1]],
-      rLegUpper: [[0], [1, [-0.2, 0, 0]]],
-      rLegLower: [[0], [1, [-0.3, 0, 0]]],
-      rFoot: [[0], [1, [-0.6, 0, 0]]]
-    }, { once: true, ease: "easeInOutSine" });
-    this.animator.add("idle", 15e3, {
-      torso: [],
-      hips: [],
-      head: [[0.4, [0, 0.5]], [0.5, [0, -0.5]], [0.9, [0, -0.5]], [1, [0, 0.5]]],
-      lArmUpper: [],
-      lArmLower: [],
-      lHand: [],
-      rArmUpper: [],
-      rArmLower: [],
-      rHand: [],
-      lLegUpper: [],
-      lLegLower: [],
-      lFoot: [],
-      rLegUpper: [],
-      rLegLower: [],
-      rFoot: []
-    }, { loop: true, dynamic: true, ease: "easeInOutSine" });
-    this.animator.add("aim", 1e3, {
-      torso: [],
-      hips: [[0], [1, [0, Math.PI / 2, 0]]],
-      head: [[0], [1, [0, -1.1, 0]]],
-      lArmUpper: [[0], [1, [Math.PI / 2, 0, Math.PI / 2 - 0.1]]],
-      lArmLower: [[0], [1, [0, 0, -0.2]]],
-      lHand: [],
-      rArmUpper: [[0], [1, [1.5, 0, -0.8]]],
-      rArmLower: [[0], [1, [-0.3, 0, 2.2]]],
-      rHand: [],
-      lLegUpper: [[0], [1, [0, 0, 0.15]]],
-      lLegLower: [],
-      lFoot: [],
-      rLegUpper: [[0], [1, [0, 0, -0.15]]],
-      rLegLower: [],
-      rFoot: []
-    }, { once: true, ease: "easeInOutSine" });
-    this.animator.play("aim");
-  }
-  tick(obj) {
-    super.tick(obj);
-    if (!this.parent.stat.ground) {
-      this.animator.play("jumping");
-    } else {
-      if (this.parent.stat.running) {
-        this.animator.play("running");
-      } else {
-        if (this.parent.aiming) {
-          this.animator.play("aim");
-        } else {
-          this.animator.play("idle");
-        }
-      }
-    }
-  }
-};
-
-// ts/gl/controller.ts
-var GlController = class extends GlElement {
-  constructor() {
-    super(...arguments);
-    this.type = "controller";
-    this.order = "before";
-  }
-};
-
-// ts/utils/collisions.ts
-var Collisions = class _Collisions {
-  static boxesOverlap(aP, aS, bP, bS) {
-    return aP.x < bP.x + bS.x && aP.x + aS.x > bP.x && aP.y < bP.y + bS.y && aP.y + aS.y > bP.y && aP.z < bP.z + bS.z && aP.z + aS.z > bP.z;
-  }
-  static pointInBox(p, bP, bS) {
-    return p.x < bP.x + bS.x && p.x > bP.x && p.y < bP.y + bS.y && p.y > bP.y && p.z < bP.z + bS.z && p.z > bP.z;
-  }
-  static edgeCrossesBox(p1, p2, boxPosition, boxSize) {
-    return p1.x < boxPosition.x + boxSize.x && p1.x > boxPosition.x && p1.y < boxPosition.y + boxSize.y && p1.y > boxPosition.y && p1.z < boxPosition.z + boxSize.z && p1.z > boxPosition.z;
-  }
-  static overlapDirection(aP, aS, bP, bS, v) {
-    let result = [];
-    if (_Collisions.boxesOverlap(aP, aS, new Vector3(bP.x, bP.y + v.y), bS)) {
-      result.push(v.y > 0 ? ["y", aP.y - bP.y - bS.y] : ["y", aP.y + aS.y - bP.y]);
-    }
-    if (_Collisions.boxesOverlap(aP, aS, new Vector3(bP.x + v.x, bP.y), bS)) {
-      result.push(v.x < 0 ? ["x", aP.x + aS.x - bP.x] : ["x", aP.x - bP.x - bS.x]);
-    }
-    return result;
-  }
-  static check(statics, dynamic, velocity) {
-    return statics.filter(
-      (s) => _Collisions.boxesOverlap(s.position, s.size, dynamic.position.add(velocity), dynamic.size)
-      // r.push(...Collisions.overlapDirection(s.position.add(s.parent instanceof Level ? v3(0) : s.parent.position), s.size, dynamic[0], dynamic[1], velocity));
-      // if (!s.condition || s.condition()){
-      // }
-    );
-  }
-};
-
-// ts/modes/side/player_controller.ts
-var PlayerController = class extends GlController {
-  constructor() {
-    super(...arguments);
-    this.intr = { fall: 0, jump: 0, landDelay: 0 };
-    this.stat = { jumping: false, falling: false, running: false };
-    this.cnst = { runTime: 250, runSlowDownFactor: 0.7, runSpeed: 0.5, minJumpTime: 200, jumpTime: 300, jumpSpeed: 0.6 };
-    this.velocity = Vector3.f(0);
-    this.aiming = false;
-  }
-  keyDown(e) {
-    if (e.key === "e" || e.key === "E") {
-      this.aiming = true;
-    }
-  }
-  keyUp(e) {
-    if (e.key === "e" || e.key === "E") {
-      this.aiming = false;
-    }
-  }
-  setMovementVelocity(interval) {
-    const setter = (key, cond, interval2) => {
-      this.intr[key] = Util.clamp((this.intr[key] || 0) + (cond ? interval2 : -(interval2 * this.cnst.runSlowDownFactor)), 0, this.cnst.runTime);
-    };
-    setter("right", this.mode.input.right && !this.mode.input.left, interval);
-    setter("left", this.mode.input.left && !this.mode.input.right, interval);
-    setter("up", this.mode.input.up && !this.mode.input.down, interval);
-    setter("down", this.mode.input.down && !this.mode.input.up, interval);
-    if (!this.aiming) {
-      const plane = v2(
-        (this.intr.right - this.intr.left) / this.cnst.runTime,
-        (this.intr.up - this.intr.down) / this.cnst.runTime
-      ).clampMagnitude(1).scale(this.cnst.runSpeed);
-      this.velocity = v3(
-        plane.x,
-        0,
-        plane.y
-      );
-    } else {
-      this.velocity = v3(0);
-    }
-  }
-  determineStates(interval) {
-    if (this.parent.stat.falling) {
-      this.parent.stat.jumping = false;
-    } else {
-      if (this.parent.stat.jumping) {
-        if (this.intr.jump < this.cnst.minJumpTime) {
-          this.parent.stat.jumping = true;
-          this.parent.stat.falling = false;
-        } else if (this.intr.jump < this.cnst.jumpTime) {
-          this.parent.stat.jumping = this.mode.input.space;
-        } else {
-          this.parent.stat.jumping = false;
-          this.parent.stat.falling = true;
-          this.intr.jump = this.cnst.jumpTime;
-        }
-      } else {
-        this.parent.stat.jumping = this.mode.input.space;
-      }
-    }
-  }
-  setJumpVelocity(interval) {
-    this.determineStates(interval);
-    if (this.parent.stat.jumping) {
-      this.intr.jump = Math.min(this.intr.jump + interval, this.cnst.jumpTime);
-      this.intr.fall = -this.intr.jump;
-    } else if (this.parent.stat.falling) {
-      this.intr.jump = this.cnst.jumpTime;
-      this.intr.fall += interval;
-    } else {
-      this.velocity.y = 0;
-      return;
-    }
-    const y = (this.cnst.jumpTime - this.intr.jump - this.intr.fall) / this.cnst.jumpTime * this.cnst.jumpSpeed;
-    this.velocity.y = y;
-  }
-  setVelocity(obj) {
-    this.setMovementVelocity(obj.intervalS10);
-    this.setJumpVelocity(obj.intervalS10);
-    const sc = this.velocity.scale(obj.intervalS10 / 6);
-    if (sc.xz.magnitude() > 0) {
-      const [x, z] = sc.xz.rotate(-this.camera.rotation.y).array;
-      this.newPosition = this.parent.absolutePosition.add(v3(x, sc.y, z));
-      if (this.mode.input.right || this.mode.input.left || this.mode.input.up || this.mode.input.down) {
-        this.parent.rotation = this.camera.rotation.multiply(0, 1, 0).add(v3(0, Math.PI / 2, 0)).add(v3(0, -sc.xz.angle(), 0));
-      }
-      this.parent.stat.running = true;
-    } else {
-      this.newPosition = this.parent.absolutePosition.add(v3(0, sc.y, 0));
-      this.parent.stat.running = false;
-    }
-    if (this.aiming) {
-      this.parent.rotation = this.camera.rotation.multiply(0, 1, 0);
-    }
-  }
-  colliders(obj) {
-    this.parent.stat.ground = false;
-    this.level.colliders.forEach((col) => {
-      if (Collisions.boxesOverlap(col.absolutePosition, col.size, this.newPosition, this.parent.size)) {
-        if (col.direction.equals(Vector3.up) && this.velocity.y <= 0) {
-          this.velocity.y = Math.max(this.velocity.y, 0);
-          this.parent.stat.falling = false;
-          this.intr.fall = 0;
-          this.intr.jump = 0;
-          this.newPosition.y = col.absolutePosition.y + col.size.y - 1;
-          this.parent.stat.ground = true;
-        }
-      }
-    });
-    if (!this.parent.stat.jumping) {
-      this.parent.stat.falling = !this.parent.stat.ground;
-    }
-  }
-  tick(obj) {
-    super.tick(obj);
-    this.setVelocity(obj);
-    this.colliders(obj);
-    this.parent.absolutePosition = this.newPosition.clone();
-  }
-};
-
-// ts/modes/side/player_camera.ts
-var FreeCamera = class extends GlController {
-  constructor(target) {
-    super({ autoReady: false });
-    this.target = target;
-    this.type = "controller";
-    this.order = "after";
-    this.lagList = [];
-    this.lagCount = 8;
-  }
-  get active() {
-    return super.active;
-  }
-  set active(value) {
-    super.active = value;
-    if (value) {
-      this.camera.offset = v3(0, -15, 60);
-      this.camera.rotation = v3(0.3, Math.PI / 8, 0);
-      this.camera.fov = 60;
-    }
-  }
-  mouseMove(e) {
-    const r = v2(e.movementX, e.movementY).scale(5e-3);
-    this.camera.rotation = v3(
-      Util.clamp(this.camera.rotation.x + r.y, -1, Math.PI / 2),
-      this.camera.rotation.y + r.x,
-      this.camera.rotation.z
-    );
-  }
-  drag(d) {
-    const r = d.scale(0.01);
-    this.camera.rotation = v3(
-      Util.clamp(this.camera.rotation.x + r.y, -1, Math.PI / 2),
-      this.camera.rotation.y + r.x,
-      this.camera.rotation.z
-    );
-  }
-  scroll(e) {
-    if (!this.parent.aiming) {
-      this.camera.offset.z = Util.clamp(this.camera.offset.z + e.deltaY * 0.1, 10, 300);
-    }
-  }
-  build() {
-    super.build();
-    this.active = true;
-  }
-  keyUp(e) {
-    if (e.key === "e" || e.key === "E") {
-      this.camera.offset = v3(0, -15, 60);
-    }
-  }
-  keyDown(e) {
-    if (e.key === "e" || e.key === "E") {
-      this.camera.offset = v3(-15, -10, 30);
-    }
-  }
-  tick(o) {
-    super.tick(o);
-    const nP = this.target.position.add(this.target.size.multiply(0.5, 0.5, 0.5)).multiply(1, -1, 1);
-    while (this.lagList.length < this.lagCount) {
-      this.lagList.push(nP);
-    }
-    this.camera.target = this.lagList.shift();
-  }
-};
-
-// ts/modes/side/bow.ts
-var BowActor = class extends GLGroup {
-  get holding() {
-    return this._holding;
-  }
-  set holding(value) {
-    this._holding = value;
-    this.backBow.active = !value;
-    this.backBow.visible = !value;
-    this.handBow.active = value;
-    this.handBow.visible = value;
-    this.backBow.tension = 0.999;
-    this.handBow.tension = 0.999;
-  }
-  build() {
-    super.build();
-    this.handBow = new Bow({ parentBone: this.parent.skeleton.bones["lHand"], offsetR: v3(0, 0, 0.2) });
-    this.addChild(this.handBow);
-    this.backBow = new Bow({
-      parentBone: this.parent.skeleton.bones["torso"],
-      offsetP: v3(0, 6, -3),
-      offsetR: v3(
-        Math.PI / 2,
-        0.5,
-        Math.PI / 2 + 0.9
-      )
-    });
-    this.addChild(this.backBow);
-    this.holding = false;
-  }
-};
-var Bow = class extends GlElement {
+// ts/gl/testObj.ts
+var TestObj = class extends GLGroup {
   constructor(attr) {
     super(attr);
-    this.stat = {};
-    this.parentBone = attr.parentBone;
-    this.bowRig = new BowSkeleton(attr.offsetP, attr.offsetR);
-  }
-  get visible() {
-    return super.visible;
-  }
-  set visible(value) {
-    super.visible = value;
-    this.bowRig.visible = value;
-  }
-  set tension(v) {
-    this.bowRig.animator.setToInterval("tension", v);
   }
   build() {
     super.build();
-    this.parentBone.addChild(this.bowRig);
-    this.tension = 0.999;
-  }
-};
-var BowSkeleton = class extends Skeleton {
-  constructor(offsetP = v3(0), offsetR = v3(0)) {
-    super({
-      bones: [
-        ["bow", new Bone({ profile: v2(1, 28), length: 6, position: v3(0, 0, 0), mesh: false }), ""],
-        ["bowS1", new Bone({ profile: v2(1, 13), length: 1, position: v3(0, 5, -12), mesh: false }), "bow"],
-        ["bowS2", new Bone({ profile: v2(1, 13), length: 1, position: v3(0, 5, 1), mesh: false }), "bow"]
-      ]
+    this.position = v3(0, 20, 0);
+    this.final = new GLCuboid({
+      position: v3(-1, -1, -200),
+      size: v3(0.01, 0.01, 0.01),
+      colors: [Colors.r]
     });
-    this.offsetP = offsetP;
-    this.offsetR = offsetR;
-    this.rotation = offsetR;
-    this.position = offsetP;
-  }
-  get visible() {
-    return super.visible;
-  }
-  set visible(value) {
-    super.visible = value;
-    this.bones["bow"].visible = value;
-  }
-  build() {
-    super.build();
-    this.bones["bow"].addChild(new GLobj({ colorIntensity: 1.3, url: "RPGCharacters_Source-2-LongBow.obj", size: v3(10, 10, 10), rotation: v3(0, Math.PI, 0), position: v3(0.5, 2.5, 1) }));
-    this.bones["bowS1"].addChild(new GLobj({ colorIntensity: 1.3, url: "RPGCharacters_Source-0-BowRope.obj", size: v3(10, 10, 10), rotation: v3(0, Math.PI, 0), position: v3(0.5, 0.5, 6.5) }));
-    this.bones["bowS2"].addChild(new GLobj({ colorIntensity: 1.3, url: "RPGCharacters_Source-1-BowRope-1.obj", size: v3(10, 10, 10), rotation: v3(0, Math.PI, 0), position: v3(0.5, 0.5, 6.5) }));
-    this.animator.add("tension", 100, {
-      bow: [[0, [0, 0, 0]], [1, [1, 1, 0]]],
-      bowS1: [[0, [0, 0, 0]], [1, [1, 1, 1]]],
-      bowS2: [[0, [0, 0, 0]], [1, [1, 1, 1]]]
-    }, { loop: false, bounce: false, once: false, dynamic: false });
-  }
-};
-
-// ts/modes/side/player_actor.ts
-var Player = class extends Character {
-  constructor({
-    position = Vector3.f(0),
-    size = Vector3.f(0),
-    rotation = Vector3.f(0)
-  } = {}) {
-    super({
-      position,
-      size,
-      rotation,
-      anchorPoint: size.multiply(0.5, 0, 0.5)
+    this.addChild(this.final);
+    this.final.addChild(new GLCuboid({
+      position: v3(-1, -1, -1),
+      size: v3(2, 2, 2),
+      colors: [Colors.r]
+    }));
+    this.r1 = new GLCuboid({
+      size: v3(10, 0.1, 0.1),
+      colors: [Colors.b]
     });
-    this.stat = { jumping: false, falling: false, running: false, fallAnimation: false };
-    this.addControllers([new FreeCamera(this), new PlayerController(this)]);
+    this.r2 = new GLCuboid({
+      size: v3(0.1, 0.1, 0.1),
+      position: this.r1.size.clone(),
+      colors: [Colors.b]
+    });
+    this.addChild(this.r1);
+    this.r1.addChild(this.r2);
   }
-  get aiming() {
-    const a = this.controllers[1].aiming;
-    this.bow.holding = a;
-    return a;
-  }
-  build() {
-    GlElement.registerControllers(this);
-    this.skeleton = new PlayerSkel();
-    this.addChild(this.skeleton);
-    this.bow = new BowActor();
-    this.addChild(this.bow);
+  tick(obj) {
+    super.tick(obj);
+    this.r1.rotation = this.r1.rotation.add(v3(0, 5e-3, 1e-3));
   }
 };
 
@@ -4498,221 +3999,6 @@ var Collider = class extends GlElement {
   }
 };
 
-// ts/modes/side/car_controller.ts
-var CarController = class extends GlController {
-  constructor() {
-    super(...arguments);
-    this.intr = { fall: 0, jump: 0, landDelay: 0 };
-    this.cnst = { runTime: 5e3, runSlowDownFactor: 0.1, runSpeed: 2 };
-    this.velocity = Vector3.f(0);
-    this.direction = 0;
-  }
-  setMovementVelocity(interval) {
-    if (this.mode.input.space) {
-      this.intr.acc = 0;
-    } else if (this.mode.input.up) {
-      this.intr.acc = Util.clamp((this.intr.acc | 0) + interval, -(this.cnst.runTime / 3), this.cnst.runTime);
-    }
-    {
-      if (this.mode.input.down) {
-        this.intr.acc = Util.clamp((this.intr.acc | 0) - interval * 0.8, -(this.cnst.runTime / 3), this.cnst.runTime);
-      } else {
-        if (this.intr.acc >= 0) {
-          this.intr.acc = Util.clamp((this.intr.acc | 0) - interval * this.cnst.runSlowDownFactor, 0, this.cnst.runTime);
-        } else {
-          this.intr.acc = Util.clamp((this.intr.acc | 0) + interval * this.cnst.runSlowDownFactor, -(this.cnst.runTime / 3), 0);
-        }
-      }
-    }
-    this.direction = this.direction - 1e-3 * interval * (+this.mode.input.left - +this.mode.input.right) * (1.5 - this.intr.acc / this.cnst.runTime) * (this.intr.acc / this.cnst.runTime);
-    this.parent.rotation = v3(0, this.direction, 0);
-    const plane = Vector2.up.clampMagnitude(1).scale(this.intr.acc / this.cnst.runTime).scale(this.cnst.runSpeed).rotate(-this.direction);
-    this.velocity = v3(
-      plane.x,
-      0,
-      plane.y
-    );
-  }
-  setJumpVelocity(interval) {
-    if (this.parent.stat.falling) {
-      this.intr.fall += interval;
-    } else {
-      this.velocity.y = 0;
-      return;
-    }
-    this.velocity.y = 0;
-  }
-  setVelocity(obj) {
-    this.setMovementVelocity(obj.intervalS10);
-    this.setJumpVelocity(obj.intervalS10);
-    const sc = this.velocity.scale(obj.intervalS10 / 6);
-    if (sc.xz.magnitude() > 0) {
-      const [x, z] = sc.xz.array;
-      this.newPosition = this.parent.absolutePosition.add(v3(x, sc.y, z));
-    } else {
-      this.newPosition = this.parent.absolutePosition.add(v3(0, sc.y, 0));
-    }
-  }
-  colliders(obj) {
-    this.parent.stat.ground = false;
-    if (!this.parent.stat.jumping) {
-      this.parent.stat.falling = !this.parent.stat.ground;
-    }
-  }
-  build() {
-    super.build();
-    this.direction = this.parent.rotation.y;
-  }
-  tick(obj) {
-    super.tick(obj);
-    this.setVelocity(obj);
-    this.colliders(obj);
-    this.parent.absolutePosition = this.newPosition.clone();
-  }
-};
-
-// ts/modes/side/car_camera.ts
-var CarCamera = class extends GlController {
-  constructor(target) {
-    super({ autoReady: false });
-    this.target = target;
-    this.type = "controller";
-    this.order = "after";
-    this.lagList = [];
-    this.lagCount = 8;
-  }
-  get active() {
-    return super.active;
-  }
-  set active(value) {
-    super.active = value;
-    if (value) {
-      this.camera.offset = v3(0, -15, 200);
-      this.camera.rotation = v3(0.15, 0, 0);
-      this.camera.fov = 70;
-    }
-  }
-  mouseMove(e) {
-    const r = v2(e.movementX, e.movementY).scale(5e-3);
-    this.camera.rotation = v3(
-      Util.clamp(this.camera.rotation.x + r.y, -0.1, Math.PI / 2),
-      this.camera.rotation.y + r.x,
-      this.camera.rotation.z
-    );
-  }
-  build() {
-  }
-  scroll(e) {
-    this.camera.offset.z = Util.clamp(this.camera.offset.z + e.deltaY * 0.1, 100, 200);
-  }
-  tick(o) {
-    super.tick(o);
-    const nP = this.target.position.add(this.target.size.multiply(0.5, 0.5, 0.5)).multiply(1, -1, 1);
-    while (this.lagList.length < this.lagCount) {
-      this.lagList.push(nP);
-    }
-    this.camera.target = this.lagList.shift();
-  }
-};
-
-// ts/modes/side/car_actor.ts
-var Driver = class extends Character {
-  constructor({
-    position = Vector3.f(0),
-    size = Vector3.f(0),
-    rotation = Vector3.f(0)
-  } = {}) {
-    super({
-      position,
-      size,
-      rotation,
-      anchorPoint: size.multiply(0.5, 0, 0.5)
-    });
-    this.stat = { jumping: false, falling: false, running: false, fallAnimation: false };
-    this.addControllers([new CarController(this), new CarCamera(this)]);
-  }
-  build() {
-    GlElement.registerControllers(this);
-    this.addChild(new GLobj({ storage: this.mode.storage, url: "Shop-3-Car.obj", size: v3(18, 18, 18), position: v3(18, 12, 47), rotation: v3(0, -Math.PI / 2, 0) }));
-  }
-  tick(obj) {
-    super.tick(obj);
-  }
-};
-
-// ts/modes/side/npc_skeleton.ts
-var npcSkeleton = class extends HumanSkeleton {
-  constructor() {
-    super({
-      "head": 6,
-      "armUpper": 5,
-      "armLower": 9,
-      "hand": 0,
-      "legUpper": 9,
-      "legLower": 5,
-      "foot": 1,
-      "torso": 5.5,
-      "hips": 3,
-      "hipsWidth": 6,
-      "shoulderWidth": 8
-    });
-  }
-  build() {
-    super.build();
-    this.bones["head"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-10-Head.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(2, -9.5, 2) }));
-    this.bones["torso"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-8-TorsoUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(this.sizes.shoulderWidth / 2, -3, 1) }));
-    this.bones["hips"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-9-TorsoLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(3, 0, 1) }));
-    this.bones["lLegUpper"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-0-lLegUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(3, 9, 1) }));
-    this.bones["rLegUpper"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-1-rLegUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(-2, 9, 1) }));
-    this.bones["lLegLower"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-2-lLegLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(3, 14.4, 1.5) }));
-    this.bones["rLegLower"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-3-rLegLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(-2, 14.4, 1.5) }));
-    this.bones["lArmUpper"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-4-lArmUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, Math.PI / 2), position: v3(8.5, 7, 1) }));
-    this.bones["rArmUpper"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-5-rArmUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, -Math.PI / 2), position: v3(-7.5, 7, 1) }));
-    this.bones["lArmLower"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-6-lArmLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, Math.PI / 2), position: v3(8.5, 16, 1) }));
-    this.bones["rArmLower"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-7-rArmLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, -Math.PI / 2), position: v3(-7.5, 16, 1) }));
-    this.animator.add("idle", 15e3, {
-      torso: [],
-      hips: [],
-      head: [[0.4, [0, 0.5]], [0.5, [0, -0.5]], [0.9, [0, -0.5]], [1, [0, 0.5]]],
-      lArmUpper: [],
-      lArmLower: [],
-      lHand: [],
-      rArmUpper: [],
-      rArmLower: [],
-      rHand: [],
-      lLegUpper: [],
-      lLegLower: [],
-      lFoot: [],
-      rLegUpper: [],
-      rLegLower: [],
-      rFoot: []
-    }, { loop: true, dynamic: true, ease: "easeInOutSine" });
-    this.animator.play("idle");
-  }
-};
-
-// ts/modes/side/npc_actor.ts
-var NPC = class extends Character {
-  constructor({
-    position = Vector3.f(0),
-    size = Vector3.f(0),
-    rotation = Vector3.f(0)
-  } = {}) {
-    super({
-      position,
-      size,
-      rotation,
-      anchorPoint: size.multiply(0.5, 0, 0.5)
-    });
-    this.stat = { jumping: false, falling: false, running: false, fallAnimation: false };
-  }
-  build() {
-    GlElement.registerControllers(this);
-    this.skeleton = new npcSkeleton();
-    this.addChild(this.skeleton);
-  }
-};
-
 // ts/modes/side/level.ts
 var World = class extends Level {
   constructor() {
@@ -4791,46 +4077,12 @@ var World = class extends Level {
   }
   build() {
     super.build();
-    this.addChild(new NPC({
-      size: v3(6, 33, 8),
-      position: v3(220, 11, 736),
-      rotation: v3(0, Math.PI, 0)
-    }));
     this.player = new Player({
       size: v3(6, 33, 8),
-      position: v3(150, 1, 500),
+      position: v3(10, 1, -20),
       rotation: v3(0, -2.3, 0)
     });
     this.addChild(this.player);
-    this.car = new Driver({
-      size: v3(36, 26, 93),
-      position: v3(130, 1, 600),
-      rotation: v3(0, 2.3, 0)
-    });
-    this.addChild(this.car);
-    this.car.active = false;
-    this.addChild(new GLCuboid({ size: v3(3500, 1, 5e3), position: v3(-5600, -2, -2e3), colors: [[0.476378 * 0.96, 0.547244 * 0.96, 0.492126 * 0.96, 1]] }));
-    this.addChild(new GLCuboid({ size: v3(4e3, 1, 5e3), position: v3(1900, -2, -2e3), colors: [[0.476378 * 0.96, 0.547244 * 0.96, 0.492126 * 0.96, 1]] }));
-    this.addChild(new GLCuboid({ size: v3(4e3, 1, 1800), position: v3(-2100, -2, -2e3), colors: [[0.476378 * 0.96, 0.547244 * 0.96, 0.492126 * 0.96, 1]] }));
-    this.addChild(new GLCuboid({ size: v3(4e3, 1, 800), position: v3(-2100, -2, 2200), colors: [[0.476378 * 0.96, 0.547244 * 0.96, 0.492126 * 0.96, 1]] }));
-    for (let x = 0; x < 20; x++) {
-      for (let y = 0; y < 12; y++) {
-        if (y === 3) {
-          this.spawnRoad(x, y);
-        } else {
-          this.spawnTile(x, y);
-        }
-      }
-    }
-    this.addChild(new GLobj({ storage: this.mode.storage, url: "CountrySide-5-House.obj", size: v3(18, 18, 18), position: v3(200, 43, 800), rotation: v3(0, -Math.PI / 2, 0) }));
-    this.addChild(new GLobj({ storage: this.mode.storage, url: "CountrySide-4-Vegetation1.obj", size: v3(20, 20, 20), rotation: v3(0, Math.PI, 0), position: v3(-100 - 20, 5, 670) }));
-    this.addChild(new GLobj({ storage: this.mode.storage, url: "CountrySide-4-Vegetation1.obj", size: v3(25, 25, 25), rotation: v3(0, 0, 0), position: v3(-20 - 20, 6, 760) }));
-    this.addChild(new GLobj({ storage: this.mode.storage, url: "CountrySide-4-Vegetation1.obj", size: v3(25, 25, 25), rotation: v3(0, Math.PI / 2, 0), position: v3(0 - 20, 3, 670) }));
-    this.addChild(new GLobj({ storage: this.mode.storage, url: "Plane01.obj", size: v3(30, 30, 30), position: v3(420, 16, 720), rotation: v3(0, Math.PI / 4 + Math.PI / 2, -0.12) }));
-    this.addChild(new GLobj({ storage: this.mode.storage, url: "Medieval Town - Pack 1-0.obj", size: v3(10, 10, 10), position: v3(0, -1, 500) }));
-    this.addChild(new GLobj({ storage: this.mode.storage, url: "Medieval Town - Pack 1-1.obj", size: v3(10, 10, 10), position: v3(0, -1, 500) }));
-    this.addChild(new GLobj({ storage: this.mode.storage, url: "Medieval Town - Pack 1-2.obj", size: v3(10, 10, 10), position: v3(0, -1, 500) }));
-    this.addChild(new GLobj({ storage: this.mode.storage, url: "Nuclear Survival - Pack 6 - m.obj", size: v3(10, 10, 10), position: v3(0, -6, 300), rotation: v3(0, -Math.PI / 2, 0) }));
     [
       [v3(-5e3, -1e3, -2e3), v3(1e4, 1e3, 4e3), Vector3.up, false],
       // floor
@@ -4839,6 +4091,7 @@ var World = class extends Level {
     ].forEach(([position, size, direction, show]) => {
       this.addChild(new Collider({ position, size, direction, showMesh: show === void 0 ? false : show, showArrows: false }));
     });
+    this.addChild(this.test = new TestObj({ size: v3(1, 1, 1) }));
   }
 };
 

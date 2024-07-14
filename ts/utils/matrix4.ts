@@ -1,11 +1,35 @@
 import { mat4, vec3 } from 'gl-matrix';
-import { Vector3 } from './vector3';
+import { Vector3, v3 } from './vector3';
 
 export class Matrix4 {
     public mat4: mat4;
     public constructor(source?: mat4) {
         this.mat4 = source?mat4.clone(source):mat4.create();
         return this
+    }
+    public add(mat: Matrix4) {
+        mat4.add(
+            this.mat4,
+            this.mat4,
+            mat.mat4
+        );
+        return this;
+    }
+    public subtract(mat: Matrix4) {
+        mat4.subtract(
+            this.mat4,
+            this.mat4,
+            mat.mat4
+        );
+        return this;
+    }
+    public multiply(mat: Matrix4) {
+        mat4.multiply(
+            this.mat4,
+            this.mat4,
+            mat.mat4
+        );
+        return this;
     }
     public translate(vector: Vector3) {
         mat4.translate(
@@ -15,10 +39,10 @@ export class Matrix4 {
         );
         return this;
     }
-    public invert(mat: Matrix4) {
+    public invert() {
         mat4.invert(
             this.mat4,
-            mat.mat4,
+            this.mat4,
         );
         return this;
     }
@@ -56,5 +80,9 @@ export class Matrix4 {
     }
     public clone() {
         return new Matrix4(this.mat4);
+    }
+
+    public get position() {
+        return v3(this.mat4[8], this.mat4[9], this.mat4[10])
     }
 }

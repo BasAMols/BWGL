@@ -4,13 +4,12 @@ import { Level } from '../../utils/level';
 import { Vector2 } from '../../utils/vector2';
 import { Vector3, v3 } from '../../utils/vector3';
 import { Player } from './player_actor';
-import { Collider } from '../../utils/collider';
 import { GLobj } from '../../gl/obj';
-import { GLCuboid } from '../../gl/cuboid';
 import { ObjStorage } from '../../gl/objStorage';
 import { Driver } from './car_actor';
-import { NPC } from './npc_actor';
 import { Sky } from './sky';
+import { TestObj } from '../../gl/testObj';
+import { Collider } from '../../utils/collider';
 
 export class World extends Level {
     public start = Vector2.zero;
@@ -22,6 +21,7 @@ export class World extends Level {
     car: Driver;
     player: Player;
     sky: Sky;
+    public test: TestObj;
 
     keyDown(e: KeyboardEvent): void {
         if (e.key === "Enter") {
@@ -101,56 +101,56 @@ export class World extends Level {
     build() {
         super.build();
         
-        this.addChild(new NPC({
-            size: v3(6, 33, 8),
-            position: v3(220, 11, 736),
-            rotation: v3(0, Math.PI, 0)
-        }));
+        // this.addChild(new NPC({
+        //     size: v3(6, 33, 8),
+        //     position: v3(220, 11, 736),
+        //     rotation: v3(0, Math.PI, 0)
+        // }));
 
         this.player = new Player({
             size: v3(6, 33, 8),
-            position: v3(150, 1, 500),
+            position: v3(10, 1, -20),
             rotation: v3(0, -2.3, 0)
         });
         this.addChild(this.player);
-        this.car = new Driver({
-            size: v3(36, 26, 93),
-            position: v3(130, 1, 600),
-            rotation: v3(0, 2.3, 0)
-        });
-        this.addChild(this.car);
-        this.car.active = false;
-        this.addChild(new GLCuboid({ size: v3(3500, 1, 5000), position: v3(-5600, -2, -2000), colors: [[0.476378*0.96, 0.547244*0.96, 0.492126*0.96, 1]] }));
-        this.addChild(new GLCuboid({ size: v3(4000, 1, 5000), position: v3(1900, -2, -2000), colors: [[0.476378*0.96, 0.547244*0.96, 0.492126*0.96, 1]] }));
-        this.addChild(new GLCuboid({ size: v3(4000, 1, 1800), position: v3(-2100, -2, -2000), colors: [[0.476378*0.96, 0.547244*0.96, 0.492126*0.96, 1]] }));
-        this.addChild(new GLCuboid({ size: v3(4000, 1, 800), position: v3(-2100, -2, 2200), colors: [[0.476378*0.96, 0.547244*0.96, 0.492126*0.96, 1]] }));
+        // this.car = new Driver({
+        //     size: v3(36, 26, 93),
+        //     position: v3(130, 1, 600),
+        //     rotation: v3(0, 2.3, 0)
+        // });
+        // this.addChild(this.car);
+        // this.car.active = false;
+        // this.addChild(new GLCuboid({ size: v3(3500, 1, 5000), position: v3(-5600, -2, -2000), colors: [[0.476378*0.96, 0.547244*0.96, 0.492126*0.96, 1]] }));
+        // this.addChild(new GLCuboid({ size: v3(4000, 1, 5000), position: v3(1900, -2, -2000), colors: [[0.476378*0.96, 0.547244*0.96, 0.492126*0.96, 1]] }));
+        // this.addChild(new GLCuboid({ size: v3(4000, 1, 1800), position: v3(-2100, -2, -2000), colors: [[0.476378*0.96, 0.547244*0.96, 0.492126*0.96, 1]] }));
+        // this.addChild(new GLCuboid({ size: v3(4000, 1, 800), position: v3(-2100, -2, 2200), colors: [[0.476378*0.96, 0.547244*0.96, 0.492126*0.96, 1]] }));
 
-        for (let x = 0; x < 20; x++) {
-            for (let y = 0; y < 12; y++) {
-                if (y === 3) {
-                    this.spawnRoad(x, y);
-                } else {
-                    this.spawnTile(x, y);
-                }
+        // for (let x = 0; x < 20; x++) {
+        //     for (let y = 0; y < 12; y++) {
+        //         if (y === 3) {
+        //             this.spawnRoad(x, y);
+        //         } else {
+        //             this.spawnTile(x, y);
+        //         }
 
-            }
-        }
+        //     }
+        // }
 
-        // this.addChild(new GLobj({ storage: this.mode.storage, url: 'apoc/VoxelNuke-23-ConcreteGroundTile.obj', size: v3(50, 50, 50), position: v3(100, -3, 550) }));
-        // this.addChild(new GLobj({ storage: this.mode.storage, url: 'apoc/VoxelNuke-23-ConcreteGroundTile.obj', size: v3(50, 50, 50), position: v3(300, -3, 550) }));
-        // this.addChild(new GLobj({ storage: this.mode.storage, url: 'apoc/VoxelNuke-23-ConcreteGroundTile.obj', size: v3(50, 50, 50), position: v3(100, -3, 750) }));
-        // this.addChild(new GLobj({ storage: this.mode.storage, url: 'apoc/VoxelNuke-23-ConcreteGroundTile.obj', size: v3(50, 50, 50), position: v3(300, -3, 750) }));
+        // // this.addChild(new GLobj({ storage: this.mode.storage, url: 'apoc/VoxelNuke-23-ConcreteGroundTile.obj', size: v3(50, 50, 50), position: v3(100, -3, 550) }));
+        // // this.addChild(new GLobj({ storage: this.mode.storage, url: 'apoc/VoxelNuke-23-ConcreteGroundTile.obj', size: v3(50, 50, 50), position: v3(300, -3, 550) }));
+        // // this.addChild(new GLobj({ storage: this.mode.storage, url: 'apoc/VoxelNuke-23-ConcreteGroundTile.obj', size: v3(50, 50, 50), position: v3(100, -3, 750) }));
+        // // this.addChild(new GLobj({ storage: this.mode.storage, url: 'apoc/VoxelNuke-23-ConcreteGroundTile.obj', size: v3(50, 50, 50), position: v3(300, -3, 750) }));
 
-        this.addChild(new GLobj({ storage: this.mode.storage, url: 'CountrySide-5-House.obj', size: v3(18, 18, 18), position: v3(200, 43, 800), rotation: v3(0, -Math.PI / 2, 0) }));
-        this.addChild(new GLobj({ storage: this.mode.storage, url: 'CountrySide-4-Vegetation1.obj', size: v3(20, 20, 20), rotation: v3(0, Math.PI, 0), position: v3(-100 - 20, 5, 670) }));
-        this.addChild(new GLobj({ storage: this.mode.storage, url: 'CountrySide-4-Vegetation1.obj', size: v3(25, 25, 25), rotation: v3(0, 0, 0), position: v3(-20 - 20, 6, 760) }));
-        this.addChild(new GLobj({ storage: this.mode.storage, url: 'CountrySide-4-Vegetation1.obj', size: v3(25, 25, 25), rotation: v3(0, Math.PI / 2, 0), position: v3(0 - 20, 3, 670) }));
-        this.addChild(new GLobj({ storage: this.mode.storage, url: 'Plane01.obj', size: v3(30, 30, 30), position: v3(420, 16, 720), rotation: v3(0, Math.PI / 4 + Math.PI / 2, -0.12) }));
+        // this.addChild(new GLobj({ storage: this.mode.storage, url: 'CountrySide-5-House.obj', size: v3(18, 18, 18), position: v3(200, 43, 800), rotation: v3(0, -Math.PI / 2, 0) }));
+        // this.addChild(new GLobj({ storage: this.mode.storage, url: 'CountrySide-4-Vegetation1.obj', size: v3(20, 20, 20), rotation: v3(0, Math.PI, 0), position: v3(-100 - 20, 5, 670) }));
+        // this.addChild(new GLobj({ storage: this.mode.storage, url: 'CountrySide-4-Vegetation1.obj', size: v3(25, 25, 25), rotation: v3(0, 0, 0), position: v3(-20 - 20, 6, 760) }));
+        // this.addChild(new GLobj({ storage: this.mode.storage, url: 'CountrySide-4-Vegetation1.obj', size: v3(25, 25, 25), rotation: v3(0, Math.PI / 2, 0), position: v3(0 - 20, 3, 670) }));
+        // this.addChild(new GLobj({ storage: this.mode.storage, url: 'Plane01.obj', size: v3(30, 30, 30), position: v3(420, 16, 720), rotation: v3(0, Math.PI / 4 + Math.PI / 2, -0.12) }));
 
-        this.addChild(new GLobj({ storage: this.mode.storage, url: 'Medieval Town - Pack 1-0.obj', size: v3(10, 10, 10), position: v3(0, -1, 500)}));
-        this.addChild(new GLobj({ storage: this.mode.storage, url: 'Medieval Town - Pack 1-1.obj', size: v3(10, 10, 10), position: v3(0, -1, 500)}));
-        this.addChild(new GLobj({ storage: this.mode.storage, url: 'Medieval Town - Pack 1-2.obj', size: v3(10, 10, 10), position: v3(0, -1, 500)}));
-        this.addChild(new GLobj({ storage: this.mode.storage, url: 'Nuclear Survival - Pack 6 - m.obj', size: v3(10, 10, 10), position: v3(0, -6, 300), rotation: v3(0, -Math.PI / 2, 0) }));
+        // this.addChild(new GLobj({ storage: this.mode.storage, url: 'Medieval Town - Pack 1-0.obj', size: v3(10, 10, 10), position: v3(0, -1, 500)}));
+        // this.addChild(new GLobj({ storage: this.mode.storage, url: 'Medieval Town - Pack 1-1.obj', size: v3(10, 10, 10), position: v3(0, -1, 500)}));
+        // this.addChild(new GLobj({ storage: this.mode.storage, url: 'Medieval Town - Pack 1-2.obj', size: v3(10, 10, 10), position: v3(0, -1, 500)}));
+        // this.addChild(new GLobj({ storage: this.mode.storage, url: 'Nuclear Survival - Pack 6 - m.obj', size: v3(10, 10, 10), position: v3(0, -6, 300), rotation: v3(0, -Math.PI / 2, 0) }));
 
         (([
             [v3(-5000, -1000, -2000), v3(10000, 1000, 4000), Vector3.up, false], // floor
@@ -158,6 +158,10 @@ export class World extends Level {
         ]) as ([Vector3, Vector3, Vector3, boolean?])[]).forEach(([position, size, direction, show]) => {
             this.addChild(new Collider({ position, size, direction, showMesh: show === undefined ? false : show, showArrows: false }));
         });
+
+        this.addChild(this.test = new TestObj({size: v3(1,1,1)}));
+        
+
 
         // this.sky = this.addChild(new Sky()) as Sky;
 

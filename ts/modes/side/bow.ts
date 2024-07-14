@@ -32,8 +32,8 @@ export class BowActor extends GLGroup {
         
     }
 
-    private handBow: Bow;
-    private backBow: Bow;
+    public handBow: Bow;
+    public backBow: Bow;
 
     public build(): void {
         super.build();

@@ -3,10 +3,10 @@ import { Character } from '../../gl/character';
 import { Vector3 } from '../../utils/vector3';
 import { GlElement } from '../../gl/elementBase';
 import { HumanSkeleton } from '../../utils/skeleton_human';
-import { PlayerSkel } from './player_skeleton';
 import { PlayerController } from './player_controller';
 import { FreeCamera } from './player_camera';
 import { BowActor } from './bow';
+import { TickerReturnData } from '../../utils/ticker';
 
 export class Player extends Character {
     public stat: Record<string, boolean> = { jumping: false, falling: false, running: false, fallAnimation: false };
@@ -16,7 +16,7 @@ export class Player extends Character {
 
     public get aiming() {
         const a = (this.controllers[1] as PlayerController).aiming;
-        this.bow.holding = a;
+        // this.bow.holding = a;
         return a
     }
 
@@ -40,10 +40,16 @@ export class Player extends Character {
 
     build() {
         GlElement.registerControllers(this);
-        this.skeleton = new PlayerSkel();
-        this.addChild(this.skeleton);
+        // this.skeleton = new PlayerSkel();
+        // this.addChild(this.skeleton);
+        // this.bow = new BowActor();
+        // this.addChild(this.bow)
 
-        this.bow = new BowActor();
-        this.addChild(this.bow)
+
+    }
+
+    public tick(obj: TickerReturnData): void {
+        super.tick(obj);
+        // (this.level as World).test.position = this.bow.handBow.bowRig.bones['bow'].worldPosition.clone()
     }
 }

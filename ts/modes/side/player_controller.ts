@@ -105,13 +105,13 @@ export class PlayerController extends GlController {
         const sc = this.velocity.scale(obj.intervalS10 / 6);
         if (sc.xz.magnitude() > 0) {
             const [x, z] = sc.xz.rotate(-this.camera.rotation.y).array;
-            this.newPosition = this.parent.absolutePosition.add(v3(x, sc.y, z));
+            this.newPosition = this.parent.position.add(v3(x, sc.y, z));
             if (this.mode.input.right || this.mode.input.left || this.mode.input.up || this.mode.input.down) {
                 this.parent.rotation = this.camera.rotation.multiply(0, 1, 0).add(v3(0, Math.PI / 2, 0)).add(v3(0, -sc.xz.angle(), 0));
             }
             this.parent.stat.running = true;
         } else {
-            this.newPosition = this.parent.absolutePosition.add(v3(0, sc.y, 0));
+            this.newPosition = this.parent.position.add(v3(0, sc.y, 0));
             this.parent.stat.running = false;
         }
 
@@ -125,7 +125,7 @@ export class PlayerController extends GlController {
     public colliders(obj: TickerReturnData) {
         this.parent.stat.ground = false;
         this.level.colliders.forEach((col) => {
-            if (Collisions.boxesOverlap(col.absolutePosition, col.size, this.newPosition, this.parent.size)) {
+            if (Collisions.boxesOverlap(col.position, col.size, this.newPosition, this.parent.size)) {
                 // if(Collisions.boxesOverlap(col.absolutePosition, newAbs, this.parent.size)){
                 if (col.direction.equals(Vector3.up) && this.velocity.y <= 0) { // floor
 
@@ -133,7 +133,7 @@ export class PlayerController extends GlController {
                     this.parent.stat.falling = false;
                     this.intr.fall = 0;
                     this.intr.jump = 0;
-                    this.newPosition.y = col.absolutePosition.y + col.size.y - 1;
+                    this.newPosition.y = col.position.y + col.size.y - 1;
                     this.parent.stat.ground = true;
                 }
                 // if (col.direction.equals(Vector3.down) && this.velocity.y > 0) { // ceiling
@@ -169,6 +169,6 @@ export class PlayerController extends GlController {
         this.setVelocity(obj);
         this.colliders(obj);
 
-        this.parent.absolutePosition = this.newPosition.clone();
+        this.parent.position = this.newPosition.clone();
     }
 }

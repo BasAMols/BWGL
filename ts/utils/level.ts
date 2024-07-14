@@ -26,10 +26,10 @@ export abstract class Level extends GlElement {
             fov: 60,
         };
 
-    public get camera():typeof this._camera {
+    public get camera(): typeof this._camera {
         return this._camera;
     }
-    public set camera(value:typeof this._camera) {
+    public set camera(value: typeof this._camera) {
         this._camera = value;
     }
 

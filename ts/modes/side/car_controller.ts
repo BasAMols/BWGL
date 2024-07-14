@@ -68,9 +68,9 @@ export class CarController extends GlController {
         const sc = this.velocity.scale(obj.intervalS10 / 6);
         if (sc.xz.magnitude() > 0) {
             const [x, z] = sc.xz.array;
-            this.newPosition = this.parent.absolutePosition.add(v3(x, sc.y, z));
+            this.newPosition = this.parent.position.add(v3(x, sc.y, z));
         } else {
-            this.newPosition = this.parent.absolutePosition.add(v3(0, sc.y, 0));
+            this.newPosition = this.parent.position.add(v3(0, sc.y, 0));
 
         }
     }
@@ -128,6 +128,6 @@ export class CarController extends GlController {
         this.setVelocity(obj);
         this.colliders(obj);
 
-        this.parent.absolutePosition = this.newPosition.clone();
+        this.parent.position = this.newPosition.clone();
     }
 }

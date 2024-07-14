@@ -74,7 +74,7 @@ export class FreeCamera extends GlController {
 
     public tick(o: TickerReturnData) {
         super.tick(o);
-        const nP = this.target.position.add(this.target.size.multiply(0.5, 0.5, 0.5)).multiply(1, -1, 1);
+        const nP = this.target.position.add(this.target.size.multiply(0.5, 0.3, 0.5));
         while (this.lagList.length < this.lagCount) {
             this.lagList.push(nP);
         }

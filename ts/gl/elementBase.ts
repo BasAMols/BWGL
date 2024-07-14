@@ -5,6 +5,7 @@ import { Vector2 } from "../utils/vector2";
 import { Vector3, v3 } from '../utils/vector3';
 import { GlController } from './controller';
 import { Collider } from '../utils/collider';
+import { Matrix4 } from '../utils/matrix4';
 
 export type GlElementAttributes = ElementAttributes & {
     autoReady?: boolean,
@@ -29,9 +30,52 @@ export abstract class GlElement extends Element {
     public autoReady: boolean;
     public anchorPoint: Vector3;
     public parent: GlElement;
-    public position: Vector3 = v3(0);
+    private transformMatrix: Matrix4;
+    private _position: Vector3 = v3(0);
+    public get position(): Vector3 {
+        return this._position;
+    }
+    public set position(value: Vector3) {
+        this._position = value;
+    }
+
     public size: Vector3 = v3(0);
-    public rotation: Vector3 = v3(0);
+    private _rotation: Vector3 = v3(0);
+    public get rotation(): Vector3 {
+        return this._rotation;
+    }
+    public set rotation(value: Vector3) {
+        this._rotation = value;
+    }
+
+    public get matrix() {
+        return this.transposeMatrix();
+    }
+
+    transposeMatrix(m: Matrix4 = new Matrix4()): Matrix4 {
+        return m
+        .translate((this.position || v3(0)).multiply(new Vector3(1, 1, -1)))
+        .translate((this.anchorPoint || v3(0)).multiply(1, 1, -1))
+        .rotate((this.rotation || v3(0)).multiply(new Vector3(1, -1, -1)))
+        .translate((this.anchorPoint || v3(0)).multiply(-1, -1, 1));
+    }
+    deTransposeMatrix(m: Matrix4 = new Matrix4()): Matrix4 {
+        return m
+        .translate((this.anchorPoint || v3(0)).multiply(1, 1, -1))
+        .rotate((this.rotation || v3(0)).multiply(new Vector3(-1, 1, 1)))
+        .translate((this.anchorPoint || v3(0)).multiply(-1, -1, 1))
+        .translate((this.position || v3(0)).multiply(new Vector3(-1, -1, 1)))
+    }
+
+    public get worldMatrix(): Matrix4 {
+        return this.transposeMatrix(this.parent?.worldMatrix || new Matrix4());
+    }
+    
+    public get worldPosition(): Vector3 {
+        return this.worldMatrix.invert().position;
+        // return (this.parent?.worldPosition || v3(0)).add(this.position);
+    }
+
     private _active: boolean = true;
     private _visible: boolean = true;
     public get visible(): boolean {
@@ -70,13 +114,6 @@ export abstract class GlElement extends Element {
         this.anchorPoint = attr.anchorPoint || v3(0);
     }
 
-    public get absolutePosition(): Vector3 {
-        return (this.parent?.absolutePosition || v3(0)).add(this.position);
-    }
-
-    public set absolutePosition(v: Vector3) {
-        this.position = v.subtract(this.parent.absolutePosition);
-    }
 
     public ready() {
         this.build();
@@ -107,7 +144,7 @@ export abstract class GlElement extends Element {
     }
 
     public removeChild(child: GlElement) {
-        if (this.children.includes(child)){
+        if (this.children.includes(child)) {
             this.children.splice(this.children.indexOf(child), 1);
         }
     }
