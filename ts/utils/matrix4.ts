@@ -83,6 +83,6 @@ export class Matrix4 {
     }
 
     public get position() {
-        return v3(this.mat4[8], this.mat4[9], this.mat4[10])
+        return v3(this.mat4[12], this.mat4[13], this.mat4[14])
     }
 }

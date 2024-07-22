@@ -2370,7 +2370,7 @@ var Matrix4 = class _Matrix4 {
     return new _Matrix4(this.mat4);
   }
   get position() {
-    return v3(this.mat4[8], this.mat4[9], this.mat4[10]);
+    return v3(this.mat4[12], this.mat4[13], this.mat4[14]);
   }
 };
 
@@ -2477,20 +2477,14 @@ var GlElement = class _GlElement extends Element {
     this._rotation = value;
   }
   get matrix() {
-    return this.transposeMatrix();
-  }
-  transposeMatrix(m = new Matrix4()) {
-    return m.translate((this.position || v3(0)).multiply(new Vector3(1, 1, -1))).translate((this.anchorPoint || v3(0)).multiply(1, 1, -1)).rotate((this.rotation || v3(0)).multiply(new Vector3(1, -1, -1))).translate((this.anchorPoint || v3(0)).multiply(-1, -1, 1));
-  }
-  deTransposeMatrix(m = new Matrix4()) {
-    return m.translate((this.anchorPoint || v3(0)).multiply(1, 1, -1)).rotate((this.rotation || v3(0)).multiply(new Vector3(-1, 1, 1))).translate((this.anchorPoint || v3(0)).multiply(-1, -1, 1)).translate((this.position || v3(0)).multiply(new Vector3(-1, -1, 1)));
+    return new Matrix4().translate((this.position || v3(0)).multiply(new Vector3(1, 1, -1))).translate((this.anchorPoint || v3(0)).multiply(1, 1, -1)).rotate((this.rotation || v3(0)).multiply(new Vector3(1, -1, -1))).translate((this.anchorPoint || v3(0)).multiply(-1, -1, 1));
   }
   get worldMatrix() {
     var _a;
-    return this.transposeMatrix(((_a = this.parent) == null ? void 0 : _a.worldMatrix) || new Matrix4());
+    return (((_a = this.parent) == null ? void 0 : _a.worldMatrix) || new Matrix4()).multiply(this.matrix);
   }
   get worldPosition() {
-    return this.worldMatrix.invert().position;
+    return this.worldMatrix.position.multiply(v3(1, 1, -1));
   }
   get visible() {
     return this._visible;
@@ -2944,34 +2938,6 @@ var FreeCamera = class extends GlController {
   }
 };
 
-// ts/modes/side/player_actor.ts
-var Player = class extends Character {
-  constructor({
-    position = Vector3.f(0),
-    size = Vector3.f(0),
-    rotation = Vector3.f(0)
-  } = {}) {
-    super({
-      position,
-      size,
-      rotation,
-      anchorPoint: size.multiply(0.5, 0, 0.5)
-    });
-    this.stat = { jumping: false, falling: false, running: false, fallAnimation: false };
-    this.addControllers([new FreeCamera(this), new PlayerController(this)]);
-  }
-  get aiming() {
-    const a = this.controllers[1].aiming;
-    return a;
-  }
-  build() {
-    GlElement.registerControllers(this);
-  }
-  tick(obj) {
-    super.tick(obj);
-  }
-};
-
 // ts/gl/rendable.ts
 var GLRendable = class extends GlElement {
   constructor(attr = {}) {
@@ -3241,6 +3207,287 @@ var GLobj = class extends GLRendable {
       }
     }
     return this.texturePositionIndeces;
+  }
+};
+
+// ts/utils/ease.ts
+var Ease = class {
+  static linear(x) {
+    return x;
+  }
+  static easeInQuad(x) {
+    return x * x;
+  }
+  static easeOutQuad(x) {
+    return 1 - (1 - x) * (1 - x);
+  }
+  static easeInOutQuad(x) {
+    return x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2;
+  }
+  static easeInCubic(x) {
+    return x * x * x;
+  }
+  static easeOutCubic(x) {
+    return 1 - Math.pow(1 - x, 3);
+  }
+  static easeInOutCubic(x) {
+    return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+  }
+  static easeInQuart(x) {
+    return x * x * x * x;
+  }
+  static easeOutQuart(x) {
+    return 1 - Math.pow(1 - x, 4);
+  }
+  static easeInOutQuart(x) {
+    return x < 0.5 ? 8 * x * x * x * x : 1 - Math.pow(-2 * x + 2, 4) / 2;
+  }
+  static easeInQuint(x) {
+    return x * x * x * x * x;
+  }
+  static easeOutQuint(x) {
+    return 1 - Math.pow(1 - x, 5);
+  }
+  static easeInOutQuint(x) {
+    return x < 0.5 ? 16 * x * x * x * x * x : 1 - Math.pow(-2 * x + 2, 5) / 2;
+  }
+  static easeInSine(x) {
+    return 1 - Math.cos(x * Math.PI / 2);
+  }
+  static easeOutSine(x) {
+    return Math.sin(x * Math.PI / 2);
+  }
+  static easeInOutSine(x) {
+    return -(Math.cos(Math.PI * x) - 1) / 2;
+  }
+  static easeInExpo(x) {
+    return x === 0 ? 0 : Math.pow(2, 10 * x - 10);
+  }
+  static easeOutExpo(x) {
+    return x === 1 ? 1 : 1 - Math.pow(2, -10 * x);
+  }
+  static easeInOutExpo(x) {
+    return x === 0 ? 0 : x === 1 ? 1 : x < 0.5 ? Math.pow(2, 20 * x - 10) / 2 : (2 - Math.pow(2, -20 * x + 10)) / 2;
+  }
+  static easeInCirc(x) {
+    return 1 - Math.sqrt(1 - Math.pow(x, 2));
+  }
+  static easeOutCirc(x) {
+    return Math.sqrt(1 - Math.pow(x - 1, 2));
+  }
+  static easeInOutCirc(x) {
+    return x < 0.5 ? (1 - Math.sqrt(1 - Math.pow(2 * x, 2))) / 2 : (Math.sqrt(1 - Math.pow(-2 * x + 2, 2)) + 1) / 2;
+  }
+  static easeInBack(x) {
+    return 2.70158 * x * x * x - 1.70158 * x * x;
+  }
+  static easeOutBack(x) {
+    return 1 + 2.70158 * Math.pow(x - 1, 3) + 1.70158 * Math.pow(x - 1, 2);
+  }
+  static easeInOutBack(x) {
+    return x < 0.5 ? Math.pow(2 * x, 2) * (7.18982 * x - 2.59491) / 2 : (Math.pow(2 * x - 2, 2) * (3.59491 * (x * 2 - 2) + 2.59491) + 2) / 2;
+  }
+};
+
+// ts/utils/animation.ts
+var Animation = class {
+  constructor(attr) {
+    this.interval = 0;
+    this.direction = 1;
+    this.data = {};
+    this._active = false;
+    this.bones = attr.bones || {};
+    this.time = attr.time || 0;
+    this.loop = attr.loop || false;
+    this.once = attr.once || false;
+    this.dynamic = attr.dynamic || false;
+    this.bounce = attr.bounce || false;
+    this.defaultEase = attr.defaultEase || "linear";
+    Object.entries(attr.data).forEach(([key, d]) => {
+      if (d.length === 0) {
+        d = [[0], [1]];
+      }
+      if (d[0][0] !== 0) {
+        d.unshift([0, ...d[0].slice(1)]);
+      }
+      if (d[d.length - 1][0] !== 1) {
+        d.push([1, ...d[d.length - 1].slice(1)]);
+      }
+      this.data[key] = d;
+    });
+  }
+  get active() {
+    return this._active;
+  }
+  set active(value) {
+    this._active = value;
+    if (!value) {
+      this.interval = 0;
+    }
+  }
+  setTime(t) {
+    const f = this.interval / this.time;
+    this.time = t;
+    this.interval = t * f;
+  }
+  setBoneTransform(key, transform) {
+    const bone = this.bones[key];
+    if (bone) {
+      bone.setRotation(v3(transform[0] || 0, transform[1] || 0, transform[2] || 0), this.dynamic);
+      bone.setPosition(v3(transform[3] || 0, transform[4] || 0, transform[5] || 0), this.dynamic);
+    }
+  }
+  setBoneToValue(key, value) {
+    if (this.data[key]) {
+      let before = this.data[key][0];
+      let after = this.data[key][this.data[key].length - 1];
+      this.data[key].forEach((d) => {
+        if (d[0] >= before[0] && d[0] <= value) {
+          before = [d[0], Util.padArray(d[1] || [], 0, 7)];
+        }
+        if (d[0] <= after[0] && d[0] >= value) {
+          after = [d[0], Util.padArray(d[1] || [], 0, 7)];
+        }
+      });
+      const [[startNumber, start], [endNumber, end, ease]] = [before, after];
+      const factor = Ease[ease || this.defaultEase]((value - startNumber) / (endNumber - startNumber));
+      if (key === "bowS1") {
+      }
+      this.setBoneTransform(
+        key,
+        Util.addArrays(
+          start || [],
+          Util.scaleArrays(
+            Util.subtractArrays(end || [], start || []),
+            factor
+          )
+        )
+      );
+    }
+  }
+  setBonesToValue(n) {
+    Object.keys(this.bones).forEach((b) => {
+      this.setBoneToValue(b, n);
+    });
+  }
+  stop() {
+  }
+  tick(interval) {
+    if (this.active) {
+      this.interval = this.interval + interval * this.direction;
+      if (this.interval >= this.time) {
+        if (this.bounce) {
+          this.interval = this.time - 1;
+          this.direction = -1;
+        } else if (this.loop) {
+          this.interval = this.interval % this.time;
+        } else if (this.once) {
+          this.interval = this.time - 1;
+        } else {
+          this.active = false;
+          this.interval = 1;
+          return;
+        }
+      }
+      if (this.interval < 0) {
+        if (this.loop) {
+          this.interval = 0;
+          this.direction = 1;
+        } else {
+          this.active = false;
+          this.interval = 0;
+          return;
+        }
+      }
+      this.setBonesToValue(Util.clamp(this.interval / this.time, 1e-3, 0.999));
+    }
+  }
+};
+var Animator = class {
+  constructor(attr) {
+    this.animations = {};
+    this.bones = {};
+    this.bones = attr.bones || {};
+  }
+  add(key, time, data, attr = {}) {
+    this.animations[key] = new Animation({
+      bones: this.bones,
+      loop: attr.loop || false,
+      once: attr.once || false,
+      bounce: attr.bounce || false,
+      dynamic: attr.dynamic || false,
+      defaultEase: attr.ease || "linear",
+      time,
+      data
+    });
+    return this.get(key);
+  }
+  get(key) {
+    return this.animations[key];
+  }
+  stop() {
+    Object.values(this.animations).forEach((a) => {
+      a.active = false;
+    });
+  }
+  play(key) {
+    Object.entries(this.animations).forEach(([k, a]) => {
+      a.active = k === key;
+    });
+  }
+  setToInterval(key, n) {
+    const an = this.get(key);
+    if (an) {
+      an.setBonesToValue(n * an.time);
+    }
+  }
+  replay(key) {
+    this.stop();
+    Object.entries(this.animations).find((k) => k[0] === key)[1].active = true;
+  }
+  tick(interval) {
+    Object.values(this.animations).forEach((a) => a.tick(interval));
+  }
+};
+
+// ts/utils/skeleton.ts
+var Skeleton = class extends GLGroup {
+  constructor(attr = {}) {
+    super(attr);
+    this.bones = {};
+    this.parentage = {};
+    attr.bones.forEach((o) => {
+      this.addBone(o);
+    });
+  }
+  addBone(o) {
+    this.bones[o[0]] = o[1];
+    if (o[2]) {
+      this.parentage[o[0]] = o[2];
+    }
+    if (this.readyState) {
+      if (this.parentage[o[0]]) {
+        this.bones[this.parentage[o[0]]].addChild(o[1]);
+      } else {
+        this.addChild(o[1]);
+      }
+      this.animator.bones = this.bones;
+    }
+  }
+  build() {
+    super.build();
+    Object.entries(this.bones).forEach(([key, b]) => {
+      if (this.parentage[key]) {
+        this.bones[this.parentage[key]].addChild(b);
+      } else {
+        this.addChild(b);
+      }
+    });
+    this.animator = new Animator({ bones: this.bones });
+  }
+  tick(obj) {
+    super.tick(obj);
+    this.animator.tick(obj.intervalS10);
   }
 };
 
@@ -3600,6 +3847,474 @@ var GLCuboid = class _GLCuboid extends GLRendable {
   }
 };
 
+// ts/utils/skeleton_bone.ts
+var Bone = class extends GLGroup {
+  constructor(attr = {}) {
+    super(attr);
+    this.mesh = attr.mesh === void 0 ? false : attr.mesh;
+    this.length = attr.length === void 0 ? 10 : attr.length;
+    this.profile = attr.profile || v2(0);
+    this.speed = attr.speed === void 0 ? 0.02 : attr.speed;
+    this.baseRotation = attr.baseRotation || v3(0);
+    this.basePosition = this.position || v3(0);
+    this.size = v3(this.profile.x, this.length, this.profile.y);
+    if (!attr.anchorPoint) {
+      this.anchorPoint = v3(
+        this.profile.x / 2,
+        this.length,
+        this.profile.y / 2
+      );
+    }
+    this.rotation = this.baseRotation;
+  }
+  setRotation(r, dynamically = false) {
+    this.target = this.baseRotation.add(r.clone());
+    if (!dynamically) {
+      this.rotation = this.target.clone();
+    }
+  }
+  setPosition(r, dynamically = false) {
+    this.position = this.basePosition.add(r.clone());
+  }
+  tick(obj) {
+    super.tick(obj);
+    if (!this.target)
+      return;
+    const dif = this.rotation.subtract(this.target);
+    if (dif.magnitude() === 0)
+      return;
+    const movement = v3(
+      this.target.x > this.rotation.x ? Math.abs(dif.x) : -Math.abs(dif.x),
+      this.target.y > this.rotation.y ? Math.abs(dif.y) : -Math.abs(dif.y),
+      this.target.z > this.rotation.z ? Math.abs(dif.z) : -Math.abs(dif.z)
+    ).clamp(
+      v3(-this.speed, -this.speed, -this.speed).scale(obj.interval / 6),
+      v3(this.speed, this.speed, this.speed).scale(obj.interval / 6)
+    );
+    this.rotation = this.rotation.add(movement);
+  }
+  build() {
+    super.build();
+    if (this.mesh) {
+      this.addChild(new GLCuboid({
+        colors: [[0.8, 0.8, 0.8, 1], [0.8, 0.8, 0.8, 1], [0.8, 0.8, 0.8, 1], [0.8, 0.8, 0.8, 1], [0.8, 0.8, 0.8, 1], [0.8, 0.8, 0.8, 1]],
+        size: this.size
+      }));
+    }
+  }
+};
+
+// ts/modes/side/bow.ts
+var BowActor = class extends GLGroup {
+  get holding() {
+    return this._holding;
+  }
+  set holding(value) {
+    this._holding = value;
+    this.backBow.active = !value;
+    this.backBow.visible = !value;
+    this.handBow.active = value;
+    this.handBow.visible = value;
+    this.backBow.tension = 0.999;
+    this.handBow.tension = 0.999;
+  }
+  build() {
+    super.build();
+    this.handBow = new Bow({ parentBone: this.parent.skeleton.bones["lHand"], offsetR: v3(0, 0, 0.2) });
+    this.addChild(this.handBow);
+    this.backBow = new Bow({
+      parentBone: this.parent.skeleton.bones["torso"],
+      offsetP: v3(0, 6, -3),
+      offsetR: v3(
+        Math.PI / 2,
+        0.5,
+        Math.PI / 2 + 0.9
+      )
+    });
+    this.addChild(this.backBow);
+    this.holding = false;
+  }
+};
+var Bow = class extends GlElement {
+  constructor(attr) {
+    super(attr);
+    this.stat = {};
+    this.parentBone = attr.parentBone;
+    this.bowRig = new BowSkeleton(attr.offsetP, attr.offsetR);
+  }
+  get visible() {
+    return super.visible;
+  }
+  set visible(value) {
+    super.visible = value;
+    this.bowRig.visible = value;
+  }
+  set tension(v) {
+    this.bowRig.animator.setToInterval("tension", v);
+  }
+  build() {
+    super.build();
+    this.parentBone.addChild(this.bowRig);
+    this.tension = 0.999;
+  }
+};
+var BowSkeleton = class extends Skeleton {
+  constructor(offsetP = v3(0), offsetR = v3(0)) {
+    super({
+      bones: [
+        ["bow", new Bone({ profile: v2(1, 28), length: 6, position: v3(0, 0, 0), mesh: false }), ""],
+        ["bowS1", new Bone({ profile: v2(1, 13), length: 1, position: v3(0, 5, -12), mesh: false }), "bow"],
+        ["bowS2", new Bone({ profile: v2(1, 13), length: 1, position: v3(0, 5, 1), mesh: false }), "bow"]
+      ]
+    });
+    this.offsetP = offsetP;
+    this.offsetR = offsetR;
+    this.rotation = offsetR;
+    this.position = offsetP;
+  }
+  get visible() {
+    return super.visible;
+  }
+  set visible(value) {
+    super.visible = value;
+    this.bones["bow"].visible = value;
+  }
+  build() {
+    super.build();
+    this.bones["bow"].addChild(new GLobj({ colorIntensity: 1.3, url: "RPGCharacters_Source-2-LongBow.obj", size: v3(10, 10, 10), rotation: v3(0, Math.PI, 0), position: v3(0.5, 2.5, 1) }));
+    this.bones["bowS1"].addChild(new GLobj({ colorIntensity: 1.3, url: "RPGCharacters_Source-0-BowRope.obj", size: v3(10, 10, 10), rotation: v3(0, Math.PI, 0), position: v3(0.5, 0.5, 6.5) }));
+    this.bones["bowS2"].addChild(new GLobj({ colorIntensity: 1.3, url: "RPGCharacters_Source-1-BowRope-1.obj", size: v3(10, 10, 10), rotation: v3(0, Math.PI, 0), position: v3(0.5, 0.5, 6.5) }));
+    this.animator.add("tension", 100, {
+      bow: [[0, [0, 0, 0]], [1, [1, 1, 0]]],
+      bowS1: [[0, [0, 0, 0]], [1, [1, 1, 1]]],
+      bowS2: [[0, [0, 0, 0]], [1, [1, 1, 1]]]
+    }, { loop: false, bounce: false, once: false, dynamic: false });
+  }
+};
+
+// ts/utils/skeleton_human.ts
+var HumanSkeleton = class extends Skeleton {
+  constructor(attr) {
+    super({
+      bones: [
+        ["hips", new Bone({ profile: v2(attr.hipsWidth, 1), length: attr.hips, position: v3(0, attr.legUpper + attr.legLower + attr.foot, 2) }), ""],
+        ["torso", new Bone({ anchorPoint: v3(attr.shoulderWidth / 2, 0, 0), baseRotation: v3(0, 0, 0), profile: v2(attr.shoulderWidth, 1), length: attr.torso, position: v3(-(attr.shoulderWidth - attr.hipsWidth) / 2, attr.hips, 0) }), "hips"],
+        ["head", new Bone({ profile: v2(4, 3), length: attr.head, anchorPoint: v3(2, 0, 1), position: v3((attr.shoulderWidth - 4) / 2, attr.torso + 1, -1) }), "torso"],
+        ["lArmUpper", new Bone({ profile: v2(1), baseRotation: v3(-0.1, 0, 0.4), length: attr.armUpper, position: v3(0, attr.torso - attr.armUpper, 0) }), "torso"],
+        ["rArmUpper", new Bone({ profile: v2(1), baseRotation: v3(-0.1, 0, -0.4), length: attr.armUpper, position: v3(attr.shoulderWidth - 1, attr.torso - attr.armUpper, 0) }), "torso"],
+        ["lArmLower", new Bone({ baseRotation: v3(0.2, 0, -0.3), profile: v2(1), length: attr.armLower, position: v3(0, -attr.armLower, 0) }), "lArmUpper"],
+        ["rArmLower", new Bone({ baseRotation: v3(0.2, 0, 0.3), profile: v2(1), length: attr.armLower, position: v3(0, -attr.armLower, 0) }), "rArmUpper"],
+        ["lHand", new Bone({ profile: v2(1), length: attr.hand, position: v3(0, -attr.hand, 0) }), "lArmLower"],
+        ["rHand", new Bone({ profile: v2(1), length: attr.hand, position: v3(0, -attr.hand, 0) }), "rArmLower"],
+        ["lLegUpper", new Bone({ profile: v2(1), length: attr.legUpper, position: v3(0, -attr.legUpper, 0) }), "hips"],
+        ["rLegUpper", new Bone({ profile: v2(1), length: attr.legUpper, position: v3(attr.hipsWidth - 1, -attr.legUpper, 0) }), "hips"],
+        ["lLegLower", new Bone({ profile: v2(1), length: attr.legLower, position: v3(0, -attr.legLower, 0) }), "lLegUpper"],
+        ["rLegLower", new Bone({ profile: v2(1), length: attr.legLower, position: v3(0, -attr.legLower, 0) }), "rLegUpper"],
+        ["lFoot", new Bone({ profile: v2(1, 3), length: attr.foot, position: v3(-0, -attr.foot, -0) }), "lLegLower"],
+        ["rFoot", new Bone({ profile: v2(1, 3), length: attr.foot, position: v3(-0, -attr.foot, -0) }), "rLegLower"]
+      ]
+    });
+    this.sizes = attr;
+  }
+};
+
+// ts/modes/side/player_skeleton.ts
+var PlayerSkel = class extends HumanSkeleton {
+  constructor() {
+    super({
+      "head": 6,
+      "armUpper": 6,
+      "armLower": 6,
+      "hand": 0,
+      "legUpper": 4,
+      "legLower": 7,
+      "foot": 1,
+      "torso": 9,
+      "hips": 3,
+      "hipsWidth": 6,
+      "shoulderWidth": 6
+    });
+  }
+  build() {
+    super.build();
+    this.bones["head"].addChild(new GLobj({ colorIntensity: 1.3, url: "RPGCharacters_Source-15-Head-7.obj", size: v3(10, 10, 10), rotation: v3(0, Math.PI, 0), position: v3(2, 3, 2) }));
+    this.bones["torso"].addChild(new GLobj({ colorIntensity: 1.3, url: "RPGCharacters_Source-3-Spine3-2.obj", size: v3(10, 10, 10), rotation: v3(0, Math.PI, 0), position: v3(this.sizes.shoulderWidth / 2, 5, 0) }));
+    this.bones["torso"].addChild(new GLobj({ colorIntensity: 1.3, url: "RPGCharacters_Source-2-Spine2-4.obj", size: v3(10, 10, 10), rotation: v3(0, Math.PI, 0), position: v3(this.sizes.shoulderWidth / 2 - 1, 2, 1) }));
+    this.bones["hips"].addChild(new GLobj({ colorIntensity: 1.3, url: "RPGCharacters_Source-8-Spine1-3.obj", size: v3(10, 10, 10), rotation: v3(0, Math.PI, 0), position: v3(3, 2, 0) }));
+    this.bones["lLegUpper"].addChild(new GLobj({ colorIntensity: 1.3, url: "RPGCharacters_Source-14-L_Thigh-3.obj", size: v3(10, 10, 10), rotation: v3(0, Math.PI, 0), position: v3(1, 3, 0) }));
+    this.bones["rLegUpper"].addChild(new GLobj({ colorIntensity: 1.3, url: "RPGCharacters_Source-11-R_Thigh-2.obj", size: v3(10, 10, 10), rotation: v3(0, Math.PI, 0), position: v3(0, 3, 0) }));
+    this.bones["lLegLower"].addChild(new GLobj({ colorIntensity: 1.3, url: "RPGCharacters_Source-13-L_Calf-3.obj", size: v3(10, 10, 10), rotation: v3(0, Math.PI, 0), position: v3(1, 3, -0.5) }));
+    this.bones["rLegLower"].addChild(new GLobj({ colorIntensity: 1.3, url: "RPGCharacters_Source-10-R_Calf-3.obj", size: v3(10, 10, 10), rotation: v3(0, Math.PI, 0), position: v3(0, 3, -0.5) }));
+    this.bones["lLegLower"].addChild(new GLobj({ colorIntensity: 1.3, url: "RPGCharacters_Source-12-L_Foot-3.obj", size: v3(10, 10, 10), rotation: v3(0, Math.PI, 0), position: v3(1, -0.5, 0.5) }));
+    this.bones["rLegLower"].addChild(new GLobj({ colorIntensity: 1.3, url: "RPGCharacters_Source-9-R_Foot-2.obj", size: v3(10, 10, 10), rotation: v3(0, Math.PI, 0), position: v3(0, -0.5, 0.5) }));
+    this.bones["lArmUpper"].addChild(new GLobj({ colorIntensity: 1.3, url: "RPGCharacters_Source-7-L_Arm-3.obj", size: v3(10, 10, 10), rotation: v3(0, Math.PI, Math.PI / 2), position: v3(0, 3, 1) }));
+    this.bones["rArmUpper"].addChild(new GLobj({ colorIntensity: 1.3, url: "RPGCharacters_Source-1-R_Arm.obj", size: v3(10, 10, 10), rotation: v3(0, Math.PI, Math.PI / 2), position: v3(1, 3, 1) }));
+    this.bones["lArmLower"].addChild(new GLobj({ colorIntensity: 1.3, url: "RPGCharacters_Source-6-L_ForeArm-3.obj", size: v3(10, 10, 10), rotation: v3(0, Math.PI, Math.PI / 2), position: v3(0, 4, 1) }));
+    this.bones["rArmLower"].addChild(new GLobj({ colorIntensity: 1.3, url: "RPGCharacters_Source-0-R_ForeArm.obj", size: v3(10, 10, 10), rotation: v3(0, Math.PI, -Math.PI / 2), position: v3(1, 4, 1) }));
+    this.bones["lArmLower"].addChild(new GLobj({ colorIntensity: 1.3, url: "RPGCharacters_Source-4-L_Hand-3.obj", size: v3(10, 10, 10), rotation: v3(0, Math.PI, Math.PI / 2), position: v3(-0.5, 0.5, 1) }));
+    this.bones["rArmLower"].addChild(new GLobj({ colorIntensity: 1.3, url: "RPGCharacters_Source-5-R_Hand-3.obj", size: v3(10, 10, 10), rotation: v3(0, Math.PI, -Math.PI / 2), position: v3(1.5, 0.5, 1) }));
+    this.animator.add("running", 1e3, {
+      torso: [[0, [-0.3, -0.3, 0]], [1, [-0.3, 0.3, 0]]],
+      hips: [[0, [0, 0, 0, 0, 2, 0]], [0.5, [0, 0, 0, 0, 0, 0]], [1, [0, 0, 0, 0, 2, 0]]],
+      head: [[0, [0.2, 0.2, 0]], [1, [0.2, -0.2, 0]]],
+      lArmUpper: [[0, [-0.8, 0, 0.1]], [1, [1.2, 0, 0.1]]],
+      lArmLower: [[0, [0.3, 0, 0]], [1, [1.2, 0, -1.2]]],
+      lHand: [],
+      rArmUpper: [[0, [1.2, 0, -0.1]], [1, [-0.8, 0, -0.1]]],
+      rArmLower: [[0, [1.2, 0, 1.2]], [1, [0.3, 0, 0]]],
+      rHand: [],
+      lLegUpper: [[0, [1.2, 0, 0]], [1, [-0.6, 0, 0]]],
+      lLegLower: [[0, [-0.3, 0, 0]], [1, [-2, 0, 0]]],
+      lFoot: [[0, [-0.2, 0, 0]]],
+      rLegUpper: [[0, [-0.6, 0, 0]], [1, [1.2, 0, 0]]],
+      rLegLower: [[0, [-2, 0, 0]], [1, [-0.3, 0, 0]]],
+      rFoot: [[0, [-0.2, 0, 0]]]
+    }, { loop: true, ease: "easeInOutSine", bounce: true });
+    this.animator.add("jumping", 500, {
+      torso: [[0], [1]],
+      hips: [[0], [1, [-0.1, -0.1, -0.15]]],
+      head: [[0], [1, [0.3, 0, 0]]],
+      lArmUpper: [[0], [1, [-0.2, 0, 0.1]]],
+      lArmLower: [[0], [1, [0, 0, 0.2]]],
+      lHand: [[0], [1]],
+      rArmUpper: [[0], [1, [3, 0, 0.3]]],
+      rArmLower: [[0], [1, [0, 0, 0.2]]],
+      rHand: [[0], [1]],
+      lLegUpper: [[0], [1, [2, 0, 0]]],
+      lLegLower: [[0], [1, [-2.4, 0, 0]]],
+      lFoot: [[0], [1]],
+      rLegUpper: [[0], [1, [-0.2, 0, 0]]],
+      rLegLower: [[0], [1, [-0.3, 0, 0]]],
+      rFoot: [[0], [1, [-0.6, 0, 0]]]
+    }, { once: true, ease: "easeInOutSine" });
+    this.animator.add("idle", 15e3, {
+      torso: [],
+      hips: [],
+      head: [[0.4, [0, 0.5]], [0.5, [0, -0.5]], [0.9, [0, -0.5]], [1, [0, 0.5]]],
+      lArmUpper: [],
+      lArmLower: [],
+      lHand: [],
+      rArmUpper: [],
+      rArmLower: [],
+      rHand: [],
+      lLegUpper: [],
+      lLegLower: [],
+      lFoot: [],
+      rLegUpper: [],
+      rLegLower: [],
+      rFoot: []
+    }, { loop: true, dynamic: true, ease: "easeInOutSine" });
+    this.animator.add("aim", 1e3, {
+      torso: [],
+      hips: [[0], [1, [0, Math.PI / 2, 0]]],
+      head: [[0], [1, [0, -1.1, 0]]],
+      lArmUpper: [[0], [1, [Math.PI / 2, 0, Math.PI / 2 - 0.1]]],
+      lArmLower: [[0], [1, [0, 0, -0.2]]],
+      lHand: [],
+      rArmUpper: [[0], [1, [1.5, 0, -0.8]]],
+      rArmLower: [[0], [1, [-0.3, 0, 2.2]]],
+      rHand: [],
+      lLegUpper: [[0], [1, [0, 0, 0.15]]],
+      lLegLower: [],
+      lFoot: [],
+      rLegUpper: [[0], [1, [0, 0, -0.15]]],
+      rLegLower: [],
+      rFoot: []
+    }, { once: true, ease: "easeInOutSine" });
+    this.animator.play("aim");
+  }
+  tick(obj) {
+    super.tick(obj);
+    if (!this.parent.stat.ground) {
+      this.animator.play("jumping");
+    } else {
+      if (this.parent.stat.running) {
+        this.animator.play("running");
+      } else {
+        if (this.parent.aiming) {
+          this.animator.play("aim");
+        } else {
+          this.animator.play("idle");
+        }
+      }
+    }
+  }
+};
+
+// ts/modes/side/player_actor.ts
+var Player = class extends Character {
+  constructor({
+    position = Vector3.f(0),
+    size = Vector3.f(0),
+    rotation = Vector3.f(0)
+  } = {}) {
+    super({
+      position,
+      size,
+      rotation,
+      anchorPoint: size.multiply(0.5, 0, 0.5)
+    });
+    this.stat = { jumping: false, falling: false, running: false, fallAnimation: false };
+    this.addControllers([new FreeCamera(this), new PlayerController(this)]);
+  }
+  get aiming() {
+    const a = this.controllers[1].aiming;
+    return a;
+  }
+  build() {
+    GlElement.registerControllers(this);
+    this.skeleton = new PlayerSkel();
+    this.addChild(this.skeleton);
+    this.bow = new BowActor();
+    this.addChild(this.bow);
+  }
+  tick(obj) {
+    super.tick(obj);
+  }
+};
+
+// ts/modes/side/car_controller.ts
+var CarController = class extends GlController {
+  constructor() {
+    super(...arguments);
+    this.intr = { fall: 0, jump: 0, landDelay: 0 };
+    this.cnst = { runTime: 5e3, runSlowDownFactor: 0.1, runSpeed: 2 };
+    this.velocity = Vector3.f(0);
+    this.direction = 0;
+  }
+  setMovementVelocity(interval) {
+    if (this.mode.input.space) {
+      this.intr.acc = 0;
+    } else if (this.mode.input.up) {
+      this.intr.acc = Util.clamp((this.intr.acc | 0) + interval, -(this.cnst.runTime / 3), this.cnst.runTime);
+    }
+    {
+      if (this.mode.input.down) {
+        this.intr.acc = Util.clamp((this.intr.acc | 0) - interval * 0.8, -(this.cnst.runTime / 3), this.cnst.runTime);
+      } else {
+        if (this.intr.acc >= 0) {
+          this.intr.acc = Util.clamp((this.intr.acc | 0) - interval * this.cnst.runSlowDownFactor, 0, this.cnst.runTime);
+        } else {
+          this.intr.acc = Util.clamp((this.intr.acc | 0) + interval * this.cnst.runSlowDownFactor, -(this.cnst.runTime / 3), 0);
+        }
+      }
+    }
+    this.direction = this.direction - 1e-3 * interval * (+this.mode.input.left - +this.mode.input.right) * (1.5 - this.intr.acc / this.cnst.runTime) * (this.intr.acc / this.cnst.runTime);
+    this.parent.rotation = v3(0, this.direction, 0);
+    const plane = Vector2.up.clampMagnitude(1).scale(this.intr.acc / this.cnst.runTime).scale(this.cnst.runSpeed).rotate(-this.direction);
+    this.velocity = v3(
+      plane.x,
+      0,
+      plane.y
+    );
+  }
+  setJumpVelocity(interval) {
+    if (this.parent.stat.falling) {
+      this.intr.fall += interval;
+    } else {
+      this.velocity.y = 0;
+      return;
+    }
+    this.velocity.y = 0;
+  }
+  setVelocity(obj) {
+    this.setMovementVelocity(obj.intervalS10);
+    this.setJumpVelocity(obj.intervalS10);
+    const sc = this.velocity.scale(obj.intervalS10 / 6);
+    if (sc.xz.magnitude() > 0) {
+      const [x, z] = sc.xz.array;
+      this.newPosition = this.parent.position.add(v3(x, sc.y, z));
+    } else {
+      this.newPosition = this.parent.position.add(v3(0, sc.y, 0));
+    }
+  }
+  colliders(obj) {
+    this.parent.stat.ground = false;
+    if (!this.parent.stat.jumping) {
+      this.parent.stat.falling = !this.parent.stat.ground;
+    }
+  }
+  build() {
+    super.build();
+    this.direction = this.parent.rotation.y;
+  }
+  tick(obj) {
+    super.tick(obj);
+    this.setVelocity(obj);
+    this.colliders(obj);
+    this.parent.position = this.newPosition.clone();
+  }
+};
+
+// ts/modes/side/car_camera.ts
+var CarCamera = class extends GlController {
+  constructor(target) {
+    super({ autoReady: false });
+    this.target = target;
+    this.type = "controller";
+    this.order = "after";
+    this.lagList = [];
+    this.lagCount = 8;
+  }
+  get active() {
+    return super.active;
+  }
+  set active(value) {
+    super.active = value;
+    if (value) {
+      this.camera.offset = v3(0, -15, 200);
+      this.camera.rotation = v3(0.15, 0, 0);
+      this.camera.fov = 70;
+    }
+  }
+  mouseMove(e) {
+    const r = v2(e.movementX, e.movementY).scale(5e-3);
+    this.camera.rotation = v3(
+      Util.clamp(this.camera.rotation.x + r.y, -0.1, Math.PI / 2),
+      this.camera.rotation.y + r.x,
+      this.camera.rotation.z
+    );
+  }
+  build() {
+  }
+  scroll(e) {
+    this.camera.offset.z = Util.clamp(this.camera.offset.z + e.deltaY * 0.1, 100, 200);
+  }
+  tick(o) {
+    super.tick(o);
+    const nP = this.target.position.add(this.target.size.multiply(0.5, 0.5, 0.5)).multiply(1, -1, 1);
+    while (this.lagList.length < this.lagCount) {
+      this.lagList.push(nP);
+    }
+    this.camera.target = this.lagList.shift();
+  }
+};
+
+// ts/modes/side/car_actor.ts
+var Driver = class extends Character {
+  constructor({
+    position = Vector3.f(0),
+    size = Vector3.f(0),
+    rotation = Vector3.f(0)
+  } = {}) {
+    super({
+      position,
+      size,
+      rotation,
+      anchorPoint: size.multiply(0.5, 0, 0.5)
+    });
+    this.stat = { jumping: false, falling: false, running: false, fallAnimation: false };
+    this.addControllers([new CarController(this), new CarCamera(this)]);
+  }
+  build() {
+    GlElement.registerControllers(this);
+    this.addChild(new GLobj({ storage: this.mode.storage, url: "Shop-3-Car.obj", size: v3(18, 18, 18), position: v3(18, 12, 47), rotation: v3(0, -Math.PI / 2, 0) }));
+  }
+  tick(obj) {
+    super.tick(obj);
+  }
+};
+
 // ts/gl/testObj.ts
 var TestObj = class extends GLGroup {
   constructor(attr) {
@@ -3607,25 +4322,25 @@ var TestObj = class extends GLGroup {
   }
   build() {
     super.build();
-    this.position = v3(0, 20, 0);
+    this.position = v3(0, 20, 480);
     this.final = new GLCuboid({
-      position: v3(-1, -1, -200),
-      size: v3(0.01, 0.01, 0.01),
+      position: v3(-1, -1, 0),
+      size: v3(0.1, 0.1, 0.1),
       colors: [Colors.r]
     });
     this.addChild(this.final);
     this.final.addChild(new GLCuboid({
-      position: v3(-1, -1, -1),
-      size: v3(2, 2, 2),
+      position: v3(-5, -5, -5),
+      size: v3(10, 10, 10),
       colors: [Colors.r]
     }));
     this.r1 = new GLCuboid({
-      size: v3(10, 0.1, 0.1),
+      size: v3(100, 5, 5),
       colors: [Colors.b]
     });
     this.r2 = new GLCuboid({
-      size: v3(0.1, 0.1, 0.1),
-      position: this.r1.size.clone(),
+      size: v3(5, 5, 5),
+      position: v3(100, -0, -0),
       colors: [Colors.b]
     });
     this.addChild(this.r1);
@@ -3634,6 +4349,7 @@ var TestObj = class extends GLGroup {
   tick(obj) {
     super.tick(obj);
     this.r1.rotation = this.r1.rotation.add(v3(0, 5e-3, 1e-3));
+    this.final.position = this.r2.worldPosition.subtract(this.worldPosition);
   }
 };
 
@@ -3999,6 +4715,79 @@ var Collider = class extends GlElement {
   }
 };
 
+// ts/modes/side/npc_skeleton.ts
+var npcSkeleton = class extends HumanSkeleton {
+  constructor() {
+    super({
+      "head": 6,
+      "armUpper": 5,
+      "armLower": 9,
+      "hand": 0,
+      "legUpper": 9,
+      "legLower": 5,
+      "foot": 1,
+      "torso": 5.5,
+      "hips": 3,
+      "hipsWidth": 6,
+      "shoulderWidth": 8
+    });
+  }
+  build() {
+    super.build();
+    this.bones["head"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-10-Head.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(2, -9.5, 2) }));
+    this.bones["torso"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-8-TorsoUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(this.sizes.shoulderWidth / 2, -3, 1) }));
+    this.bones["hips"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-9-TorsoLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(3, 0, 1) }));
+    this.bones["lLegUpper"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-0-lLegUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(3, 9, 1) }));
+    this.bones["rLegUpper"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-1-rLegUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(-2, 9, 1) }));
+    this.bones["lLegLower"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-2-lLegLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(3, 14.4, 1.5) }));
+    this.bones["rLegLower"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-3-rLegLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(-2, 14.4, 1.5) }));
+    this.bones["lArmUpper"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-4-lArmUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, Math.PI / 2), position: v3(8.5, 7, 1) }));
+    this.bones["rArmUpper"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-5-rArmUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, -Math.PI / 2), position: v3(-7.5, 7, 1) }));
+    this.bones["lArmLower"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-6-lArmLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, Math.PI / 2), position: v3(8.5, 16, 1) }));
+    this.bones["rArmLower"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-7-rArmLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, -Math.PI / 2), position: v3(-7.5, 16, 1) }));
+    this.animator.add("idle", 15e3, {
+      torso: [],
+      hips: [],
+      head: [[0.4, [0, 0.5]], [0.5, [0, -0.5]], [0.9, [0, -0.5]], [1, [0, 0.5]]],
+      lArmUpper: [],
+      lArmLower: [],
+      lHand: [],
+      rArmUpper: [],
+      rArmLower: [],
+      rHand: [],
+      lLegUpper: [],
+      lLegLower: [],
+      lFoot: [],
+      rLegUpper: [],
+      rLegLower: [],
+      rFoot: []
+    }, { loop: true, dynamic: true, ease: "easeInOutSine" });
+    this.animator.play("idle");
+  }
+};
+
+// ts/modes/side/npc_actor.ts
+var NPC = class extends Character {
+  constructor({
+    position = Vector3.f(0),
+    size = Vector3.f(0),
+    rotation = Vector3.f(0)
+  } = {}) {
+    super({
+      position,
+      size,
+      rotation,
+      anchorPoint: size.multiply(0.5, 0, 0.5)
+    });
+    this.stat = { jumping: false, falling: false, running: false, fallAnimation: false };
+  }
+  build() {
+    GlElement.registerControllers(this);
+    this.skeleton = new npcSkeleton();
+    this.addChild(this.skeleton);
+  }
+};
+
 // ts/modes/side/level.ts
 var World = class extends Level {
   constructor() {
@@ -4077,12 +4866,46 @@ var World = class extends Level {
   }
   build() {
     super.build();
+    this.addChild(new NPC({
+      size: v3(6, 33, 8),
+      position: v3(220, 11, 736),
+      rotation: v3(0, Math.PI, 0)
+    }));
     this.player = new Player({
       size: v3(6, 33, 8),
-      position: v3(10, 1, -20),
+      position: v3(10, 1, 400),
       rotation: v3(0, -2.3, 0)
     });
     this.addChild(this.player);
+    this.car = new Driver({
+      size: v3(36, 26, 93),
+      position: v3(130, 1, 600),
+      rotation: v3(0, 2.3, 0)
+    });
+    this.addChild(this.car);
+    this.car.active = false;
+    this.addChild(new GLCuboid({ size: v3(3500, 1, 5e3), position: v3(-5600, -2, -2e3), colors: [[0.476378 * 0.96, 0.547244 * 0.96, 0.492126 * 0.96, 1]] }));
+    this.addChild(new GLCuboid({ size: v3(4e3, 1, 5e3), position: v3(1900, -2, -2e3), colors: [[0.476378 * 0.96, 0.547244 * 0.96, 0.492126 * 0.96, 1]] }));
+    this.addChild(new GLCuboid({ size: v3(4e3, 1, 1800), position: v3(-2100, -2, -2e3), colors: [[0.476378 * 0.96, 0.547244 * 0.96, 0.492126 * 0.96, 1]] }));
+    this.addChild(new GLCuboid({ size: v3(4e3, 1, 800), position: v3(-2100, -2, 2200), colors: [[0.476378 * 0.96, 0.547244 * 0.96, 0.492126 * 0.96, 1]] }));
+    for (let x = 0; x < 20; x++) {
+      for (let y = 0; y < 12; y++) {
+        if (y === 3) {
+          this.spawnRoad(x, y);
+        } else {
+          this.spawnTile(x, y);
+        }
+      }
+    }
+    this.addChild(new GLobj({ storage: this.mode.storage, url: "CountrySide-5-House.obj", size: v3(18, 18, 18), position: v3(200, 43, 800), rotation: v3(0, -Math.PI / 2, 0) }));
+    this.addChild(new GLobj({ storage: this.mode.storage, url: "CountrySide-4-Vegetation1.obj", size: v3(20, 20, 20), rotation: v3(0, Math.PI, 0), position: v3(-100 - 20, 5, 670) }));
+    this.addChild(new GLobj({ storage: this.mode.storage, url: "CountrySide-4-Vegetation1.obj", size: v3(25, 25, 25), rotation: v3(0, 0, 0), position: v3(-20 - 20, 6, 760) }));
+    this.addChild(new GLobj({ storage: this.mode.storage, url: "CountrySide-4-Vegetation1.obj", size: v3(25, 25, 25), rotation: v3(0, Math.PI / 2, 0), position: v3(0 - 20, 3, 670) }));
+    this.addChild(new GLobj({ storage: this.mode.storage, url: "Plane01.obj", size: v3(30, 30, 30), position: v3(420, 16, 720), rotation: v3(0, Math.PI / 4 + Math.PI / 2, -0.12) }));
+    this.addChild(new GLobj({ storage: this.mode.storage, url: "Medieval Town - Pack 1-0.obj", size: v3(10, 10, 10), position: v3(0, -1, 500) }));
+    this.addChild(new GLobj({ storage: this.mode.storage, url: "Medieval Town - Pack 1-1.obj", size: v3(10, 10, 10), position: v3(0, -1, 500) }));
+    this.addChild(new GLobj({ storage: this.mode.storage, url: "Medieval Town - Pack 1-2.obj", size: v3(10, 10, 10), position: v3(0, -1, 500) }));
+    this.addChild(new GLobj({ storage: this.mode.storage, url: "Nuclear Survival - Pack 6 - m.obj", size: v3(10, 10, 10), position: v3(0, -6, 300), rotation: v3(0, -Math.PI / 2, 0) }));
     [
       [v3(-5e3, -1e3, -2e3), v3(1e4, 1e3, 4e3), Vector3.up, false],
       // floor

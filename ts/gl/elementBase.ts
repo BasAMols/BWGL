@@ -49,30 +49,19 @@ export abstract class GlElement extends Element {
     }
 
     public get matrix() {
-        return this.transposeMatrix();
-    }
-
-    transposeMatrix(m: Matrix4 = new Matrix4()): Matrix4 {
-        return m
+        return new Matrix4()
         .translate((this.position || v3(0)).multiply(new Vector3(1, 1, -1)))
         .translate((this.anchorPoint || v3(0)).multiply(1, 1, -1))
         .rotate((this.rotation || v3(0)).multiply(new Vector3(1, -1, -1)))
-        .translate((this.anchorPoint || v3(0)).multiply(-1, -1, 1));
-    }
-    deTransposeMatrix(m: Matrix4 = new Matrix4()): Matrix4 {
-        return m
-        .translate((this.anchorPoint || v3(0)).multiply(1, 1, -1))
-        .rotate((this.rotation || v3(0)).multiply(new Vector3(-1, 1, 1)))
         .translate((this.anchorPoint || v3(0)).multiply(-1, -1, 1))
-        .translate((this.position || v3(0)).multiply(new Vector3(-1, -1, 1)))
     }
 
     public get worldMatrix(): Matrix4 {
-        return this.transposeMatrix(this.parent?.worldMatrix || new Matrix4());
+        return (this.parent?.worldMatrix || new Matrix4()).multiply(this.matrix);
     }
     
     public get worldPosition(): Vector3 {
-        return this.worldMatrix.invert().position;
+        return this.worldMatrix.position.multiply(v3(1,1,-1));
         // return (this.parent?.worldPosition || v3(0)).add(this.position);
     }
 

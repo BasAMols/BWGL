@@ -7,6 +7,7 @@ import { PlayerController } from './player_controller';
 import { FreeCamera } from './player_camera';
 import { BowActor } from './bow';
 import { TickerReturnData } from '../../utils/ticker';
+import { PlayerSkel } from './player_skeleton';
 
 export class Player extends Character {
     public stat: Record<string, boolean> = { jumping: false, falling: false, running: false, fallAnimation: false };
@@ -40,10 +41,10 @@ export class Player extends Character {
 
     build() {
         GlElement.registerControllers(this);
-        // this.skeleton = new PlayerSkel();
-        // this.addChild(this.skeleton);
-        // this.bow = new BowActor();
-        // this.addChild(this.bow)
+        this.skeleton = new PlayerSkel();
+        this.addChild(this.skeleton);
+        this.bow = new BowActor();
+        this.addChild(this.bow)
 
 
     }
