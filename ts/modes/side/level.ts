@@ -1,7 +1,7 @@
 import { DomText } from '../../dom/domText';
 import { Color } from '../../utils/colors';
 import { Level } from '../../utils/level';
-import { Vector2 } from '../../utils/vector2';
+import { Vector2, v2 } from '../../utils/vector2';
 import { v3 } from '../../utils/vector3';
 import { Player } from './player_actor';
 import { GLobj } from '../../gl/obj';
@@ -11,6 +11,7 @@ import { Sky } from './sky';
 import { TestObj } from '../../gl/testObj';
 import { Collider } from '../../utils/collider';
 import { GLCuboid } from '../../gl/cuboid';
+import { TickerReturnData } from '../../utils/ticker';
 
 export class World extends Level {
     public start = Vector2.zero;
@@ -23,6 +24,7 @@ export class World extends Level {
     public player: Player;
     public sky: Sky;
     public test: TestObj;
+    test2d: DomText;
 
     constructor() {
         super();
@@ -38,6 +40,15 @@ export class World extends Level {
             //     fixed: true
             // }),
         ]);
+
+        this.test2d = new DomText({
+            position: v2(100,100),
+            fontSize: 40, 
+            fontFamily: 'monospace',
+            color: 'white',
+            text: '0'
+        })
+        this.addUi(this.test2d)
     }
 
     keyDown(e: KeyboardEvent): void {
@@ -198,6 +209,11 @@ export class World extends Level {
 
         // this.sky = this.addChild(new Sky()) as Sky;
 
+    }
+
+    public tick(obj: TickerReturnData): void {
+        super.tick(obj);
+        this.test2d.position = this.player.screenPosition
     }
 
 }

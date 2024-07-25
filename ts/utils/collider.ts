@@ -18,7 +18,7 @@ export class Collider extends GlController {
     public reaction: Vector3[] = [];
 
     public get centeredPosition() {
-        return this.worldPosition.add(this.size.multiply(0.5,0,0.5))
+        return this.globalPosition.add(this.size.multiply(0.5,0,0.5))
     }
 
     public constructor(attr: ColliderAttributes) {
@@ -39,12 +39,12 @@ export class Collider extends GlController {
         if (this === othr) return;
 
         //do these NOT overlap?
-        if (this.worldPosition.x + this.size.x < othr.worldPosition.x) return; // to the x- of other
-        if (this.worldPosition.x > othr.worldPosition.x + othr.size.x) return; // to the x+ of other
-        if (this.worldPosition.y + this.size.y < othr.worldPosition.y) return; // to the y- of other
-        if (this.worldPosition.y > othr.worldPosition.y + othr.size.y) return; // to the y+ of other
-        if (this.worldPosition.z + this.size.z < othr.worldPosition.z) return; // to the z- of other
-        if (this.worldPosition.z > othr.worldPosition.z + othr.size.z) return; // to the z+ of other
+        if (this.globalPosition.x + this.size.x < othr.globalPosition.x) return; // to the x- of other
+        if (this.globalPosition.x > othr.globalPosition.x + othr.size.x) return; // to the x+ of other
+        if (this.globalPosition.y + this.size.y < othr.globalPosition.y) return; // to the y- of other
+        if (this.globalPosition.y > othr.globalPosition.y + othr.size.y) return; // to the y+ of other
+        if (this.globalPosition.z + this.size.z < othr.globalPosition.z) return; // to the z- of other
+        if (this.globalPosition.z > othr.globalPosition.z + othr.size.z) return; // to the z+ of other
 
         // console.log(this, );
         
@@ -58,14 +58,14 @@ export class Collider extends GlController {
     private calculateExitVelocity(othr: Collider): [Vector3, Vector3, Vector3, Vector3, Vector3, Vector3] {
         return [
 
-            v3(-(this.worldPosition.x + this.size.x - othr.worldPosition.x), 0, 0),// to the x- of other
-            v3((othr.worldPosition.x + othr.size.x) - this.worldPosition.x, 0, 0),// to the x+ of other
+            v3(-(this.globalPosition.x + this.size.x - othr.globalPosition.x), 0, 0),// to the x- of other
+            v3((othr.globalPosition.x + othr.size.x) - this.globalPosition.x, 0, 0),// to the x+ of other
 
-            v3(0, -(this.worldPosition.y + this.size.y - othr.worldPosition.y), 0),// to the y- of other
-            v3(0, (othr.worldPosition.y + othr.size.y) - this.worldPosition.y, 0),// to the y+ of other
+            v3(0, -(this.globalPosition.y + this.size.y - othr.globalPosition.y), 0),// to the y- of other
+            v3(0, (othr.globalPosition.y + othr.size.y) - this.globalPosition.y, 0),// to the y+ of other
 
-            v3(0, 0, -(this.worldPosition.z + this.size.z - othr.worldPosition.z)),// to the z- of other
-            v3(0, 0, (othr.worldPosition.z + othr.size.z) - this.worldPosition.z),// to the z+ of other
+            v3(0, 0, -(this.globalPosition.z + this.size.z - othr.globalPosition.z)),// to the z- of other
+            v3(0, 0, (othr.globalPosition.z + othr.size.z) - this.globalPosition.z),// to the z+ of other
 
         ];
     }

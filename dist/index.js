@@ -203,7 +203,7 @@ var DomElement = class extends Element {
     super();
     this.children = [];
     this.rendererType = "dom";
-    this.position = v2(0);
+    this._position = v2(0);
     this.size = v2(0);
     this.dom = document.createElement(type);
     this.dom.style.position = "absolute";
@@ -214,6 +214,14 @@ var DomElement = class extends Element {
     this.background = attr.background || "";
     this.size = attr.size || Vector2.zero;
     this.position = attr.position || Vector2.zero;
+  }
+  get position() {
+    return this._position;
+  }
+  set position(value) {
+    this._position = value;
+    this.x = value.x;
+    this.y = value.y;
   }
   get id() {
     return this.dom.id;
@@ -2446,18 +2454,18 @@ var GLRenderer = class {
     this.gl.depthFunc(this.gl.LEQUAL);
     this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
   }
+  getProjection() {
+    return new Matrix4().perspective(
+      this.game.mode.camera.fov * Math.PI / 180,
+      1,
+      2e4
+    ).translate(this.game.mode.camera.offset.multiply(1, 1, -1)).rotate(this.game.mode.camera.rotation).translate(this.game.mode.camera.target.multiply(-1, -1, 1));
+  }
   draw() {
     this.clear();
     this.gl.useProgram(this.glt.program);
     this.glt.sendUniform("uSampler", 0);
-    this.glt.sendUniform(
-      "uProjectionMatrix",
-      new Matrix4().perspective(
-        this.game.mode.camera.fov * Math.PI / 180,
-        1,
-        2e4
-      ).translate(this.game.mode.camera.offset.multiply(1, 1, -1)).rotate(this.game.mode.camera.rotation).translate(this.game.mode.camera.target.multiply(-1, -1, 1)).mat4
-    );
+    this.glt.sendUniform("uProjectionMatrix", this.getProjection().mat4);
     this.drawChildren(this.game.level);
   }
   drawChildren(element) {
@@ -2468,7 +2476,7 @@ var GLRenderer = class {
   drawObject(mesh) {
     if (mesh.visible) {
       if (mesh.buffer) {
-        this.renderMesh(mesh, mesh.worldMatrix);
+        this.renderMesh(mesh, mesh.globalMatrix);
       }
       this.drawChildren(mesh);
     }
@@ -2528,19 +2536,22 @@ var GlElement = class _GlElement extends Element {
   set rotation(value) {
     this._rotation = value;
   }
-  get matrix() {
+  get localMatrix() {
     return new Matrix4().translate((this.position || v3(0)).multiply(new Vector3(1, 1, -1))).translate((this.anchorPoint || v3(0)).multiply(1, 1, -1)).rotate((this.rotation || v3(0)).multiply(new Vector3(1, -1, -1))).translate((this.anchorPoint || v3(0)).multiply(-1, -1, 1));
   }
-  get worldMatrix() {
+  get globalMatrix() {
     var _a;
-    return (((_a = this.parent) == null ? void 0 : _a.worldMatrix) || new Matrix4()).multiply(this.matrix);
+    return (((_a = this.parent) == null ? void 0 : _a.globalMatrix) || new Matrix4()).multiply(this.localMatrix);
   }
-  get worldPosition() {
-    return this.worldMatrix.position.multiply(v3(1, 1, -1));
+  get globalPosition() {
+    return this.globalMatrix.position.multiply(v3(1, 1, -1));
   }
   get worldRotation() {
     var _a;
     return (((_a = this.parent) == null ? void 0 : _a.worldRotation) || v3()).add(this.rotation);
+  }
+  get screenPosition() {
+    return v2(0);
   }
   get visible() {
     return this._visible;
@@ -2707,6 +2718,7 @@ var Mode = class extends GLGroup {
   addLevel(s, level) {
     this.levels[s] = level;
     this.addChild(level);
+    document.body.appendChild(level.interface.dom);
   }
   switchLevel(s) {
     Object.entries(this.levels).forEach(([key, level]) => {
@@ -2730,6 +2742,17 @@ var Mode = class extends GLGroup {
   }
 };
 
+// ts/dom/interface.ts
+var Interface = class extends DomElement {
+  constructor(attr = {}) {
+    super("div", attr);
+    this.dom.style.width = "100%";
+    this.dom.style.height = "100%";
+    this.dom.style.zIndex = "3";
+    this.dom.style.pointerEvents = "none";
+  }
+};
+
 // ts/utils/level.ts
 var Level = class extends GlElement {
   constructor(attr = {}) {
@@ -2737,6 +2760,7 @@ var Level = class extends GlElement {
     this.type = "group";
     this.levelColliders = [];
     this.colliderMeshes = [];
+    this.interface = new Interface();
     this._camera = {
       target: Vector3.f(0),
       rotation: Vector3.f(0),
@@ -2744,6 +2768,9 @@ var Level = class extends GlElement {
       fov: 60
     };
     this.size = this.size;
+  }
+  addUi(element) {
+    this.interface.appendChild(element);
   }
   addCollider(c) {
     this.levelColliders.push(c);
@@ -2756,11 +2783,12 @@ var Level = class extends GlElement {
   }
   build() {
     this.game.active.level = this;
+    this.interface.build();
   }
   tick(obj) {
     super.tick(obj);
     this.colliderMeshes.forEach((c, i) => {
-      c.position = this.levelColliders[i].worldPosition;
+      c.position = this.levelColliders[i].globalPosition;
       c.size = this.levelColliders[i].size.clone();
     });
   }
@@ -4198,7 +4226,7 @@ var Collider = class extends GlController {
     this.fixed = Boolean(attr.fixed);
   }
   get centeredPosition() {
-    return this.worldPosition.add(this.size.multiply(0.5, 0, 0.5));
+    return this.globalPosition.add(this.size.multiply(0.5, 0, 0.5));
   }
   tick(obj) {
     super.tick(obj);
@@ -4208,17 +4236,17 @@ var Collider = class extends GlController {
   calculateReaction(othr) {
     if (this === othr)
       return;
-    if (this.worldPosition.x + this.size.x < othr.worldPosition.x)
+    if (this.globalPosition.x + this.size.x < othr.globalPosition.x)
       return;
-    if (this.worldPosition.x > othr.worldPosition.x + othr.size.x)
+    if (this.globalPosition.x > othr.globalPosition.x + othr.size.x)
       return;
-    if (this.worldPosition.y + this.size.y < othr.worldPosition.y)
+    if (this.globalPosition.y + this.size.y < othr.globalPosition.y)
       return;
-    if (this.worldPosition.y > othr.worldPosition.y + othr.size.y)
+    if (this.globalPosition.y > othr.globalPosition.y + othr.size.y)
       return;
-    if (this.worldPosition.z + this.size.z < othr.worldPosition.z)
+    if (this.globalPosition.z + this.size.z < othr.globalPosition.z)
       return;
-    if (this.worldPosition.z > othr.worldPosition.z + othr.size.z)
+    if (this.globalPosition.z > othr.globalPosition.z + othr.size.z)
       return;
     if (this.fixed)
       return v3(0);
@@ -4226,17 +4254,17 @@ var Collider = class extends GlController {
   }
   calculateExitVelocity(othr) {
     return [
-      v3(-(this.worldPosition.x + this.size.x - othr.worldPosition.x), 0, 0),
+      v3(-(this.globalPosition.x + this.size.x - othr.globalPosition.x), 0, 0),
       // to the x- of other
-      v3(othr.worldPosition.x + othr.size.x - this.worldPosition.x, 0, 0),
+      v3(othr.globalPosition.x + othr.size.x - this.globalPosition.x, 0, 0),
       // to the x+ of other
-      v3(0, -(this.worldPosition.y + this.size.y - othr.worldPosition.y), 0),
+      v3(0, -(this.globalPosition.y + this.size.y - othr.globalPosition.y), 0),
       // to the y- of other
-      v3(0, othr.worldPosition.y + othr.size.y - this.worldPosition.y, 0),
+      v3(0, othr.globalPosition.y + othr.size.y - this.globalPosition.y, 0),
       // to the y+ of other
-      v3(0, 0, -(this.worldPosition.z + this.size.z - othr.worldPosition.z)),
+      v3(0, 0, -(this.globalPosition.z + this.size.z - othr.globalPosition.z)),
       // to the z- of other
-      v3(0, 0, othr.worldPosition.z + othr.size.z - this.worldPosition.z)
+      v3(0, 0, othr.globalPosition.z + othr.size.z - this.globalPosition.z)
       // to the z+ of other
     ];
   }
@@ -4436,6 +4464,14 @@ var World = class extends Level {
       //     fixed: true
       // }),
     ]);
+    this.test2d = new DomText({
+      position: v2(100, 100),
+      fontSize: 40,
+      fontFamily: "monospace",
+      color: "white",
+      text: "0"
+    });
+    this.addUi(this.test2d);
   }
   keyDown(e) {
     if (e.key === "Enter") {
@@ -4579,6 +4615,10 @@ var World = class extends Level {
       position: v3(-90, 0, 153),
       fixed: true
     })], storage: this.mode.storage, url: "Nuclear Survival - Pack 6 - m.obj", size: v3(10, 10, 10), position: v3(0, -6, 300), rotation: v3(0, -Math.PI / 2, 0) }));
+  }
+  tick(obj) {
+    super.tick(obj);
+    this.test2d.position = this.player.screenPosition;
   }
 };
 

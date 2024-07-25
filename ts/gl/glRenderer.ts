@@ -66,12 +66,8 @@ export class GLRenderer {
         this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
     }
 
-    draw() {
-        this.clear();
-
-        this.gl.useProgram(this.glt.program);
-        this.glt.sendUniform('uSampler', 0);
-        this.glt.sendUniform('uProjectionMatrix', new Matrix4()
+    getProjection() {
+        return new Matrix4()
             .perspective(
                 (this.game.mode.camera.fov * Math.PI) / 180,
                 1,
@@ -80,8 +76,14 @@ export class GLRenderer {
             .translate(this.game.mode.camera.offset.multiply(1, 1, -1))
             .rotate(this.game.mode.camera.rotation)
             .translate(this.game.mode.camera.target.multiply(-1, -1, 1))
-            .mat4
-        );
+    }
+
+    draw() {
+        this.clear();
+
+        this.gl.useProgram(this.glt.program);
+        this.glt.sendUniform('uSampler', 0);
+        this.glt.sendUniform('uProjectionMatrix', this.getProjection().mat4);
 
         this.drawChildren(this.game.level);
     }
@@ -95,7 +97,7 @@ export class GLRenderer {
     drawObject(mesh: GlElement) {
         if (mesh.visible) {
             if ((mesh as GLRendable).buffer) {
-                this.renderMesh(mesh as GLRendable, mesh.worldMatrix);
+                this.renderMesh(mesh as GLRendable, mesh.globalMatrix);
             }
             this.drawChildren(mesh);
         }

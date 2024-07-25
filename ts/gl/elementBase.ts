@@ -1,7 +1,7 @@
 import { Element, ElementAttributes } from "../utils/element";
 import { GlElementType } from './glRenderer';
 import { TickerReturnData } from '../utils/ticker';
-import { Vector2 } from "../utils/vector2";
+import { Vector2, v2 } from "../utils/vector2";
 import { Vector3, v3 } from '../utils/vector3';
 import { GlController } from './controller';
 import { Collider } from '../utils/collider';
@@ -55,7 +55,7 @@ export abstract class GlElement extends Element {
         this._rotation = value;
     }
 
-    public get matrix() {
+    public get localMatrix() {
         return new Matrix4()
         .translate((this.position || v3(0)).multiply(new Vector3(1, 1, -1)))
         .translate((this.anchorPoint || v3(0)).multiply(1, 1, -1))
@@ -63,15 +63,20 @@ export abstract class GlElement extends Element {
         .translate((this.anchorPoint || v3(0)).multiply(-1, -1, 1))
     }
 
-    public get worldMatrix(): Matrix4 {
-        return (this.parent?.worldMatrix || new Matrix4()).multiply(this.matrix);
+    public get globalMatrix(): Matrix4 {
+        return (this.parent?.globalMatrix || new Matrix4()).multiply(this.localMatrix);
     }
     
-    public get worldPosition(): Vector3 {
-        return this.worldMatrix.position.multiply(v3(1,1,-1));
+    public get globalPosition(): Vector3 {
+        return this.globalMatrix.position.multiply(v3(1,1,-1));
     }
+
     public get worldRotation(): Vector3 {
         return (this.parent?.worldRotation || v3()).add(this.rotation);
+    }
+
+    public get screenPosition(): Vector2 {
+        return v2(0)
     }
 
     private _active: boolean = true;

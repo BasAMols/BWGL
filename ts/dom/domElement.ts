@@ -12,7 +12,15 @@ export class DomElement<T extends keyof HTMLElementTagNameMap> extends Element {
     public dom: HTMLElementTagNameMap[T];
     public children: DomElement<any>[] = [];
     public rendererType = 'dom' as const;
-    public position: Vector2 = v2(0);
+    private _position: Vector2 = v2(0);
+    public get position(): Vector2 {
+        return this._position;
+    }
+    public set position(value: Vector2) {
+        this._position = value;
+        this.x = value.x;
+        this.y = value.y
+    }
     public size: Vector2 = v2(0);
 
     public get id() { return this.dom.id; }

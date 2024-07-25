@@ -59,6 +59,7 @@ export abstract class Mode extends GLGroup {
     protected addLevel(s: string, level: Level) {
         this.levels[s] = level;
         this.addChild(level);
+        document.body.appendChild(level.interface.dom)
     }
 
     public switchLevel(s: string) {

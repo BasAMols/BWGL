@@ -55,7 +55,7 @@ export class TestObj extends GLGroup {
         super.tick(obj);
         // this.r1.position = v3(Math.sin(obj.frame/200)*100, 0, 0)
         this.r1.rotation = this.r1.rotation.add(v3(0,0.005, 0.001));
-        this.final.position = this.r2.worldPosition.subtract(this.worldPosition);
+        this.final.position = this.r2.globalPosition.subtract(this.globalPosition);
         // console.log(this.r2.worldPosition.array);
         
     }
