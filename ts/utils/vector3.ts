@@ -35,13 +35,23 @@ export class Vector3 {
 	public set z(value: number) { this.vec[2] = value; }
 
 	public get xy() { return v2(this.x, this.y); }
+	public set xy(v: Vector2) { this.x = v.x; this.y = v.y}
+
 	public get xz() { return v2(this.x, this.z); }
+	public set xz(v: Vector2) { this.x = v.x; this.z = v.y}
 
 	public get yx() { return v2(this.y, this.x); }
+	public set yx(v: Vector2) { this.y = v.x; this.x = v.y}
+
 	public get yz() { return v2(this.y, this.z); }
+	public set yz(v: Vector2) { this.y = v.x; this.z = v.y}
 
 	public get zx() { return v2(this.z, this.x); }
+	public set zx(v: Vector2) { this.z = v.x; this.x = v.y}
+
 	public get zy() { return v2(this.z, this.y); }
+	public set zy(v: Vector2) { this.z = v.x; this.y = v.y}
+
 
 	public vec: vec3;
 
@@ -158,7 +168,7 @@ export class Vector3 {
 	}
 
 	rotateXY(rad: number) {
-		const [a,b] = this.xy.rotate(rad).array;
+		const [a, b] = this.xy.rotate(rad).array;
 
 		return new Vector3(
 			a,
@@ -167,7 +177,7 @@ export class Vector3 {
 		);
 	}
 	rotateXZ(rad: number) {
-		const [a,b] = this.xz.rotate(rad).array;
+		const [a, b] = this.xz.rotate(rad).array;
 
 		return new Vector3(
 			a,
@@ -176,7 +186,7 @@ export class Vector3 {
 		);
 	}
 	rotateYZ(rad: number) {
-		const [a,b] = this.yz.rotate(rad).array;
+		const [a, b] = this.yz.rotate(rad).array;
 
 		return new Vector3(
 			this.x,
@@ -207,6 +217,15 @@ export class Vector3 {
 			Util.clamp(this.z, min.z, max.z),
 		);
 	}
-
-
+	normalize() {
+		let len = this.x * this.x + this.y * this.y + this.z * this.z;
+		if (len > 0) {
+			len = 1 / Math.sqrt(len);
+		}
+		return v3(
+			this.x * len,
+			this.y * len,
+			this.z * len
+		);
+	}
 }

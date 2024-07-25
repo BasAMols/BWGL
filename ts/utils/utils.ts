@@ -1,3 +1,5 @@
+import { Vector3 } from './vector3';
+
 export abstract class Util{
     public static clamp(value:number, min:number, max:number) {
         return Math.max(Math.min(value, max), min);
@@ -25,5 +27,18 @@ export abstract class Util{
     public static scaleArrays(ar: number[], b: number) {
         return ar.map((a, i) => a * b);
     }
+
+    public static closestVectorMagniture(vectors: Vector3[], target: number): Vector3 {
+        let current: Vector3;
+        vectors.forEach((v)=>{
+            if (current === undefined || Math.abs(v.magnitude()) < Math.abs(current.magnitude())) current = v;
+            else {
+                // console.log(current.magnitude(), v.magnitude());
+            }
+
+        })
+        return current;
+    }
+    
     
 }

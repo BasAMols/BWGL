@@ -2,7 +2,6 @@ import { GlController } from '../../gl/controller';
 import { TickerReturnData } from '../../utils/ticker';
 import { Util } from '../../utils/utils';
 import { Vector3, v3 } from '../../utils/vector3';
-import { Collisions } from '../../utils/collisions';
 import { v2 } from '../../utils/vector2';
 import { Player } from './player_actor';
 
@@ -117,47 +116,26 @@ export class PlayerController extends GlController {
 
         if (this.aiming) {
             this.parent.rotation = this.camera.rotation.multiply(0, 1, 0);
-
         }
     }
 
 
-    public colliders(obj: TickerReturnData) {
+    public collide(obj: TickerReturnData) {
         this.parent.stat.ground = false;
-        this.level.colliders.forEach((col) => {
-            if (Collisions.boxesOverlap(col.position, col.size, this.newPosition, this.parent.size)) {
-                // if(Collisions.boxesOverlap(col.absolutePosition, newAbs, this.parent.size)){
-                if (col.direction.equals(Vector3.up) && this.velocity.y <= 0) { // floor
-
-                    this.velocity.y = Math.max(this.velocity.y, 0);
-                    this.parent.stat.falling = false;
-                    this.intr.fall = 0;
-                    this.intr.jump = 0;
-                    this.newPosition.y = col.position.y + col.size.y - 1;
-                    this.parent.stat.ground = true;
-                }
-                // if (col.direction.equals(Vector3.down) && this.velocity.y > 0) { // ceiling
-                //     this.velocity.y = Math.min(this.velocity.y, 0);
-                //     this.newPosition.y = col.absolutePosition.y - this.parent.size.y;
-                // }
-                // if (col.direction.equals(Vector3.right) && this.velocity.x < 0){ // left wall
-                //     this.velocity.x = Math.max(this.velocity.x, 0);
-                //     this.newPosition.x = col.absolutePosition.x+col.size.x;
-                // }
-                // if (col.direction.equals(Vector3.left) && this.velocity.x > 0){ // right wall
-                //     this.velocity.x = Math.min(this.velocity.x, 0);
-                //     this.newPosition.x = col.absolutePosition.x-this.parent.size.x;
-                // }
-                // if (col.direction.equals(Vector3.backwards) && this.velocity.z < 0){ // front wall
-                //     this.velocity.z = Math.max(this.velocity.z, 0);
-                //     this.newPosition.z = col.absolutePosition.z+col.size.z;
-                // }
-                // if (col.direction.equals(Vector3.forwards) && this.velocity.z > 0){ // back wall
-                //     this.velocity.z = Math.min(this.velocity.z, 0);
-                //     this.newPosition.z = col.absolutePosition.z-this.parent.size.z;
-                // }
-            }
-        });
+        this.parent.colliders[0].reaction.forEach((v)=>{
+            if (v.y >= 0){
+                this.intr.fall = 0;
+                this.intr.jump = 0;
+                this.parent.stat.falling = false;
+                this.parent.stat.ground = true;
+            } else {
+                this.parent.stat.falling = true;
+                this.parent.stat.ground = false;
+            } 
+            this.velocity.subtract(v);
+            this.parent.position = this.newPosition.clone();
+            this.newPosition = this.newPosition.add(v);
+        })
 
         if (!this.parent.stat.jumping) {
             this.parent.stat.falling = !this.parent.stat.ground;
@@ -167,8 +145,9 @@ export class PlayerController extends GlController {
     public tick(obj: TickerReturnData) {
         super.tick(obj);
         this.setVelocity(obj);
-        this.colliders(obj);
+        this.collide(obj);
 
         this.parent.position = this.newPosition.clone();
+        // this.parent.rotation = this.parent.rotation.rotateXZ(0.004)
     }
 }

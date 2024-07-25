@@ -7,6 +7,7 @@ import { GLobj } from '../../gl/obj';
 import { CarController } from './car_controller';
 import { CarCamera } from './car_camera';
 import { HumanSkeleton } from '../../utils/skeleton_human';
+import { Collider } from '../../utils/collider';
 
 export class Driver extends Character {
     public stat: Record<string, boolean> = { jumping: false, falling: false, running: false, fallAnimation: false };
@@ -28,7 +29,10 @@ export class Driver extends Character {
             rotation: rotation,
             anchorPoint: size.multiply(0.5, 0, 0.5),
         });
-        this.addControllers([new CarController(this), new CarCamera(this)]);
+        this.addControllers([new Collider({
+            size: this.size,
+            fixed: true,
+        }), new CarController(this), new CarCamera(this)]);
 
     }
 

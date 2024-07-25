@@ -2085,6 +2085,16 @@ var Util = class {
   static scaleArrays(ar, b) {
     return ar.map((a, i) => a * b);
   }
+  static closestVectorMagniture(vectors, target) {
+    let current;
+    vectors.forEach((v) => {
+      if (current === void 0 || Math.abs(v.magnitude()) < Math.abs(current.magnitude()))
+        current = v;
+      else {
+      }
+    });
+    return current;
+  }
 };
 
 // ts/utils/vector3.ts
@@ -2137,20 +2147,44 @@ var Vector3 = class _Vector3 {
   get xy() {
     return v2(this.x, this.y);
   }
+  set xy(v) {
+    this.x = v.x;
+    this.y = v.y;
+  }
   get xz() {
     return v2(this.x, this.z);
+  }
+  set xz(v) {
+    this.x = v.x;
+    this.z = v.y;
   }
   get yx() {
     return v2(this.y, this.x);
   }
+  set yx(v) {
+    this.y = v.x;
+    this.x = v.y;
+  }
   get yz() {
     return v2(this.y, this.z);
+  }
+  set yz(v) {
+    this.y = v.x;
+    this.z = v.y;
   }
   get zx() {
     return v2(this.z, this.x);
   }
+  set zx(v) {
+    this.z = v.x;
+    this.x = v.y;
+  }
   get zy() {
     return v2(this.z, this.y);
+  }
+  set zy(v) {
+    this.z = v.x;
+    this.y = v.y;
   }
   constructor(x = 0, y = 0, z = 0) {
     this.vec = [x, y, z];
@@ -2285,6 +2319,17 @@ var Vector3 = class _Vector3 {
       Util.clamp(this.x, min.x, max.x),
       Util.clamp(this.y, min.y, max.y),
       Util.clamp(this.z, min.z, max.z)
+    );
+  }
+  normalize() {
+    let len = this.x * this.x + this.y * this.y + this.z * this.z;
+    if (len > 0) {
+      len = 1 / Math.sqrt(len);
+    }
+    return v3(
+      this.x * len,
+      this.y * len,
+      this.z * len
     );
   }
 };
@@ -2448,8 +2493,9 @@ var GlElement = class _GlElement extends Element {
     var _a;
     super();
     this.rendererType = "gl";
+    this.colliders = [];
     this._position = v3(0);
-    this.size = v3(0);
+    this._size = v3(0);
     this._rotation = v3(0);
     this._active = true;
     this._visible = true;
@@ -2470,6 +2516,12 @@ var GlElement = class _GlElement extends Element {
   set position(value) {
     this._position = value;
   }
+  get size() {
+    return this._size;
+  }
+  set size(value) {
+    this._size = value;
+  }
   get rotation() {
     return this._rotation;
   }
@@ -2485,6 +2537,10 @@ var GlElement = class _GlElement extends Element {
   }
   get worldPosition() {
     return this.worldMatrix.position.multiply(v3(1, 1, -1));
+  }
+  get worldRotation() {
+    var _a;
+    return (((_a = this.parent) == null ? void 0 : _a.worldRotation) || v3()).add(this.rotation);
   }
   get visible() {
     return this._visible;
@@ -2522,9 +2578,6 @@ var GlElement = class _GlElement extends Element {
       child.ready();
     }
     _GlElement.registerControllers(child);
-    if (child.type === "collider" && this.level) {
-      this.level.colliders.push(child);
-    }
     child.readyState = true;
     return child;
   }
@@ -2545,6 +2598,10 @@ var GlElement = class _GlElement extends Element {
         (_a = controller.parent) != null ? _a : controller.parent = child;
         (_b = controller.game) != null ? _b : controller.game = child.game;
         controller.build();
+        if (controller.type === "collider" && controller.level) {
+          child.level.addCollider(controller);
+          child.colliders.push(controller);
+        }
       }
     });
   }
@@ -2678,7 +2735,8 @@ var Level = class extends GlElement {
   constructor(attr = {}) {
     super(attr);
     this.type = "group";
-    this.colliders = [];
+    this.levelColliders = [];
+    this.colliderMeshes = [];
     this._camera = {
       target: Vector3.f(0),
       rotation: Vector3.f(0),
@@ -2686,6 +2744,9 @@ var Level = class extends GlElement {
       fov: 60
     };
     this.size = this.size;
+  }
+  addCollider(c) {
+    this.levelColliders.push(c);
   }
   get camera() {
     return this._camera;
@@ -2695,6 +2756,13 @@ var Level = class extends GlElement {
   }
   build() {
     this.game.active.level = this;
+  }
+  tick(obj) {
+    super.tick(obj);
+    this.colliderMeshes.forEach((c, i) => {
+      c.position = this.levelColliders[i].worldPosition;
+      c.size = this.levelColliders[i].size.clone();
+    });
   }
 };
 
@@ -2716,37 +2784,6 @@ var GlController = class extends GlElement {
     super(...arguments);
     this.type = "controller";
     this.order = "before";
-  }
-};
-
-// ts/utils/collisions.ts
-var Collisions = class _Collisions {
-  static boxesOverlap(aP, aS, bP, bS) {
-    return aP.x < bP.x + bS.x && aP.x + aS.x > bP.x && aP.y < bP.y + bS.y && aP.y + aS.y > bP.y && aP.z < bP.z + bS.z && aP.z + aS.z > bP.z;
-  }
-  static pointInBox(p, bP, bS) {
-    return p.x < bP.x + bS.x && p.x > bP.x && p.y < bP.y + bS.y && p.y > bP.y && p.z < bP.z + bS.z && p.z > bP.z;
-  }
-  static edgeCrossesBox(p1, p2, boxPosition, boxSize) {
-    return p1.x < boxPosition.x + boxSize.x && p1.x > boxPosition.x && p1.y < boxPosition.y + boxSize.y && p1.y > boxPosition.y && p1.z < boxPosition.z + boxSize.z && p1.z > boxPosition.z;
-  }
-  static overlapDirection(aP, aS, bP, bS, v) {
-    let result = [];
-    if (_Collisions.boxesOverlap(aP, aS, new Vector3(bP.x, bP.y + v.y), bS)) {
-      result.push(v.y > 0 ? ["y", aP.y - bP.y - bS.y] : ["y", aP.y + aS.y - bP.y]);
-    }
-    if (_Collisions.boxesOverlap(aP, aS, new Vector3(bP.x + v.x, bP.y), bS)) {
-      result.push(v.x < 0 ? ["x", aP.x + aS.x - bP.x] : ["x", aP.x - bP.x - bS.x]);
-    }
-    return result;
-  }
-  static check(statics, dynamic, velocity) {
-    return statics.filter(
-      (s) => _Collisions.boxesOverlap(s.position, s.size, dynamic.position.add(velocity), dynamic.size)
-      // r.push(...Collisions.overlapDirection(s.position.add(s.parent instanceof Level ? v3(0) : s.parent.position), s.size, dynamic[0], dynamic[1], velocity));
-      // if (!s.condition || s.condition()){
-      // }
-    );
   }
 };
 
@@ -2846,19 +2883,21 @@ var PlayerController = class extends GlController {
       this.parent.rotation = this.camera.rotation.multiply(0, 1, 0);
     }
   }
-  colliders(obj) {
+  collide(obj) {
     this.parent.stat.ground = false;
-    this.level.colliders.forEach((col) => {
-      if (Collisions.boxesOverlap(col.position, col.size, this.newPosition, this.parent.size)) {
-        if (col.direction.equals(Vector3.up) && this.velocity.y <= 0) {
-          this.velocity.y = Math.max(this.velocity.y, 0);
-          this.parent.stat.falling = false;
-          this.intr.fall = 0;
-          this.intr.jump = 0;
-          this.newPosition.y = col.position.y + col.size.y - 1;
-          this.parent.stat.ground = true;
-        }
+    this.parent.colliders[0].reaction.forEach((v) => {
+      if (v.y >= 0) {
+        this.intr.fall = 0;
+        this.intr.jump = 0;
+        this.parent.stat.falling = false;
+        this.parent.stat.ground = true;
+      } else {
+        this.parent.stat.falling = true;
+        this.parent.stat.ground = false;
       }
+      this.velocity.subtract(v);
+      this.parent.position = this.newPosition.clone();
+      this.newPosition = this.newPosition.add(v);
     });
     if (!this.parent.stat.jumping) {
       this.parent.stat.falling = !this.parent.stat.ground;
@@ -2867,7 +2906,7 @@ var PlayerController = class extends GlController {
   tick(obj) {
     super.tick(obj);
     this.setVelocity(obj);
-    this.colliders(obj);
+    this.collide(obj);
     this.parent.position = this.newPosition.clone();
   }
 };
@@ -3530,6 +3569,15 @@ var GLCuboid = class _GLCuboid extends GLRendable {
         Colors.y
       ].slice(0, this.faceCount);
   }
+  get size() {
+    return super.size;
+  }
+  set size(value) {
+    super.size = value;
+    if (this.parent) {
+      this.buffer.positionBuffer = this.GLT.createBuffer(this.positionBuffer(this.size));
+    }
+  }
   build() {
     super.build();
     this.texture = new GLTexture(this.game, this.textureUrl ? { url: this.textureUrl } : { color: this.colors });
@@ -4141,6 +4189,59 @@ var PlayerSkel = class extends HumanSkeleton {
   }
 };
 
+// ts/utils/collider.ts
+var Collider = class extends GlController {
+  constructor(attr) {
+    super(attr);
+    this.type = "collider";
+    this.reaction = [];
+    this.fixed = Boolean(attr.fixed);
+  }
+  get centeredPosition() {
+    return this.worldPosition.add(this.size.multiply(0.5, 0, 0.5));
+  }
+  tick(obj) {
+    super.tick(obj);
+    this.reaction = [];
+    this.level.levelColliders.forEach(this.calculateReaction.bind(this));
+  }
+  calculateReaction(othr) {
+    if (this === othr)
+      return;
+    if (this.worldPosition.x + this.size.x < othr.worldPosition.x)
+      return;
+    if (this.worldPosition.x > othr.worldPosition.x + othr.size.x)
+      return;
+    if (this.worldPosition.y + this.size.y < othr.worldPosition.y)
+      return;
+    if (this.worldPosition.y > othr.worldPosition.y + othr.size.y)
+      return;
+    if (this.worldPosition.z + this.size.z < othr.worldPosition.z)
+      return;
+    if (this.worldPosition.z > othr.worldPosition.z + othr.size.z)
+      return;
+    if (this.fixed)
+      return v3(0);
+    this.reaction.push(Util.closestVectorMagniture(this.calculateExitVelocity(othr), 0));
+  }
+  calculateExitVelocity(othr) {
+    return [
+      v3(-(this.worldPosition.x + this.size.x - othr.worldPosition.x), 0, 0),
+      // to the x- of other
+      v3(othr.worldPosition.x + othr.size.x - this.worldPosition.x, 0, 0),
+      // to the x+ of other
+      v3(0, -(this.worldPosition.y + this.size.y - othr.worldPosition.y), 0),
+      // to the y- of other
+      v3(0, othr.worldPosition.y + othr.size.y - this.worldPosition.y, 0),
+      // to the y+ of other
+      v3(0, 0, -(this.worldPosition.z + this.size.z - othr.worldPosition.z)),
+      // to the z- of other
+      v3(0, 0, othr.worldPosition.z + othr.size.z - this.worldPosition.z)
+      // to the z+ of other
+    ];
+  }
+};
+
 // ts/modes/side/player_actor.ts
 var Player = class extends Character {
   constructor({
@@ -4151,11 +4252,17 @@ var Player = class extends Character {
     super({
       position,
       size,
-      rotation,
-      anchorPoint: size.multiply(0.5, 0, 0.5)
+      rotation
     });
     this.stat = { jumping: false, falling: false, running: false, fallAnimation: false };
-    this.addControllers([new FreeCamera(this), new PlayerController(this)]);
+    this.addControllers([
+      new Collider({
+        size: this.size,
+        fixed: false
+      }),
+      new PlayerController(this),
+      new FreeCamera(this)
+    ]);
   }
   get aiming() {
     const a = this.controllers[1].aiming;
@@ -4175,8 +4282,8 @@ var Player = class extends Character {
 
 // ts/modes/side/car_controller.ts
 var CarController = class extends GlController {
-  constructor() {
-    super(...arguments);
+  constructor(attr) {
+    super(attr);
     this.intr = { fall: 0, jump: 0, landDelay: 0 };
     this.cnst = { runTime: 5e3, runSlowDownFactor: 0.1, runSpeed: 2 };
     this.velocity = Vector3.f(0);
@@ -4228,12 +4335,6 @@ var CarController = class extends GlController {
       this.newPosition = this.parent.position.add(v3(0, sc.y, 0));
     }
   }
-  colliders(obj) {
-    this.parent.stat.ground = false;
-    if (!this.parent.stat.jumping) {
-      this.parent.stat.falling = !this.parent.stat.ground;
-    }
-  }
   build() {
     super.build();
     this.direction = this.parent.rotation.y;
@@ -4241,7 +4342,6 @@ var CarController = class extends GlController {
   tick(obj) {
     super.tick(obj);
     this.setVelocity(obj);
-    this.colliders(obj);
     this.parent.position = this.newPosition.clone();
   }
 };
@@ -4304,7 +4404,10 @@ var Driver = class extends Character {
       anchorPoint: size.multiply(0.5, 0, 0.5)
     });
     this.stat = { jumping: false, falling: false, running: false, fallAnimation: false };
-    this.addControllers([new CarController(this), new CarCamera(this)]);
+    this.addControllers([new Collider({
+      size: this.size,
+      fixed: true
+    }), new CarController(this), new CarCamera(this)]);
   }
   build() {
     GlElement.registerControllers(this);
@@ -4315,485 +4418,24 @@ var Driver = class extends Character {
   }
 };
 
-// ts/gl/testObj.ts
-var TestObj = class extends GLGroup {
-  constructor(attr) {
-    super(attr);
-  }
-  build() {
-    super.build();
-    this.position = v3(0, 20, 480);
-    this.final = new GLCuboid({
-      position: v3(-1, -1, 0),
-      size: v3(0.1, 0.1, 0.1),
-      colors: [Colors.r]
-    });
-    this.addChild(this.final);
-    this.final.addChild(new GLCuboid({
-      position: v3(-5, -5, -5),
-      size: v3(10, 10, 10),
-      colors: [Colors.r]
-    }));
-    this.r1 = new GLCuboid({
-      size: v3(100, 5, 5),
-      colors: [Colors.b]
-    });
-    this.r2 = new GLCuboid({
-      size: v3(5, 5, 5),
-      position: v3(100, -0, -0),
-      colors: [Colors.b]
-    });
-    this.addChild(this.r1);
-    this.r1.addChild(this.r2);
-  }
-  tick(obj) {
-    super.tick(obj);
-    this.r1.rotation = this.r1.rotation.add(v3(0, 5e-3, 1e-3));
-    this.final.position = this.r2.worldPosition.subtract(this.worldPosition);
-  }
-};
-
-// ts/gl/pyramid.ts
-var GLPyramid = class _GLPyramid extends GLRendable {
-  constructor(attr) {
-    super(attr);
-    this.type = "mesh";
-    this.colors = [];
-    this.verticesCount = 30;
-    this.dimensions = 0 | 1 | 2 | 3;
-    this.faceCount = 5;
-    this.dimensions = attr.size.array.filter((v) => v !== 0).length;
-    if (this.dimensions < 2) {
-      return;
-    }
-    this.textureUrl = attr.textureUrl;
-    if (attr.colors)
-      this.colors = attr.colors;
-    else
-      this.colors = [
-        Colors.r,
-        Colors.g,
-        Colors.b,
-        Colors.c,
-        Colors.m,
-        Colors.y
-      ].slice(0, this.faceCount);
-  }
-  build() {
-    super.build();
-    this.texture = new GLTexture(this.game, this.textureUrl ? { url: this.textureUrl } : { color: this.colors });
-  }
-  indexBuffer() {
-    let b = this.getBufferData().index.slice(0, this.faceCount * 6);
-    return b;
-  }
-  positionBuffer(size) {
-    return _GLPyramid.scale(
-      this.getBufferData().position,
-      size
-    );
-  }
-  normalBuffer() {
-    return this.getBufferData().normal;
-  }
-  textureBuffer() {
-    let b = [];
-    if (this.textureUrl) {
-      return this.getBufferData().texture;
-    } else {
-      const inc = 1 / this.faceCount;
-      for (let index = 0; index < this.faceCount; index++) {
-        b.push(
-          index * inc + inc / 3,
-          0,
-          index * inc + inc / 3,
-          1,
-          (index + 1) * inc - inc / 3,
-          0,
-          (index + 1) * inc - inc / 3,
-          0
-        );
-      }
-    }
-    return b;
-  }
-  getIndexBufferData() {
-    return [
-      0,
-      1,
-      2,
-      0,
-      2,
-      3,
-      4,
-      5,
-      6,
-      4,
-      6,
-      7,
-      8,
-      9,
-      10,
-      8,
-      10,
-      11,
-      12,
-      13,
-      14,
-      12,
-      14,
-      15,
-      16,
-      17,
-      18,
-      16,
-      18,
-      19
-    ];
-  }
-  getPositionBufferData() {
-    return [
-      0,
-      0,
-      -1,
-      1,
-      0,
-      -1,
-      0.5,
-      1,
-      -0.5,
-      0.5,
-      1,
-      -0.5,
-      0,
-      0,
-      -0,
-      0.5,
-      1,
-      -0.5,
-      0.5,
-      1,
-      -0.5,
-      1,
-      0,
-      -0,
-      0,
-      0,
-      -0,
-      1,
-      0,
-      -0,
-      1,
-      0,
-      -1,
-      0,
-      0,
-      -1,
-      1,
-      0,
-      -0,
-      0.5,
-      1,
-      -0.5,
-      0.5,
-      1,
-      -0.5,
-      1,
-      0,
-      -1,
-      0,
-      0,
-      -0,
-      0,
-      0,
-      -1,
-      0.5,
-      1,
-      -0.5,
-      0.5,
-      1,
-      -0.5
-    ];
-  }
-  getNormalBufferData() {
-    return [
-      0,
-      0,
-      -1,
-      0,
-      0,
-      -1,
-      0,
-      0,
-      -1,
-      0,
-      0,
-      -1,
-      0,
-      0,
-      1,
-      0,
-      0,
-      1,
-      0,
-      0,
-      1,
-      0,
-      0,
-      1,
-      0,
-      -1,
-      0,
-      0,
-      -1,
-      0,
-      0,
-      -1,
-      0,
-      0,
-      -1,
-      0,
-      1,
-      0,
-      0,
-      1,
-      0,
-      0,
-      1,
-      0,
-      0,
-      1,
-      0,
-      0,
-      -1,
-      0,
-      0,
-      -1,
-      0,
-      0,
-      -1,
-      0,
-      0,
-      -1,
-      0,
-      0
-    ];
-  }
-  getTextureBufferData() {
-    return [
-      0,
-      0,
-      1,
-      0,
-      1,
-      1,
-      0,
-      1,
-      0,
-      0,
-      1,
-      0,
-      1,
-      1,
-      0,
-      1,
-      0,
-      0,
-      1,
-      0,
-      1,
-      1,
-      0,
-      1,
-      0,
-      0,
-      1,
-      0,
-      1,
-      1,
-      0,
-      1,
-      0,
-      0,
-      1,
-      0,
-      1,
-      1,
-      0,
-      1
-    ];
-  }
-  getBufferData() {
-    return {
-      index: this.getIndexBufferData(),
-      position: this.getPositionBufferData(),
-      normal: this.getNormalBufferData(),
-      texture: this.getTextureBufferData()
-    };
-  }
-  static scale(array, size) {
-    return size ? array.map((n, i) => n * size.array[i % 3]) : array;
-  }
-};
-
-// ts/utils/arrow.ts
-var Arrow = class extends GLGroup {
-  constructor(attr) {
-    super(attr);
-    this.direction = attr.direction = v3(1, 0, 0);
-    this.width = attr.width || 2;
-    this.length = attr.length || 4;
-    this.colors = attr.colors || [Colors.r];
-  }
-  build() {
-    const s = new GLCuboid({
-      position: v3(-this.width / 4, 0, -this.width / 4),
-      size: v3(this.width / 2, this.length / 2, this.width / 2),
-      colors: this.colors
-    });
-    this.addChild(s);
-    const p = new GLPyramid({
-      position: v3(-this.width / 2, this.length / 2, -this.width / 2),
-      size: v3(this.width, this.length / 2, this.width),
-      colors: [Colors.r]
-    });
-    this.addChild(p);
-  }
-};
-
-// ts/utils/collider.ts
-var Collider = class extends GlElement {
-  constructor(attr) {
-    super(attr);
-    this.type = "collider";
-    this.colliderType = "static";
-    this.direction = attr.direction;
-    this.showMesh = attr.showMesh || false;
-    this.showArrows = attr.showArrows || false;
-  }
-  build() {
-    if (this.showMesh) {
-      this.debugObject = this.addChild(new GLCuboid({
-        size: this.size,
-        colors: [Colors.c]
-      }));
-      if (this.showArrows) {
-        this.debugObject.addChild(new Arrow({
-          position: this.size.multiply(v3(1, 1, 1)),
-          rotation: Vector3.up.multiply(this.direction)
-        }));
-        this.debugObject.addChild(new Arrow({
-          position: this.size.multiply(v3(1, 1, 0)),
-          rotation: Vector3.up.multiply(this.direction)
-        }));
-        this.debugObject.addChild(new Arrow({
-          position: this.size.multiply(v3(0, 1, 1)),
-          rotation: Vector3.up.multiply(this.direction)
-        }));
-        this.debugObject.addChild(new Arrow({
-          position: this.size.multiply(v3(1, 0, 1)),
-          rotation: Vector3.up.multiply(this.direction)
-        }));
-        this.debugObject.addChild(new Arrow({
-          position: this.size.multiply(v3(1, 0, 0)),
-          rotation: Vector3.up.multiply(this.direction)
-        }));
-        this.debugObject.addChild(new Arrow({
-          position: this.size.multiply(v3(0, 1, 0)),
-          rotation: Vector3.up.multiply(this.direction)
-        }));
-        this.debugObject.addChild(new Arrow({
-          position: this.size.multiply(v3(0, 0, 1)),
-          rotation: Vector3.up.multiply(this.direction)
-        }));
-        this.debugObject.addChild(new Arrow({
-          position: this.size.multiply(v3(0, 0, 0)),
-          rotation: Vector3.up.multiply(this.direction)
-        }));
-      }
-    }
-  }
-};
-
-// ts/modes/side/npc_skeleton.ts
-var npcSkeleton = class extends HumanSkeleton {
-  constructor() {
-    super({
-      "head": 6,
-      "armUpper": 5,
-      "armLower": 9,
-      "hand": 0,
-      "legUpper": 9,
-      "legLower": 5,
-      "foot": 1,
-      "torso": 5.5,
-      "hips": 3,
-      "hipsWidth": 6,
-      "shoulderWidth": 8
-    });
-  }
-  build() {
-    super.build();
-    this.bones["head"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-10-Head.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(2, -9.5, 2) }));
-    this.bones["torso"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-8-TorsoUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(this.sizes.shoulderWidth / 2, -3, 1) }));
-    this.bones["hips"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-9-TorsoLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(3, 0, 1) }));
-    this.bones["lLegUpper"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-0-lLegUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(3, 9, 1) }));
-    this.bones["rLegUpper"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-1-rLegUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(-2, 9, 1) }));
-    this.bones["lLegLower"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-2-lLegLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(3, 14.4, 1.5) }));
-    this.bones["rLegLower"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-3-rLegLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, 0), position: v3(-2, 14.4, 1.5) }));
-    this.bones["lArmUpper"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-4-lArmUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, Math.PI / 2), position: v3(8.5, 7, 1) }));
-    this.bones["rArmUpper"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-5-rArmUpper.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, -Math.PI / 2), position: v3(-7.5, 7, 1) }));
-    this.bones["lArmLower"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-6-lArmLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, Math.PI / 2), position: v3(8.5, 16, 1) }));
-    this.bones["rArmLower"].addChild(new GLobj({ colorIntensity: 0.7, url: "worker/worker-7-rArmLower.obj", size: v3(6, 6, 6), rotation: v3(0, Math.PI, -Math.PI / 2), position: v3(-7.5, 16, 1) }));
-    this.animator.add("idle", 15e3, {
-      torso: [],
-      hips: [],
-      head: [[0.4, [0, 0.5]], [0.5, [0, -0.5]], [0.9, [0, -0.5]], [1, [0, 0.5]]],
-      lArmUpper: [],
-      lArmLower: [],
-      lHand: [],
-      rArmUpper: [],
-      rArmLower: [],
-      rHand: [],
-      lLegUpper: [],
-      lLegLower: [],
-      lFoot: [],
-      rLegUpper: [],
-      rLegLower: [],
-      rFoot: []
-    }, { loop: true, dynamic: true, ease: "easeInOutSine" });
-    this.animator.play("idle");
-  }
-};
-
-// ts/modes/side/npc_actor.ts
-var NPC = class extends Character {
-  constructor({
-    position = Vector3.f(0),
-    size = Vector3.f(0),
-    rotation = Vector3.f(0)
-  } = {}) {
-    super({
-      position,
-      size,
-      rotation,
-      anchorPoint: size.multiply(0.5, 0, 0.5)
-    });
-    this.stat = { jumping: false, falling: false, running: false, fallAnimation: false };
-  }
-  build() {
-    GlElement.registerControllers(this);
-    this.skeleton = new npcSkeleton();
-    this.addChild(this.skeleton);
-  }
-};
-
 // ts/modes/side/level.ts
 var World = class extends Level {
   constructor() {
-    super(...arguments);
+    super();
     this.start = Vector2.zero;
     this.background = [0.67451 * 0.6, 0.603922 * 0.6, 0.968627 * 0.9, 1];
+    this.addControllers([
+      new Collider({
+        position: v3(-5e3, -1e3, -2e3),
+        size: v3(1e4, 1e3, 4e3),
+        fixed: true
+      })
+      // new Collider({
+      //     position: v3(150, -6, 727),
+      //     size: v3(100, 20, 168),
+      //     fixed: true
+      // }),
+    ]);
   }
   keyDown(e) {
     if (e.key === "Enter") {
@@ -4866,11 +4508,6 @@ var World = class extends Level {
   }
   build() {
     super.build();
-    this.addChild(new NPC({
-      size: v3(6, 33, 8),
-      position: v3(220, 11, 736),
-      rotation: v3(0, Math.PI, 0)
-    }));
     this.player = new Player({
       size: v3(6, 33, 8),
       position: v3(10, 1, 400),
@@ -4897,24 +4534,51 @@ var World = class extends Level {
         }
       }
     }
-    this.addChild(new GLobj({ storage: this.mode.storage, url: "CountrySide-5-House.obj", size: v3(18, 18, 18), position: v3(200, 43, 800), rotation: v3(0, -Math.PI / 2, 0) }));
-    this.addChild(new GLobj({ storage: this.mode.storage, url: "CountrySide-4-Vegetation1.obj", size: v3(20, 20, 20), rotation: v3(0, Math.PI, 0), position: v3(-100 - 20, 5, 670) }));
-    this.addChild(new GLobj({ storage: this.mode.storage, url: "CountrySide-4-Vegetation1.obj", size: v3(25, 25, 25), rotation: v3(0, 0, 0), position: v3(-20 - 20, 6, 760) }));
-    this.addChild(new GLobj({ storage: this.mode.storage, url: "CountrySide-4-Vegetation1.obj", size: v3(25, 25, 25), rotation: v3(0, Math.PI / 2, 0), position: v3(0 - 20, 3, 670) }));
-    this.addChild(new GLobj({ storage: this.mode.storage, url: "Plane01.obj", size: v3(30, 30, 30), position: v3(420, 16, 720), rotation: v3(0, Math.PI / 4 + Math.PI / 2, -0.12) }));
-    this.addChild(new GLobj({ storage: this.mode.storage, url: "Medieval Town - Pack 1-0.obj", size: v3(10, 10, 10), position: v3(0, -1, 500) }));
-    this.addChild(new GLobj({ storage: this.mode.storage, url: "Medieval Town - Pack 1-1.obj", size: v3(10, 10, 10), position: v3(0, -1, 500) }));
-    this.addChild(new GLobj({ storage: this.mode.storage, url: "Medieval Town - Pack 1-2.obj", size: v3(10, 10, 10), position: v3(0, -1, 500) }));
-    this.addChild(new GLobj({ storage: this.mode.storage, url: "Nuclear Survival - Pack 6 - m.obj", size: v3(10, 10, 10), position: v3(0, -6, 300), rotation: v3(0, -Math.PI / 2, 0) }));
-    [
-      [v3(-5e3, -1e3, -2e3), v3(1e4, 1e3, 4e3), Vector3.up, false],
-      // floor
-      [v3(150, -3, 727), v3(100, 15, 168), Vector3.up, false]
-      // floor
-    ].forEach(([position, size, direction, show]) => {
-      this.addChild(new Collider({ position, size, direction, showMesh: show === void 0 ? false : show, showArrows: false }));
-    });
-    this.addChild(this.test = new TestObj({ size: v3(1, 1, 1) }));
+    this.addChild(new GLobj({
+      controllers: [
+        new Collider({
+          size: v3(97, 200, 98),
+          position: v3(-144, 0, 143),
+          fixed: true
+        }),
+        new Collider({
+          size: v3(97 - 30, 20, 98),
+          position: v3(-144 + 15, 0, 122),
+          fixed: true
+        })
+      ],
+      storage: this.mode.storage,
+      url: "Medieval Town - Pack 1-0.obj",
+      size: v3(10, 10, 10),
+      position: v3(0, -1, 500)
+    }));
+    this.addChild(new GLobj({
+      controllers: [new Collider({
+        size: v3(97, 200, 98),
+        position: v3(-144 + 97, 0, 143),
+        fixed: true
+      })],
+      storage: this.mode.storage,
+      url: "Medieval Town - Pack 1-1.obj",
+      size: v3(10, 10, 10),
+      position: v3(0, -1, 500)
+    }));
+    this.addChild(new GLobj({
+      controllers: [new Collider({
+        size: v3(97, 200, 98),
+        position: v3(-144 - 97, 0, 143),
+        fixed: true
+      })],
+      storage: this.mode.storage,
+      url: "Medieval Town - Pack 1-2.obj",
+      size: v3(10, 10, 10),
+      position: v3(0, -1, 500)
+    }));
+    this.addChild(new GLobj({ controllers: [new Collider({
+      size: v3(190, 200, 150),
+      position: v3(-90, 0, 153),
+      fixed: true
+    })], storage: this.mode.storage, url: "Nuclear Survival - Pack 6 - m.obj", size: v3(10, 10, 10), position: v3(0, -6, 300), rotation: v3(0, -Math.PI / 2, 0) }));
   }
 };
 

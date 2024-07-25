@@ -1,76 +1,72 @@
-import { GlElement, GlElementAttributes } from '../gl/elementBase';
+import { GlElementAttributes } from '../gl/elementBase';
 import { GlElementType } from '../gl/glRenderer';
-import { GLCuboid as GlCuboid } from '../gl/cuboid';
-import { Colors } from './colors';
+import { GlController } from '../gl/controller';
+import { TickerReturnData } from './ticker';
 import { Vector3, v3 } from './vector3';
-import { Arrow } from './arrow';
+import { Util } from './utils';
 
 
 export type ColliderAttributes = GlElementAttributes & {
-    direction: Vector3,
-    showMesh?: boolean,
-    showArrows?: boolean,
+    fixed: boolean;
 };
 
 export type ColliderType = 'static' | 'dynamic';
 
-export class Collider extends GlElement {
+export class Collider extends GlController {
     public type: GlElementType = 'collider';
-    public colliderType: ColliderType = 'static';
-    public direction: Vector3;
-    public debugObject: GlElement;
-    public showMesh: boolean;
-    public showArrows: boolean;
+    public fixed: boolean;
+    public reaction: Vector3[] = [];
+
+    public get centeredPosition() {
+        return this.worldPosition.add(this.size.multiply(0.5,0,0.5))
+    }
 
     public constructor(attr: ColliderAttributes) {
         super(attr);
-        this.direction = attr.direction;
-        this.showMesh = attr.showMesh || false;
-        this.showArrows = attr.showArrows || false;
+        this.fixed = Boolean(attr.fixed);
     }
 
-    public build(): void {
-        if (this.showMesh) {
+    public tick(obj: TickerReturnData): void {
+        super.tick(obj);
+        this.reaction = [];
+        // console.log(this.level.colliders);
+        
+        this.level.levelColliders.forEach(this.calculateReaction.bind(this));
+    }
 
-            this.debugObject = this.addChild(new GlCuboid({
-                size: this.size,
-                colors: [Colors.c],
-            }));
-            
-            if (this.showArrows) {
-                this.debugObject.addChild(new Arrow({
-                    position: this.size.multiply(v3(1, 1, 1)),
-                    rotation: Vector3.up.multiply(this.direction)
-                }));
-                this.debugObject.addChild(new Arrow({
-                    position: this.size.multiply(v3(1, 1, 0)),
-                    rotation: Vector3.up.multiply(this.direction)
-                }));
-                this.debugObject.addChild(new Arrow({
-                    position: this.size.multiply(v3(0, 1, 1)),
-                    rotation: Vector3.up.multiply(this.direction)
-                }));
-                this.debugObject.addChild(new Arrow({
-                    position: this.size.multiply(v3(1, 0, 1)),
-                    rotation: Vector3.up.multiply(this.direction)
-                }));
-                this.debugObject.addChild(new Arrow({
-                    position: this.size.multiply(v3(1, 0, 0)),
-                    rotation: Vector3.up.multiply(this.direction)
-                }));
-                this.debugObject.addChild(new Arrow({
-                    position: this.size.multiply(v3(0, 1, 0)),
-                    rotation: Vector3.up.multiply(this.direction)
-                }));
-                this.debugObject.addChild(new Arrow({
-                    position: this.size.multiply(v3(0, 0, 1)),
-                    rotation: Vector3.up.multiply(this.direction)
-                }));
-                this.debugObject.addChild(new Arrow({
-                    position: this.size.multiply(v3(0, 0, 0)),
-                    rotation: Vector3.up.multiply(this.direction)
-                }));
-            }
-        }
+    public calculateReaction(othr: Collider): Vector3 | null {
+        //myself
+        if (this === othr) return;
+
+        //do these NOT overlap?
+        if (this.worldPosition.x + this.size.x < othr.worldPosition.x) return; // to the x- of other
+        if (this.worldPosition.x > othr.worldPosition.x + othr.size.x) return; // to the x+ of other
+        if (this.worldPosition.y + this.size.y < othr.worldPosition.y) return; // to the y- of other
+        if (this.worldPosition.y > othr.worldPosition.y + othr.size.y) return; // to the y+ of other
+        if (this.worldPosition.z + this.size.z < othr.worldPosition.z) return; // to the z- of other
+        if (this.worldPosition.z > othr.worldPosition.z + othr.size.z) return; // to the z+ of other
+
+        // console.log(this, );
+        
+
+        //fixed objects dont react
+        if (this.fixed) return v3(0);
+
+        this.reaction.push(Util.closestVectorMagniture(this.calculateExitVelocity(othr), 0));
+    }
+
+    private calculateExitVelocity(othr: Collider): [Vector3, Vector3, Vector3, Vector3, Vector3, Vector3] {
+        return [
+
+            v3(-(this.worldPosition.x + this.size.x - othr.worldPosition.x), 0, 0),// to the x- of other
+            v3((othr.worldPosition.x + othr.size.x) - this.worldPosition.x, 0, 0),// to the x+ of other
+
+            v3(0, -(this.worldPosition.y + this.size.y - othr.worldPosition.y), 0),// to the y- of other
+            v3(0, (othr.worldPosition.y + othr.size.y) - this.worldPosition.y, 0),// to the y+ of other
+
+            v3(0, 0, -(this.worldPosition.z + this.size.z - othr.worldPosition.z)),// to the z- of other
+            v3(0, 0, (othr.worldPosition.z + othr.size.z) - this.worldPosition.z),// to the z+ of other
+
+        ];
     }
 }

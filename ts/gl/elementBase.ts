@@ -31,6 +31,7 @@ export abstract class GlElement extends Element {
     public anchorPoint: Vector3;
     public parent: GlElement;
     private transformMatrix: Matrix4;
+    public colliders: Collider[] = [];
     private _position: Vector3 = v3(0);
     public get position(): Vector3 {
         return this._position;
@@ -39,7 +40,13 @@ export abstract class GlElement extends Element {
         this._position = value;
     }
 
-    public size: Vector3 = v3(0);
+    private _size: Vector3 = v3(0);
+    public get size(): Vector3 {
+        return this._size;
+    }
+    public set size(value: Vector3) {
+        this._size = value;
+    }
     private _rotation: Vector3 = v3(0);
     public get rotation(): Vector3 {
         return this._rotation;
@@ -62,7 +69,9 @@ export abstract class GlElement extends Element {
     
     public get worldPosition(): Vector3 {
         return this.worldMatrix.position.multiply(v3(1,1,-1));
-        // return (this.parent?.worldPosition || v3(0)).add(this.position);
+    }
+    public get worldRotation(): Vector3 {
+        return (this.parent?.worldRotation || v3()).add(this.rotation);
     }
 
     private _active: boolean = true;
@@ -123,12 +132,7 @@ export abstract class GlElement extends Element {
         }
         GlElement.registerControllers(child);
 
-        if (child.type === 'collider' && this.level) {
-            this.level.colliders.push(child as Collider);
-        }
-
         child.readyState = true;
-
         return child;
     }
 
@@ -150,6 +154,11 @@ export abstract class GlElement extends Element {
                 controller.parent ??= child;
                 controller.game ??= child.game;
                 controller.build();
+
+                if (controller.type === 'collider' && controller.level) {
+                    child.level.addCollider(controller as Collider);
+                    child.colliders.push(controller as Collider);
+                }
             }
         });
     }

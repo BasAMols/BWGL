@@ -26,6 +26,16 @@ export class GLCuboid extends GLRendable {
     public textureUrl: string;
     private faceCount: number;
 
+    public get size(): Vector3 {
+        return super.size;
+    }
+    public set size(value: Vector3) {
+        super.size = value;
+        if (this.parent){
+            this.buffer.positionBuffer = this.GLT.createBuffer(this.positionBuffer(this.size))
+        }
+    }
+
     constructor(attr: GlCuboidAttributes) {
         super(attr);
         this.dimensions = attr.size.array.filter((v) => v !== 0).length;

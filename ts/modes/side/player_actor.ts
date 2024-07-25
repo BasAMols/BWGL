@@ -8,6 +8,7 @@ import { FreeCamera } from './player_camera';
 import { BowActor } from './bow';
 import { TickerReturnData } from '../../utils/ticker';
 import { PlayerSkel } from './player_skeleton';
+import { Collider } from '../../utils/collider';
 
 export class Player extends Character {
     public stat: Record<string, boolean> = { jumping: false, falling: false, running: false, fallAnimation: false };
@@ -18,7 +19,7 @@ export class Player extends Character {
     public get aiming() {
         const a = (this.controllers[1] as PlayerController).aiming;
         // this.bow.holding = a;
-        return a
+        return a;
     }
 
     constructor({
@@ -34,9 +35,15 @@ export class Player extends Character {
             position: position,
             size: size,
             rotation: rotation,
-            anchorPoint: size.multiply(0.5, 0, 0.5),
         });
-        this.addControllers([new FreeCamera(this), new PlayerController(this)]);
+        this.addControllers([
+            new Collider({
+                size: this.size,
+                fixed: false,
+            }),
+            new PlayerController(this),
+            new FreeCamera(this)
+        ]);
     }
 
     build() {
@@ -44,9 +51,7 @@ export class Player extends Character {
         this.skeleton = new PlayerSkel();
         this.addChild(this.skeleton);
         this.bow = new BowActor();
-        this.addChild(this.bow)
-
-
+        this.addChild(this.bow);
     }
 
     public tick(obj: TickerReturnData): void {
