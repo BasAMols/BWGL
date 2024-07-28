@@ -1,5 +1,5 @@
 import { GlElement, GlElementAttributes } from '../gl/elementBase';
-import { Color, Colors } from './colors';
+import { Color } from './colors';
 import { GlElementType } from '../gl/glRenderer';
 import { Vector2 } from "./vector2";
 import { Vector3 } from './vector3';
@@ -39,14 +39,14 @@ export abstract class Level extends GlElement {
     addZone(c: Zone) {
         this.levelZones.push(c);
 
-        const mesh = new GLCuboid({
-            size: c.size,
-            colors: [Colors.r],
-            opacity: 0.3,
-            anchorPoint: c.anchorPoint
-        });
-        this.colliderMeshes.push(mesh);
-        this.addChild(mesh);
+        // const mesh = new GLCuboid({
+        //     size: c.size,
+        //     colors: [Colors.r],
+        //     opacity: 0.3,
+        //     anchorPoint: c.anchorPoint
+        // });
+        // this.colliderMeshes.push(mesh);
+        // this.addChild(mesh);
     }
 
     public get camera(): typeof this._camera {

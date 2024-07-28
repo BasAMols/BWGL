@@ -1,10 +1,12 @@
 import { GlElementAttributes } from '../gl/elementBase';
 import { GlElementType } from '../gl/glRenderer';
 import { GlController } from '../gl/controller';
+import { Vector3, v3 } from './vector3';
 
 
 export type ZoneAttributes = GlElementAttributes & {
-    fixed: boolean;
+    fixed?: boolean;
+    absoluteOffset?: Vector3
 };
 
 export type ZoneType = 'collider' | 'trigger' | 'interact';
@@ -13,10 +15,16 @@ export abstract class Zone extends GlController {
     public fixed: boolean;
     public abstract zoneType: ZoneType;
     public overlaps: Zone[] = [];
+    public absoluteOffset: Vector3;
 
     public constructor(attr: ZoneAttributes) {
         super(attr);
         this.fixed = Boolean(attr.fixed);
+        this.absoluteOffset = attr.absoluteOffset || v3();
+    }
+
+    get globalPosition(){
+        return super.globalPosition.add(this.absoluteOffset);
     }
 
     public calculateOverlaps() {

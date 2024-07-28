@@ -2742,471 +2742,6 @@ var Mode = class extends GLGroup {
   }
 };
 
-// ts/utils/colors.ts
-var Colors = class {
-};
-Colors.k = [0, 0, 0, 1];
-Colors.r = [1, 0, 0, 1];
-Colors.g = [0, 1, 0, 1];
-Colors.b = [0, 0, 1, 1];
-Colors.y = [1, 1, 0, 1];
-Colors.c = [0, 1, 1, 1];
-Colors.m = [1, 0, 1, 1];
-Colors.w = [1, 1, 1, 1];
-
-// ts/gl/rendable.ts
-var GLRendable = class extends GlElement {
-  constructor(attr = {}) {
-    super(attr);
-    this.colorIntensity = 1;
-    this.opacity = 1;
-    this.colors = [];
-    this.opacity = attr.opacity !== void 0 ? attr.opacity : 1;
-    this.colorIntensity = attr.colorIntensity !== void 0 ? attr.colorIntensity : 1;
-  }
-  build() {
-    this.buffer = {
-      positionBuffer: this.GLT.createBuffer(this.positionBuffer(this.size)),
-      indices: this.GLT.createBuffer(this.indexBuffer(), "element", Uint32Array),
-      textureCoord: this.GLT.createBuffer(this.textureBuffer(this.size)),
-      normalBuffer: this.GLT.createBuffer(this.normalBuffer())
-    };
-    this.GLR.initGlElement(this);
-  }
-  ready() {
-    this.build();
-    if (this.game.waitCount) {
-      this.game.waitCount--;
-    }
-  }
-};
-
-// ts/gl/texture.ts
-var GLTexture = class {
-  constructor(game, attr) {
-    this.game = game;
-    if (attr.image) {
-      this.loadTexture(attr.image);
-    } else if (attr.url) {
-      this.game.waitCount++;
-      this.image = new Image();
-      this.image.onload = () => {
-        this.game.waitCount--;
-        this.loadTexture(this.image);
-      };
-      this.image.src = "".concat(window.location.href, "/").concat(attr.url);
-    } else {
-      this.loadColor(attr.color || [[0.8, 0.8, 0.7, 1]]);
-    }
-  }
-  static textureOffset(index, total) {
-    const inc = 1 / total;
-    return [
-      index * inc + inc / 3,
-      0,
-      index * inc + inc / 3,
-      1,
-      (index + 1) * inc - inc / 3,
-      0
-    ];
-  }
-  loadColor(colors) {
-    const ss = document.createElement("canvas");
-    ss.width = colors.length;
-    ss.height = 1;
-    const ssCTX = ss.getContext("2d");
-    for (let x = 0; x < colors.length; x++) {
-      const color = colors[x];
-      ssCTX.fillStyle = "rgba(".concat(color[0] * 255, ", ").concat(color[1] * 255, ", ").concat(color[2] * 255, ", ").concat(color[3], ")");
-      ssCTX.fillRect(
-        x,
-        0,
-        1,
-        1
-      );
-    }
-    this.loadTexture(ss);
-  }
-  loadTexture(img) {
-    const gl = this.game.gl;
-    const texture = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, texture);
-    gl.texImage2D(
-      gl.TEXTURE_2D,
-      0,
-      gl.RGBA,
-      gl.RGBA,
-      gl.UNSIGNED_BYTE,
-      img
-    );
-    gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-    if (this.isPowerOf2(img.width) && this.isPowerOf2(img.height)) {
-      gl.generateMipmap(gl.TEXTURE_2D);
-    } else {
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    }
-    this.texture = texture;
-  }
-  isPowerOf2(value) {
-    return (value & value - 1) === 0;
-  }
-};
-
-// ts/gl/cuboid.ts
-var GLCuboid = class _GLCuboid extends GLRendable {
-  constructor(attr) {
-    super(attr);
-    this.type = "mesh";
-    this.colors = [];
-    this.verticesCount = 36;
-    this.dimensions = 0 | 1 | 2 | 3;
-    this.dimensions = attr.size.array.filter((v) => v !== 0).length;
-    if (this.dimensions < 2) {
-      return;
-    }
-    this.verticesCount = this.dimensions === 3 ? 36 : 6;
-    this.faceCount = this.dimensions === 3 ? 6 : 1;
-    this.textureUrl = attr.textureUrl;
-    if (attr.colors)
-      this.colors = attr.colors;
-    else
-      this.colors = [
-        Colors.r,
-        Colors.g,
-        Colors.b,
-        Colors.c,
-        Colors.m,
-        Colors.y
-      ].slice(0, this.faceCount);
-  }
-  get size() {
-    return super.size;
-  }
-  set size(value) {
-    super.size = value;
-    if (this.parent) {
-      this.buffer.positionBuffer = this.GLT.createBuffer(this.positionBuffer(this.size));
-    }
-  }
-  build() {
-    super.build();
-    this.texture = new GLTexture(this.game, this.textureUrl ? { url: this.textureUrl } : { color: this.colors });
-  }
-  indexBuffer() {
-    let b = this.getBufferData().index.slice(0, this.faceCount * 6);
-    return b;
-  }
-  positionBuffer(size) {
-    return _GLCuboid.scale(
-      _GLCuboid.sliceToDimension(
-        this.getBufferData().position,
-        this.size,
-        72
-      ),
-      size
-    );
-  }
-  normalBuffer() {
-    return _GLCuboid.sliceToDimension(
-      this.getBufferData().normal,
-      this.size,
-      72
-    );
-  }
-  textureBuffer() {
-    let b = [];
-    if (this.textureUrl) {
-      return _GLCuboid.sliceToDimension(
-        this.getBufferData().texture,
-        this.size,
-        48
-      );
-    } else {
-      const inc = 1 / this.faceCount;
-      for (let index = 0; index < this.faceCount; index++) {
-        b.push(
-          index * inc + inc / 3,
-          0,
-          index * inc + inc / 3,
-          1,
-          (index + 1) * inc - inc / 3,
-          0,
-          (index + 1) * inc - inc / 3,
-          0
-        );
-      }
-    }
-    return b;
-  }
-  getIndexBufferData() {
-    return [
-      0,
-      1,
-      2,
-      0,
-      2,
-      3,
-      4,
-      5,
-      6,
-      4,
-      6,
-      7,
-      8,
-      9,
-      10,
-      8,
-      10,
-      11,
-      12,
-      13,
-      14,
-      12,
-      14,
-      15,
-      16,
-      17,
-      18,
-      16,
-      18,
-      19,
-      20,
-      21,
-      22,
-      20,
-      22,
-      23
-    ];
-  }
-  getPositionBufferData() {
-    return [
-      0,
-      0,
-      -1,
-      1,
-      0,
-      -1,
-      1,
-      1,
-      -1,
-      0,
-      1,
-      -1,
-      0,
-      0,
-      -0,
-      0,
-      1,
-      -0,
-      1,
-      1,
-      -0,
-      1,
-      0,
-      -0,
-      0,
-      1,
-      -0,
-      0,
-      1,
-      -1,
-      1,
-      1,
-      -1,
-      1,
-      1,
-      -0,
-      0,
-      0,
-      -0,
-      1,
-      0,
-      -0,
-      1,
-      0,
-      -1,
-      0,
-      0,
-      -1,
-      1,
-      0,
-      -0,
-      1,
-      1,
-      -0,
-      1,
-      1,
-      -1,
-      1,
-      0,
-      -1,
-      0,
-      0,
-      -0,
-      0,
-      0,
-      -1,
-      0,
-      1,
-      -1,
-      0,
-      1,
-      -0
-    ];
-  }
-  getNormalBufferData() {
-    return [
-      0,
-      0,
-      -1,
-      0,
-      0,
-      -1,
-      0,
-      0,
-      -1,
-      0,
-      0,
-      -1,
-      0,
-      0,
-      1,
-      0,
-      0,
-      1,
-      0,
-      0,
-      1,
-      0,
-      0,
-      1,
-      0,
-      1,
-      0,
-      0,
-      1,
-      0,
-      0,
-      1,
-      0,
-      0,
-      1,
-      0,
-      0,
-      -1,
-      0,
-      0,
-      -1,
-      0,
-      0,
-      -1,
-      0,
-      0,
-      -1,
-      0,
-      1,
-      0,
-      0,
-      1,
-      0,
-      0,
-      1,
-      0,
-      0,
-      1,
-      0,
-      0,
-      -1,
-      0,
-      0,
-      -1,
-      0,
-      0,
-      -1,
-      0,
-      0,
-      -1,
-      0,
-      0
-    ];
-  }
-  getTextureBufferData() {
-    return [
-      0,
-      0,
-      1,
-      0,
-      1,
-      1,
-      0,
-      1,
-      0,
-      0,
-      1,
-      0,
-      1,
-      1,
-      0,
-      1,
-      0,
-      0,
-      1,
-      0,
-      1,
-      1,
-      0,
-      1,
-      0,
-      0,
-      1,
-      0,
-      1,
-      1,
-      0,
-      1,
-      0,
-      0,
-      1,
-      0,
-      1,
-      1,
-      0,
-      1,
-      0,
-      0,
-      1,
-      0,
-      1,
-      1,
-      0,
-      1
-    ];
-  }
-  getBufferData() {
-    return {
-      index: this.getIndexBufferData(),
-      position: this.getPositionBufferData(),
-      normal: this.getNormalBufferData(),
-      texture: this.getTextureBufferData()
-    };
-  }
-  static sliceToDimension(array, size, total) {
-    const s = total / 6;
-    if (size.z === 0)
-      array = array.slice(0, s * 1);
-    else if (size.x === 0)
-      array = array.slice(s * 5, s * 6);
-    else if (size.y === 0)
-      array = array.slice(s * 3, s * 4);
-    return array;
-  }
-  static scale(array, size) {
-    return size ? array.map((n, i) => n * size.array[i % 3]) : array;
-  }
-};
-
 // ts/dom/interface.ts
 var Interface = class extends DomElement {
   constructor(attr = {}) {
@@ -3239,14 +2774,6 @@ var Level = class extends GlElement {
   }
   addZone(c) {
     this.levelZones.push(c);
-    const mesh = new GLCuboid({
-      size: c.size,
-      colors: [Colors.r],
-      opacity: 0.3,
-      anchorPoint: c.anchorPoint
-    });
-    this.colliderMeshes.push(mesh);
-    this.addChild(mesh);
   }
   get camera() {
     return this._camera;
@@ -3421,7 +2948,7 @@ var FreeCamera = class extends GlController {
     this.type = "controller";
     this.order = "after";
     this.lagList = [];
-    this.lagCount = 8;
+    this.lagCount = 1;
   }
   get active() {
     return super.active;
@@ -3476,6 +3003,106 @@ var FreeCamera = class extends GlController {
       this.lagList.push(nP);
     }
     this.camera.target = this.lagList.shift();
+  }
+};
+
+// ts/gl/rendable.ts
+var GLRendable = class extends GlElement {
+  constructor(attr = {}) {
+    super(attr);
+    this.colorIntensity = 1;
+    this.opacity = 1;
+    this.colors = [];
+    this.opacity = attr.opacity !== void 0 ? attr.opacity : 1;
+    this.colorIntensity = attr.colorIntensity !== void 0 ? attr.colorIntensity : 1;
+  }
+  build() {
+    this.buffer = {
+      positionBuffer: this.GLT.createBuffer(this.positionBuffer(this.size)),
+      indices: this.GLT.createBuffer(this.indexBuffer(), "element", Uint32Array),
+      textureCoord: this.GLT.createBuffer(this.textureBuffer(this.size)),
+      normalBuffer: this.GLT.createBuffer(this.normalBuffer())
+    };
+    this.GLR.initGlElement(this);
+  }
+  ready() {
+    this.build();
+    if (this.game.waitCount) {
+      this.game.waitCount--;
+    }
+  }
+};
+
+// ts/gl/texture.ts
+var GLTexture = class {
+  constructor(game, attr) {
+    this.game = game;
+    if (attr.image) {
+      this.loadTexture(attr.image);
+    } else if (attr.url) {
+      this.game.waitCount++;
+      this.image = new Image();
+      this.image.onload = () => {
+        this.game.waitCount--;
+        this.loadTexture(this.image);
+      };
+      this.image.src = "".concat(window.location.href, "/").concat(attr.url);
+    } else {
+      this.loadColor(attr.color || [[0.8, 0.8, 0.7, 1]]);
+    }
+  }
+  static textureOffset(index, total) {
+    const inc = 1 / total;
+    return [
+      index * inc + inc / 3,
+      0,
+      index * inc + inc / 3,
+      1,
+      (index + 1) * inc - inc / 3,
+      0
+    ];
+  }
+  loadColor(colors) {
+    const ss = document.createElement("canvas");
+    ss.width = colors.length;
+    ss.height = 1;
+    const ssCTX = ss.getContext("2d");
+    for (let x = 0; x < colors.length; x++) {
+      const color = colors[x];
+      ssCTX.fillStyle = "rgba(".concat(color[0] * 255, ", ").concat(color[1] * 255, ", ").concat(color[2] * 255, ", ").concat(color[3], ")");
+      ssCTX.fillRect(
+        x,
+        0,
+        1,
+        1
+      );
+    }
+    this.loadTexture(ss);
+  }
+  loadTexture(img) {
+    const gl = this.game.gl;
+    const texture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texImage2D(
+      gl.TEXTURE_2D,
+      0,
+      gl.RGBA,
+      gl.RGBA,
+      gl.UNSIGNED_BYTE,
+      img
+    );
+    gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    if (this.isPowerOf2(img.width) && this.isPowerOf2(img.height)) {
+      gl.generateMipmap(gl.TEXTURE_2D);
+    } else {
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    }
+    this.texture = texture;
+  }
+  isPowerOf2(value) {
+    return (value & value - 1) === 0;
   }
 };
 
@@ -3932,6 +3559,371 @@ var Skeleton = class extends GLGroup {
   }
 };
 
+// ts/utils/colors.ts
+var Colors = class {
+};
+Colors.k = [0, 0, 0, 1];
+Colors.r = [1, 0, 0, 1];
+Colors.g = [0, 1, 0, 1];
+Colors.b = [0, 0, 1, 1];
+Colors.y = [1, 1, 0, 1];
+Colors.c = [0, 1, 1, 1];
+Colors.m = [1, 0, 1, 1];
+Colors.w = [1, 1, 1, 1];
+
+// ts/gl/cuboid.ts
+var GLCuboid = class _GLCuboid extends GLRendable {
+  constructor(attr) {
+    super(attr);
+    this.type = "mesh";
+    this.colors = [];
+    this.verticesCount = 36;
+    this.dimensions = 0 | 1 | 2 | 3;
+    this.dimensions = attr.size.array.filter((v) => v !== 0).length;
+    if (this.dimensions < 2) {
+      return;
+    }
+    this.verticesCount = this.dimensions === 3 ? 36 : 6;
+    this.faceCount = this.dimensions === 3 ? 6 : 1;
+    this.textureUrl = attr.textureUrl;
+    if (attr.colors)
+      this.colors = attr.colors;
+    else
+      this.colors = [
+        Colors.r,
+        Colors.g,
+        Colors.b,
+        Colors.c,
+        Colors.m,
+        Colors.y
+      ].slice(0, this.faceCount);
+  }
+  get size() {
+    return super.size;
+  }
+  set size(value) {
+    super.size = value;
+    if (this.parent) {
+      this.buffer.positionBuffer = this.GLT.createBuffer(this.positionBuffer(this.size));
+    }
+  }
+  build() {
+    super.build();
+    this.texture = new GLTexture(this.game, this.textureUrl ? { url: this.textureUrl } : { color: this.colors });
+  }
+  indexBuffer() {
+    let b = this.getBufferData().index.slice(0, this.faceCount * 6);
+    return b;
+  }
+  positionBuffer(size) {
+    return _GLCuboid.scale(
+      _GLCuboid.sliceToDimension(
+        this.getBufferData().position,
+        this.size,
+        72
+      ),
+      size
+    );
+  }
+  normalBuffer() {
+    return _GLCuboid.sliceToDimension(
+      this.getBufferData().normal,
+      this.size,
+      72
+    );
+  }
+  textureBuffer() {
+    let b = [];
+    if (this.textureUrl) {
+      return _GLCuboid.sliceToDimension(
+        this.getBufferData().texture,
+        this.size,
+        48
+      );
+    } else {
+      const inc = 1 / this.faceCount;
+      for (let index = 0; index < this.faceCount; index++) {
+        b.push(
+          index * inc + inc / 3,
+          0,
+          index * inc + inc / 3,
+          1,
+          (index + 1) * inc - inc / 3,
+          0,
+          (index + 1) * inc - inc / 3,
+          0
+        );
+      }
+    }
+    return b;
+  }
+  getIndexBufferData() {
+    return [
+      0,
+      1,
+      2,
+      0,
+      2,
+      3,
+      4,
+      5,
+      6,
+      4,
+      6,
+      7,
+      8,
+      9,
+      10,
+      8,
+      10,
+      11,
+      12,
+      13,
+      14,
+      12,
+      14,
+      15,
+      16,
+      17,
+      18,
+      16,
+      18,
+      19,
+      20,
+      21,
+      22,
+      20,
+      22,
+      23
+    ];
+  }
+  getPositionBufferData() {
+    return [
+      0,
+      0,
+      -1,
+      1,
+      0,
+      -1,
+      1,
+      1,
+      -1,
+      0,
+      1,
+      -1,
+      0,
+      0,
+      -0,
+      0,
+      1,
+      -0,
+      1,
+      1,
+      -0,
+      1,
+      0,
+      -0,
+      0,
+      1,
+      -0,
+      0,
+      1,
+      -1,
+      1,
+      1,
+      -1,
+      1,
+      1,
+      -0,
+      0,
+      0,
+      -0,
+      1,
+      0,
+      -0,
+      1,
+      0,
+      -1,
+      0,
+      0,
+      -1,
+      1,
+      0,
+      -0,
+      1,
+      1,
+      -0,
+      1,
+      1,
+      -1,
+      1,
+      0,
+      -1,
+      0,
+      0,
+      -0,
+      0,
+      0,
+      -1,
+      0,
+      1,
+      -1,
+      0,
+      1,
+      -0
+    ];
+  }
+  getNormalBufferData() {
+    return [
+      0,
+      0,
+      -1,
+      0,
+      0,
+      -1,
+      0,
+      0,
+      -1,
+      0,
+      0,
+      -1,
+      0,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      0,
+      -1,
+      0,
+      0,
+      -1,
+      0,
+      0,
+      -1,
+      0,
+      0,
+      -1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      0,
+      -1,
+      0,
+      0,
+      -1,
+      0,
+      0,
+      -1,
+      0,
+      0,
+      -1,
+      0,
+      0
+    ];
+  }
+  getTextureBufferData() {
+    return [
+      0,
+      0,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1
+    ];
+  }
+  getBufferData() {
+    return {
+      index: this.getIndexBufferData(),
+      position: this.getPositionBufferData(),
+      normal: this.getNormalBufferData(),
+      texture: this.getTextureBufferData()
+    };
+  }
+  static sliceToDimension(array, size, total) {
+    const s = total / 6;
+    if (size.z === 0)
+      array = array.slice(0, s * 1);
+    else if (size.x === 0)
+      array = array.slice(s * 5, s * 6);
+    else if (size.y === 0)
+      array = array.slice(s * 3, s * 4);
+    return array;
+  }
+  static scale(array, size) {
+    return size ? array.map((n, i) => n * size.array[i % 3]) : array;
+  }
+};
+
 // ts/utils/skeleton_bone.ts
 var Bone = class extends GLGroup {
   constructor(attr = {}) {
@@ -4233,6 +4225,10 @@ var Zone = class extends GlController {
     this.type = "collider";
     this.overlaps = [];
     this.fixed = Boolean(attr.fixed);
+    this.absoluteOffset = attr.absoluteOffset || v3();
+  }
+  get globalPosition() {
+    return super.globalPosition.add(this.absoluteOffset);
   }
   calculateOverlaps() {
     this.overlaps = this.level.levelZones.filter(this.overlap.bind(this)) || [];
@@ -4295,15 +4291,16 @@ var Player = class extends Character {
     super({
       position,
       rotation,
-      size: v3(1, 33, 1),
-      anchorPoint: v3(0.5, 0, 0.5)
+      size: v3(8, 33, 8),
+      anchorPoint: v3(4, 0, 4)
     });
     this.stat = { jumping: false, falling: false, running: false, fallAnimation: false };
     this.addControllers([
       new Collider({
-        size: v3(10, 33, 10),
+        size: v3(8, 33, 8),
         fixed: false,
-        anchorPoint: v3(5, 5)
+        position: v3(4, 0, 4),
+        absoluteOffset: v3(-4, 0, -4)
       }),
       new PlayerController(this),
       new FreeCamera(this)
@@ -4315,10 +4312,9 @@ var Player = class extends Character {
   }
   build() {
     GlElement.registerControllers(this);
-    this.addChild(new GLCuboid({ size: this.size, colors: [Colors.w], opacity: 0.1 }));
     this.skeleton = new PlayerSkel();
     this.addChild(this.skeleton);
-    this.skeleton.position = v3(-3, 0, -3);
+    this.skeleton.position = v3(0, 0, 0);
     this.bow = new BowActor();
     this.addChild(this.bow);
   }
@@ -4564,7 +4560,6 @@ var World = class extends Level {
   build() {
     super.build();
     this.player = new Player({
-      size: v3(1, 33, 1),
       position: v3(10, 1, 420),
       rotation: v3(0, -2.3, 0)
     });
@@ -4580,6 +4575,15 @@ var World = class extends Level {
     this.addChild(new GLCuboid({ size: v3(4e3, 1, 5e3), position: v3(1900, -2, -2e3), colors: [[0.476378 * 0.96, 0.547244 * 0.96, 0.492126 * 0.96, 1]] }));
     this.addChild(new GLCuboid({ size: v3(4e3, 1, 1800), position: v3(-2100, -2, -2e3), colors: [[0.476378 * 0.96, 0.547244 * 0.96, 0.492126 * 0.96, 1]] }));
     this.addChild(new GLCuboid({ size: v3(4e3, 1, 800), position: v3(-2100, -2, 2200), colors: [[0.476378 * 0.96, 0.547244 * 0.96, 0.492126 * 0.96, 1]] }));
+    for (let x = 0; x < 20; x++) {
+      for (let y = 0; y < 12; y++) {
+        if (y === 3) {
+          this.spawnRoad(x, y);
+        } else {
+          this.spawnTile(x, y);
+        }
+      }
+    }
     this.addChild(new GLobj({
       controllers: [
         new Collider({

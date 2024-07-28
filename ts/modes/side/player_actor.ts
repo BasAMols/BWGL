@@ -9,7 +9,6 @@ import { BowActor } from './bow';
 import { TickerReturnData } from '../../utils/ticker';
 import { PlayerSkel } from './player_skeleton';
 import { Collider } from '../../utils/collider';
-import { Colors } from '../../utils/colors';
 
 export class Player extends Character {
     public stat: Record<string, boolean> = { jumping: false, falling: false, running: false, fallAnimation: false };
@@ -33,14 +32,15 @@ export class Player extends Character {
         super({
             position: position,
             rotation: rotation,
-            size: v3(1, 33, 1),
-            anchorPoint: v3(0.5,0,0.5)
+            size: v3(8, 33, 8),
+            anchorPoint: v3(4,0,4)
         });
         this.addControllers([
             new Collider({
-                size: v3(10,33,10),
+                size: v3(8,33,8),
                 fixed: false,
-                anchorPoint: v3(5, 5),
+                position: v3(4,0,4),
+                absoluteOffset: v3(-4,0,-4),
             }),
             new PlayerController(this),
             new FreeCamera(this)
@@ -49,10 +49,10 @@ export class Player extends Character {
 
     build() {
         GlElement.registerControllers(this);
-        this.addChild(new GLCuboid({size: this.size, colors: [Colors.w], opacity: 0.1}))
+        // this.addChild(new GLCuboid({size: this.size, colors: [Colors.w], opacity: 0.1}))
         this.skeleton = new PlayerSkel();
         this.addChild(this.skeleton);
-        this.skeleton.position = v3(-3,0,-3)
+        this.skeleton.position = v3(0,0,0)
         this.bow = new BowActor();
         this.addChild(this.bow);
     }

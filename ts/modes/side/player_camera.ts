@@ -11,7 +11,7 @@ export class FreeCamera extends GlController {
     public type: GlElementType = 'controller';
     public order: GlControllerOrder = 'after';
     public lagList: Vector3[] = [];
-    private lagCount: number = 8;
+    private lagCount: number = 1;
     public parent: Player;
     public get active(): boolean {
         return super.active;
