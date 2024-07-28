@@ -4,6 +4,7 @@ import { Util } from '../../utils/utils';
 import { Vector3, v3 } from '../../utils/vector3';
 import { v2 } from '../../utils/vector2';
 import { Player } from './player_actor';
+import { Collider } from '../../utils/collider';
 
 export class PlayerController extends GlController {
     private intr: Record<string, number> = { fall: 0, jump: 0, landDelay: 0 };
@@ -122,7 +123,8 @@ export class PlayerController extends GlController {
 
     public collide(obj: TickerReturnData) {
         this.parent.stat.ground = false;
-        this.parent.colliders[0].reaction.forEach((v)=>{
+        const collisions = (this.parent.zones[0] as Collider).calculateCollision();
+        collisions.forEach((v: Vector3)=>{
             if (v.y >= 0){
                 this.intr.fall = 0;
                 this.intr.jump = 0;

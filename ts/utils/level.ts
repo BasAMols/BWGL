@@ -1,13 +1,13 @@
 import { GlElement, GlElementAttributes } from '../gl/elementBase';
-import { Color } from './colors';
+import { Color, Colors } from './colors';
 import { GlElementType } from '../gl/glRenderer';
 import { Vector2 } from "./vector2";
 import { Vector3 } from './vector3';
-import { Collider } from './collider';
 import { GLCuboid } from '../gl/cuboid';
 import { TickerReturnData } from './ticker';
 import { Interface } from '../dom/interface';
 import { DomElement } from '../dom/domElement';
+import { Zone } from './zone';
 
 export type levelAttributes = GlElementAttributes & {
     size3?: Vector3;
@@ -16,7 +16,7 @@ export abstract class Level extends GlElement {
     abstract start: Vector2;
     abstract background: Color;
     public type: GlElementType = 'group';
-    public levelColliders: Collider[] = [];
+    public levelZones: Zone[] = [];
     private colliderMeshes: GLCuboid[] = [];
     public interface: Interface = new Interface();
 
@@ -36,16 +36,17 @@ export abstract class Level extends GlElement {
         this.interface.appendChild(element)
     }
 
-    addCollider(c: Collider) {
-        this.levelColliders.push(c);
+    addZone(c: Zone) {
+        this.levelZones.push(c);
 
-        // const mesh = new GLCuboid({
-        //     size: c.size,
-        //     colors: [Colors.r],
-        //     opacity: 0.3,
-        // });
-        // this.colliderMeshes.push(mesh);
-        // this.addChild(mesh);
+        const mesh = new GLCuboid({
+            size: c.size,
+            colors: [Colors.r],
+            opacity: 0.3,
+            anchorPoint: c.anchorPoint
+        });
+        this.colliderMeshes.push(mesh);
+        this.addChild(mesh);
     }
 
     public get camera(): typeof this._camera {
@@ -70,8 +71,8 @@ export abstract class Level extends GlElement {
 
         this.colliderMeshes.forEach((c, i) => {
             // console.log(c.size.vec);
-            c.position = this.levelColliders[i].globalPosition;
-            c.size = this.levelColliders[i].size.clone();
+            c.position = this.levelZones[i].globalPosition;
+            c.size = this.levelZones[i].size.clone();
             // c.rotation = this.levelColliders[i].worldRotation.clone();
         });
 

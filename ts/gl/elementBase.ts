@@ -4,8 +4,8 @@ import { TickerReturnData } from '../utils/ticker';
 import { Vector2, v2 } from "../utils/vector2";
 import { Vector3, v3 } from '../utils/vector3';
 import { GlController } from './controller';
-import { Collider } from '../utils/collider';
 import { Matrix4 } from '../utils/matrix4';
+import { Zone } from '../utils/zone';
 
 export type GlElementAttributes = ElementAttributes & {
     autoReady?: boolean,
@@ -31,7 +31,7 @@ export abstract class GlElement extends Element {
     public anchorPoint: Vector3;
     public parent: GlElement;
     private transformMatrix: Matrix4;
-    public colliders: Collider[] = [];
+    public zones: Zone[] = [];
     private _position: Vector3 = v3(0);
     public get position(): Vector3 {
         return this._position;
@@ -161,8 +161,8 @@ export abstract class GlElement extends Element {
                 controller.build();
 
                 if (controller.type === 'collider' && controller.level) {
-                    child.level.addCollider(controller as Collider);
-                    child.colliders.push(controller as Collider);
+                    child.level.addZone(controller as Zone);
+                    child.zones.push(controller as Zone);
                 }
             }
         });

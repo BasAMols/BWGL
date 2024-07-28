@@ -136,8 +136,8 @@ export class World extends Level {
         // }));
 
         this.player = new Player({
-            size: v3(6, 33, 8),
-            position: v3(10, 1, 400),
+            size: v3(1, 33, 1),
+            position: v3(10, 1, 420),
             rotation: v3(0, -2.3, 0)
         });
         this.addChild(this.player);
@@ -154,16 +154,16 @@ export class World extends Level {
         this.addChild(new GLCuboid({ size: v3(4000, 1, 800), position: v3(-2100, -2, 2200), colors: [[0.476378 * 0.96, 0.547244 * 0.96, 0.492126 * 0.96, 1]] }));
         // this.addChild(new GLCuboid({ size: v3(4000, 1, 4000), position: v3(-2100, -100, -2200), colors: [[0.547244*0.96, 0.547244*0.96, 0.492126*0.96, 1]] }));
 
-        for (let x = 0; x < 20; x++) {
-            for (let y = 0; y < 12; y++) {
-                if (y === 3) {
-                    this.spawnRoad(x, y);
-                } else {
-                    this.spawnTile(x, y);
-                }
+        // for (let x = 0; x < 20; x++) {
+        //     for (let y = 0; y < 12; y++) {
+        //         if (y === 3) {
+        //             this.spawnRoad(x, y);
+        //         } else {
+        //             this.spawnTile(x, y);
+        //         }
 
-            }
-        }
+        //     }
+        // }
 
 
         // this.addChild(new GLobj({ storage: this.mode.storage, url: 'CountrySide-5-House.obj', size: v3(18, 18, 18), position: v3(200, 43, 800), rotation: v3(0, -Math.PI / 2, 0) }));
