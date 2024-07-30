@@ -183,6 +183,30 @@ export class World extends Level {
                 fixed: true
             })], storage: this.mode.storage, url: 'Medieval Town - Pack 1-0.obj', size: v3(10, 10, 10), position: v3(0, -1, 500)
         }));
+
+        for (let index = 0; index < 100; index++) {
+            this.addChild(new GLobj({
+                storage: this.mode.storage, url: `treeModels/tree0_${Math.floor(Math.random()*6)}.obj`, rotation: v3(0,Math.random()*Math.PI,0), size: v3(100, 100, 100).scale(0.8+(0.2*Math.random())), position: v3(Math.random()*4000-2000, 0, Math.random()*2000+800)
+            }));
+        }
+
+        for (let index = 0; index < 100; index++) {
+            this.addChild(new GLobj({
+                storage: this.mode.storage, url: `treeModels/tree0_${Math.floor(Math.random()*6)}.obj`, rotation: v3(0,Math.random()*Math.PI,0), size: v3(100, 100, 100).scale(0.8+(0.2*Math.random())), position: v3(Math.random()*4000-2000, 0, Math.random()*2000-1800)
+            }));
+        }
+        for (let index = 0; index < 100; index++) {
+            this.addChild(new GLobj({
+                storage: this.mode.storage, url: `treeModels/tree0_${Math.floor(Math.random()*6)}.obj`, rotation: v3(0,Math.random()*Math.PI,0), size: v3(100, 100, 100).scale(0.8+(0.2*Math.random())), position: v3(Math.random()*100-2000, 0, Math.random()*4000-1800)
+            }));
+        }
+        for (let index = 0; index < 100; index++) {
+            this.addChild(new GLobj({
+                storage: this.mode.storage, url: `treeModels/tree0_${Math.floor(Math.random()*6)}.obj`, rotation: v3(0,Math.random()*Math.PI,0), size: v3(100, 100, 100).scale(0.8+(0.2*Math.random())), position: v3(Math.random()*100+2000, 0, Math.random()*4000-1800)
+            }));
+        }
+
+       
         this.addChild(new GLobj({
             controllers: [new Collider({
                 size: v3(97, 200, 98),
