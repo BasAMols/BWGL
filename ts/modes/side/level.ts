@@ -186,27 +186,19 @@ export class World extends Level {
 
         for (let index = 0; index < 100; index++) {
             this.addChild(new GLobj({
-                storage: this.mode.storage, url: `treeModels/tree0_${Math.floor(Math.random()*6)}.obj`, rotation: v3(0,Math.random()*Math.PI,0), size: v3(100, 100, 100).scale(0.8+(0.2*Math.random())), position: v3(Math.random()*4000-2000, 0, Math.random()*2000+800)
+                storage: this.mode.storage, url: `treeModels/tree0_${Math.floor(Math.random()*6)}.obj`, rotation: v3(0,Math.random()*Math.PI,0), size: v3(70, 70, 70).scale(0.8+(0.4*Math.random())), position: v3(Math.random()*4000-2000, 0, Math.random()*2000+800)
+            }));
+            this.addChild(new GLobj({
+                storage: this.mode.storage, url: `treeModels/tree0_${Math.floor(Math.random()*6)}.obj`, rotation: v3(0,Math.random()*Math.PI,0), size: v3(70, 70, 70).scale(0.8+(0.4*Math.random())), position: v3(Math.random()*4000-2000, 0, Math.random()*2000-1800)
+            }));
+            this.addChild(new GLobj({
+                storage: this.mode.storage, url: `treeModels/tree0_${Math.floor(Math.random()*6)}.obj`, rotation: v3(0,Math.random()*Math.PI,0), size: v3(70, 70, 70).scale(0.8+(0.4*Math.random())), position: v3(Math.random()*100-2000, 0, Math.random()*4000-1800)
+            }));
+            this.addChild(new GLobj({
+                storage: this.mode.storage, url: `treeModels/tree0_${Math.floor(Math.random()*6)}.obj`, rotation: v3(0,Math.random()*Math.PI,0), size: v3(70, 70, 70).scale(0.8+(0.4*Math.random())), position: v3(Math.random()*100+2000, 0, Math.random()*4000-1800)
             }));
         }
 
-        for (let index = 0; index < 100; index++) {
-            this.addChild(new GLobj({
-                storage: this.mode.storage, url: `treeModels/tree0_${Math.floor(Math.random()*6)}.obj`, rotation: v3(0,Math.random()*Math.PI,0), size: v3(100, 100, 100).scale(0.8+(0.2*Math.random())), position: v3(Math.random()*4000-2000, 0, Math.random()*2000-1800)
-            }));
-        }
-        for (let index = 0; index < 100; index++) {
-            this.addChild(new GLobj({
-                storage: this.mode.storage, url: `treeModels/tree0_${Math.floor(Math.random()*6)}.obj`, rotation: v3(0,Math.random()*Math.PI,0), size: v3(100, 100, 100).scale(0.8+(0.2*Math.random())), position: v3(Math.random()*100-2000, 0, Math.random()*4000-1800)
-            }));
-        }
-        for (let index = 0; index < 100; index++) {
-            this.addChild(new GLobj({
-                storage: this.mode.storage, url: `treeModels/tree0_${Math.floor(Math.random()*6)}.obj`, rotation: v3(0,Math.random()*Math.PI,0), size: v3(100, 100, 100).scale(0.8+(0.2*Math.random())), position: v3(Math.random()*100+2000, 0, Math.random()*4000-1800)
-            }));
-        }
-
-       
         this.addChild(new GLobj({
             controllers: [new Collider({
                 size: v3(97, 200, 98),
