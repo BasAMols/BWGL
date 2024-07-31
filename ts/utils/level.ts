@@ -8,6 +8,7 @@ import { TickerReturnData } from './ticker';
 import { Interface } from '../dom/interface';
 import { DomElement } from '../dom/domElement';
 import { Zone } from './zone';
+import { glob } from '../game';
 
 export type levelAttributes = GlElementAttributes & {
     size3?: Vector3;
@@ -62,7 +63,7 @@ export abstract class Level extends GlElement {
     }
 
     public build(): void {
-        this.game.active.level = this;
+        glob.game.active.level = this;
         this.interface.build();
     }
 

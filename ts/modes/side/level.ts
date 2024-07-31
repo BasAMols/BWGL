@@ -12,6 +12,8 @@ import { TestObj } from '../../gl/testObj';
 import { Collider } from '../../utils/collider';
 import { GLCuboid } from '../../gl/cuboid';
 import { TickerReturnData } from '../../utils/ticker';
+import { Forrest } from './trees/forrest';
+import { glob } from '../../game';
 
 export class World extends Level {
     public start = Vector2.zero;
@@ -42,13 +44,13 @@ export class World extends Level {
         ]);
 
         this.test2d = new DomText({
-            position: v2(100,100),
-            fontSize: 40, 
+            position: v2(100, 100),
+            fontSize: 40,
             fontFamily: 'monospace',
             color: 'white',
             text: '0'
-        })
-        this.addUi(this.test2d)
+        });
+        this.addUi(this.test2d);
     }
 
     keyDown(e: KeyboardEvent): void {
@@ -75,35 +77,33 @@ export class World extends Level {
             200 * y - 100
         );
         if (Math.random() < 0.5) {
-            this.addChild(new GLobj({ colorIntensity: 1.2, storage: this.mode.storage, url: 'CountrySide-3-GroundTile1.obj', size: v3(20, 20, 20), position: p }));
+            this.addChild(new GLobj({ storage: this.mode.storage, url: 'CountrySide-3-GroundTile1.obj', size: v3(20, 20, 20), position: p }));
         } else {
-            this.addChild(new GLobj({ colorIntensity: 1.2, storage: this.mode.storage, url: 'CountrySide-2-GroundTile2.obj', size: v3(20, 20, 20), position: p }));
+            this.addChild(new GLobj({ storage: this.mode.storage, url: 'CountrySide-2-GroundTile2.obj', size: v3(20, 20, 20), position: p }));
         }
 
-        if (![9, 10, 11].includes(x) || ![3, 4].includes(y)) {
-            for (let rx = 0; rx < 5; rx++) {
-                for (let ry = 0; ry < 5; ry++) {
-                    if (Math.random() < 0.1) {
-                        this.addChild(new GLobj({
-                            storage: this.mode.storage,
-                            url: ['CountrySide-6-Vegetation5.obj', 'CountrySide-0-Vegetation3.obj', 'CountrySide-6-Vegetation5.obj', 'CountrySide-8-Rock.obj'][Math.floor(Math.random() * 4)],
-                            size: v3(
-                                10,
-                                10,
-                                10,
-                            ).scale(Math.ceil(Math.random() * 3)),
-                            position: p.add(v3(
-                                (40 * rx) + (Math.random() * 6),
-                                3,
-                                (40 * ry) + (Math.random() * 6) - 80
-                            )),
-                            rotation: v3(
-                                0,
-                                Math.floor(Math.random() * 4) * Math.PI,
-                                0,
-                            )
-                        }));
-                    }
+        for (let rx = 0; rx < 5; rx++) {
+            for (let ry = 0; ry < 5; ry++) {
+                if (Math.random() < 0.1) {
+                    this.addChild(new GLobj({
+                        storage: this.mode.storage,
+                        url: ['CountrySide-6-Vegetation5.obj', 'CountrySide-0-Vegetation3.obj', 'CountrySide-6-Vegetation5.obj', 'CountrySide-8-Rock.obj'][Math.floor(Math.random() * 4)],
+                        size: v3(
+                            10,
+                            10,
+                            10,
+                        ).scale(Math.ceil(Math.random() * 3)),
+                        position: p.add(v3(
+                            (40 * rx) + (Math.random() * 6),
+                            3,
+                            (40 * ry) + (Math.random() * 6) - 80
+                        )),
+                        rotation: v3(
+                            0,
+                            Math.floor(Math.random() * 4) * Math.PI,
+                            0,
+                        )
+                    }));
                 }
             }
         }
@@ -140,26 +140,21 @@ export class World extends Level {
             rotation: v3(0, -2.3, 0)
         });
         this.addChild(this.player);
-        this.car = new Driver({
-            size: v3(36, 26, 93),
-            position: v3(130, 1, 600),
-            rotation: v3(0, 2.3, 0)
-        });
-        this.addChild(this.car);
-        this.car.active = false;
-        this.addChild(new GLCuboid({ size: v3(3500, 1, 5000), position: v3(-5600, -2, -2000), colors: [[0.476378 * 0.96, 0.547244 * 0.96, 0.492126 * 0.96, 1]] }));
-        this.addChild(new GLCuboid({ size: v3(4000, 1, 5000), position: v3(1900, -2, -2000), colors: [[0.476378 * 0.96, 0.547244 * 0.96, 0.492126 * 0.96, 1]] }));
-        this.addChild(new GLCuboid({ size: v3(4000, 1, 1800), position: v3(-2100, -2, -2000), colors: [[0.476378 * 0.96, 0.547244 * 0.96, 0.492126 * 0.96, 1]] }));
-        this.addChild(new GLCuboid({ size: v3(4000, 1, 800), position: v3(-2100, -2, 2200), colors: [[0.476378 * 0.96, 0.547244 * 0.96, 0.492126 * 0.96, 1]] }));
-        // this.addChild(new GLCuboid({ size: v3(4000, 1, 4000), position: v3(-2100, -100, -2200), colors: [[0.547244*0.96, 0.547244*0.96, 0.492126*0.96, 1]] }));
-
+        // this.car = new Driver({
+        //     size: v3(36, 26, 93),
+        //     position: v3(130, 1, 600),
+        //     rotation: v3(0, 2.3, 0)
+        // });
+        // this.addChild(this.car);
+        // this.car.active = false;
+        this.addChild(new GLCuboid({ size: v3(10000, 1, 10000), position: v3(-5000, -6, -5000), colors: [[103 / 350, 119 / 350, 107 / 350, 1]] }));
         for (let x = 0; x < 20; x++) {
-            for (let y = 0; y < 12; y++) {
-                if (y === 3) {
-                    this.spawnRoad(x, y);
-                } else {
-                    this.spawnTile(x, y);
-                }
+            for (let y = 0; y < 20; y++) {
+                this.spawnTile(x, y);
+                // if (y === 3) {
+                //     this.spawnRoad(x, y);
+                // } else {
+                // }
 
             }
         }
@@ -171,64 +166,77 @@ export class World extends Level {
         // this.addChild(new GLobj({ storage: this.mode.storage, url: 'CountrySide-4-Vegetation1.obj', size: v3(25, 25, 25), rotation: v3(0, Math.PI / 2, 0), position: v3(0 - 20, 3, 670) }));
         // this.addChild(new GLobj({ storage: this.mode.storage, url: 'Plane01.obj', size: v3(30, 30, 30), position: v3(420, 16, 720), rotation: v3(0, Math.PI / 4 + Math.PI / 2, -0.12) }));
 
-        this.addChild(new GLobj({
-            controllers: [new Collider({
-                size: v3(97, 200, 98),
-                position: v3(-144, 0, 143),
-                fixed: true
-            }),
-            new Collider({
-                size: v3(97-30, 20, 98),
-                position: v3(-144+15, 0, 122),
-                fixed: true
-            })], storage: this.mode.storage, url: 'Medieval Town - Pack 1-0.obj', size: v3(10, 10, 10), position: v3(0, -1, 500)
+        // this.addChild(new GLobj({
+        //     controllers: [new Collider({
+        //         size: v3(97, 200, 98),
+        //         position: v3(-144, 0, 143),
+        //         fixed: true
+        //     }),
+        //     new Collider({
+        //         size: v3(97-30, 20, 98),
+        //         position: v3(-144+15, 0, 122),
+        //         fixed: true
+        //     })], storage: this.mode.storage, url: 'Medieval Town - Pack 1-0.obj', size: v3(10, 10, 10), position: v3(0, -1, 500)
+        // }));
+
+        this.addChild(new Forrest({
+            storage: this.mode.storage,
+            position: v3(-2000, 0, 800),
+            area: v2(4000, 2000),
+            density: 0.003
+        }));
+        this.addChild(new Forrest({
+            storage: this.mode.storage,
+            position: v3(-2000, 0, -1800),
+            area: v2(4000, 2000),
+            density: 0.003
+        }));
+        this.addChild(new Forrest({
+            storage: this.mode.storage,
+            position: v3(-2300, 0, -1800),
+            area: v2(2000, 4000),
+            density: 0.003
+        }));
+        this.addChild(new Forrest({
+            storage: this.mode.storage,
+            position: v3(300, 0, -1800),
+            area: v2(2000, 4000),
+            density: 0.003
         }));
 
-        for (let index = 0; index < 100; index++) {
-            this.addChild(new GLobj({
-                storage: this.mode.storage, url: `treeModels/tree0_${Math.floor(Math.random()*6)}.obj`, rotation: v3(0,Math.random()*Math.PI,0), size: v3(70, 70, 70).scale(0.8+(0.4*Math.random())), position: v3(Math.random()*4000-2000, 0, Math.random()*2000+800)
-            }));
-            this.addChild(new GLobj({
-                storage: this.mode.storage, url: `treeModels/tree0_${Math.floor(Math.random()*6)}.obj`, rotation: v3(0,Math.random()*Math.PI,0), size: v3(70, 70, 70).scale(0.8+(0.4*Math.random())), position: v3(Math.random()*4000-2000, 0, Math.random()*2000-1800)
-            }));
-            this.addChild(new GLobj({
-                storage: this.mode.storage, url: `treeModels/tree0_${Math.floor(Math.random()*6)}.obj`, rotation: v3(0,Math.random()*Math.PI,0), size: v3(70, 70, 70).scale(0.8+(0.4*Math.random())), position: v3(Math.random()*100-2000, 0, Math.random()*4000-1800)
-            }));
-            this.addChild(new GLobj({
-                storage: this.mode.storage, url: `treeModels/tree0_${Math.floor(Math.random()*6)}.obj`, rotation: v3(0,Math.random()*Math.PI,0), size: v3(70, 70, 70).scale(0.8+(0.4*Math.random())), position: v3(Math.random()*100+2000, 0, Math.random()*4000-1800)
-            }));
-        }
-
-        this.addChild(new GLobj({
-            controllers: [new Collider({
-                size: v3(97, 200, 98),
-                position: v3(-144 + 97, 0, 143),
-                fixed: true
-            })], storage: this.mode.storage, url: 'Medieval Town - Pack 1-1.obj', size: v3(10, 10, 10), position: v3(0, -1, 500)
-        }));
-        this.addChild(new GLobj({
-            controllers: [new Collider({
-                size: v3(97, 200, 98),
-                position: v3(-144 - 97, 0, 143),
-                fixed: true
-            })], storage: this.mode.storage, url: 'Medieval Town - Pack 1-2.obj', size: v3(10, 10, 10), position: v3(0, -1, 500)
-        }));
-        this.addChild(new GLobj({ controllers: [new Collider({
-            size: v3(190, 200, 150),
-            position: v3(-90, 0, 153),
-            fixed: true
-        })], storage: this.mode.storage, url: 'Nuclear Survival - Pack 6 - m.obj', size: v3(10, 10, 10), position: v3(0, -6, 300), rotation: v3(0, -Math.PI / 2, 0) }));
+        // this.addChild(new GLobj({
+        //     controllers: [new Collider({
+        //         size: v3(97, 200, 98),
+        //         position: v3(-144 + 97, 0, 143),
+        //         fixed: true
+        //     })], storage: this.mode.storage, url: 'Medieval Town - Pack 1-1.obj', size: v3(10, 10, 10), position: v3(0, -1, 500)
+        // }));
+        // this.addChild(new GLobj({
+        //     controllers: [new Collider({
+        //         size: v3(97, 200, 98),
+        //         position: v3(-144 - 97, 0, 143),
+        //         fixed: true
+        //     })], storage: this.mode.storage, url: 'Medieval Town - Pack 1-2.obj', size: v3(10, 10, 10), position: v3(0, -1, 500)
+        // }));
+        // this.addChild(new GLobj({ controllers: [new Collider({
+        //     size: v3(190, 200, 150),
+        //     position: v3(-90, 0, 153),
+        //     fixed: true
+        // })], storage: this.mode.storage, url: 'Nuclear Survival - Pack 6 - m.obj', size: v3(10, 10, 10), position: v3(0, -6, 300), rotation: v3(0, -Math.PI / 2, 0) }));
 
         // this.addChild(this.test = new TestObj({ size: v3(1, 1, 1) }));
 
 
         // this.sky = this.addChild(new Sky()) as Sky;
 
+        console.log(glob);
+                
+
     }
 
     public tick(obj: TickerReturnData): void {
         super.tick(obj);
-        this.test2d.position = this.player.screenPosition
+        this.test2d.position = this.player.screenPosition;
     }
 
 }

@@ -34,9 +34,9 @@ export abstract class GLRendable extends GlElement {
 
     public ready() {
         this.build();
-        if (this.game.waitCount) {
-            this.game.waitCount--;
-        }
+        // if (this.game.waitCount) {
+        //     this.game.waitCount--;
+        // }
     }
 
     protected abstract indexBuffer(): number[];

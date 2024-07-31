@@ -8,6 +8,19 @@ import { GLRenderer } from './gl/glRenderer';
 import { Level } from './utils/level';
 import { OpenWorldMode } from './modes/side/mode';
 
+export var glob = new class{
+    public game: Game;
+    public get renderer(){
+        return this.game.renderer;
+    }
+    public get mode(){
+        return this.game.active.mode;
+    }
+    public get level(){
+        return this.game.active.level;
+    }
+}
+
 export class Game {
     public ticker: Ticker;
     public renderer: Renderer;
@@ -49,10 +62,11 @@ export class Game {
     }
 
     public constructor() {
+        glob.game = this;
         this.build();
     }
     build() {
-        this.renderer = new Renderer(this);
+        this.renderer = new Renderer();
 
         this.loader = new Loader();
         this.renderer.addChild(this.loader);

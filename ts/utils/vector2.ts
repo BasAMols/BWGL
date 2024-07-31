@@ -150,6 +150,10 @@ export class Vector2 {
 		[this.x, this.y] = a;
 	}
 
+	get surfaceArea():number {
+		return this.x*this.y
+	}
+
 
 	public static clampMagnitute(value:Vector2, mag: number) {
 		var ratio = value.magnitude() / mag;

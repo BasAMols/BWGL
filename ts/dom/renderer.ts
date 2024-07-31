@@ -1,4 +1,3 @@
-import { Game } from '../game';
 import { ElementAttributes } from "../utils/element";
 import { Event } from '../utils/event';
 import { Mode } from '../utils/mode';
@@ -15,7 +14,7 @@ export type DomElementAttributes = ElementAttributes & {
 export class Renderer extends DomElement<'canvas'> {
     public tickerData: TickerReturnData;
 
-    constructor(public game: Game) {
+    constructor() {
         super('canvas');
         this.dom.style.position = 'absolute';
         this.dom.style.pointerEvents = 'all';
@@ -59,7 +58,6 @@ export class Renderer extends DomElement<'canvas'> {
     }
 
     public addMode(child: Mode) {
-        child.game ??= this.game;
         child.build();
     }
 

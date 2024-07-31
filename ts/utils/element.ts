@@ -1,4 +1,4 @@
-import { Game } from '../game';
+import { Game, glob } from '../game';
 import { Event } from "./event";
 import { GLRenderer } from '../gl/glRenderer';
 import { Level } from './level';
@@ -20,7 +20,10 @@ export abstract class Element {
     }
 
     public parent!: Element;
-    public game!: Game;
+
+    public get game(): Game {
+        return glob.game;
+    }
     
     public get mode(): Mode {
         return this.game.mode;

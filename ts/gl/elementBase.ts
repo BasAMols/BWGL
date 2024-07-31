@@ -120,23 +120,17 @@ export abstract class GlElement extends Element {
 
     public ready() {
         this.build();
-        if (this.game.waitCount) {
-            this.game.waitCount--;
-        }
+        // glob.game.waitCount--;
     }
 
     public addChild(child: GlElement): typeof child {
         child.parent ??= this;
-        child.game ??= this.game;
-        if (this.game.waitCount) {
-            this.game.waitCount++;
-        }
+        // glob.game.waitCount++;
         this.children.push(child);
         if (child.autoReady) {
             child.ready();
         }
         GlElement.registerControllers(child);
-
         child.readyState = true;
         return child;
     }
@@ -157,7 +151,6 @@ export abstract class GlElement extends Element {
         child.controllers.forEach((controller) => {
             if (controller.parent === undefined) {
                 controller.parent ??= child;
-                controller.game ??= child.game;
                 controller.build();
 
                 if (controller.type === 'collider' && controller.level) {

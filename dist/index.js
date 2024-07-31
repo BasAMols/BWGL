@@ -27,6 +27,9 @@ var Element = class {
   get t() {
     return this.game.t;
   }
+  get game() {
+    return glob.game;
+  }
   get mode() {
     return this.game.mode;
   }
@@ -172,6 +175,9 @@ var Vector2 = class _Vector2 {
   }
   set array(a) {
     [this.x, this.y] = a;
+  }
+  get surfaceArea() {
+    return this.x * this.y;
   }
   static clampMagnitute(value, mag) {
     var ratio = value.magnitude() / mag;
@@ -558,9 +564,8 @@ var Event = class {
 
 // ts/dom/renderer.ts
 var Renderer = class extends DomElement {
-  constructor(game) {
+  constructor() {
     super("canvas");
-    this.game = game;
     this.dom.style.position = "absolute";
     this.dom.style.pointerEvents = "all";
     this.dom.style.bottom = "0px";
@@ -594,8 +599,6 @@ var Renderer = class extends DomElement {
     this.dom.setAttribute("height", String(value));
   }
   addMode(child) {
-    var _a;
-    (_a = child.game) != null ? _a : child.game = this.game;
     child.build();
   }
   get context() {
@@ -2573,17 +2576,10 @@ var GlElement = class _GlElement extends Element {
   }
   ready() {
     this.build();
-    if (this.game.waitCount) {
-      this.game.waitCount--;
-    }
   }
   addChild(child) {
-    var _a, _b;
+    var _a;
     (_a = child.parent) != null ? _a : child.parent = this;
-    (_b = child.game) != null ? _b : child.game = this.game;
-    if (this.game.waitCount) {
-      this.game.waitCount++;
-    }
     this.children.push(child);
     if (child.autoReady) {
       child.ready();
@@ -2604,10 +2600,9 @@ var GlElement = class _GlElement extends Element {
   }
   static registerControllers(child) {
     child.controllers.forEach((controller) => {
-      var _a, _b;
+      var _a;
       if (controller.parent === void 0) {
         (_a = controller.parent) != null ? _a : controller.parent = child;
-        (_b = controller.game) != null ? _b : controller.game = child.game;
         controller.build();
         if (controller.type === "collider" && controller.level) {
           child.level.addZone(controller);
@@ -2782,7 +2777,7 @@ var Level = class extends GlElement {
     this._camera = value;
   }
   build() {
-    this.game.active.level = this;
+    glob.game.active.level = this;
     this.interface.build();
   }
   tick(obj) {
@@ -3027,9 +3022,6 @@ var GLRendable = class extends GlElement {
   }
   ready() {
     this.build();
-    if (this.game.waitCount) {
-      this.game.waitCount--;
-    }
   }
 };
 
@@ -4323,141 +4315,134 @@ var Player = class extends Character {
   }
 };
 
-// ts/modes/side/car_controller.ts
-var CarController = class extends GlController {
+// ts/modes/side/trees/treeBase.ts
+var TreeBase = class extends GLobj {
   constructor(attr) {
-    super(attr);
-    this.intr = { fall: 0, jump: 0, landDelay: 0 };
-    this.cnst = { runTime: 5e3, runSlowDownFactor: 0.1, runSpeed: 2 };
-    this.velocity = Vector3.f(0);
-    this.direction = 0;
+    super({
+      storage: attr.storage,
+      url: "treeModels/".concat(attr.name, ".obj"),
+      rotation: attr.rotation || v3(),
+      size: v3(70, 70, 70).scale(attr.scale || 1),
+      position: attr.position || v3()
+    });
   }
-  setMovementVelocity(interval) {
-    if (this.mode.input.space) {
-      this.intr.acc = 0;
-    } else if (this.mode.input.up) {
-      this.intr.acc = Util.clamp((this.intr.acc | 0) + interval, -(this.cnst.runTime / 3), this.cnst.runTime);
-    }
-    {
-      if (this.mode.input.down) {
-        this.intr.acc = Util.clamp((this.intr.acc | 0) - interval * 0.8, -(this.cnst.runTime / 3), this.cnst.runTime);
-      } else {
-        if (this.intr.acc >= 0) {
-          this.intr.acc = Util.clamp((this.intr.acc | 0) - interval * this.cnst.runSlowDownFactor, 0, this.cnst.runTime);
-        } else {
-          this.intr.acc = Util.clamp((this.intr.acc | 0) + interval * this.cnst.runSlowDownFactor, -(this.cnst.runTime / 3), 0);
-        }
-      }
-    }
-    this.direction = this.direction - 1e-3 * interval * (+this.mode.input.left - +this.mode.input.right) * (1.5 - this.intr.acc / this.cnst.runTime) * (this.intr.acc / this.cnst.runTime);
-    this.parent.rotation = v3(0, this.direction, 0);
-    const plane = Vector2.up.clampMagnitude(1).scale(this.intr.acc / this.cnst.runTime).scale(this.cnst.runSpeed).rotate(-this.direction);
-    this.velocity = v3(
-      plane.x,
-      0,
-      plane.y
-    );
+};
+
+// ts/modes/side/trees/Tree1.ts
+var Tree1 = class extends TreeBase {
+  constructor(attr) {
+    super({
+      name: "tree0_1",
+      storage: attr.storage,
+      position: attr.position,
+      rotation: attr.rotation,
+      scale: attr.scale * 0.7
+    });
   }
-  setJumpVelocity(interval) {
-    if (this.parent.stat.falling) {
-      this.intr.fall += interval;
-    } else {
-      this.velocity.y = 0;
-      return;
-    }
-    this.velocity.y = 0;
+};
+
+// ts/modes/side/trees/tree2.ts
+var Tree2 = class extends TreeBase {
+  constructor(attr) {
+    super({
+      name: "tree0_2",
+      storage: attr.storage,
+      position: attr.position,
+      rotation: attr.rotation,
+      scale: attr.scale
+    });
   }
-  setVelocity(obj) {
-    this.setMovementVelocity(obj.intervalS10);
-    this.setJumpVelocity(obj.intervalS10);
-    const sc = this.velocity.scale(obj.intervalS10 / 6);
-    if (sc.xz.magnitude() > 0) {
-      const [x, z] = sc.xz.array;
-      this.newPosition = this.parent.position.add(v3(x, sc.y, z));
-    } else {
-      this.newPosition = this.parent.position.add(v3(0, sc.y, 0));
-    }
+};
+
+// ts/modes/side/trees/tree3.ts
+var Tree3 = class extends TreeBase {
+  constructor(attr) {
+    super({
+      name: "tree0_3",
+      storage: attr.storage,
+      position: attr.position,
+      rotation: attr.rotation,
+      scale: attr.scale
+    });
+  }
+};
+
+// ts/modes/side/trees/tree4.ts
+var Tree4 = class extends TreeBase {
+  constructor(attr) {
+    super({
+      name: "tree0_4",
+      storage: attr.storage,
+      position: attr.position,
+      rotation: attr.rotation,
+      scale: attr.scale
+    });
+  }
+};
+
+// ts/modes/side/trees/tree5.ts
+var Tree5 = class extends TreeBase {
+  constructor(attr) {
+    super({
+      name: "tree0_5",
+      storage: attr.storage,
+      position: attr.position,
+      rotation: attr.rotation,
+      scale: attr.scale
+    });
+  }
+};
+
+// ts/modes/side/trees/tree6.ts
+var Tree6 = class extends TreeBase {
+  constructor(attr) {
+    super({
+      name: "tree0_6",
+      storage: attr.storage,
+      position: attr.position,
+      rotation: attr.rotation,
+      scale: attr.scale
+    });
+  }
+};
+
+// ts/modes/side/trees/randomTree.ts
+var RandomTree = class extends GLGroup {
+  constructor(attr) {
+    super({
+      position: attr.position
+    });
   }
   build() {
     super.build();
-    this.direction = this.parent.rotation.y;
-  }
-  tick(obj) {
-    super.tick(obj);
-    this.setVelocity(obj);
-    this.parent.position = this.newPosition.clone();
-  }
-};
-
-// ts/modes/side/car_camera.ts
-var CarCamera = class extends GlController {
-  constructor(target) {
-    super({ autoReady: false });
-    this.target = target;
-    this.type = "controller";
-    this.order = "after";
-    this.lagList = [];
-    this.lagCount = 8;
-  }
-  get active() {
-    return super.active;
-  }
-  set active(value) {
-    super.active = value;
-    if (value) {
-      this.camera.offset = v3(0, -15, 200);
-      this.camera.rotation = v3(0.15, 0, 0);
-      this.camera.fov = 70;
-    }
-  }
-  mouseMove(e) {
-    const r = v2(e.movementX, e.movementY).scale(5e-3);
-    this.camera.rotation = v3(
-      Util.clamp(this.camera.rotation.x + r.y, -0.1, Math.PI / 2),
-      this.camera.rotation.y + r.x,
-      this.camera.rotation.z
-    );
-  }
-  build() {
-  }
-  scroll(e) {
-    this.camera.offset.z = Util.clamp(this.camera.offset.z + e.deltaY * 0.1, 100, 200);
-  }
-  tick(o) {
-    super.tick(o);
-    const nP = this.target.position.add(this.target.size.multiply(0.5, 0.5, 0.5)).multiply(1, -1, 1);
-    while (this.lagList.length < this.lagCount) {
-      this.lagList.push(nP);
-    }
-    this.camera.target = this.lagList.shift();
+    this.addChild(new [Tree1, Tree2, Tree3, Tree4, Tree5, Tree6, Tree2, Tree3, Tree4, Tree5, Tree6][Math.floor(Math.random() * 11)]({
+      storage: this.mode.storage,
+      rotation: v3(0, Math.random() * Math.PI, 0),
+      scale: 0.8 + 0.4 * Math.random()
+    }));
   }
 };
 
-// ts/modes/side/car_actor.ts
-var Driver = class extends Character {
-  constructor({
-    position = Vector3.f(0),
-    size = Vector3.f(0),
-    rotation = Vector3.f(0)
-  } = {}) {
+// ts/modes/side/trees/forrest.ts
+var Forrest = class extends GLGroup {
+  constructor(attr) {
     super({
-      position,
-      size,
-      rotation,
-      anchorPoint: size.multiply(0.5, 0, 0.5)
+      position: attr.position
     });
-    this.stat = { jumping: false, falling: false, running: false, fallAnimation: false };
-    this.addControllers([new Collider({
-      size: this.size,
-      fixed: true
-    }), new CarController(this), new CarCamera(this)]);
+    this.area = attr.area;
+    this.density = attr.density;
   }
   build() {
-    GlElement.registerControllers(this);
-    this.addChild(new GLobj({ storage: this.mode.storage, url: "Shop-3-Car.obj", size: v3(18, 18, 18), position: v3(18, 12, 47), rotation: v3(0, -Math.PI / 2, 0) }));
-  }
-  tick(obj) {
-    super.tick(obj);
+    super.build();
+    for (let x = 0; x < this.area.x; x += 10) {
+      for (let y = 0; y < this.area.y; y += 10) {
+        if (Math.random() < this.density) {
+          this.addChild(new RandomTree({
+            position: v3(x, 0, y)
+          }));
+        }
+      }
+    }
   }
 };
 
@@ -4510,34 +4495,32 @@ var World = class extends Level {
       200 * y - 100
     );
     if (Math.random() < 0.5) {
-      this.addChild(new GLobj({ colorIntensity: 1.2, storage: this.mode.storage, url: "CountrySide-3-GroundTile1.obj", size: v3(20, 20, 20), position: p }));
+      this.addChild(new GLobj({ storage: this.mode.storage, url: "CountrySide-3-GroundTile1.obj", size: v3(20, 20, 20), position: p }));
     } else {
-      this.addChild(new GLobj({ colorIntensity: 1.2, storage: this.mode.storage, url: "CountrySide-2-GroundTile2.obj", size: v3(20, 20, 20), position: p }));
+      this.addChild(new GLobj({ storage: this.mode.storage, url: "CountrySide-2-GroundTile2.obj", size: v3(20, 20, 20), position: p }));
     }
-    if (![9, 10, 11].includes(x) || ![3, 4].includes(y)) {
-      for (let rx = 0; rx < 5; rx++) {
-        for (let ry = 0; ry < 5; ry++) {
-          if (Math.random() < 0.1) {
-            this.addChild(new GLobj({
-              storage: this.mode.storage,
-              url: ["CountrySide-6-Vegetation5.obj", "CountrySide-0-Vegetation3.obj", "CountrySide-6-Vegetation5.obj", "CountrySide-8-Rock.obj"][Math.floor(Math.random() * 4)],
-              size: v3(
-                10,
-                10,
-                10
-              ).scale(Math.ceil(Math.random() * 3)),
-              position: p.add(v3(
-                40 * rx + Math.random() * 6,
-                3,
-                40 * ry + Math.random() * 6 - 80
-              )),
-              rotation: v3(
-                0,
-                Math.floor(Math.random() * 4) * Math.PI,
-                0
-              )
-            }));
-          }
+    for (let rx = 0; rx < 5; rx++) {
+      for (let ry = 0; ry < 5; ry++) {
+        if (Math.random() < 0.1) {
+          this.addChild(new GLobj({
+            storage: this.mode.storage,
+            url: ["CountrySide-6-Vegetation5.obj", "CountrySide-0-Vegetation3.obj", "CountrySide-6-Vegetation5.obj", "CountrySide-8-Rock.obj"][Math.floor(Math.random() * 4)],
+            size: v3(
+              10,
+              10,
+              10
+            ).scale(Math.ceil(Math.random() * 3)),
+            position: p.add(v3(
+              40 * rx + Math.random() * 6,
+              3,
+              40 * ry + Math.random() * 6 - 80
+            )),
+            rotation: v3(
+              0,
+              Math.floor(Math.random() * 4) * Math.PI,
+              0
+            )
+          }));
         }
       }
     }
@@ -4564,101 +4547,37 @@ var World = class extends Level {
       rotation: v3(0, -2.3, 0)
     });
     this.addChild(this.player);
-    this.car = new Driver({
-      size: v3(36, 26, 93),
-      position: v3(130, 1, 600),
-      rotation: v3(0, 2.3, 0)
-    });
-    this.addChild(this.car);
-    this.car.active = false;
-    this.addChild(new GLCuboid({ size: v3(3500, 1, 5e3), position: v3(-5600, -2, -2e3), colors: [[0.476378 * 0.96, 0.547244 * 0.96, 0.492126 * 0.96, 1]] }));
-    this.addChild(new GLCuboid({ size: v3(4e3, 1, 5e3), position: v3(1900, -2, -2e3), colors: [[0.476378 * 0.96, 0.547244 * 0.96, 0.492126 * 0.96, 1]] }));
-    this.addChild(new GLCuboid({ size: v3(4e3, 1, 1800), position: v3(-2100, -2, -2e3), colors: [[0.476378 * 0.96, 0.547244 * 0.96, 0.492126 * 0.96, 1]] }));
-    this.addChild(new GLCuboid({ size: v3(4e3, 1, 800), position: v3(-2100, -2, 2200), colors: [[0.476378 * 0.96, 0.547244 * 0.96, 0.492126 * 0.96, 1]] }));
+    this.addChild(new GLCuboid({ size: v3(1e4, 1, 1e4), position: v3(-5e3, -6, -5e3), colors: [[103 / 350, 119 / 350, 107 / 350, 1]] }));
     for (let x = 0; x < 20; x++) {
-      for (let y = 0; y < 12; y++) {
-        if (y === 3) {
-          this.spawnRoad(x, y);
-        } else {
-          this.spawnTile(x, y);
-        }
+      for (let y = 0; y < 20; y++) {
+        this.spawnTile(x, y);
       }
     }
-    this.addChild(new GLobj({
-      controllers: [
-        new Collider({
-          size: v3(97, 200, 98),
-          position: v3(-144, 0, 143),
-          fixed: true
-        }),
-        new Collider({
-          size: v3(97 - 30, 20, 98),
-          position: v3(-144 + 15, 0, 122),
-          fixed: true
-        })
-      ],
+    this.addChild(new Forrest({
       storage: this.mode.storage,
-      url: "Medieval Town - Pack 1-0.obj",
-      size: v3(10, 10, 10),
-      position: v3(0, -1, 500)
+      position: v3(-2e3, 0, 800),
+      area: v2(4e3, 2e3),
+      density: 3e-3
     }));
-    for (let index = 0; index < 100; index++) {
-      this.addChild(new GLobj({
-        storage: this.mode.storage,
-        url: "treeModels/tree0_".concat(Math.floor(Math.random() * 6), ".obj"),
-        rotation: v3(0, Math.random() * Math.PI, 0),
-        size: v3(70, 70, 70).scale(0.8 + 0.4 * Math.random()),
-        position: v3(Math.random() * 4e3 - 2e3, 0, Math.random() * 2e3 + 800)
-      }));
-      this.addChild(new GLobj({
-        storage: this.mode.storage,
-        url: "treeModels/tree0_".concat(Math.floor(Math.random() * 6), ".obj"),
-        rotation: v3(0, Math.random() * Math.PI, 0),
-        size: v3(70, 70, 70).scale(0.8 + 0.4 * Math.random()),
-        position: v3(Math.random() * 4e3 - 2e3, 0, Math.random() * 2e3 - 1800)
-      }));
-      this.addChild(new GLobj({
-        storage: this.mode.storage,
-        url: "treeModels/tree0_".concat(Math.floor(Math.random() * 6), ".obj"),
-        rotation: v3(0, Math.random() * Math.PI, 0),
-        size: v3(70, 70, 70).scale(0.8 + 0.4 * Math.random()),
-        position: v3(Math.random() * 100 - 2e3, 0, Math.random() * 4e3 - 1800)
-      }));
-      this.addChild(new GLobj({
-        storage: this.mode.storage,
-        url: "treeModels/tree0_".concat(Math.floor(Math.random() * 6), ".obj"),
-        rotation: v3(0, Math.random() * Math.PI, 0),
-        size: v3(70, 70, 70).scale(0.8 + 0.4 * Math.random()),
-        position: v3(Math.random() * 100 + 2e3, 0, Math.random() * 4e3 - 1800)
-      }));
-    }
-    this.addChild(new GLobj({
-      controllers: [new Collider({
-        size: v3(97, 200, 98),
-        position: v3(-144 + 97, 0, 143),
-        fixed: true
-      })],
+    this.addChild(new Forrest({
       storage: this.mode.storage,
-      url: "Medieval Town - Pack 1-1.obj",
-      size: v3(10, 10, 10),
-      position: v3(0, -1, 500)
+      position: v3(-2e3, 0, -1800),
+      area: v2(4e3, 2e3),
+      density: 3e-3
     }));
-    this.addChild(new GLobj({
-      controllers: [new Collider({
-        size: v3(97, 200, 98),
-        position: v3(-144 - 97, 0, 143),
-        fixed: true
-      })],
+    this.addChild(new Forrest({
       storage: this.mode.storage,
-      url: "Medieval Town - Pack 1-2.obj",
-      size: v3(10, 10, 10),
-      position: v3(0, -1, 500)
+      position: v3(-2300, 0, -1800),
+      area: v2(2e3, 4e3),
+      density: 3e-3
     }));
-    this.addChild(new GLobj({ controllers: [new Collider({
-      size: v3(190, 200, 150),
-      position: v3(-90, 0, 153),
-      fixed: true
-    })], storage: this.mode.storage, url: "Nuclear Survival - Pack 6 - m.obj", size: v3(10, 10, 10), position: v3(0, -6, 300), rotation: v3(0, -Math.PI / 2, 0) }));
+    this.addChild(new Forrest({
+      storage: this.mode.storage,
+      position: v3(300, 0, -1800),
+      area: v2(2e3, 4e3),
+      density: 3e-3
+    }));
+    console.log(glob);
   }
   tick(obj) {
     super.tick(obj);
@@ -4676,7 +4595,18 @@ var OpenWorldMode = class extends Mode {
 };
 
 // ts/game.ts
-var Game = class {
+var glob = new class {
+  get renderer() {
+    return this.game.renderer;
+  }
+  get mode() {
+    return this.game.active.mode;
+  }
+  get level() {
+    return this.game.active.level;
+  }
+}();
+var Game2 = class {
   constructor() {
     this.modes = {};
     this.readyToStart = false;
@@ -4687,6 +4617,7 @@ var Game = class {
       mode: void 0,
       level: void 0
     };
+    glob.game = this;
     this.build();
   }
   get t() {
@@ -4709,7 +4640,7 @@ var Game = class {
     this._waitCount = value;
   }
   build() {
-    this.renderer = new Renderer(this);
+    this.renderer = new Renderer();
     this.loader = new Loader();
     this.renderer.addChild(this.loader);
     this.GLR = new GLRenderer(this);
@@ -4767,7 +4698,7 @@ var Game = class {
 
 // ts/index.ts
 document.addEventListener("DOMContentLoaded", () => {
-  const g = new Game();
+  const g = new Game2();
   document.body.appendChild(g.renderer.dom);
 });
 //# sourceMappingURL=index.js.map
