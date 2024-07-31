@@ -1,9 +1,10 @@
-import { GLCuboid } from '../../../gl/objects/cuboid';
-import { Character } from '../../../gl/character';
-import { Vector3 } from '../../../gl/math/vector3';
-import { GlElement } from '../../../gl/elementBase';
+import { HumanSkeleton } from '../../../classes/animation/skeleton_human';
+import { Character } from '../../../classes/character';
+import { GlElement } from '../../../classes/elementBase';
+import { Vector3 } from '../../../classes/math/vector3';
+import { GLCuboid } from '../../../classes/objects/cuboid';
 import { npcSkeleton } from './npc_skeleton';
-import { HumanSkeleton } from '../../../gl/animation/skeleton_human';
+
 
 export class NPC extends Character {
     public stat: Record<string, boolean> = { jumping: false, falling: false, running: false, fallAnimation: false };

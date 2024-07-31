@@ -19,7 +19,7 @@ var __export = (target, all) => {
     __defProp(target, name, { get: all[name], enumerable: true });
 };
 
-// ts/gl/element.ts
+// ts/classes/element.ts
 var Element = class {
   constructor() {
     this.events = [];
@@ -55,7 +55,7 @@ var Element = class {
   }
 };
 
-// ts/gl/math/vector2.ts
+// ts/classes/math/vector2.ts
 function v2(n, y) {
   if (typeof n === "number") {
     return Vector2.f(n, y);
@@ -203,7 +203,7 @@ var Vector2 = class _Vector2 {
   }
 };
 
-// ts/dom/domElement.ts
+// ts/classes/dom/domElement.ts
 var DomElement = class extends Element {
   constructor(type, attr = {}) {
     super();
@@ -300,7 +300,7 @@ var DomElement = class extends Element {
   }
 };
 
-// ts/dom/domText.ts
+// ts/classes/dom/domText.ts
 var DomText = class extends DomElement {
   set color(v) {
     this.dom.style.color = v;
@@ -337,7 +337,7 @@ var DomText = class extends DomElement {
   }
 };
 
-// ts/gl/debug/fps.ts
+// ts/classes/debug/fps.ts
 var FPS = class _FPS extends DomText {
   constructor() {
     super({
@@ -364,79 +364,106 @@ var FPS = class _FPS extends DomText {
   }
 };
 
-// ts/gl/ticker.ts
-var Ticker = class {
+// ts/classes/debug/loader.ts
+var Loader = class extends DomElement {
   constructor() {
-    this._running = false;
-    this.started = false;
-    this.pauzedTime = 0;
-    this.intervalKeeper = [];
-    this.callbacks = [];
-    this.frameN = 0;
-    document.addEventListener("visibilitychange", () => {
-      if (this.started) {
-        this.running = !document.hidden;
-      }
+    super("div", {
+      position: new Vector2(5, 5),
+      size: new Vector2(600, 70),
+      background: "#272727"
     });
+    this.bar = new DomElement("div", {
+      size: new Vector2(600, 70),
+      background: "#80808070"
+    });
+    this.dom.appendChild(this.bar.dom);
+    this.text = new DomText({
+      text: "",
+      fontSize: 35,
+      fontWeight: 900,
+      color: "white",
+      size: new Vector2(600, 70),
+      position: new Vector2(30, -10),
+      fontFamily: "monospace"
+    });
+    this.dom.appendChild(this.text.dom);
   }
-  get running() {
-    return this._running;
-  }
-  set running(value) {
-    this._running = value;
-    if (value) {
-      this.pTime = performance.now() - this.pauzedTime;
-      this.id = window.requestAnimationFrame(this.frame.bind(this));
-    } else {
-      window.cancelAnimationFrame(this.id);
-      this.pauzedTime = performance.now() - this.pTime;
-    }
-  }
-  get startTime() {
-    return this.sTime;
-  }
-  averagedInterval(count, interval) {
-    const average = this.intervalKeeper.slice(0, count).reduce((partialSum, a) => partialSum + a, 0) / count;
-    return Math.abs(interval - average) > 10 ? interval : average;
-  }
-  frame(timeStamp) {
-    if (this.running) {
-      const interval = timeStamp - this.pTime;
-      this.intervalKeeper.push(interval);
-      this.intervalKeeper = this.intervalKeeper.slice(0, 20);
-      while (this.intervalKeeper.length < 20) {
-        this.intervalKeeper.push(this.intervalKeeper[0]);
-      }
-      this.pTime = timeStamp;
-      this.frameN++;
-      const o = {
-        interval,
-        total: this.eTime,
-        frameRate: 1e3 / interval,
-        frame: this.frameN,
-        intervalS3: this.averagedInterval(3, interval),
-        intervalS10: this.averagedInterval(5, interval),
-        intervalS20: this.averagedInterval(20, interval)
-      };
-      this.callbacks.forEach((c) => {
-        c(o);
-      });
-      this.id = window.requestAnimationFrame(this.frame.bind(this));
-    }
-  }
-  start() {
-    this.started = true;
-    this._running = true;
-    this.sTime = performance.now();
-    this.pTime = performance.now();
-    this.id = window.requestAnimationFrame(this.frame.bind(this));
-  }
-  add(callback) {
-    this.callbacks.push(callback);
+  update(value, total) {
+    this.text.text = "loaded ".concat(total - value, " out of ").concat(total, " assets");
+    this.bar.width = 600 * (total - value) / total;
   }
 };
 
-// ts/gl/input.ts
+// ts/classes/event.ts
+var Events = class {
+  constructor(id) {
+    this.subscribers = {};
+    this.id = id;
+  }
+  subscribe(key, func) {
+    this.subscribers[key] = func;
+  }
+  alert(v) {
+    Object.values(this.subscribers).forEach((s) => {
+      s(v);
+    });
+  }
+};
+
+// ts/classes/dom/renderer.ts
+var Renderer = class extends DomElement {
+  constructor() {
+    super("canvas");
+    this.dom.style.position = "absolute";
+    this.dom.style.pointerEvents = "all";
+    this.dom.style.bottom = "0px";
+    this.dom.tabIndex = 1;
+    window.addEventListener("resize", () => {
+      this.resize();
+    });
+    this.addEvent(new Events("resize"));
+    this.resize();
+  }
+  resize() {
+    this.size = v2(document.body.clientWidth, document.body.clientHeight);
+    this.dom.style.width = "".concat(this.size.x, "px");
+    this.dom.setAttribute("width", String(this.size.x));
+    this.dom.style.height = "".concat(this.size.y, "px");
+    this.dom.setAttribute("height", String(this.size.y));
+    this.getEvent("resize").alert(this.size);
+  }
+  get width() {
+    return Math.round(Number(this.dom.style.width.replace(/\D/g, "")));
+  }
+  set width(value) {
+    this.dom.style.width = "".concat(value, "px");
+    this.dom.setAttribute("width", String(value));
+  }
+  get height() {
+    return Math.round(Number(this.dom.style.height.replace(/\D/g, "")));
+  }
+  set height(value) {
+    this.dom.style.height = "".concat(value, "px");
+    this.dom.setAttribute("height", String(value));
+  }
+  addMode(child) {
+    child.build();
+  }
+  get context() {
+    return this._context;
+  }
+  set context(value) {
+    this._context = value;
+  }
+  tick(obj) {
+    super.tick(obj);
+    this.tickerData = obj;
+    this.game.GLR.draw();
+    this.game.mode.tick(obj);
+  }
+};
+
+// ts/classes/input.ts
 var Input = class {
   get locked() {
     return this._locked;
@@ -546,112 +573,13 @@ var Input = class {
   }
 };
 
-// ts/gl/event.ts
-var Event = class {
-  constructor(id) {
-    this.subscribers = {};
-    this.id = id;
-  }
-  subscribe(key, func) {
-    this.subscribers[key] = func;
-  }
-  alert(v) {
-    Object.values(this.subscribers).forEach((s) => {
-      s(v);
-    });
-  }
-};
+// ts/classes/shaders/vertexShader.ts
+var vertexShader_default = "\nattribute vec4 aVertexPosition;\nattribute vec3 aVertexNormal;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uModelViewMatrix;\nuniform mat4 uProjectionMatrix;\nuniform mat4 uNormalMatrix;\n\nvarying highp vec2 vTextureCoord;\nvarying highp vec3 vLighting;\nvarying highp vec3 vCloudLighting;\n\nuniform mat4 u_world;\nuniform mat4 u_worldViewProjection;\nuniform mat4 u_worldInverseTranspose;\n\nvarying vec3 v_normal;\n\nvarying vec3 v_surfaceToLight;\nvarying vec3 v_surfaceToView;\n\nvoid main(void) {\n  gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;\n  vTextureCoord = aTextureCoord;\n\n  v_normal = mat3(u_worldInverseTranspose) * a_normal;\n  vec3 surfaceWorldPosition = (u_world * a_position).xyz;\n  v_surfaceToLight = u_lightWorldPosition - surfaceWorldPosition;\n  v_surfaceToView = normalize(u_viewWorldPosition - surfaceWorldPosition);\n\n\n  highp vec3 ambientLight = vec3(0.8, 0.8, 1) *0.7;\n  highp vec3 directionalLightColor = vec3(1, 1, 1);\n  highp vec3 directionalVector = normalize(vec3(-0.7, .7, 0.3));\n\n  highp vec4 transformedNormal = uNormalMatrix * vec4(aVertexNormal, 1.0);\n  highp float directional = max(dot(transformedNormal.xyz, directionalVector), 0.0);\n  lowp vec3 vCloudLighting = vec3(1, 1, 1)*0.9 + (vec3(1, 1, 1) * max(dot(transformedNormal.xyz, normalize(vec3(0, -1, 0))), 0.0)*0.0)*0.6;\n\n  if ((uModelViewMatrix * aVertexPosition).y > 600.0) {\n    vLighting = vCloudLighting * 0.9;\n  } else {\n    vLighting = ambientLight + (directionalLightColor * directional);\n  }\n}";
 
-// ts/dom/renderer.ts
-var Renderer = class extends DomElement {
-  constructor() {
-    super("canvas");
-    this.dom.style.position = "absolute";
-    this.dom.style.pointerEvents = "all";
-    this.dom.style.bottom = "0px";
-    this.dom.tabIndex = 1;
-    window.addEventListener("resize", () => {
-      this.resize();
-    });
-    this.addEvent(new Event("resize"));
-    this.resize();
-  }
-  resize() {
-    this.size = v2(document.body.clientWidth, document.body.clientHeight);
-    this.dom.style.width = "".concat(this.size.x, "px");
-    this.dom.setAttribute("width", String(this.size.x));
-    this.dom.style.height = "".concat(this.size.y, "px");
-    this.dom.setAttribute("height", String(this.size.y));
-    this.getEvent("resize").alert(this.size);
-  }
-  get width() {
-    return Math.round(Number(this.dom.style.width.replace(/\D/g, "")));
-  }
-  set width(value) {
-    this.dom.style.width = "".concat(value, "px");
-    this.dom.setAttribute("width", String(value));
-  }
-  get height() {
-    return Math.round(Number(this.dom.style.height.replace(/\D/g, "")));
-  }
-  set height(value) {
-    this.dom.style.height = "".concat(value, "px");
-    this.dom.setAttribute("height", String(value));
-  }
-  addMode(child) {
-    child.build();
-  }
-  get context() {
-    return this._context;
-  }
-  set context(value) {
-    this._context = value;
-  }
-  tick(obj) {
-    super.tick(obj);
-    this.tickerData = obj;
-    this.game.GLR.draw();
-    this.game.mode.tick(obj);
-  }
-};
+// ts/classes/shaders/fragmentShader.ts
+var fragmentShader_default = "\nprecision mediump float;\n\nvarying highp vec2 vTextureCoord;\nvarying highp vec3 vLighting;\n\nuniform sampler2D uSampler;\nuniform lowp float uOpacity;\nuniform lowp float uIntensity;\n\nvarying vec3 v_normal;\nvarying vec3 v_surfaceToLight;\nvarying vec3 v_surfaceToView;\n\nuniform float u_shininess;\nuniform vec3 u_lightColor;\nuniform vec3 u_specularColor;\n\nvoid main(void) {\n    highp vec4 texelColor = texture2D(uSampler, vTextureCoord);\n\n    vec3 normal = normalize(v_normal);\n    \n    vec3 surfaceToLightDirection = normalize(v_surfaceToLight);\n    vec3 surfaceToViewDirection = normalize(v_surfaceToView);\n    vec3 halfVector = normalize(surfaceToLightDirection + surfaceToViewDirection);\n\n    float light = dot(normal, surfaceToLightDirection);\n    float specular = 0.0;\n    if (light > 0.0) {\n        specular = pow(dot(normal, halfVector), u_shininess);\n    }\n\n    gl_FragColor = vec4((texelColor.rgb+texelColor.rgb * (uIntensity-1.0)) * light * u_lightColor, texelColor.a*uOpacity);\n}\n";
 
-// ts/gl/debug/loader.ts
-var Loader = class extends DomElement {
-  constructor() {
-    super("div", {
-      position: new Vector2(5, 5),
-      size: new Vector2(600, 70),
-      background: "#272727"
-    });
-    this.bar = new DomElement("div", {
-      size: new Vector2(600, 70),
-      background: "#80808070"
-    });
-    this.dom.appendChild(this.bar.dom);
-    this.text = new DomText({
-      text: "",
-      fontSize: 35,
-      fontWeight: 900,
-      color: "white",
-      size: new Vector2(600, 70),
-      position: new Vector2(30, -10),
-      fontFamily: "monospace"
-    });
-    this.dom.appendChild(this.text.dom);
-  }
-  update(value, total) {
-    this.text.text = "loaded ".concat(total - value, " out of ").concat(total, " assets");
-    this.bar.width = 600 * (total - value) / total;
-  }
-};
-
-// ts/gl/shaders/vertexShader.ts
-var vertexShader_default = "\nattribute vec4 aVertexPosition;\nattribute vec3 aVertexNormal;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uModelViewMatrix;\nuniform mat4 uProjectionMatrix;\nuniform mat4 uNormalMatrix;\n\nvarying highp vec2 vTextureCoord;\nvarying highp vec3 vLighting;\nvarying highp vec3 vCloudLighting;\n\nvoid main(void) {\n  gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;\n  vTextureCoord = aTextureCoord;\n\n  highp vec3 ambientLight = vec3(0.8, 0.8, 1) *0.5;\n  highp vec3 directionalLightColor = vec3(1, 1, 1);\n  highp vec3 directionalVector = normalize(vec3(-0.7, .7, 0.3));\n\n  highp vec4 transformedNormal = uNormalMatrix * vec4(aVertexNormal, 1.0);\n  highp float directional = max(dot(transformedNormal.xyz, directionalVector), 0.0);\n  lowp vec3 vCloudLighting = vec3(1, 1, 1)*0.9 + (vec3(1, 1, 1) * max(dot(transformedNormal.xyz, normalize(vec3(0, -1, 0))), 0.0)*0.0)*0.6;\n\n  if ((uModelViewMatrix * aVertexPosition).y > 600.0) {\n    vLighting = vCloudLighting * 0.9;\n  } else {\n    vLighting = ambientLight + (directionalLightColor * directional);\n  }\n}";
-
-// ts/gl/shaders/fragmentShader.ts
-var fragmentShader_default = "\nvarying highp vec2 vTextureCoord;\nvarying highp vec3 vLighting;\n\nuniform sampler2D uSampler;\nuniform lowp float uOpacity;\nuniform lowp float uIntensity;\n\nvoid main(void) {\n    highp vec4 texelColor = texture2D(uSampler, vTextureCoord);\n    gl_FragColor = vec4((texelColor.rgb+texelColor.rgb * (uIntensity-1.0)) * vLighting, texelColor.a*uOpacity);\n}\n";
-
-// ts/gl/rendering/glrInit.ts
+// ts/classes/rendering/glrInit.ts
 function loadShader(gl, type, source) {
   const shader = gl.createShader(type);
   gl.shaderSource(shader, source);
@@ -723,7 +651,7 @@ function initShaderProgram(gl) {
   ];
 }
 
-// ts/gl/rendering/glTranslator.ts
+// ts/classes/rendering/glTranslator.ts
 var GLTranslator = class {
   constructor(game, glr) {
     this.game = game;
@@ -2073,7 +2001,7 @@ function equals(a, b) {
 var mul = multiply;
 var sub = subtract;
 
-// ts/gl/util/utils.ts
+// ts/classes/util/utils.ts
 var Util = class {
   static clamp(value, min, max) {
     return Math.max(Math.min(value, max), min);
@@ -2108,7 +2036,7 @@ var Util = class {
   }
 };
 
-// ts/gl/math/vector3.ts
+// ts/classes/math/vector3.ts
 function v3(a, b, c) {
   if (typeof a === "number") {
     return Vector3.f(a, b, c);
@@ -2345,7 +2273,7 @@ var Vector3 = class _Vector3 {
   }
 };
 
-// ts/gl/math/matrix4.ts
+// ts/classes/math/matrix4.ts
 var Matrix4 = class _Matrix4 {
   constructor(source) {
     this.mat4 = source ? mat4_exports.clone(source) : mat4_exports.create();
@@ -2430,7 +2358,7 @@ var Matrix4 = class _Matrix4 {
   }
 };
 
-// ts/gl/rendering/glRenderer.ts
+// ts/classes/rendering/glRenderer.ts
 var GLRenderer = class {
   constructor(game) {
     this.game = game;
@@ -2498,7 +2426,79 @@ var GLRenderer = class {
   }
 };
 
-// ts/gl/elementBase.ts
+// ts/classes/ticker.ts
+var Ticker = class {
+  constructor() {
+    this._running = false;
+    this.started = false;
+    this.pauzedTime = 0;
+    this.intervalKeeper = [];
+    this.callbacks = [];
+    this.frameN = 0;
+    document.addEventListener("visibilitychange", () => {
+      if (this.started) {
+        this.running = !document.hidden;
+      }
+    });
+  }
+  get running() {
+    return this._running;
+  }
+  set running(value) {
+    this._running = value;
+    if (value) {
+      this.pTime = performance.now() - this.pauzedTime;
+      this.id = window.requestAnimationFrame(this.frame.bind(this));
+    } else {
+      window.cancelAnimationFrame(this.id);
+      this.pauzedTime = performance.now() - this.pTime;
+    }
+  }
+  get startTime() {
+    return this.sTime;
+  }
+  averagedInterval(count, interval) {
+    const average = this.intervalKeeper.slice(0, count).reduce((partialSum, a) => partialSum + a, 0) / count;
+    return Math.abs(interval - average) > 10 ? interval : average;
+  }
+  frame(timeStamp) {
+    if (this.running) {
+      const interval = timeStamp - this.pTime;
+      this.intervalKeeper.push(interval);
+      this.intervalKeeper = this.intervalKeeper.slice(0, 20);
+      while (this.intervalKeeper.length < 20) {
+        this.intervalKeeper.push(this.intervalKeeper[0]);
+      }
+      this.pTime = timeStamp;
+      this.frameN++;
+      const o = {
+        interval,
+        total: this.eTime,
+        frameRate: 1e3 / interval,
+        frame: this.frameN,
+        intervalS3: this.averagedInterval(3, interval),
+        intervalS10: this.averagedInterval(5, interval),
+        intervalS20: this.averagedInterval(20, interval)
+      };
+      this.callbacks.forEach((c) => {
+        c(o);
+      });
+      this.id = window.requestAnimationFrame(this.frame.bind(this));
+    }
+  }
+  start() {
+    this.started = true;
+    this._running = true;
+    this.sTime = performance.now();
+    this.pTime = performance.now();
+    this.id = window.requestAnimationFrame(this.frame.bind(this));
+  }
+  add(callback) {
+    this.callbacks.push(callback);
+  }
+};
+
+// ts/classes/elementBase.ts
 var GlElement = class _GlElement extends Element {
   constructor(attr = {}) {
     var _a;
@@ -2621,7 +2621,7 @@ var GlElement = class _GlElement extends Element {
   }
 };
 
-// ts/gl/group.ts
+// ts/classes/group.ts
 var GLGroup = class extends GlElement {
   constructor() {
     super(...arguments);
@@ -2632,7 +2632,7 @@ var GLGroup = class extends GlElement {
   }
 };
 
-// ts/gl/objStorage.ts
+// ts/classes/objStorage.ts
 var ObjStorage = class {
   constructor() {
     this.registered = {};
@@ -2675,7 +2675,7 @@ var ObjStorage = class {
   }
 };
 
-// ts/gl/mode.ts
+// ts/classes/mode.ts
 var Mode = class extends GLGroup {
   constructor(attr = {}) {
     super(attr);
@@ -2737,7 +2737,80 @@ var Mode = class extends GLGroup {
   }
 };
 
-// ts/dom/interface.ts
+// ts/classes/controller.ts
+var GlController = class extends GlElement {
+  constructor() {
+    super(...arguments);
+    this.type = "controller";
+    this.order = "before";
+  }
+};
+
+// ts/classes/zone.ts
+var Zone = class extends GlController {
+  constructor(attr) {
+    super(attr);
+    this.type = "collider";
+    this.overlaps = [];
+    this.fixed = Boolean(attr.fixed);
+    this.absoluteOffset = attr.absoluteOffset || v3();
+  }
+  get globalPosition() {
+    return super.globalPosition.add(this.absoluteOffset);
+  }
+  calculateOverlaps() {
+    this.overlaps = this.level.levelZones.filter(this.overlap.bind(this)) || [];
+  }
+  overlap(othr) {
+    if (this === othr)
+      return false;
+    if (this.fixed)
+      return false;
+    if (this.globalPosition.x + this.size.x < othr.globalPosition.x)
+      return false;
+    if (this.globalPosition.x > othr.globalPosition.x + othr.size.x)
+      return false;
+    if (this.globalPosition.y + this.size.y < othr.globalPosition.y)
+      return false;
+    if (this.globalPosition.y > othr.globalPosition.y + othr.size.y)
+      return false;
+    if (this.globalPosition.z + this.size.z < othr.globalPosition.z)
+      return false;
+    if (this.globalPosition.z > othr.globalPosition.z + othr.size.z)
+      return false;
+    return true;
+  }
+};
+
+// ts/classes/collider.ts
+var Collider = class extends Zone {
+  constructor() {
+    super(...arguments);
+    this.zoneType = "collider";
+  }
+  calculateCollision() {
+    this.calculateOverlaps();
+    return this.overlaps.filter((o) => o.zoneType === "collider").map(this.calculateExitVelocity.bind(this)) || [];
+  }
+  calculateExitVelocity(othr) {
+    return Util.closestVectorMagniture([
+      v3(-(this.globalPosition.x + this.size.x - othr.globalPosition.x), 0, 0),
+      // to the x- of other
+      v3(othr.globalPosition.x + othr.size.x - this.globalPosition.x, 0, 0),
+      // to the x+ of other
+      v3(0, -(this.globalPosition.y + this.size.y - othr.globalPosition.y), 0),
+      // to the y- of other
+      v3(0, othr.globalPosition.y + othr.size.y - this.globalPosition.y, 0),
+      // to the y+ of other
+      v3(0, 0, -(this.globalPosition.z + this.size.z - othr.globalPosition.z)),
+      // to the z- of other
+      v3(0, 0, othr.globalPosition.z + othr.size.z - this.globalPosition.z)
+      // to the z+ of other
+    ], 0);
+  }
+};
+
+// ts/classes/dom/interface.ts
 var Interface = class extends DomElement {
   constructor(attr = {}) {
     super("div", attr);
@@ -2748,7 +2821,7 @@ var Interface = class extends DomElement {
   }
 };
 
-// ts/gl/level.ts
+// ts/classes/level.ts
 var Level = class extends GlElement {
   constructor(attr = {}) {
     super(attr);
@@ -2789,219 +2862,19 @@ var Level = class extends GlElement {
   }
 };
 
-// ts/gl/character.ts
-var Character = class extends GlElement {
-  constructor(attr) {
-    super(attr);
-    this.type = "group";
-    this.stat = {};
-  }
-  get ani() {
-    return this.skeleton.animator;
-  }
+// ts/classes/util/colors.ts
+var Colors = class {
 };
+Colors.k = [0, 0, 0, 1];
+Colors.r = [1, 0, 0, 1];
+Colors.g = [0, 1, 0, 1];
+Colors.b = [0, 0, 1, 1];
+Colors.y = [1, 1, 0, 1];
+Colors.c = [0, 1, 1, 1];
+Colors.m = [1, 0, 1, 1];
+Colors.w = [1, 1, 1, 1];
 
-// ts/gl/controller.ts
-var GlController = class extends GlElement {
-  constructor() {
-    super(...arguments);
-    this.type = "controller";
-    this.order = "before";
-  }
-};
-
-// ts/modes/side/player/player_controller.ts
-var PlayerController = class extends GlController {
-  constructor() {
-    super(...arguments);
-    this.intr = { fall: 0, jump: 0, landDelay: 0 };
-    this.stat = { jumping: false, falling: false, running: false };
-    this.cnst = { runTime: 250, runSlowDownFactor: 0.7, runSpeed: 0.5, minJumpTime: 200, jumpTime: 300, jumpSpeed: 0.6 };
-    this.velocity = Vector3.f(0);
-    this.aiming = false;
-  }
-  keyDown(e) {
-    if (e.key === "e" || e.key === "E") {
-      this.aiming = true;
-    }
-  }
-  keyUp(e) {
-    if (e.key === "e" || e.key === "E") {
-      this.aiming = false;
-    }
-  }
-  setMovementVelocity(interval) {
-    const setter = (key, cond, interval2) => {
-      this.intr[key] = Util.clamp((this.intr[key] || 0) + (cond ? interval2 : -(interval2 * this.cnst.runSlowDownFactor)), 0, this.cnst.runTime);
-    };
-    setter("right", this.mode.input.right && !this.mode.input.left, interval);
-    setter("left", this.mode.input.left && !this.mode.input.right, interval);
-    setter("up", this.mode.input.up && !this.mode.input.down, interval);
-    setter("down", this.mode.input.down && !this.mode.input.up, interval);
-    if (!this.aiming) {
-      const plane = v2(
-        (this.intr.right - this.intr.left) / this.cnst.runTime,
-        (this.intr.up - this.intr.down) / this.cnst.runTime
-      ).clampMagnitude(1).scale(this.cnst.runSpeed);
-      this.velocity = v3(
-        plane.x,
-        0,
-        plane.y
-      );
-    } else {
-      this.velocity = v3(0);
-    }
-  }
-  determineStates(interval) {
-    if (this.parent.stat.falling) {
-      this.parent.stat.jumping = false;
-    } else {
-      if (this.parent.stat.jumping) {
-        if (this.intr.jump < this.cnst.minJumpTime) {
-          this.parent.stat.jumping = true;
-          this.parent.stat.falling = false;
-        } else if (this.intr.jump < this.cnst.jumpTime) {
-          this.parent.stat.jumping = this.mode.input.space;
-        } else {
-          this.parent.stat.jumping = false;
-          this.parent.stat.falling = true;
-          this.intr.jump = this.cnst.jumpTime;
-        }
-      } else {
-        this.parent.stat.jumping = this.mode.input.space;
-      }
-    }
-  }
-  setJumpVelocity(interval) {
-    this.determineStates(interval);
-    if (this.parent.stat.jumping) {
-      this.intr.jump = Math.min(this.intr.jump + interval, this.cnst.jumpTime);
-      this.intr.fall = -this.intr.jump;
-    } else if (this.parent.stat.falling) {
-      this.intr.jump = this.cnst.jumpTime;
-      this.intr.fall += interval;
-    } else {
-      this.velocity.y = 0;
-      return;
-    }
-    const y = (this.cnst.jumpTime - this.intr.jump - this.intr.fall) / this.cnst.jumpTime * this.cnst.jumpSpeed;
-    this.velocity.y = y;
-  }
-  setVelocity(obj) {
-    this.setMovementVelocity(obj.intervalS10);
-    this.setJumpVelocity(obj.intervalS10);
-    const sc = this.velocity.scale(obj.intervalS10 / 6);
-    if (sc.xz.magnitude() > 0) {
-      const [x, z] = sc.xz.rotate(-this.camera.rotation.y).array;
-      this.newPosition = this.parent.position.add(v3(x, sc.y, z));
-      if (this.mode.input.right || this.mode.input.left || this.mode.input.up || this.mode.input.down) {
-        this.parent.rotation = this.camera.rotation.multiply(0, 1, 0).add(v3(0, Math.PI / 2, 0)).add(v3(0, -sc.xz.angle(), 0));
-      }
-      this.parent.stat.running = true;
-    } else {
-      this.newPosition = this.parent.position.add(v3(0, sc.y, 0));
-      this.parent.stat.running = false;
-    }
-    if (this.aiming) {
-      this.parent.rotation = this.camera.rotation.multiply(0, 1, 0);
-    }
-  }
-  collide(obj) {
-    this.parent.stat.ground = false;
-    const collisions = this.parent.zones[0].calculateCollision();
-    collisions.forEach((v) => {
-      if (v.y >= 0) {
-        this.intr.fall = 0;
-        this.intr.jump = 0;
-        this.parent.stat.falling = false;
-        this.parent.stat.ground = true;
-      } else {
-        this.parent.stat.falling = true;
-        this.parent.stat.ground = false;
-      }
-      this.velocity.subtract(v);
-      this.parent.position = this.newPosition.clone();
-      this.newPosition = this.newPosition.add(v);
-    });
-    if (!this.parent.stat.jumping) {
-      this.parent.stat.falling = !this.parent.stat.ground;
-    }
-  }
-  tick(obj) {
-    super.tick(obj);
-    this.setVelocity(obj);
-    this.collide(obj);
-    this.parent.position = this.newPosition.clone();
-  }
-};
-
-// ts/modes/side/player/player_camera.ts
-var FreeCamera = class extends GlController {
-  constructor(target) {
-    super({ autoReady: false });
-    this.target = target;
-    this.type = "controller";
-    this.order = "after";
-    this.lagList = [];
-    this.lagCount = 1;
-  }
-  get active() {
-    return super.active;
-  }
-  set active(value) {
-    super.active = value;
-    if (value) {
-      this.camera.offset = v3(0, -15, 60);
-      this.camera.rotation = v3(0.3, Math.PI / 8, 0);
-      this.camera.fov = 60;
-    }
-  }
-  mouseMove(e) {
-    const r = v2(e.movementX, e.movementY).scale(5e-3);
-    this.camera.rotation = v3(
-      Util.clamp(this.camera.rotation.x + r.y, -1, Math.PI / 2),
-      this.camera.rotation.y + r.x,
-      this.camera.rotation.z
-    );
-  }
-  drag(d) {
-    const r = d.scale(0.01);
-    this.camera.rotation = v3(
-      Util.clamp(this.camera.rotation.x + r.y, -1, Math.PI / 2),
-      this.camera.rotation.y + r.x,
-      this.camera.rotation.z
-    );
-  }
-  scroll(e) {
-    if (!this.parent.aiming) {
-      this.camera.offset.z = Util.clamp(this.camera.offset.z + e.deltaY * 0.1, 10, 300);
-    }
-  }
-  build() {
-    super.build();
-    this.active = true;
-  }
-  keyUp(e) {
-    if (e.key === "e" || e.key === "E") {
-      this.camera.offset = v3(0, -15, 60);
-    }
-  }
-  keyDown(e) {
-    if (e.key === "e" || e.key === "E") {
-      this.camera.offset = v3(-15, -10, 30);
-    }
-  }
-  tick(o) {
-    super.tick(o);
-    const nP = this.target.position.add(this.target.size.multiply(0.5, 0.3, 0.5));
-    while (this.lagList.length < this.lagCount) {
-      this.lagList.push(nP);
-    }
-    this.camera.target = this.lagList.shift();
-  }
-};
-
-// ts/gl/rendable.ts
+// ts/classes/rendable.ts
 var GLRendable = class extends GlElement {
   constructor(attr = {}) {
     super(attr);
@@ -3025,7 +2898,7 @@ var GLRendable = class extends GlElement {
   }
 };
 
-// ts/gl/texture.ts
+// ts/classes/texture.ts
 var GLTexture = class {
   constructor(game, attr) {
     this.game = game;
@@ -3098,466 +2971,7 @@ var GLTexture = class {
   }
 };
 
-// ts/gl/objects/obj.ts
-var GLobj = class extends GLRendable {
-  constructor(attr = {}) {
-    super(__spreadValues(__spreadValues({}, attr), { autoReady: false }));
-    this.type = "mesh";
-    this.verticesCount = 0;
-    this.matIndeces = [];
-    this.mats = {};
-    this.matsData = {};
-    this.positionIndeces = [];
-    this.indexIndeces = [];
-    this.normalIndeces = [];
-    this.textureIndeces = [];
-    this.texturePositionIndeces = [];
-    this.opacity = attr.opacity !== void 0 ? attr.opacity : 1;
-    this.colorIntensity = attr.colorIntensity !== void 0 ? attr.colorIntensity : 1;
-    this.path = attr.url.split("/").slice(0, -1).join("/") + "/";
-    if (glob.storage.register(attr.url, this)) {
-      this.loadFile("".concat(window.location.href, "/obj/").concat(attr.url)).then(this.parseMtl.bind(this)).then(this.parseObj.bind(this)).then(() => {
-        this.ready();
-        glob.storage.loaded(attr.url);
-      });
-    }
-  }
-  getData() {
-    return {
-      verticesCount: this.verticesCount,
-      matIndeces: this.matIndeces,
-      matsData: this.matsData,
-      positionIndeces: this.positionIndeces,
-      indexIndeces: this.indexIndeces,
-      normalIndeces: this.normalIndeces,
-      texturePositionIndeces: this.texturePositionIndeces
-    };
-  }
-  giveData(data) {
-    this.verticesCount = data.verticesCount;
-    this.matIndeces = data.matIndeces;
-    this.matsData = data.matsData;
-    this.positionIndeces = data.positionIndeces;
-    this.indexIndeces = data.indexIndeces;
-    this.normalIndeces = data.normalIndeces;
-    this.texturePositionIndeces = data.texturePositionIndeces;
-  }
-  async parseMtl(str2) {
-    if (/mtllib/.test(str2)) {
-      await this.loadFile("".concat(window.location.href, "obj/").concat(this.path).concat(str2.split(/mtllib/)[1].split(/\n/)[0].trim())).then((v) => {
-        v.split("newmtl ").slice(1).forEach((s) => {
-          const lines = s.split(/\r\n|\r|\n/).filter((n) => n);
-          this.matsData[lines.shift()] = Object.fromEntries(lines.map((line) => {
-            const a = line.split(" ");
-            return [a.shift(), a];
-          }));
-        });
-      });
-      return str2;
-    } else {
-      return str2;
-    }
-  }
-  parseFaces(lineArray, mat, points, normals, tCoords) {
-    const textRemainder = lineArray.slice(1);
-    const numbRemainder = textRemainder.map(Number);
-    ({
-      usemtl: () => {
-        mat = textRemainder[0];
-      },
-      f: () => {
-        if (numbRemainder.length === 3) {
-          this.positionIndeces.push(...points[numbRemainder[0] - 1]);
-          this.positionIndeces.push(...points[numbRemainder[1] - 1]);
-          this.positionIndeces.push(...points[numbRemainder[2] - 1]);
-        } else if (numbRemainder.length === 6) {
-          this.positionIndeces.push(...points[numbRemainder[0] - 1]);
-          this.positionIndeces.push(...points[numbRemainder[2] - 1]);
-          this.positionIndeces.push(...points[numbRemainder[4] - 1]);
-          this.texturePositionIndeces.push(...tCoords[numbRemainder[1] - 1]);
-          this.texturePositionIndeces.push(...tCoords[numbRemainder[3] - 1]);
-          this.texturePositionIndeces.push(...tCoords[numbRemainder[5] - 1]);
-        } else {
-          this.positionIndeces.push(...points[numbRemainder[0] - 1]);
-          this.positionIndeces.push(...points[numbRemainder[3] - 1]);
-          this.positionIndeces.push(...points[numbRemainder[6] - 1]);
-          this.texturePositionIndeces.push(...tCoords[numbRemainder[1] - 1]);
-          this.texturePositionIndeces.push(...tCoords[numbRemainder[4] - 1]);
-          this.texturePositionIndeces.push(...tCoords[numbRemainder[7] - 1]);
-          this.normalIndeces.push(...normals[numbRemainder[2] - 1]);
-          this.normalIndeces.push(...normals[numbRemainder[5] - 1]);
-          this.normalIndeces.push(...normals[numbRemainder[8] - 1]);
-          this.textureIndeces.push(
-            ...GLTexture.textureOffset(Object.keys(this.mats).indexOf(mat), Object.keys(this.mats).length)
-          );
-        }
-        this.indexIndeces.push(this.indexIndeces.length);
-        this.indexIndeces.push(this.indexIndeces.length);
-        this.indexIndeces.push(this.indexIndeces.length);
-        this.matIndeces.push(mat);
-        this.matIndeces.push(mat);
-        this.matIndeces.push(mat);
-      }
-    }[lineArray[0]] || (() => {
-    }))();
-    return mat;
-  }
-  parseObj(str2) {
-    let mat = "none";
-    const lines = str2.split(/\r\n|\r|\n/);
-    const nonVertex = [];
-    const points = [];
-    const normals = [];
-    const tCoords = [];
-    lines.forEach(async (line) => {
-      const words = line.split(/(?: |\/)/);
-      const command = words[0];
-      const numbers = words.slice(1).map(Number);
-      if (command === "v") {
-        points.push([numbers[0], numbers[1], numbers[2]]);
-      } else if (command === "vn") {
-        normals.push([numbers[0], numbers[1], numbers[2]]);
-      } else if (command === "vt") {
-        tCoords.push([numbers[0], numbers[1]]);
-      } else {
-        nonVertex.push(words);
-      }
-    });
-    nonVertex.forEach((words) => {
-      mat = this.parseFaces(words, mat, points, normals, tCoords);
-    });
-    this.verticesCount = this.indexIndeces.length;
-  }
-  async loadFile(url) {
-    const response = await fetch(url);
-    const data = await response.text();
-    return data;
-  }
-  indexBuffer() {
-    return this.indexIndeces;
-  }
-  positionBuffer(size) {
-    return this.positionIndeces.map((n, i) => n * size.array[i % 3]);
-  }
-  normalBuffer() {
-    return this.normalIndeces;
-  }
-  textureBuffer(size) {
-    this.texture = new GLTexture(this.game, {});
-    if (Object.values(this.matsData).length) {
-      const matArray = Object.values(this.matsData);
-      const matImage = matArray.find((m) => m.map_Kd);
-      if (matImage) {
-        this.texture = new GLTexture(this.game, {
-          url: "obj/".concat(this.path).concat(matImage.map_Kd.join(" ").trim())
-        });
-      } else {
-        this.texture = new GLTexture(this.game, {
-          color: matArray.map((m) => [
-            ...m.Kd ? m.Kd.map(Number) : [0, 0, 0],
-            m.d ? Number(m.d[0]) : 1
-          ])
-        });
-      }
-    }
-    return this.texturePositionIndeces;
-  }
-};
-
-// ts/gl/util/ease.ts
-var Ease = class {
-  static linear(x) {
-    return x;
-  }
-  static easeInQuad(x) {
-    return x * x;
-  }
-  static easeOutQuad(x) {
-    return 1 - (1 - x) * (1 - x);
-  }
-  static easeInOutQuad(x) {
-    return x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2;
-  }
-  static easeInCubic(x) {
-    return x * x * x;
-  }
-  static easeOutCubic(x) {
-    return 1 - Math.pow(1 - x, 3);
-  }
-  static easeInOutCubic(x) {
-    return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
-  }
-  static easeInQuart(x) {
-    return x * x * x * x;
-  }
-  static easeOutQuart(x) {
-    return 1 - Math.pow(1 - x, 4);
-  }
-  static easeInOutQuart(x) {
-    return x < 0.5 ? 8 * x * x * x * x : 1 - Math.pow(-2 * x + 2, 4) / 2;
-  }
-  static easeInQuint(x) {
-    return x * x * x * x * x;
-  }
-  static easeOutQuint(x) {
-    return 1 - Math.pow(1 - x, 5);
-  }
-  static easeInOutQuint(x) {
-    return x < 0.5 ? 16 * x * x * x * x * x : 1 - Math.pow(-2 * x + 2, 5) / 2;
-  }
-  static easeInSine(x) {
-    return 1 - Math.cos(x * Math.PI / 2);
-  }
-  static easeOutSine(x) {
-    return Math.sin(x * Math.PI / 2);
-  }
-  static easeInOutSine(x) {
-    return -(Math.cos(Math.PI * x) - 1) / 2;
-  }
-  static easeInExpo(x) {
-    return x === 0 ? 0 : Math.pow(2, 10 * x - 10);
-  }
-  static easeOutExpo(x) {
-    return x === 1 ? 1 : 1 - Math.pow(2, -10 * x);
-  }
-  static easeInOutExpo(x) {
-    return x === 0 ? 0 : x === 1 ? 1 : x < 0.5 ? Math.pow(2, 20 * x - 10) / 2 : (2 - Math.pow(2, -20 * x + 10)) / 2;
-  }
-  static easeInCirc(x) {
-    return 1 - Math.sqrt(1 - Math.pow(x, 2));
-  }
-  static easeOutCirc(x) {
-    return Math.sqrt(1 - Math.pow(x - 1, 2));
-  }
-  static easeInOutCirc(x) {
-    return x < 0.5 ? (1 - Math.sqrt(1 - Math.pow(2 * x, 2))) / 2 : (Math.sqrt(1 - Math.pow(-2 * x + 2, 2)) + 1) / 2;
-  }
-  static easeInBack(x) {
-    return 2.70158 * x * x * x - 1.70158 * x * x;
-  }
-  static easeOutBack(x) {
-    return 1 + 2.70158 * Math.pow(x - 1, 3) + 1.70158 * Math.pow(x - 1, 2);
-  }
-  static easeInOutBack(x) {
-    return x < 0.5 ? Math.pow(2 * x, 2) * (7.18982 * x - 2.59491) / 2 : (Math.pow(2 * x - 2, 2) * (3.59491 * (x * 2 - 2) + 2.59491) + 2) / 2;
-  }
-};
-
-// ts/gl/animation/animation.ts
-var Animation = class {
-  constructor(attr) {
-    this.interval = 0;
-    this.direction = 1;
-    this.data = {};
-    this._active = false;
-    this.bones = attr.bones || {};
-    this.time = attr.time || 0;
-    this.loop = attr.loop || false;
-    this.once = attr.once || false;
-    this.dynamic = attr.dynamic || false;
-    this.bounce = attr.bounce || false;
-    this.defaultEase = attr.defaultEase || "linear";
-    Object.entries(attr.data).forEach(([key, d]) => {
-      if (d.length === 0) {
-        d = [[0], [1]];
-      }
-      if (d[0][0] !== 0) {
-        d.unshift([0, ...d[0].slice(1)]);
-      }
-      if (d[d.length - 1][0] !== 1) {
-        d.push([1, ...d[d.length - 1].slice(1)]);
-      }
-      this.data[key] = d;
-    });
-  }
-  get active() {
-    return this._active;
-  }
-  set active(value) {
-    this._active = value;
-    if (!value) {
-      this.interval = 0;
-    }
-  }
-  setTime(t) {
-    const f = this.interval / this.time;
-    this.time = t;
-    this.interval = t * f;
-  }
-  setBoneTransform(key, transform) {
-    const bone = this.bones[key];
-    if (bone) {
-      bone.setRotation(v3(transform[0] || 0, transform[1] || 0, transform[2] || 0), this.dynamic);
-      bone.setPosition(v3(transform[3] || 0, transform[4] || 0, transform[5] || 0), this.dynamic);
-    }
-  }
-  setBoneToValue(key, value) {
-    if (this.data[key]) {
-      let before = this.data[key][0];
-      let after = this.data[key][this.data[key].length - 1];
-      this.data[key].forEach((d) => {
-        if (d[0] >= before[0] && d[0] <= value) {
-          before = [d[0], Util.padArray(d[1] || [], 0, 7)];
-        }
-        if (d[0] <= after[0] && d[0] >= value) {
-          after = [d[0], Util.padArray(d[1] || [], 0, 7)];
-        }
-      });
-      const [[startNumber, start], [endNumber, end, ease]] = [before, after];
-      const factor = Ease[ease || this.defaultEase]((value - startNumber) / (endNumber - startNumber));
-      if (key === "bowS1") {
-      }
-      this.setBoneTransform(
-        key,
-        Util.addArrays(
-          start || [],
-          Util.scaleArrays(
-            Util.subtractArrays(end || [], start || []),
-            factor
-          )
-        )
-      );
-    }
-  }
-  setBonesToValue(n) {
-    Object.keys(this.bones).forEach((b) => {
-      this.setBoneToValue(b, n);
-    });
-  }
-  stop() {
-  }
-  tick(interval) {
-    if (this.active) {
-      this.interval = this.interval + interval * this.direction;
-      if (this.interval >= this.time) {
-        if (this.bounce) {
-          this.interval = this.time - 1;
-          this.direction = -1;
-        } else if (this.loop) {
-          this.interval = this.interval % this.time;
-        } else if (this.once) {
-          this.interval = this.time - 1;
-        } else {
-          this.active = false;
-          this.interval = 1;
-          return;
-        }
-      }
-      if (this.interval < 0) {
-        if (this.loop) {
-          this.interval = 0;
-          this.direction = 1;
-        } else {
-          this.active = false;
-          this.interval = 0;
-          return;
-        }
-      }
-      this.setBonesToValue(Util.clamp(this.interval / this.time, 1e-3, 0.999));
-    }
-  }
-};
-var Animator = class {
-  constructor(attr) {
-    this.animations = {};
-    this.bones = {};
-    this.bones = attr.bones || {};
-  }
-  add(key, time, data, attr = {}) {
-    this.animations[key] = new Animation({
-      bones: this.bones,
-      loop: attr.loop || false,
-      once: attr.once || false,
-      bounce: attr.bounce || false,
-      dynamic: attr.dynamic || false,
-      defaultEase: attr.ease || "linear",
-      time,
-      data
-    });
-    return this.get(key);
-  }
-  get(key) {
-    return this.animations[key];
-  }
-  stop() {
-    Object.values(this.animations).forEach((a) => {
-      a.active = false;
-    });
-  }
-  play(key) {
-    Object.entries(this.animations).forEach(([k, a]) => {
-      a.active = k === key;
-    });
-  }
-  setToInterval(key, n) {
-    const an = this.get(key);
-    if (an) {
-      an.setBonesToValue(n * an.time);
-    }
-  }
-  replay(key) {
-    this.stop();
-    Object.entries(this.animations).find((k) => k[0] === key)[1].active = true;
-  }
-  tick(interval) {
-    Object.values(this.animations).forEach((a) => a.tick(interval));
-  }
-};
-
-// ts/gl/animation/skeleton.ts
-var Skeleton = class extends GLGroup {
-  constructor(attr = {}) {
-    super(attr);
-    this.bones = {};
-    this.parentage = {};
-    attr.bones.forEach((o) => {
-      this.addBone(o);
-    });
-  }
-  addBone(o) {
-    this.bones[o[0]] = o[1];
-    if (o[2]) {
-      this.parentage[o[0]] = o[2];
-    }
-    if (this.readyState) {
-      if (this.parentage[o[0]]) {
-        this.bones[this.parentage[o[0]]].addChild(o[1]);
-      } else {
-        this.addChild(o[1]);
-      }
-      this.animator.bones = this.bones;
-    }
-  }
-  build() {
-    super.build();
-    Object.entries(this.bones).forEach(([key, b]) => {
-      if (this.parentage[key]) {
-        this.bones[this.parentage[key]].addChild(b);
-      } else {
-        this.addChild(b);
-      }
-    });
-    this.animator = new Animator({ bones: this.bones });
-  }
-  tick(obj) {
-    super.tick(obj);
-    this.animator.tick(obj.intervalS10);
-  }
-};
-
-// ts/gl/util/colors.ts
-var Colors = class {
-};
-Colors.k = [0, 0, 0, 1];
-Colors.r = [1, 0, 0, 1];
-Colors.g = [0, 1, 0, 1];
-Colors.b = [0, 0, 1, 1];
-Colors.y = [1, 1, 0, 1];
-Colors.c = [0, 1, 1, 1];
-Colors.m = [1, 0, 1, 1];
-Colors.w = [1, 1, 1, 1];
-
-// ts/gl/objects/cuboid.ts
+// ts/classes/objects/cuboid.ts
 var GLCuboid = class _GLCuboid extends GLRendable {
   constructor(attr) {
     super(attr);
@@ -3910,7 +3324,466 @@ var GLCuboid = class _GLCuboid extends GLRendable {
   }
 };
 
-// ts/gl/animation/skeleton_bone.ts
+// ts/classes/objects/obj.ts
+var GLobj = class extends GLRendable {
+  constructor(attr = {}) {
+    super(__spreadValues(__spreadValues({}, attr), { autoReady: false }));
+    this.type = "mesh";
+    this.verticesCount = 0;
+    this.matIndeces = [];
+    this.mats = {};
+    this.matsData = {};
+    this.positionIndeces = [];
+    this.indexIndeces = [];
+    this.normalIndeces = [];
+    this.textureIndeces = [];
+    this.texturePositionIndeces = [];
+    this.opacity = attr.opacity !== void 0 ? attr.opacity : 1;
+    this.colorIntensity = attr.colorIntensity !== void 0 ? attr.colorIntensity : 1;
+    this.path = attr.url.split("/").slice(0, -1).join("/") + "/";
+    if (glob.storage.register(attr.url, this)) {
+      this.loadFile("".concat(window.location.href, "/obj/").concat(attr.url)).then(this.parseMtl.bind(this)).then(this.parseObj.bind(this)).then(() => {
+        this.ready();
+        glob.storage.loaded(attr.url);
+      });
+    }
+  }
+  getData() {
+    return {
+      verticesCount: this.verticesCount,
+      matIndeces: this.matIndeces,
+      matsData: this.matsData,
+      positionIndeces: this.positionIndeces,
+      indexIndeces: this.indexIndeces,
+      normalIndeces: this.normalIndeces,
+      texturePositionIndeces: this.texturePositionIndeces
+    };
+  }
+  giveData(data) {
+    this.verticesCount = data.verticesCount;
+    this.matIndeces = data.matIndeces;
+    this.matsData = data.matsData;
+    this.positionIndeces = data.positionIndeces;
+    this.indexIndeces = data.indexIndeces;
+    this.normalIndeces = data.normalIndeces;
+    this.texturePositionIndeces = data.texturePositionIndeces;
+  }
+  async parseMtl(str2) {
+    if (/mtllib/.test(str2)) {
+      await this.loadFile("".concat(window.location.href, "obj/").concat(this.path).concat(str2.split(/mtllib/)[1].split(/\n/)[0].trim())).then((v) => {
+        v.split("newmtl ").slice(1).forEach((s) => {
+          const lines = s.split(/\r\n|\r|\n/).filter((n) => n);
+          this.matsData[lines.shift()] = Object.fromEntries(lines.map((line) => {
+            const a = line.split(" ");
+            return [a.shift(), a];
+          }));
+        });
+      });
+      return str2;
+    } else {
+      return str2;
+    }
+  }
+  parseFaces(lineArray, mat, points, normals, tCoords) {
+    const textRemainder = lineArray.slice(1);
+    const numbRemainder = textRemainder.map(Number);
+    ({
+      usemtl: () => {
+        mat = textRemainder[0];
+      },
+      f: () => {
+        if (numbRemainder.length === 3) {
+          this.positionIndeces.push(...points[numbRemainder[0] - 1]);
+          this.positionIndeces.push(...points[numbRemainder[1] - 1]);
+          this.positionIndeces.push(...points[numbRemainder[2] - 1]);
+        } else if (numbRemainder.length === 6) {
+          this.positionIndeces.push(...points[numbRemainder[0] - 1]);
+          this.positionIndeces.push(...points[numbRemainder[2] - 1]);
+          this.positionIndeces.push(...points[numbRemainder[4] - 1]);
+          this.texturePositionIndeces.push(...tCoords[numbRemainder[1] - 1]);
+          this.texturePositionIndeces.push(...tCoords[numbRemainder[3] - 1]);
+          this.texturePositionIndeces.push(...tCoords[numbRemainder[5] - 1]);
+        } else {
+          this.positionIndeces.push(...points[numbRemainder[0] - 1]);
+          this.positionIndeces.push(...points[numbRemainder[3] - 1]);
+          this.positionIndeces.push(...points[numbRemainder[6] - 1]);
+          this.texturePositionIndeces.push(...tCoords[numbRemainder[1] - 1]);
+          this.texturePositionIndeces.push(...tCoords[numbRemainder[4] - 1]);
+          this.texturePositionIndeces.push(...tCoords[numbRemainder[7] - 1]);
+          this.normalIndeces.push(...normals[numbRemainder[2] - 1]);
+          this.normalIndeces.push(...normals[numbRemainder[5] - 1]);
+          this.normalIndeces.push(...normals[numbRemainder[8] - 1]);
+          this.textureIndeces.push(
+            ...GLTexture.textureOffset(Object.keys(this.mats).indexOf(mat), Object.keys(this.mats).length)
+          );
+        }
+        this.indexIndeces.push(this.indexIndeces.length);
+        this.indexIndeces.push(this.indexIndeces.length);
+        this.indexIndeces.push(this.indexIndeces.length);
+        this.matIndeces.push(mat);
+        this.matIndeces.push(mat);
+        this.matIndeces.push(mat);
+      }
+    }[lineArray[0]] || (() => {
+    }))();
+    return mat;
+  }
+  parseObj(str2) {
+    let mat = "none";
+    const lines = str2.split(/\r\n|\r|\n/);
+    const nonVertex = [];
+    const points = [];
+    const normals = [];
+    const tCoords = [];
+    lines.forEach(async (line) => {
+      const words = line.split(/(?: |\/)/);
+      const command = words[0];
+      const numbers = words.slice(1).map(Number);
+      if (command === "v") {
+        points.push([numbers[0], numbers[1], numbers[2]]);
+      } else if (command === "vn") {
+        normals.push([numbers[0], numbers[1], numbers[2]]);
+      } else if (command === "vt") {
+        tCoords.push([numbers[0], numbers[1]]);
+      } else {
+        nonVertex.push(words);
+      }
+    });
+    nonVertex.forEach((words) => {
+      mat = this.parseFaces(words, mat, points, normals, tCoords);
+    });
+    this.verticesCount = this.indexIndeces.length;
+  }
+  async loadFile(url) {
+    const response = await fetch(url);
+    const data = await response.text();
+    return data;
+  }
+  indexBuffer() {
+    return this.indexIndeces;
+  }
+  positionBuffer(size) {
+    return this.positionIndeces.map((n, i) => n * size.array[i % 3]);
+  }
+  normalBuffer() {
+    return this.normalIndeces;
+  }
+  textureBuffer(size) {
+    this.texture = new GLTexture(this.game, {});
+    if (Object.values(this.matsData).length) {
+      const matArray = Object.values(this.matsData);
+      const matImage = matArray.find((m) => m.map_Kd);
+      if (matImage) {
+        this.texture = new GLTexture(this.game, {
+          url: "obj/".concat(this.path).concat(matImage.map_Kd.join(" ").trim())
+        });
+      } else {
+        this.texture = new GLTexture(this.game, {
+          color: matArray.map((m) => [
+            ...m.Kd ? m.Kd.map(Number) : [0, 0, 0],
+            m.d ? Number(m.d[0]) : 1
+          ])
+        });
+      }
+    }
+    return this.texturePositionIndeces;
+  }
+};
+
+// ts/classes/character.ts
+var Character = class extends GlElement {
+  constructor(attr) {
+    super(attr);
+    this.type = "group";
+    this.stat = {};
+  }
+  get ani() {
+    return this.skeleton.animator;
+  }
+};
+
+// ts/classes/util/ease.ts
+var Ease = class {
+  static linear(x) {
+    return x;
+  }
+  static easeInQuad(x) {
+    return x * x;
+  }
+  static easeOutQuad(x) {
+    return 1 - (1 - x) * (1 - x);
+  }
+  static easeInOutQuad(x) {
+    return x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2;
+  }
+  static easeInCubic(x) {
+    return x * x * x;
+  }
+  static easeOutCubic(x) {
+    return 1 - Math.pow(1 - x, 3);
+  }
+  static easeInOutCubic(x) {
+    return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+  }
+  static easeInQuart(x) {
+    return x * x * x * x;
+  }
+  static easeOutQuart(x) {
+    return 1 - Math.pow(1 - x, 4);
+  }
+  static easeInOutQuart(x) {
+    return x < 0.5 ? 8 * x * x * x * x : 1 - Math.pow(-2 * x + 2, 4) / 2;
+  }
+  static easeInQuint(x) {
+    return x * x * x * x * x;
+  }
+  static easeOutQuint(x) {
+    return 1 - Math.pow(1 - x, 5);
+  }
+  static easeInOutQuint(x) {
+    return x < 0.5 ? 16 * x * x * x * x * x : 1 - Math.pow(-2 * x + 2, 5) / 2;
+  }
+  static easeInSine(x) {
+    return 1 - Math.cos(x * Math.PI / 2);
+  }
+  static easeOutSine(x) {
+    return Math.sin(x * Math.PI / 2);
+  }
+  static easeInOutSine(x) {
+    return -(Math.cos(Math.PI * x) - 1) / 2;
+  }
+  static easeInExpo(x) {
+    return x === 0 ? 0 : Math.pow(2, 10 * x - 10);
+  }
+  static easeOutExpo(x) {
+    return x === 1 ? 1 : 1 - Math.pow(2, -10 * x);
+  }
+  static easeInOutExpo(x) {
+    return x === 0 ? 0 : x === 1 ? 1 : x < 0.5 ? Math.pow(2, 20 * x - 10) / 2 : (2 - Math.pow(2, -20 * x + 10)) / 2;
+  }
+  static easeInCirc(x) {
+    return 1 - Math.sqrt(1 - Math.pow(x, 2));
+  }
+  static easeOutCirc(x) {
+    return Math.sqrt(1 - Math.pow(x - 1, 2));
+  }
+  static easeInOutCirc(x) {
+    return x < 0.5 ? (1 - Math.sqrt(1 - Math.pow(2 * x, 2))) / 2 : (Math.sqrt(1 - Math.pow(-2 * x + 2, 2)) + 1) / 2;
+  }
+  static easeInBack(x) {
+    return 2.70158 * x * x * x - 1.70158 * x * x;
+  }
+  static easeOutBack(x) {
+    return 1 + 2.70158 * Math.pow(x - 1, 3) + 1.70158 * Math.pow(x - 1, 2);
+  }
+  static easeInOutBack(x) {
+    return x < 0.5 ? Math.pow(2 * x, 2) * (7.18982 * x - 2.59491) / 2 : (Math.pow(2 * x - 2, 2) * (3.59491 * (x * 2 - 2) + 2.59491) + 2) / 2;
+  }
+};
+
+// ts/classes/animation/animation.ts
+var Animation = class {
+  constructor(attr) {
+    this.interval = 0;
+    this.direction = 1;
+    this.data = {};
+    this._active = false;
+    this.bones = attr.bones || {};
+    this.time = attr.time || 0;
+    this.loop = attr.loop || false;
+    this.once = attr.once || false;
+    this.dynamic = attr.dynamic || false;
+    this.bounce = attr.bounce || false;
+    this.defaultEase = attr.defaultEase || "linear";
+    Object.entries(attr.data).forEach(([key, d]) => {
+      if (d.length === 0) {
+        d = [[0], [1]];
+      }
+      if (d[0][0] !== 0) {
+        d.unshift([0, ...d[0].slice(1)]);
+      }
+      if (d[d.length - 1][0] !== 1) {
+        d.push([1, ...d[d.length - 1].slice(1)]);
+      }
+      this.data[key] = d;
+    });
+  }
+  get active() {
+    return this._active;
+  }
+  set active(value) {
+    this._active = value;
+    if (!value) {
+      this.interval = 0;
+    }
+  }
+  setTime(t) {
+    const f = this.interval / this.time;
+    this.time = t;
+    this.interval = t * f;
+  }
+  setBoneTransform(key, transform) {
+    const bone = this.bones[key];
+    if (bone) {
+      bone.setRotation(v3(transform[0] || 0, transform[1] || 0, transform[2] || 0), this.dynamic);
+      bone.setPosition(v3(transform[3] || 0, transform[4] || 0, transform[5] || 0), this.dynamic);
+    }
+  }
+  setBoneToValue(key, value) {
+    if (this.data[key]) {
+      let before = this.data[key][0];
+      let after = this.data[key][this.data[key].length - 1];
+      this.data[key].forEach((d) => {
+        if (d[0] >= before[0] && d[0] <= value) {
+          before = [d[0], Util.padArray(d[1] || [], 0, 7)];
+        }
+        if (d[0] <= after[0] && d[0] >= value) {
+          after = [d[0], Util.padArray(d[1] || [], 0, 7)];
+        }
+      });
+      const [[startNumber, start], [endNumber, end, ease]] = [before, after];
+      const factor = Ease[ease || this.defaultEase]((value - startNumber) / (endNumber - startNumber));
+      if (key === "bowS1") {
+      }
+      this.setBoneTransform(
+        key,
+        Util.addArrays(
+          start || [],
+          Util.scaleArrays(
+            Util.subtractArrays(end || [], start || []),
+            factor
+          )
+        )
+      );
+    }
+  }
+  setBonesToValue(n) {
+    Object.keys(this.bones).forEach((b) => {
+      this.setBoneToValue(b, n);
+    });
+  }
+  stop() {
+  }
+  tick(interval) {
+    if (this.active) {
+      this.interval = this.interval + interval * this.direction;
+      if (this.interval >= this.time) {
+        if (this.bounce) {
+          this.interval = this.time - 1;
+          this.direction = -1;
+        } else if (this.loop) {
+          this.interval = this.interval % this.time;
+        } else if (this.once) {
+          this.interval = this.time - 1;
+        } else {
+          this.active = false;
+          this.interval = 1;
+          return;
+        }
+      }
+      if (this.interval < 0) {
+        if (this.loop) {
+          this.interval = 0;
+          this.direction = 1;
+        } else {
+          this.active = false;
+          this.interval = 0;
+          return;
+        }
+      }
+      this.setBonesToValue(Util.clamp(this.interval / this.time, 1e-3, 0.999));
+    }
+  }
+};
+var Animator = class {
+  constructor(attr) {
+    this.animations = {};
+    this.bones = {};
+    this.bones = attr.bones || {};
+  }
+  add(key, time, data, attr = {}) {
+    this.animations[key] = new Animation({
+      bones: this.bones,
+      loop: attr.loop || false,
+      once: attr.once || false,
+      bounce: attr.bounce || false,
+      dynamic: attr.dynamic || false,
+      defaultEase: attr.ease || "linear",
+      time,
+      data
+    });
+    return this.get(key);
+  }
+  get(key) {
+    return this.animations[key];
+  }
+  stop() {
+    Object.values(this.animations).forEach((a) => {
+      a.active = false;
+    });
+  }
+  play(key) {
+    Object.entries(this.animations).forEach(([k, a]) => {
+      a.active = k === key;
+    });
+  }
+  setToInterval(key, n) {
+    const an = this.get(key);
+    if (an) {
+      an.setBonesToValue(n * an.time);
+    }
+  }
+  replay(key) {
+    this.stop();
+    Object.entries(this.animations).find((k) => k[0] === key)[1].active = true;
+  }
+  tick(interval) {
+    Object.values(this.animations).forEach((a) => a.tick(interval));
+  }
+};
+
+// ts/classes/animation/skeleton.ts
+var Skeleton = class extends GLGroup {
+  constructor(attr = {}) {
+    super(attr);
+    this.bones = {};
+    this.parentage = {};
+    attr.bones.forEach((o) => {
+      this.addBone(o);
+    });
+  }
+  addBone(o) {
+    this.bones[o[0]] = o[1];
+    if (o[2]) {
+      this.parentage[o[0]] = o[2];
+    }
+    if (this.readyState) {
+      if (this.parentage[o[0]]) {
+        this.bones[this.parentage[o[0]]].addChild(o[1]);
+      } else {
+        this.addChild(o[1]);
+      }
+      this.animator.bones = this.bones;
+    }
+  }
+  build() {
+    super.build();
+    Object.entries(this.bones).forEach(([key, b]) => {
+      if (this.parentage[key]) {
+        this.bones[this.parentage[key]].addChild(b);
+      } else {
+        this.addChild(b);
+      }
+    });
+    this.animator = new Animator({ bones: this.bones });
+  }
+  tick(obj) {
+    super.tick(obj);
+    this.animator.tick(obj.intervalS10);
+  }
+};
+
+// ts/classes/animation/skeleton_bone.ts
 var Bone = class extends GLGroup {
   constructor(attr = {}) {
     super(attr);
@@ -4055,7 +3928,198 @@ var BowSkeleton = class extends Skeleton {
   }
 };
 
-// ts/gl/animation/skeleton_human.ts
+// ts/modes/side/player/player_camera.ts
+var FreeCamera = class extends GlController {
+  constructor(target) {
+    super({ autoReady: false });
+    this.target = target;
+    this.type = "controller";
+    this.order = "after";
+    this.lagList = [];
+    this.lagCount = 1;
+  }
+  get active() {
+    return super.active;
+  }
+  set active(value) {
+    super.active = value;
+    if (value) {
+      this.camera.offset = v3(0, -15, 60);
+      this.camera.rotation = v3(0.3, Math.PI / 8, 0);
+      this.camera.fov = 60;
+    }
+  }
+  mouseMove(e) {
+    const r = v2(e.movementX, e.movementY).scale(5e-3);
+    this.camera.rotation = v3(
+      Util.clamp(this.camera.rotation.x + r.y, -1, Math.PI / 2),
+      this.camera.rotation.y + r.x,
+      this.camera.rotation.z
+    );
+  }
+  drag(d) {
+    const r = d.scale(0.01);
+    this.camera.rotation = v3(
+      Util.clamp(this.camera.rotation.x + r.y, -1, Math.PI / 2),
+      this.camera.rotation.y + r.x,
+      this.camera.rotation.z
+    );
+  }
+  scroll(e) {
+    if (!this.parent.aiming) {
+      this.camera.offset.z = Util.clamp(this.camera.offset.z + e.deltaY * 0.1, 10, 300);
+    }
+  }
+  build() {
+    super.build();
+    this.active = true;
+  }
+  keyUp(e) {
+    if (e.key === "e" || e.key === "E") {
+      this.camera.offset = v3(0, -15, 60);
+    }
+  }
+  keyDown(e) {
+    if (e.key === "e" || e.key === "E") {
+      this.camera.offset = v3(-15, -10, 30);
+    }
+  }
+  tick(o) {
+    super.tick(o);
+    const nP = this.target.position.add(this.target.size.multiply(0.5, 0.3, 0.5));
+    while (this.lagList.length < this.lagCount) {
+      this.lagList.push(nP);
+    }
+    this.camera.target = this.lagList.shift();
+  }
+};
+
+// ts/modes/side/player/player_controller.ts
+var PlayerController = class extends GlController {
+  constructor() {
+    super(...arguments);
+    this.intr = { fall: 0, jump: 0, landDelay: 0 };
+    this.stat = { jumping: false, falling: false, running: false };
+    this.cnst = { runTime: 250, runSlowDownFactor: 0.7, runSpeed: 0.5, minJumpTime: 200, jumpTime: 300, jumpSpeed: 0.6 };
+    this.velocity = Vector3.f(0);
+    this.aiming = false;
+  }
+  keyDown(e) {
+    if (e.key === "e" || e.key === "E") {
+      this.aiming = true;
+    }
+  }
+  keyUp(e) {
+    if (e.key === "e" || e.key === "E") {
+      this.aiming = false;
+    }
+  }
+  setMovementVelocity(interval) {
+    const setter = (key, cond, interval2) => {
+      this.intr[key] = Util.clamp((this.intr[key] || 0) + (cond ? interval2 : -(interval2 * this.cnst.runSlowDownFactor)), 0, this.cnst.runTime);
+    };
+    setter("right", this.mode.input.right && !this.mode.input.left, interval);
+    setter("left", this.mode.input.left && !this.mode.input.right, interval);
+    setter("up", this.mode.input.up && !this.mode.input.down, interval);
+    setter("down", this.mode.input.down && !this.mode.input.up, interval);
+    if (!this.aiming) {
+      const plane = v2(
+        (this.intr.right - this.intr.left) / this.cnst.runTime,
+        (this.intr.up - this.intr.down) / this.cnst.runTime
+      ).clampMagnitude(1).scale(this.cnst.runSpeed);
+      this.velocity = v3(
+        plane.x,
+        0,
+        plane.y
+      );
+    } else {
+      this.velocity = v3(0);
+    }
+  }
+  determineStates(interval) {
+    if (this.parent.stat.falling) {
+      this.parent.stat.jumping = false;
+    } else {
+      if (this.parent.stat.jumping) {
+        if (this.intr.jump < this.cnst.minJumpTime) {
+          this.parent.stat.jumping = true;
+          this.parent.stat.falling = false;
+        } else if (this.intr.jump < this.cnst.jumpTime) {
+          this.parent.stat.jumping = this.mode.input.space;
+        } else {
+          this.parent.stat.jumping = false;
+          this.parent.stat.falling = true;
+          this.intr.jump = this.cnst.jumpTime;
+        }
+      } else {
+        this.parent.stat.jumping = this.mode.input.space;
+      }
+    }
+  }
+  setJumpVelocity(interval) {
+    this.determineStates(interval);
+    if (this.parent.stat.jumping) {
+      this.intr.jump = Math.min(this.intr.jump + interval, this.cnst.jumpTime);
+      this.intr.fall = -this.intr.jump;
+    } else if (this.parent.stat.falling) {
+      this.intr.jump = this.cnst.jumpTime;
+      this.intr.fall += interval;
+    } else {
+      this.velocity.y = 0;
+      return;
+    }
+    const y = (this.cnst.jumpTime - this.intr.jump - this.intr.fall) / this.cnst.jumpTime * this.cnst.jumpSpeed;
+    this.velocity.y = y;
+  }
+  setVelocity(obj) {
+    this.setMovementVelocity(obj.intervalS10);
+    this.setJumpVelocity(obj.intervalS10);
+    const sc = this.velocity.scale(obj.intervalS10 / 6);
+    if (sc.xz.magnitude() > 0) {
+      const [x, z] = sc.xz.rotate(-this.camera.rotation.y).array;
+      this.newPosition = this.parent.position.add(v3(x, sc.y, z));
+      if (this.mode.input.right || this.mode.input.left || this.mode.input.up || this.mode.input.down) {
+        this.parent.rotation = this.camera.rotation.multiply(0, 1, 0).add(v3(0, Math.PI / 2, 0)).add(v3(0, -sc.xz.angle(), 0));
+      }
+      this.parent.stat.running = true;
+    } else {
+      this.newPosition = this.parent.position.add(v3(0, sc.y, 0));
+      this.parent.stat.running = false;
+    }
+    if (this.aiming) {
+      this.parent.rotation = this.camera.rotation.multiply(0, 1, 0);
+    }
+  }
+  collide(obj) {
+    this.parent.stat.ground = false;
+    const collisions = this.parent.zones[0].calculateCollision();
+    collisions.forEach((v) => {
+      if (v.y >= 0) {
+        this.intr.fall = 0;
+        this.intr.jump = 0;
+        this.parent.stat.falling = false;
+        this.parent.stat.ground = true;
+      } else {
+        this.parent.stat.falling = true;
+        this.parent.stat.ground = false;
+      }
+      this.velocity.subtract(v);
+      this.parent.position = this.newPosition.clone();
+      this.newPosition = this.newPosition.add(v);
+    });
+    if (!this.parent.stat.jumping) {
+      this.parent.stat.falling = !this.parent.stat.ground;
+    }
+  }
+  tick(obj) {
+    super.tick(obj);
+    this.setVelocity(obj);
+    this.collide(obj);
+    this.parent.position = this.newPosition.clone();
+  }
+};
+
+// ts/classes/animation/skeleton_human.ts
 var HumanSkeleton = class extends Skeleton {
   constructor(attr) {
     super({
@@ -4201,70 +4265,6 @@ var PlayerSkel = class extends HumanSkeleton {
         }
       }
     }
-  }
-};
-
-// ts/gl/zone.ts
-var Zone = class extends GlController {
-  constructor(attr) {
-    super(attr);
-    this.type = "collider";
-    this.overlaps = [];
-    this.fixed = Boolean(attr.fixed);
-    this.absoluteOffset = attr.absoluteOffset || v3();
-  }
-  get globalPosition() {
-    return super.globalPosition.add(this.absoluteOffset);
-  }
-  calculateOverlaps() {
-    this.overlaps = this.level.levelZones.filter(this.overlap.bind(this)) || [];
-  }
-  overlap(othr) {
-    if (this === othr)
-      return false;
-    if (this.fixed)
-      return false;
-    if (this.globalPosition.x + this.size.x < othr.globalPosition.x)
-      return false;
-    if (this.globalPosition.x > othr.globalPosition.x + othr.size.x)
-      return false;
-    if (this.globalPosition.y + this.size.y < othr.globalPosition.y)
-      return false;
-    if (this.globalPosition.y > othr.globalPosition.y + othr.size.y)
-      return false;
-    if (this.globalPosition.z + this.size.z < othr.globalPosition.z)
-      return false;
-    if (this.globalPosition.z > othr.globalPosition.z + othr.size.z)
-      return false;
-    return true;
-  }
-};
-
-// ts/gl/collider.ts
-var Collider = class extends Zone {
-  constructor() {
-    super(...arguments);
-    this.zoneType = "collider";
-  }
-  calculateCollision() {
-    this.calculateOverlaps();
-    return this.overlaps.filter((o) => o.zoneType === "collider").map(this.calculateExitVelocity.bind(this)) || [];
-  }
-  calculateExitVelocity(othr) {
-    return Util.closestVectorMagniture([
-      v3(-(this.globalPosition.x + this.size.x - othr.globalPosition.x), 0, 0),
-      // to the x- of other
-      v3(othr.globalPosition.x + othr.size.x - this.globalPosition.x, 0, 0),
-      // to the x+ of other
-      v3(0, -(this.globalPosition.y + this.size.y - othr.globalPosition.y), 0),
-      // to the y- of other
-      v3(0, othr.globalPosition.y + othr.size.y - this.globalPosition.y, 0),
-      // to the y+ of other
-      v3(0, 0, -(this.globalPosition.z + this.size.z - othr.globalPosition.z)),
-      // to the z- of other
-      v3(0, 0, othr.globalPosition.z + othr.size.z - this.globalPosition.z)
-      // to the z+ of other
-    ], 0);
   }
 };
 

@@ -1,5 +1,5 @@
-import { GLGroup } from '../../../gl/group';
-import { Vector3, v3 } from '../../../gl/math/vector3';
+import { GLGroup } from '../../../classes/group';
+import { Vector3, v3 } from '../../../classes/math/vector3';
 import { Tree1 } from './tree1';
 import { Tree2 } from './tree2';
 import { Tree3 } from './tree3';

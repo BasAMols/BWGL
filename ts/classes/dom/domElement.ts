@@ -1,6 +1,7 @@
-import { Element, ElementAttributes } from "../gl/element";
-import { TickerReturnData } from '../gl/ticker';
-import { Vector2, v2 } from "../gl/math/vector2";
+import { Element, ElementAttributes } from '../element';
+import { Vector2, v2 } from '../math/vector2';
+import { TickerReturnData } from '../ticker';
+
 
 export type DomElementAttributes = ElementAttributes & {
     id?: string,

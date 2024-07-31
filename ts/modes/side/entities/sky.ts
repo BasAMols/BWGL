@@ -1,7 +1,7 @@
-import { Vector3, v3 } from '../../../gl/math/vector3';
-import { GLGroup } from '../../../gl/group';
-import { TickerReturnData } from '../../../gl/ticker';
-import { GLobj } from '../../../gl/objects/obj';
+import { GLGroup } from '../../../classes/group';
+import { Vector3, v3 } from '../../../classes/math/vector3';
+import { GLobj } from '../../../classes/objects/obj';
+import { TickerReturnData } from '../../../classes/ticker';
 
 export class Sky extends GLGroup {
     clouds: GLobj[] = [];

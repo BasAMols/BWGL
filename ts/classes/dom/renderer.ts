@@ -1,9 +1,10 @@
-import { ElementAttributes } from "../gl/element";
-import { Event } from '../gl/event';
-import { Mode } from '../gl/mode';
-import { TickerReturnData } from '../gl/ticker';
-import { Vector2, v2 } from "../gl/math/vector2";
+import { ElementAttributes } from '../element';
+import { Events } from '../event';
+import { Vector2, v2 } from '../math/vector2';
+import { Mode } from '../mode';
+import { TickerReturnData } from '../ticker';
 import { DomElement } from './domElement';
+
 
 export type DomElementAttributes = ElementAttributes & {
     id?: string,
@@ -25,7 +26,7 @@ export class Renderer extends DomElement<'canvas'> {
             this.resize(); 
         });
 
-        this.addEvent(new Event('resize'));
+        this.addEvent(new Events('resize'));
         this.resize();
     }
 

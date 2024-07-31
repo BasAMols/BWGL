@@ -1,14 +1,14 @@
-import { GLCuboid } from '../../../gl/objects/cuboid';
-import { Character } from '../../../gl/character';
-import { Vector3, v3 } from '../../../gl/math/vector3';
-import { GlElement } from '../../../gl/elementBase';
-import { HumanSkeleton } from '../../../gl/animation/skeleton_human';
-import { PlayerController } from './player_controller';
-import { FreeCamera } from './player_camera';
+import { HumanSkeleton } from '../../../classes/animation/skeleton_human';
+import { Character } from '../../../classes/character';
+import { Collider } from '../../../classes/collider';
+import { GlElement } from '../../../classes/elementBase';
+import { Vector3, v3 } from '../../../classes/math/vector3';
+import { GLCuboid } from '../../../classes/objects/cuboid';
+import { TickerReturnData } from '../../../classes/ticker';
 import { BowActor } from './bow';
-import { TickerReturnData } from '../../../gl/ticker';
+import { FreeCamera } from './player_camera';
+import { PlayerController } from './player_controller';
 import { PlayerSkel } from './player_skeleton';
-import { Collider } from '../../../gl/collider';
 
 export class Player extends Character {
     public stat: Record<string, boolean> = { jumping: false, falling: false, running: false, fallAnimation: false };

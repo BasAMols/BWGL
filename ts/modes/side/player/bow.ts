@@ -1,12 +1,13 @@
-import { GlElement, GlElementAttributes } from '../../../gl/elementBase';
-import { GlElementType } from '../../../gl/rendering/glRenderer';
-import { GLGroup } from '../../../gl/group';
-import { GLobj } from '../../../gl/objects/obj';
-import { Skeleton } from '../../../gl/animation/skeleton';
-import { Bone } from '../../../gl/animation/skeleton_bone';
-import { v2 } from '../../../gl/math/vector2';
-import { Vector3, v3 } from '../../../gl/math/vector3';
+import { Skeleton } from '../../../classes/animation/skeleton';
+import { Bone } from '../../../classes/animation/skeleton_bone';
+import { GlElementAttributes, GlElement } from '../../../classes/elementBase';
+import { GLGroup } from '../../../classes/group';
+import { v2 } from '../../../classes/math/vector2';
+import { Vector3, v3 } from '../../../classes/math/vector3';
+import { GLobj } from '../../../classes/objects/obj';
+import { GlElementType } from '../../../classes/rendering/glRenderer';
 import { Player } from './player_actor';
+
 
 export type BowAttributes = GlElementAttributes & {
     parentBone: Bone;

@@ -1,5 +1,5 @@
-import { GLobj } from '../../../gl/objects/obj';
-import { Vector3, v3 } from '../../../gl/math/vector3';
+import { Vector3, v3 } from '../../../classes/math/vector3';
+import { GLobj } from '../../../classes/objects/obj';
 
 export type TreeBaseAttributes = {
     name: string,

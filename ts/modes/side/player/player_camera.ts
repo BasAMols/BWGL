@@ -1,11 +1,12 @@
-import { TickerReturnData } from '../../../gl/ticker';
-import { Character } from '../../../gl/character';
-import { GlElementType } from '../../../gl/rendering/glRenderer';
-import { Vector3, v3 } from '../../../gl/math/vector3';
-import { GlController, GlControllerOrder } from '../../../gl/controller';
-import { Util } from '../../../gl/util/utils';
-import { Vector2, v2 } from '../../../gl/math/vector2';
+import { Character } from '../../../classes/character';
+import { GlController, GlControllerOrder } from '../../../classes/controller';
+import { v2, Vector2 } from '../../../classes/math/vector2';
+import { Vector3, v3 } from '../../../classes/math/vector3';
+import { GlElementType } from '../../../classes/rendering/glRenderer';
+import { TickerReturnData } from '../../../classes/ticker';
+import { Util } from '../../../classes/util/utils';
 import { Player } from './player_actor';
+
 
 export class FreeCamera extends GlController {
     public type: GlElementType = 'controller';

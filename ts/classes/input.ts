@@ -1,8 +1,9 @@
-import { Renderer } from '../dom/renderer';
-import { DomText } from '../dom/domText';
-import { GlElement } from './elementBase';
 import { Game } from '../game';
+import { DomText } from './dom/domText';
+import { Renderer } from './dom/renderer';
+import { GlElement } from './elementBase';
 import { Vector2, v2 } from './math/vector2';
+
 
 export type inputEvents = 'mouseMove' | 'keyDown' | 'keyUp' | 'click' | 'scroll';
 export type inputEventsData = {

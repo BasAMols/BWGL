@@ -1,13 +1,14 @@
-import { GLCuboid } from '../../../gl/objects/cuboid';
-import { Character } from '../../../gl/character';
-import { Vector3, v3 } from '../../../gl/math/vector3';
-import { GlElement } from '../../../gl/elementBase';
-import { TickerReturnData } from '../../../gl/ticker';
-import { GLobj } from '../../../gl/objects/obj';
-import { CarController } from './car_controller';
+import { HumanSkeleton } from '../../../classes/animation/skeleton_human';
+import { Character } from '../../../classes/character';
+import { Collider } from '../../../classes/collider';
+import { GlElement } from '../../../classes/elementBase';
+import { Vector3, v3 } from '../../../classes/math/vector3';
+import { GLCuboid } from '../../../classes/objects/cuboid';
+import { GLobj } from '../../../classes/objects/obj';
+import { TickerReturnData } from '../../../classes/ticker';
 import { CarCamera } from './car_camera';
-import { HumanSkeleton } from '../../../gl/animation/skeleton_human';
-import { Collider } from '../../../gl/collider';
+import { CarController } from './car_controller';
+
 
 export class Driver extends Character {
     public stat: Record<string, boolean> = { jumping: false, falling: false, running: false, fallAnimation: false };

@@ -1,19 +1,19 @@
-import { DomText } from '../../dom/domText';
-import { Color } from '../../gl/util/colors';
-import { Level } from '../../gl/level';
-import { Vector2, v2 } from '../../gl/math/vector2';
-import { v3 } from '../../gl/math/vector3';
-import { Player } from './player/player_actor';
-import { GLobj } from '../../gl/objects/obj';
-import { ObjStorage } from '../../gl/objStorage';
+import { Collider } from '../../classes/collider';
+import { TestObj } from '../../classes/debug/testObj';
+import { DomText } from '../../classes/dom/domText';
+import { Level } from '../../classes/level';
+import { Vector2, v2 } from '../../classes/math/vector2';
+import { v3 } from '../../classes/math/vector3';
+import { ObjStorage } from '../../classes/objStorage';
+import { GLCuboid } from '../../classes/objects/cuboid';
+import { GLobj } from '../../classes/objects/obj';
+import { TickerReturnData } from '../../classes/ticker';
+import { Color } from '../../classes/util/colors';
+import { glob } from '../../game';
 import { Driver } from './car/car_actor';
 import { Sky } from './entities/sky';
-import { TestObj } from '../../gl/debug/testObj';
-import { Collider } from '../../gl/collider';
-import { GLCuboid } from '../../gl/objects/cuboid';
-import { TickerReturnData } from '../../gl/ticker';
+import { Player } from './player/player_actor';
 import { Forrest } from './trees/forrest';
-import { glob } from '../../game';
 
 export class World extends Level {
     public start = Vector2.zero;

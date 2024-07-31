@@ -1,12 +1,13 @@
-import { FPS } from './gl/debug/fps';
-import { Ticker, TickerReturnData } from './gl/ticker';
-import { Input } from './gl/input';
-import { Mode } from './gl/mode';
-import { Renderer } from './dom/renderer';
-import { Loader } from './gl/debug/loader';
-import { GLRenderer } from './gl/rendering/glRenderer';
-import { Level } from './gl/level';
+import { FPS } from './classes/debug/fps';
+import { Loader } from './classes/debug/loader';
+import { Renderer } from './classes/dom/renderer';
+import { Input } from './classes/input';
+import { Level } from './classes/level';
+import { Mode } from './classes/mode';
+import { GLRenderer } from './classes/rendering/glRenderer';
+import { Ticker, TickerReturnData } from './classes/ticker';
 import { OpenWorldMode } from './modes/mode';
+
 
 export var glob = new class{
     public game: Game;

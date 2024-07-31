@@ -1,6 +1,7 @@
-import { DomText } from "../../dom/domText";
-import { TickerReturnData } from '../ticker';
+import { DomText } from '../dom/domText';
 import { Vector2 } from '../math/vector2';
+import { TickerReturnData } from '../ticker';
+
 
 export class FPS extends DomText {
     private fCount: number = 0;

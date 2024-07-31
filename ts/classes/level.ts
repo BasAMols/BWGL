@@ -1,14 +1,15 @@
-import { GlElement, GlElementAttributes } from './elementBase';
-import { Color } from './util/colors';
-import { GlElementType } from './rendering/glRenderer';
-import { Vector2 } from "./math/vector2";
+import { glob } from '../game';
+import { DomElement } from './dom/domElement';
+import { Interface } from './dom/interface';
+import { GlElementAttributes, GlElement } from './elementBase';
+import { Vector2 } from './math/vector2';
 import { Vector3 } from './math/vector3';
 import { GLCuboid } from './objects/cuboid';
+import { GlElementType } from './rendering/glRenderer';
 import { TickerReturnData } from './ticker';
-import { Interface } from '../dom/interface';
-import { DomElement } from '../dom/domElement';
+import { Color } from './util/colors';
 import { Zone } from './zone';
-import { glob } from '../game';
+
 
 export type levelAttributes = GlElementAttributes & {
     size3?: Vector3;

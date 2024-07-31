@@ -1,5 +1,5 @@
 import { Game, glob } from '../game';
-import { Event } from "./event";
+import { Events } from "./event";
 import { GLRenderer } from './rendering/glRenderer';
 import { Level } from './level';
 import { Mode } from './mode';
@@ -13,7 +13,7 @@ export type ElementAttributes = {
 export abstract class Element {
     public abstract rendererType: 'dom' | 'gl';
 
-    private events: Event<unknown>[] = [];
+    private events: Events<unknown>[] = [];
 
     get t(): TickerReturnData {
         return this.game.t;
@@ -45,7 +45,7 @@ export abstract class Element {
         //
     }
 
-    addEvent(e: Event<unknown>) {
+    addEvent(e: Events<unknown>) {
         this.events.push(e);
     }
 

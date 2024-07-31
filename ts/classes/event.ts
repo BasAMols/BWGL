@@ -1,5 +1,5 @@
 export type eventFunction<T> = (v: T) => void;
-export class Event<T> {
+export class Events<T> {
     public id: string;
     private subscribers: Record<string, eventFunction<T>> = {};
     constructor(id: string) {
