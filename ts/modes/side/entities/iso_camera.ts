@@ -1,9 +1,9 @@
-import { TickerReturnData } from '../../gl/ticker';
-import { Character } from '../../gl/character';
-import { GlElementType } from '../../gl/rendering/glRenderer';
-import { Vector3, v3 } from '../../gl/math/vector3';
-import { GlController, GlControllerOrder } from '../../gl/controller';
-import { Util } from '../../gl/util/utils';
+import { TickerReturnData } from '../../../gl/ticker';
+import { Character } from '../../../gl/character';
+import { GlElementType } from '../../../gl/rendering/glRenderer';
+import { Vector3, v3 } from '../../../gl/math/vector3';
+import { GlController, GlControllerOrder } from '../../../gl/controller';
+import { Util } from '../../../gl/util/utils';
 
 export class ISOCamera extends GlController {
     public type: GlElementType = 'controller';
