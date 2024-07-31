@@ -20,7 +20,6 @@ export class RandomTree extends GLGroup {
     public build(): void {
         super.build();
         this.addChild(new ([Tree1, Tree2, Tree3, Tree4, Tree5, Tree6, Tree2, Tree3, Tree4, Tree5, Tree6][Math.floor(Math.random() * 11)])({
-            storage: this.mode.storage,
             rotation: v3(0, Math.random() * Math.PI, 0),
             scale: 0.8 + (0.4 * Math.random())
         }));

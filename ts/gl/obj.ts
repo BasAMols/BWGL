@@ -4,13 +4,12 @@ import { Vector3 } from '../utils/vector3';
 import { GlElementAttributes } from './elementBase';
 import { GLRendable } from './rendable';
 import { GLTexture } from './texture';
-import { ObjStorage } from './objStorage';
+import { glob } from '../game';
 
 export type matData = Record<string, string[]>;
 
 export type GLobjAttributes = GlElementAttributes & {
     url?: string;
-    storage?: ObjStorage;
     opacity?: number;
     colorIntensity?: number;
 };
@@ -66,28 +65,19 @@ export class GLobj extends GLRendable {
 
     constructor(attr: GLobjAttributes = {}) {
         super({ ...attr, ...{ autoReady: false } });
-        
+
         this.opacity = attr.opacity !== undefined ? attr.opacity : 1;
         this.colorIntensity = attr.colorIntensity !== undefined ? attr.colorIntensity : 1;
 
         this.path = attr.url.split('/').slice(0, -1).join('/') + '/';
 
-        if (attr.storage){
-            if (attr.storage.register(attr.url, this)) {
-                this.loadFile(`${window.location.href}/obj/${attr.url}`)
-                    .then(this.parseMtl.bind(this))
-                    .then(this.parseObj.bind(this))
-                    .then(() => {
-                        this.ready();
-                        attr.storage.loaded(attr.url);
-                    });
-            }
-        } else {
+        if (glob.storage.register(attr.url, this)) {
             this.loadFile(`${window.location.href}/obj/${attr.url}`)
                 .then(this.parseMtl.bind(this))
                 .then(this.parseObj.bind(this))
                 .then(() => {
                     this.ready();
+                    glob.storage.loaded(attr.url);
                 });
         }
     }

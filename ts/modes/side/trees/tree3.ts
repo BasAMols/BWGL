@@ -4,7 +4,6 @@ export class Tree3 extends TreeBase {
     constructor(attr: TreeAttributes) {
         super({
             name: 'tree0_3',
-            storage: attr.storage,
             position: attr.position,
             rotation: attr.rotation,
             scale: attr.scale,

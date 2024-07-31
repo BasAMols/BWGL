@@ -19,6 +19,9 @@ export var glob = new class{
     public get level(){
         return this.game.active.level;
     }
+    public get storage() {
+        return this.mode.storage
+    }
 }
 
 export class Game {

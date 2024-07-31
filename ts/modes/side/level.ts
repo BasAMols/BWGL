@@ -50,7 +50,7 @@ export class World extends Level {
             color: 'white',
             text: '0'
         });
-        this.addUi(this.test2d);
+        // this.addUi(this.test2d);
     }
 
     keyDown(e: KeyboardEvent): void {
@@ -77,16 +77,15 @@ export class World extends Level {
             200 * y - 100
         );
         if (Math.random() < 0.5) {
-            this.addChild(new GLobj({ storage: this.mode.storage, url: 'CountrySide-3-GroundTile1.obj', size: v3(20, 20, 20), position: p }));
+            this.addChild(new GLobj({ url: 'CountrySide-3-GroundTile1.obj', size: v3(20, 20, 20), position: p }));
         } else {
-            this.addChild(new GLobj({ storage: this.mode.storage, url: 'CountrySide-2-GroundTile2.obj', size: v3(20, 20, 20), position: p }));
+            this.addChild(new GLobj({ url: 'CountrySide-2-GroundTile2.obj', size: v3(20, 20, 20), position: p }));
         }
 
         for (let rx = 0; rx < 5; rx++) {
             for (let ry = 0; ry < 5; ry++) {
                 if (Math.random() < 0.1) {
                     this.addChild(new GLobj({
-                        storage: this.mode.storage,
                         url: ['CountrySide-6-Vegetation5.obj', 'CountrySide-0-Vegetation3.obj', 'CountrySide-6-Vegetation5.obj', 'CountrySide-8-Rock.obj'][Math.floor(Math.random() * 4)],
                         size: v3(
                             10,
@@ -111,16 +110,16 @@ export class World extends Level {
 
     spawnRoad(x: number, y: number) {
         if (Math.random() < 0.5) {
-            this.addChild(new GLobj({ storage: this.mode.storage, url: 'apoc/VoxelNuke-18-RoadTile-1.obj', size: v3(100, 100, 100), position: v3(x * 200 - 2200, -6, y * 200 - 100) }));
+            this.addChild(new GLobj({ url: 'apoc/VoxelNuke-18-RoadTile-1.obj', size: v3(100, 100, 100), position: v3(x * 200 - 2200, -6, y * 200 - 100) }));
         } else {
-            this.addChild(new GLobj({ storage: this.mode.storage, url: 'apoc/VoxelNuke-17-RoadTile-0.obj', size: v3(100, 100, 100), position: v3(x * 200 - 2000, -6, y * 200 - 100) }));
+            this.addChild(new GLobj({ url: 'apoc/VoxelNuke-17-RoadTile-0.obj', size: v3(100, 100, 100), position: v3(x * 200 - 2000, -6, y * 200 - 100) }));
         }
         for (let i = 0; i < 6; i++) {
             if (Math.random() < 0.2) {
-                this.addChild(new GLobj({ storage: this.mode.storage, url: 'apoc/VoxelNuke-0-Overgrowth-0.obj', size: v3(50, 50, 50), position: v3(x * 200 - 2000 + (i * 33), -4, y * 200 - 55) }));
+                this.addChild(new GLobj({ url: 'apoc/VoxelNuke-0-Overgrowth-0.obj', size: v3(50, 50, 50), position: v3(x * 200 - 2000 + (i * 33), -4, y * 200 - 55) }));
             }
             if (Math.random() < 0.2) {
-                this.addChild(new GLobj({ storage: this.mode.storage, url: 'apoc/VoxelNuke-0-Overgrowth-0.obj', size: v3(50, 50, 50), position: v3(x * 200 - 2000 + (i * 33), -4, (y * 200) - 145), rotation: v3(0, Math.PI, 0) }));
+                this.addChild(new GLobj({ url: 'apoc/VoxelNuke-0-Overgrowth-0.obj', size: v3(50, 50, 50), position: v3(x * 200 - 2000 + (i * 33), -4, (y * 200) - 145), rotation: v3(0, Math.PI, 0) }));
             }
         }
     }
@@ -160,11 +159,11 @@ export class World extends Level {
         }
 
 
-        // this.addChild(new GLobj({ storage: this.mode.storage, url: 'CountrySide-5-House.obj', size: v3(18, 18, 18), position: v3(200, 43, 800), rotation: v3(0, -Math.PI / 2, 0) }));
-        // this.addChild(new GLobj({ storage: this.mode.storage, url: 'CountrySide-4-Vegetation1.obj', size: v3(20, 20, 20), rotation: v3(0, Math.PI, 0), position: v3(-100 - 20, 5, 670) }));
-        // this.addChild(new GLobj({ storage: this.mode.storage, url: 'CountrySide-4-Vegetation1.obj', size: v3(25, 25, 25), rotation: v3(0, 0, 0), position: v3(-20 - 20, 6, 760) }));
-        // this.addChild(new GLobj({ storage: this.mode.storage, url: 'CountrySide-4-Vegetation1.obj', size: v3(25, 25, 25), rotation: v3(0, Math.PI / 2, 0), position: v3(0 - 20, 3, 670) }));
-        // this.addChild(new GLobj({ storage: this.mode.storage, url: 'Plane01.obj', size: v3(30, 30, 30), position: v3(420, 16, 720), rotation: v3(0, Math.PI / 4 + Math.PI / 2, -0.12) }));
+        // this.addChild(new GLobj({ url: 'CountrySide-5-House.obj', size: v3(18, 18, 18), position: v3(200, 43, 800), rotation: v3(0, -Math.PI / 2, 0) }));
+        // this.addChild(new GLobj({ url: 'CountrySide-4-Vegetation1.obj', size: v3(20, 20, 20), rotation: v3(0, Math.PI, 0), position: v3(-100 - 20, 5, 670) }));
+        // this.addChild(new GLobj({ url: 'CountrySide-4-Vegetation1.obj', size: v3(25, 25, 25), rotation: v3(0, 0, 0), position: v3(-20 - 20, 6, 760) }));
+        // this.addChild(new GLobj({ url: 'CountrySide-4-Vegetation1.obj', size: v3(25, 25, 25), rotation: v3(0, Math.PI / 2, 0), position: v3(0 - 20, 3, 670) }));
+        // this.addChild(new GLobj({ url: 'Plane01.obj', size: v3(30, 30, 30), position: v3(420, 16, 720), rotation: v3(0, Math.PI / 4 + Math.PI / 2, -0.12) }));
 
         // this.addChild(new GLobj({
         //     controllers: [new Collider({
@@ -176,7 +175,7 @@ export class World extends Level {
         //         size: v3(97-30, 20, 98),
         //         position: v3(-144+15, 0, 122),
         //         fixed: true
-        //     })], storage: this.mode.storage, url: 'Medieval Town - Pack 1-0.obj', size: v3(10, 10, 10), position: v3(0, -1, 500)
+        //     })], url: 'Medieval Town - Pack 1-0.obj', size: v3(10, 10, 10), position: v3(0, -1, 500)
         // }));
 
         this.addChild(new Forrest({
@@ -209,20 +208,20 @@ export class World extends Level {
         //         size: v3(97, 200, 98),
         //         position: v3(-144 + 97, 0, 143),
         //         fixed: true
-        //     })], storage: this.mode.storage, url: 'Medieval Town - Pack 1-1.obj', size: v3(10, 10, 10), position: v3(0, -1, 500)
+        //     })], url: 'Medieval Town - Pack 1-1.obj', size: v3(10, 10, 10), position: v3(0, -1, 500)
         // }));
         // this.addChild(new GLobj({
         //     controllers: [new Collider({
         //         size: v3(97, 200, 98),
         //         position: v3(-144 - 97, 0, 143),
         //         fixed: true
-        //     })], storage: this.mode.storage, url: 'Medieval Town - Pack 1-2.obj', size: v3(10, 10, 10), position: v3(0, -1, 500)
+        //     })], url: 'Medieval Town - Pack 1-2.obj', size: v3(10, 10, 10), position: v3(0, -1, 500)
         // }));
         // this.addChild(new GLobj({ controllers: [new Collider({
         //     size: v3(190, 200, 150),
         //     position: v3(-90, 0, 153),
         //     fixed: true
-        // })], storage: this.mode.storage, url: 'Nuclear Survival - Pack 6 - m.obj', size: v3(10, 10, 10), position: v3(0, -6, 300), rotation: v3(0, -Math.PI / 2, 0) }));
+        // })], url: 'Nuclear Survival - Pack 6 - m.obj', size: v3(10, 10, 10), position: v3(0, -6, 300), rotation: v3(0, -Math.PI / 2, 0) }));
 
         // this.addChild(this.test = new TestObj({ size: v3(1, 1, 1) }));
 

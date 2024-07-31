@@ -38,7 +38,7 @@ export class Driver extends Character {
 
     build() {
         GlElement.registerControllers(this);
-        this.addChild(new GLobj({ storage: this.mode.storage, url: 'Shop-3-Car.obj', size: v3(18, 18, 18), position: v3(18, 12, 47), rotation: v3(0, -Math.PI / 2, 0) }));
+        this.addChild(new GLobj({  url: 'Shop-3-Car.obj', size: v3(18, 18, 18), position: v3(18, 12, 47), rotation: v3(0, -Math.PI / 2, 0) }));
     }
 
     public tick(obj: TickerReturnData): void {

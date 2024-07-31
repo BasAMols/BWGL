@@ -3115,16 +3115,10 @@ var GLobj = class extends GLRendable {
     this.opacity = attr.opacity !== void 0 ? attr.opacity : 1;
     this.colorIntensity = attr.colorIntensity !== void 0 ? attr.colorIntensity : 1;
     this.path = attr.url.split("/").slice(0, -1).join("/") + "/";
-    if (attr.storage) {
-      if (attr.storage.register(attr.url, this)) {
-        this.loadFile("".concat(window.location.href, "/obj/").concat(attr.url)).then(this.parseMtl.bind(this)).then(this.parseObj.bind(this)).then(() => {
-          this.ready();
-          attr.storage.loaded(attr.url);
-        });
-      }
-    } else {
+    if (glob.storage.register(attr.url, this)) {
       this.loadFile("".concat(window.location.href, "/obj/").concat(attr.url)).then(this.parseMtl.bind(this)).then(this.parseObj.bind(this)).then(() => {
         this.ready();
+        glob.storage.loaded(attr.url);
       });
     }
   }
@@ -4319,7 +4313,6 @@ var Player = class extends Character {
 var TreeBase = class extends GLobj {
   constructor(attr) {
     super({
-      storage: attr.storage,
       url: "treeModels/".concat(attr.name, ".obj"),
       rotation: attr.rotation || v3(),
       size: v3(70, 70, 70).scale(attr.scale || 1),
@@ -4333,7 +4326,6 @@ var Tree1 = class extends TreeBase {
   constructor(attr) {
     super({
       name: "tree0_1",
-      storage: attr.storage,
       position: attr.position,
       rotation: attr.rotation,
       scale: attr.scale * 0.7
@@ -4346,7 +4338,6 @@ var Tree2 = class extends TreeBase {
   constructor(attr) {
     super({
       name: "tree0_2",
-      storage: attr.storage,
       position: attr.position,
       rotation: attr.rotation,
       scale: attr.scale
@@ -4359,7 +4350,6 @@ var Tree3 = class extends TreeBase {
   constructor(attr) {
     super({
       name: "tree0_3",
-      storage: attr.storage,
       position: attr.position,
       rotation: attr.rotation,
       scale: attr.scale
@@ -4372,7 +4362,6 @@ var Tree4 = class extends TreeBase {
   constructor(attr) {
     super({
       name: "tree0_4",
-      storage: attr.storage,
       position: attr.position,
       rotation: attr.rotation,
       scale: attr.scale
@@ -4385,7 +4374,6 @@ var Tree5 = class extends TreeBase {
   constructor(attr) {
     super({
       name: "tree0_5",
-      storage: attr.storage,
       position: attr.position,
       rotation: attr.rotation,
       scale: attr.scale
@@ -4398,7 +4386,6 @@ var Tree6 = class extends TreeBase {
   constructor(attr) {
     super({
       name: "tree0_6",
-      storage: attr.storage,
       position: attr.position,
       rotation: attr.rotation,
       scale: attr.scale
@@ -4416,7 +4403,6 @@ var RandomTree = class extends GLGroup {
   build() {
     super.build();
     this.addChild(new [Tree1, Tree2, Tree3, Tree4, Tree5, Tree6, Tree2, Tree3, Tree4, Tree5, Tree6][Math.floor(Math.random() * 11)]({
-      storage: this.mode.storage,
       rotation: v3(0, Math.random() * Math.PI, 0),
       scale: 0.8 + 0.4 * Math.random()
     }));
@@ -4471,7 +4457,6 @@ var World = class extends Level {
       color: "white",
       text: "0"
     });
-    this.addUi(this.test2d);
   }
   keyDown(e) {
     if (e.key === "Enter") {
@@ -4495,15 +4480,14 @@ var World = class extends Level {
       200 * y - 100
     );
     if (Math.random() < 0.5) {
-      this.addChild(new GLobj({ storage: this.mode.storage, url: "CountrySide-3-GroundTile1.obj", size: v3(20, 20, 20), position: p }));
+      this.addChild(new GLobj({ url: "CountrySide-3-GroundTile1.obj", size: v3(20, 20, 20), position: p }));
     } else {
-      this.addChild(new GLobj({ storage: this.mode.storage, url: "CountrySide-2-GroundTile2.obj", size: v3(20, 20, 20), position: p }));
+      this.addChild(new GLobj({ url: "CountrySide-2-GroundTile2.obj", size: v3(20, 20, 20), position: p }));
     }
     for (let rx = 0; rx < 5; rx++) {
       for (let ry = 0; ry < 5; ry++) {
         if (Math.random() < 0.1) {
           this.addChild(new GLobj({
-            storage: this.mode.storage,
             url: ["CountrySide-6-Vegetation5.obj", "CountrySide-0-Vegetation3.obj", "CountrySide-6-Vegetation5.obj", "CountrySide-8-Rock.obj"][Math.floor(Math.random() * 4)],
             size: v3(
               10,
@@ -4527,16 +4511,16 @@ var World = class extends Level {
   }
   spawnRoad(x, y) {
     if (Math.random() < 0.5) {
-      this.addChild(new GLobj({ storage: this.mode.storage, url: "apoc/VoxelNuke-18-RoadTile-1.obj", size: v3(100, 100, 100), position: v3(x * 200 - 2200, -6, y * 200 - 100) }));
+      this.addChild(new GLobj({ url: "apoc/VoxelNuke-18-RoadTile-1.obj", size: v3(100, 100, 100), position: v3(x * 200 - 2200, -6, y * 200 - 100) }));
     } else {
-      this.addChild(new GLobj({ storage: this.mode.storage, url: "apoc/VoxelNuke-17-RoadTile-0.obj", size: v3(100, 100, 100), position: v3(x * 200 - 2e3, -6, y * 200 - 100) }));
+      this.addChild(new GLobj({ url: "apoc/VoxelNuke-17-RoadTile-0.obj", size: v3(100, 100, 100), position: v3(x * 200 - 2e3, -6, y * 200 - 100) }));
     }
     for (let i = 0; i < 6; i++) {
       if (Math.random() < 0.2) {
-        this.addChild(new GLobj({ storage: this.mode.storage, url: "apoc/VoxelNuke-0-Overgrowth-0.obj", size: v3(50, 50, 50), position: v3(x * 200 - 2e3 + i * 33, -4, y * 200 - 55) }));
+        this.addChild(new GLobj({ url: "apoc/VoxelNuke-0-Overgrowth-0.obj", size: v3(50, 50, 50), position: v3(x * 200 - 2e3 + i * 33, -4, y * 200 - 55) }));
       }
       if (Math.random() < 0.2) {
-        this.addChild(new GLobj({ storage: this.mode.storage, url: "apoc/VoxelNuke-0-Overgrowth-0.obj", size: v3(50, 50, 50), position: v3(x * 200 - 2e3 + i * 33, -4, y * 200 - 145), rotation: v3(0, Math.PI, 0) }));
+        this.addChild(new GLobj({ url: "apoc/VoxelNuke-0-Overgrowth-0.obj", size: v3(50, 50, 50), position: v3(x * 200 - 2e3 + i * 33, -4, y * 200 - 145), rotation: v3(0, Math.PI, 0) }));
       }
     }
   }
@@ -4604,6 +4588,9 @@ var glob = new class {
   }
   get level() {
     return this.game.active.level;
+  }
+  get storage() {
+    return this.mode.storage;
   }
 }();
 var Game2 = class {
