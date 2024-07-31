@@ -1,5 +1,5 @@
 import { Game } from '../game';
-import { Color } from '../utils/colors';
+import { Color } from './util/colors';
 
 export type GLTextureAttributes = {
     url?: string;

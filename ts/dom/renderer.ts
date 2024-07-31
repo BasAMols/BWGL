@@ -1,8 +1,8 @@
-import { ElementAttributes } from "../utils/element";
-import { Event } from '../utils/event';
-import { Mode } from '../utils/mode';
-import { TickerReturnData } from '../utils/ticker';
-import { Vector2, v2 } from "../utils/vector2";
+import { ElementAttributes } from "../gl/element";
+import { Event } from '../gl/event';
+import { Mode } from '../gl/mode';
+import { TickerReturnData } from '../gl/ticker';
+import { Vector2, v2 } from "../gl/math/vector2";
 import { DomElement } from './domElement';
 
 export type DomElementAttributes = ElementAttributes & {

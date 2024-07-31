@@ -1,10 +1,10 @@
-import { GLCuboid } from '../gl/cuboid';
-import { Vector3, v3 } from './vector3';
-import { GlElementAttributes } from '../gl/elementBase';
-import { TickerReturnData } from './ticker';
-import { GLGroup } from '../gl/group';
-import { Color } from './colors';
-import { Vector2, v2 } from './vector2';
+import { GLCuboid } from '../objects/cuboid';
+import { Vector3, v3 } from '../math/vector3';
+import { GlElementAttributes } from '../elementBase';
+import { TickerReturnData } from '../ticker';
+import { GLGroup } from '../group';
+import { Color } from '../util/colors';
+import { Vector2, v2 } from '../math/vector2';
 
 
 export type BoneAttributes = GlElementAttributes & {

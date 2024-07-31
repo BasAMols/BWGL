@@ -1,10 +1,10 @@
-import { GlElementType } from './glRenderer';
-import { Color, Colors } from '../utils/colors';
-import { Vector3 } from '../utils/vector3';
-import { GLRendable, GLRendableAttributes } from './rendable';
-import { GLTexture } from './texture';
+import { GlElementType } from '../rendering/glRenderer';
+import { Color, Colors } from '../util/colors';
+import { Vector3 } from '../math/vector3';
+import { GLRendable, GLRendableAttributes } from '../rendable';
+import { GLTexture } from '../texture';
 
-export type GlCuboidAttributes = GLRendableAttributes & {
+export type GlMeshAttributes = GLRendableAttributes & {
     colors?: [Color, Color?, Color?, Color?, Color?, Color?],
     textureUrl?: string,
     size: Vector3;
@@ -17,33 +17,21 @@ export type bufferData = {
     texture: number[],
 };
 
-export class GLCuboid extends GLRendable {
+export class GLPyramid extends GLRendable {
     public texture: GLTexture;
     public type: GlElementType = 'mesh';
     public colors: [number, number, number, number][] = [];
-    public verticesCount = 36;
+    public verticesCount = 30;
     public dimensions = 0 | 1 | 2 | 3;
     public textureUrl: string;
-    private faceCount: number;
+    private faceCount = 5;
 
-    public get size(): Vector3 {
-        return super.size;
-    }
-    public set size(value: Vector3) {
-        super.size = value;
-        if (this.parent){
-            this.buffer.positionBuffer = this.GLT.createBuffer(this.positionBuffer(this.size))
-        }
-    }
-
-    constructor(attr: GlCuboidAttributes) {
+    constructor(attr: GlMeshAttributes) {
         super(attr);
         this.dimensions = attr.size.array.filter((v) => v !== 0).length;
         if (this.dimensions < 2) {
             return;
         }
-        this.verticesCount = this.dimensions === 3 ? 36 : 6;
-        this.faceCount = this.dimensions === 3 ? 6 : 1;
         this.textureUrl = attr.textureUrl;
 
         if (attr.colors) this.colors = attr.colors;
@@ -70,32 +58,20 @@ export class GLCuboid extends GLRendable {
     }
 
     protected positionBuffer(size: Vector3) {
-        return GLCuboid.scale(
-            GLCuboid.sliceToDimension(
-                this.getBufferData().position,
-                this.size,
-                72
-            ),
+        return GLPyramid.scale(
+            this.getBufferData().position,
             size
         );
     }
 
     protected normalBuffer() {
-        return GLCuboid.sliceToDimension(
-            this.getBufferData().normal,
-            this.size,
-            72
-        );
+        return this.getBufferData().normal;
     }
 
     protected textureBuffer() {
         let b: number[] = [];
         if (this.textureUrl) {
-            return GLCuboid.sliceToDimension(
-                this.getBufferData().texture,
-                this.size,
-                48
-            );
+            return this.getBufferData().texture;
         } else {
             const inc = 1 / this.faceCount;
 
@@ -125,71 +101,58 @@ export class GLCuboid extends GLRendable {
             12, 14, 15,
             16, 17, 18,
             16, 18, 19,
-            20, 21, 22,
-            20, 22, 23
         ];
     }
     protected getPositionBufferData(): number[] {
         return [
-            0.0, 0.0, -1.0,
-            1.0, 0.0, -1.0,
+            0.0, 0.0, -1.0, 1.0, 0.0, -1.0,
+            0.5, 1.0, -0.5, 0.5, 1.0, -0.5,
 
-            1.0, 1.0, -1.0,
-            0.0, 1.0, -1.0,
+            0.0, 0.0, -0.0, 0.5, 1.0, -0.5,
+            0.5, 1.0, -0.5, 1, 0.0, -0.0,
 
-            0.0, 0.0, -0.0,
-            0.0, 1.0, -0.0,
+            0.0, 0.0, -0.0, 1.0, 0.0, -0.0,
+            1.0, 0.0, -1.0, 0.0, 0.0, -1.0,
 
-            1.0, 1.0, -0.0,
-            1.0, 0.0, -0.0,
+            1.0, 0.0, -0.0, 0.5, 1.0, -0.5,
+            0.5, 1.0, -0.5, 1.0, 0.0, -1.0,
 
-            0.0, 1.0, -0.0,
-            0.0, 1.0, -1.0,
-
-            1.0, 1.0, -1.0,
-            1.0, 1.0, -0.0,
-
-            0.0, 0.0, -0.0,
-            1.0, 0.0, -0.0,
-
-            1.0, 0.0, -1.0,
-            0.0, 0.0, -1.0,
-
-            1.0, 0.0, -0.0,
-            1.0, 1.0, -0.0,
-
-            1.0, 1.0, -1.0,
-            1.0, 0.0, -1.0,
-
-            0.0, 0.0, -0.0,
-            0.0, 0.0, -1.0,
-
-            0.0, 1.0, -1.0,
-            0.0, 1.0, -0.0
+            0.0, 0.0, -0.0, 0.0, 0.0, -1.0,
+            0.5, 1.0, -0.5, 0.5, 1.0, -0.5
         ];
     }
     protected getNormalBufferData(): number[] {
         return [
-            0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0,
-            0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0,
-            0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0,
-            0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0,
-            1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0,
-            -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0,
+            0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 
+            0.0, 0.0, -1.0, 0.0, 0.0, -1.0,
+
+            0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 
+            0.0, 0.0, 1.0, 0.0, 0.0, 1.0,
+
+            0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 
+            0.0, -1.0, 0.0, 0.0, -1.0, 0.0,
+
+            1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 
+            1.0, 0.0, 0.0, 1.0, 0.0, 0.0,
+
+            -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, 
+            -1.0, 0.0, 0.0, -1.0, 0.0, 0.0,
         ];
     }
     protected getTextureBufferData(): number[] {
         return [
             0.0, 0.0, 1.0, 0.0,
             1.0, 1.0, 0.0, 1.0,
+
             0.0, 0.0, 1.0, 0.0,
             1.0, 1.0, 0.0, 1.0,
+
             0.0, 0.0, 1.0, 0.0,
             1.0, 1.0, 0.0, 1.0,
+
             0.0, 0.0, 1.0, 0.0,
             1.0, 1.0, 0.0, 1.0,
-            0.0, 0.0, 1.0, 0.0,
-            1.0, 1.0, 0.0, 1.0,
+
             0.0, 0.0, 1.0, 0.0,
             1.0, 1.0, 0.0, 1.0,
         ];
@@ -201,14 +164,6 @@ export class GLCuboid extends GLRendable {
             normal: this.getNormalBufferData(),
             texture: this.getTextureBufferData(),
         };
-    }
-
-    public static sliceToDimension(array: number[], size: Vector3, total: number): number[] {
-        const s = total / 6;
-        if (size.z === 0) array = array.slice(0, s * 1);
-        else if (size.x === 0) array = array.slice(s * 5, s * 6);
-        else if (size.y === 0) array = array.slice(s * 3, s * 4);
-        return array;
     }
 
     public static scale(array: number[], size?: Vector3): number[] {

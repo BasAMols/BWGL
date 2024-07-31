@@ -1,10 +1,10 @@
 import { Game, glob } from '../game';
 import { Event } from "./event";
-import { GLRenderer } from '../gl/glRenderer';
+import { GLRenderer } from './rendering/glRenderer';
 import { Level } from './level';
 import { Mode } from './mode';
 import { TickerReturnData } from './ticker';
-import { GLTranslator } from '../gl/glTranslator';
+import { GLTranslator } from './rendering/glTranslator';
 
 export type ElementAttributes = {
     

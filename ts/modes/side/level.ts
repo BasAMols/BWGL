@@ -1,17 +1,17 @@
 import { DomText } from '../../dom/domText';
-import { Color } from '../../utils/colors';
-import { Level } from '../../utils/level';
-import { Vector2, v2 } from '../../utils/vector2';
-import { v3 } from '../../utils/vector3';
+import { Color } from '../../gl/util/colors';
+import { Level } from '../../gl/level';
+import { Vector2, v2 } from '../../gl/math/vector2';
+import { v3 } from '../../gl/math/vector3';
 import { Player } from './player_actor';
-import { GLobj } from '../../gl/obj';
+import { GLobj } from '../../gl/objects/obj';
 import { ObjStorage } from '../../gl/objStorage';
 import { Driver } from './car_actor';
 import { Sky } from './sky';
-import { TestObj } from '../../gl/testObj';
-import { Collider } from '../../utils/collider';
-import { GLCuboid } from '../../gl/cuboid';
-import { TickerReturnData } from '../../utils/ticker';
+import { TestObj } from '../../gl/debug/testObj';
+import { Collider } from '../../gl/collider';
+import { GLCuboid } from '../../gl/objects/cuboid';
+import { TickerReturnData } from '../../gl/ticker';
 import { Forrest } from './trees/forrest';
 import { glob } from '../../game';
 

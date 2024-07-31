@@ -1,10 +1,10 @@
-import { Color } from '../utils/colors';
-import { GlElementType } from './glRenderer';
-import { Vector3 } from '../utils/vector3';
-import { GlElementAttributes } from './elementBase';
-import { GLRendable } from './rendable';
-import { GLTexture } from './texture';
-import { glob } from '../game';
+import { Color } from '../util/colors';
+import { GlElementType } from '../rendering/glRenderer';
+import { Vector3 } from '../math/vector3';
+import { GlElementAttributes } from '../elementBase';
+import { GLRendable } from '../rendable';
+import { GLTexture } from '../texture';
+import { glob } from '../../game';
 
 export type matData = Record<string, string[]>;
 

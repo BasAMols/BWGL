@@ -1,7 +1,7 @@
 import { GLGroup } from '../../../gl/group';
 import { ObjStorage } from '../../../gl/objStorage';
-import { Vector2 } from '../../../utils/vector2';
-import { Vector3, v3 } from '../../../utils/vector3';
+import { Vector2 } from '../../../gl/math/vector2';
+import { Vector3, v3 } from '../../../gl/math/vector3';
 import { RandomTree } from './randomTree';
 
 export type ForrestAttributes = {

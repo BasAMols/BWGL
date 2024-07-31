@@ -1,9 +1,9 @@
-import { GlElement, GlElementAttributes } from '../gl/elementBase';
-import { GLCuboid as GlCuboid, GlCuboidAttributes } from '../gl/cuboid';
-import { Color, Colors } from './colors';
-import { Vector3, v3 } from './vector3';
-import { GLGroup } from '../gl/group';
-import { GLPyramid } from '../gl/pyramid';
+import { GlElement, GlElementAttributes } from './elementBase';
+import { GLCuboid as GlCuboid, GlCuboidAttributes } from './objects/cuboid';
+import { Color, Colors } from './util/colors';
+import { Vector3, v3 } from './math/vector3';
+import { GLGroup } from './group';
+import { GLPyramid } from './objects/pyramid';
 
 
 export type ArrowAttributes = GlElementAttributes & {

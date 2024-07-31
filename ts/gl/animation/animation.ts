@@ -1,7 +1,7 @@
-import { Ease, EaseKeys } from './ease';
+import { Ease, EaseKeys } from '../util/ease';
 import { Bone } from './skeleton_bone';
-import { Util } from './utils';
-import { v3 } from './vector3';
+import { Util } from '../util/utils';
+import { v3 } from '../math/vector3';
 
 export type aniBoneTransform = [number?, number?, number?, number?, number?, number?];
 export type aniBoneData = [number, aniBoneTransform?, EaseKeys?];

@@ -1,9 +1,9 @@
-import { GlElement, GlElementAttributes } from '../gl/elementBase';
-import { Color } from './colors';
-import { GlElementType } from '../gl/glRenderer';
-import { Vector2 } from "./vector2";
-import { Vector3 } from './vector3';
-import { GLCuboid } from '../gl/cuboid';
+import { GlElement, GlElementAttributes } from './elementBase';
+import { Color } from './util/colors';
+import { GlElementType } from './rendering/glRenderer';
+import { Vector2 } from "./math/vector2";
+import { Vector3 } from './math/vector3';
+import { GLCuboid } from './objects/cuboid';
 import { TickerReturnData } from './ticker';
 import { Interface } from '../dom/interface';
 import { DomElement } from '../dom/domElement';

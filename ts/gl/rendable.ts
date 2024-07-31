@@ -1,5 +1,5 @@
-import { buffers } from './glRenderer';
-import { Vector3 } from '../utils/vector3';
+import { buffers } from './rendering/glRenderer';
+import { Vector3 } from './math/vector3';
 import { GlElement, GlElementAttributes } from './elementBase';
 import { GLTexture } from './texture';
 

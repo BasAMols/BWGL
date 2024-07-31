@@ -1,5 +1,5 @@
-import { Util } from './utils';
-import { Vector3, v3 } from './vector3';
+import { Util } from './util/utils';
+import { Vector3, v3 } from './math/vector3';
 import { Zone, ZoneType } from './zone';
 
 

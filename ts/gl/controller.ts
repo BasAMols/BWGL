@@ -1,6 +1,6 @@
 import { GlElement } from './elementBase';
 import { Character } from './character';
-import { GlElementType } from './glRenderer';
+import { GlElementType } from './rendering/glRenderer';
 export type GlControllerOrder = 'before'|'after';
 export class GlController extends GlElement {
     public type: GlElementType = 'controller';

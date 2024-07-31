@@ -1,9 +1,9 @@
-import { GlElement, GlElementAttributes } from '../gl/elementBase';
-import { GLCuboid as GlCuboid } from '../gl/cuboid';
-import { GLGroup } from '../gl/group';
-import { Colors } from '../utils/colors';
-import { v3 } from '../utils/vector3';
-import { TickerReturnData } from '../utils/ticker';
+import { GlElement, GlElementAttributes } from '../elementBase';
+import { GLCuboid as GlCuboid } from '../objects/cuboid';
+import { GLGroup } from '../group';
+import { Colors } from '../util/colors';
+import { v3 } from '../math/vector3';
+import { TickerReturnData } from '../ticker';
 
 export class TestObj extends GLGroup {
     r1: GlCuboid;

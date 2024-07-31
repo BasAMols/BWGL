@@ -1,6 +1,6 @@
-import { Skeleton } from '../utils/skeleton';
+import { Skeleton } from './animation/skeleton';
 import { GlElement, GlElementAttributes } from './elementBase';
-import { GlElementType } from './glRenderer';
+import { GlElementType } from './rendering/glRenderer';
 
 export type CharacterAttributes = GlElementAttributes & {
 }

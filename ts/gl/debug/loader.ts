@@ -1,6 +1,6 @@
 import { DomElement } from '../../dom/domElement';
 import { DomText } from "../../dom/domText";
-import { Vector2 } from '../vector2';
+import { Vector2 } from '../math/vector2';
 
 export class Loader extends DomElement<'div'> {
     bar: DomElement<'div'>;

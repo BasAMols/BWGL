@@ -1,5 +1,5 @@
 import { mat4 } from 'gl-matrix';
-import { Game } from '../game';
+import { Game } from '../../game';
 import { GLRenderer } from './glRenderer';
 import { attributes, initShaderProgram, uniforms } from './glrInit';
 

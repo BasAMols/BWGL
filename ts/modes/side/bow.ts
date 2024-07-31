@@ -1,11 +1,11 @@
 import { GlElement, GlElementAttributes } from '../../gl/elementBase';
-import { GlElementType } from '../../gl/glRenderer';
+import { GlElementType } from '../../gl/rendering/glRenderer';
 import { GLGroup } from '../../gl/group';
-import { GLobj } from '../../gl/obj';
-import { Skeleton } from '../../utils/skeleton';
-import { Bone } from '../../utils/skeleton_bone';
-import { v2 } from '../../utils/vector2';
-import { Vector3, v3 } from '../../utils/vector3';
+import { GLobj } from '../../gl/objects/obj';
+import { Skeleton } from '../../gl/animation/skeleton';
+import { Bone } from '../../gl/animation/skeleton_bone';
+import { v2 } from '../../gl/math/vector2';
+import { Vector3, v3 } from '../../gl/math/vector3';
 import { Player } from './player_actor';
 
 export type BowAttributes = GlElementAttributes & {

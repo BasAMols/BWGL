@@ -1,8 +1,8 @@
-import { GLobj } from '../../gl/obj';
-import { v3 } from '../../utils/vector3';
-import { HumanSkeleton } from '../../utils/skeleton_human';
+import { GLobj } from '../../gl/objects/obj';
+import { v3 } from '../../gl/math/vector3';
+import { HumanSkeleton } from '../../gl/animation/skeleton_human';
 import { Player } from './player_actor';
-import { TickerReturnData } from '../../utils/ticker';
+import { TickerReturnData } from '../../gl/ticker';
 
 export class PlayerSkel extends HumanSkeleton {
 

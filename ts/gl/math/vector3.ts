@@ -1,6 +1,6 @@
 import { vec3 } from 'gl-matrix';
 import { Vector2, v2 } from './vector2';
-import { Util } from './utils';
+import { Util } from '../util/utils';
 
 export function v3(): Vector3;
 export function v3(a?: [number?, number?, number?]): Vector3;

@@ -1,9 +1,9 @@
 import { GlController } from '../../gl/controller';
 import { Character } from '../../gl/character';
-import { TickerReturnData } from '../../utils/ticker';
-import { Util } from '../../utils/utils';
-import { Vector3, v3 } from '../../utils/vector3';
-import { Vector2 } from '../../utils/vector2';
+import { TickerReturnData } from '../../gl/ticker';
+import { Util } from '../../gl/util/utils';
+import { Vector3, v3 } from '../../gl/math/vector3';
+import { Vector2 } from '../../gl/math/vector2';
 import { GlElementAttributes } from '../../gl/elementBase';
 
 export class CarController extends GlController {

@@ -1,7 +1,7 @@
-import { Vector3, v3 } from '../../utils/vector3';
+import { Vector3, v3 } from '../../gl/math/vector3';
 import { GLGroup } from '../../gl/group';
-import { TickerReturnData } from '../../utils/ticker';
-import { GLobj } from '../../gl/obj';
+import { TickerReturnData } from '../../gl/ticker';
+import { GLobj } from '../../gl/objects/obj';
 
 export class Sky extends GLGroup {
     clouds: GLobj[] = [];
@@ -13,14 +13,14 @@ export class Sky extends GLGroup {
 
     createBigCloud(p: Vector3 = v3(0), s: Vector3 = v3(2000, 0, 2000)) {
         const sc = 200 + 100 * Math.random();
-        const c = new GLobj({ storage: this.mode.storage, position: p, rotation: v3(0, Math.random() * Math.PI * 2, 0), size: v3(sc,sc,sc), url: 'cloud2.obj' });
+        const c = new GLobj({ position: p, rotation: v3(0, Math.random() * Math.PI * 2, 0), size: v3(sc,sc,sc), url: 'cloud2.obj' });
         this.bigClouds.push(c);
         c.opacity = 0.5;
         this.addChild(c);
     }
     createCloud(p: Vector3 = v3(0), s: Vector3 = v3(500, 0, 500)) {
         const sc = 50 + 50 * Math.random();
-        const c = new GLobj({ storage: this.mode.storage, position: p, rotation: v3(0, Math.random() * Math.PI * 2, 0), size: v3(sc,sc,sc), url: 'cloud2.obj' });
+        const c = new GLobj({ position: p, rotation: v3(0, Math.random() * Math.PI * 2, 0), size: v3(sc,sc,sc), url: 'cloud2.obj' });
         this.addChild(c);
         c.opacity = 0.5;
         this.clouds.push(c);

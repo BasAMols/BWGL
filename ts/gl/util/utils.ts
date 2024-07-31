@@ -1,4 +1,4 @@
-import { Vector3 } from './vector3';
+import { Vector3 } from '../math/vector3';
 
 export abstract class Util{
     public static clamp(value:number, min:number, max:number) {

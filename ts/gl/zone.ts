@@ -1,7 +1,7 @@
-import { GlElementAttributes } from '../gl/elementBase';
-import { GlElementType } from '../gl/glRenderer';
-import { GlController } from '../gl/controller';
-import { Vector3, v3 } from './vector3';
+import { GlElementAttributes } from './elementBase';
+import { GlElementType } from './rendering/glRenderer';
+import { GlController } from './controller';
+import { Vector3, v3 } from './math/vector3';
 
 
 export type ZoneAttributes = GlElementAttributes & {

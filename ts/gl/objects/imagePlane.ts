@@ -1,7 +1,7 @@
-import { Vector2 } from '../utils/vector2';
-import { v3 } from '../utils/vector3';
+import { Vector2 } from '../math/vector2';
+import { v3 } from '../math/vector3';
 import { GLCuboid, GlCuboidAttributes } from './cuboid';
-import { GLTexture } from './texture';
+import { GLTexture } from '../texture';
 
 export type CanvasImageAttributes = GlCuboidAttributes & {
     textureUrl: string,

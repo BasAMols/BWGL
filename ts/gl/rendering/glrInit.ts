@@ -1,5 +1,5 @@
-import vs from './shaders/vertexShader';
-import fs from './shaders/fragmentShader';
+import vs from '../shaders/vertexShader';
+import fs from '../shaders/fragmentShader';
 
 function loadShader(gl: WebGLRenderingContext, type: number, source: string) {
     const shader = gl.createShader(type);

@@ -1,6 +1,6 @@
-import { Skeleton } from '../utils/skeleton';
+import { Skeleton } from './animation/skeleton';
 import { GlElement } from './elementBase';
-import { GlElementType } from './glRenderer';
+import { GlElementType } from './rendering/glRenderer';
 
 export class GLGroup extends GlElement {
     public type: GlElementType = 'group';

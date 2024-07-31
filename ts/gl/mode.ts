@@ -1,9 +1,9 @@
-import { GlElementAttributes } from '../gl/elementBase';
-import { GLGroup } from '../gl/group';
-import { ObjStorage } from '../gl/objStorage';
+import { GlElementAttributes } from './elementBase';
+import { GLGroup } from './group';
+import { ObjStorage } from './objStorage';
 import { Level } from './level';
 import { TickerReturnData } from './ticker';
-import { Vector2 } from './vector2';
+import { Vector2 } from './math/vector2';
 
 export type modeAttributes = GlElementAttributes & {
 

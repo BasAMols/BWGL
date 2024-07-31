@@ -1,8 +1,8 @@
-import { GlElementAttributes } from '../gl/elementBase';
-import { GLGroup } from '../gl/group';
+import { GlElementAttributes } from '../elementBase';
+import { GLGroup } from '../group';
 import { Bone } from './skeleton_bone';
 import { Animator } from './animation';
-import { TickerReturnData } from './ticker';
+import { TickerReturnData } from '../ticker';
 
 export type HumanSkeletonLimbsSizes = 'hipsWidth' | 'shoulderWidth' | 'head' | 'torso' | 'armUpper' | 'armLower' | 'hand' | 'legUpper' | 'legLower' | 'foot' | 'hips';
 export type HumanSkeletonLimbs =

@@ -1,10 +1,10 @@
 import { GlController } from '../../gl/controller';
-import { TickerReturnData } from '../../utils/ticker';
-import { Util } from '../../utils/utils';
-import { Vector3, v3 } from '../../utils/vector3';
-import { v2 } from '../../utils/vector2';
+import { TickerReturnData } from '../../gl/ticker';
+import { Util } from '../../gl/util/utils';
+import { Vector3, v3 } from '../../gl/math/vector3';
+import { v2 } from '../../gl/math/vector2';
 import { Player } from './player_actor';
-import { Collider } from '../../utils/collider';
+import { Collider } from '../../gl/collider';
 
 export class PlayerController extends GlController {
     private intr: Record<string, number> = { fall: 0, jump: 0, landDelay: 0 };

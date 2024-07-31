@@ -1,8 +1,8 @@
-import { GlElementAttributes } from '../gl/elementBase';
-import { v2 } from './vector2';
+import { GlElementAttributes } from '../elementBase';
+import { v2 } from '../math/vector2';
 import { Bone } from './skeleton_bone';
 import { Skeleton } from './skeleton';
-import { v3 } from './vector3';
+import { v3 } from '../math/vector3';
 
 export type HumanAttributes = GlElementAttributes & {
     'head': number,

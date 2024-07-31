@@ -1,4 +1,4 @@
-import { GLobj } from './obj';
+import { GLobj } from './objects/obj';
 
 export class ObjStorage{
     private registered: Record<string, {

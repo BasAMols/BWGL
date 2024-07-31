@@ -1,4 +1,4 @@
-import { Mode } from '../../utils/mode';
+import { Mode } from '../../gl/mode';
 import { World } from './level';
 
 export class OpenWorldMode extends Mode{

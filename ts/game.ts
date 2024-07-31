@@ -1,11 +1,11 @@
-import { FPS } from './utils/debug/fps';
-import { Ticker, TickerReturnData } from './utils/ticker';
-import { Input } from './utils/input';
-import { Mode } from './utils/mode';
+import { FPS } from './gl/debug/fps';
+import { Ticker, TickerReturnData } from './gl/ticker';
+import { Input } from './gl/input';
+import { Mode } from './gl/mode';
 import { Renderer } from './dom/renderer';
-import { Loader } from './utils/debug/loader';
-import { GLRenderer } from './gl/glRenderer';
-import { Level } from './utils/level';
+import { Loader } from './gl/debug/loader';
+import { GLRenderer } from './gl/rendering/glRenderer';
+import { Level } from './gl/level';
 import { OpenWorldMode } from './modes/side/mode';
 
 export var glob = new class{

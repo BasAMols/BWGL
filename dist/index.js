@@ -19,7 +19,7 @@ var __export = (target, all) => {
     __defProp(target, name, { get: all[name], enumerable: true });
 };
 
-// ts/utils/element.ts
+// ts/gl/element.ts
 var Element = class {
   constructor() {
     this.events = [];
@@ -55,7 +55,7 @@ var Element = class {
   }
 };
 
-// ts/utils/vector2.ts
+// ts/gl/math/vector2.ts
 function v2(n, y) {
   if (typeof n === "number") {
     return Vector2.f(n, y);
@@ -337,7 +337,7 @@ var DomText = class extends DomElement {
   }
 };
 
-// ts/utils/debug/fps.ts
+// ts/gl/debug/fps.ts
 var FPS = class _FPS extends DomText {
   constructor() {
     super({
@@ -364,7 +364,7 @@ var FPS = class _FPS extends DomText {
   }
 };
 
-// ts/utils/ticker.ts
+// ts/gl/ticker.ts
 var Ticker = class {
   constructor() {
     this._running = false;
@@ -436,7 +436,7 @@ var Ticker = class {
   }
 };
 
-// ts/utils/input.ts
+// ts/gl/input.ts
 var Input = class {
   get locked() {
     return this._locked;
@@ -546,7 +546,7 @@ var Input = class {
   }
 };
 
-// ts/utils/event.ts
+// ts/gl/event.ts
 var Event = class {
   constructor(id) {
     this.subscribers = {};
@@ -615,7 +615,7 @@ var Renderer = class extends DomElement {
   }
 };
 
-// ts/utils/debug/loader.ts
+// ts/gl/debug/loader.ts
 var Loader = class extends DomElement {
   constructor() {
     super("div", {
@@ -651,7 +651,7 @@ var vertexShader_default = "\nattribute vec4 aVertexPosition;\nattribute vec3 aV
 // ts/gl/shaders/fragmentShader.ts
 var fragmentShader_default = "\nvarying highp vec2 vTextureCoord;\nvarying highp vec3 vLighting;\n\nuniform sampler2D uSampler;\nuniform lowp float uOpacity;\nuniform lowp float uIntensity;\n\nvoid main(void) {\n    highp vec4 texelColor = texture2D(uSampler, vTextureCoord);\n    gl_FragColor = vec4((texelColor.rgb+texelColor.rgb * (uIntensity-1.0)) * vLighting, texelColor.a*uOpacity);\n}\n";
 
-// ts/gl/glrInit.ts
+// ts/gl/rendering/glrInit.ts
 function loadShader(gl, type, source) {
   const shader = gl.createShader(type);
   gl.shaderSource(shader, source);
@@ -723,7 +723,7 @@ function initShaderProgram(gl) {
   ];
 }
 
-// ts/gl/glTranslator.ts
+// ts/gl/rendering/glTranslator.ts
 var GLTranslator = class {
   constructor(game, glr) {
     this.game = game;
@@ -2073,7 +2073,7 @@ function equals(a, b) {
 var mul = multiply;
 var sub = subtract;
 
-// ts/utils/utils.ts
+// ts/gl/util/utils.ts
 var Util = class {
   static clamp(value, min, max) {
     return Math.max(Math.min(value, max), min);
@@ -2108,7 +2108,7 @@ var Util = class {
   }
 };
 
-// ts/utils/vector3.ts
+// ts/gl/math/vector3.ts
 function v3(a, b, c) {
   if (typeof a === "number") {
     return Vector3.f(a, b, c);
@@ -2345,7 +2345,7 @@ var Vector3 = class _Vector3 {
   }
 };
 
-// ts/utils/matrix4.ts
+// ts/gl/math/matrix4.ts
 var Matrix4 = class _Matrix4 {
   constructor(source) {
     this.mat4 = source ? mat4_exports.clone(source) : mat4_exports.create();
@@ -2430,7 +2430,7 @@ var Matrix4 = class _Matrix4 {
   }
 };
 
-// ts/gl/glRenderer.ts
+// ts/gl/rendering/glRenderer.ts
 var GLRenderer = class {
   constructor(game) {
     this.game = game;
@@ -2675,7 +2675,7 @@ var ObjStorage = class {
   }
 };
 
-// ts/utils/mode.ts
+// ts/gl/mode.ts
 var Mode = class extends GLGroup {
   constructor(attr = {}) {
     super(attr);
@@ -2748,7 +2748,7 @@ var Interface = class extends DomElement {
   }
 };
 
-// ts/utils/level.ts
+// ts/gl/level.ts
 var Level = class extends GlElement {
   constructor(attr = {}) {
     super(attr);
@@ -3098,7 +3098,7 @@ var GLTexture = class {
   }
 };
 
-// ts/gl/obj.ts
+// ts/gl/objects/obj.ts
 var GLobj = class extends GLRendable {
   constructor(attr = {}) {
     super(__spreadValues(__spreadValues({}, attr), { autoReady: false }));
@@ -3264,7 +3264,7 @@ var GLobj = class extends GLRendable {
   }
 };
 
-// ts/utils/ease.ts
+// ts/gl/util/ease.ts
 var Ease = class {
   static linear(x) {
     return x;
@@ -3343,7 +3343,7 @@ var Ease = class {
   }
 };
 
-// ts/utils/animation.ts
+// ts/gl/animation/animation.ts
 var Animation = class {
   constructor(attr) {
     this.interval = 0;
@@ -3504,7 +3504,7 @@ var Animator = class {
   }
 };
 
-// ts/utils/skeleton.ts
+// ts/gl/animation/skeleton.ts
 var Skeleton = class extends GLGroup {
   constructor(attr = {}) {
     super(attr);
@@ -3545,7 +3545,7 @@ var Skeleton = class extends GLGroup {
   }
 };
 
-// ts/utils/colors.ts
+// ts/gl/util/colors.ts
 var Colors = class {
 };
 Colors.k = [0, 0, 0, 1];
@@ -3557,7 +3557,7 @@ Colors.c = [0, 1, 1, 1];
 Colors.m = [1, 0, 1, 1];
 Colors.w = [1, 1, 1, 1];
 
-// ts/gl/cuboid.ts
+// ts/gl/objects/cuboid.ts
 var GLCuboid = class _GLCuboid extends GLRendable {
   constructor(attr) {
     super(attr);
@@ -3910,7 +3910,7 @@ var GLCuboid = class _GLCuboid extends GLRendable {
   }
 };
 
-// ts/utils/skeleton_bone.ts
+// ts/gl/animation/skeleton_bone.ts
 var Bone = class extends GLGroup {
   constructor(attr = {}) {
     super(attr);
@@ -4055,7 +4055,7 @@ var BowSkeleton = class extends Skeleton {
   }
 };
 
-// ts/utils/skeleton_human.ts
+// ts/gl/animation/skeleton_human.ts
 var HumanSkeleton = class extends Skeleton {
   constructor(attr) {
     super({
@@ -4204,7 +4204,7 @@ var PlayerSkel = class extends HumanSkeleton {
   }
 };
 
-// ts/utils/zone.ts
+// ts/gl/zone.ts
 var Zone = class extends GlController {
   constructor(attr) {
     super(attr);
@@ -4240,7 +4240,7 @@ var Zone = class extends GlController {
   }
 };
 
-// ts/utils/collider.ts
+// ts/gl/collider.ts
 var Collider = class extends Zone {
   constructor() {
     super(...arguments);
@@ -4321,7 +4321,7 @@ var TreeBase = class extends GLobj {
   }
 };
 
-// ts/modes/side/trees/Tree1.ts
+// ts/modes/side/trees/tree1.ts
 var Tree1 = class extends TreeBase {
   constructor(attr) {
     super({

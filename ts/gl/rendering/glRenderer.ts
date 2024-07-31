@@ -1,12 +1,12 @@
 import { vec4 } from 'gl-matrix';
-import { Game } from '../game';
-import { TickerReturnData } from '../utils/ticker';
-import { Vector3 } from '../utils/vector3';
-import { GLRendable } from './rendable';
-import { GlElement } from './elementBase';
-import { Vector2 } from '../utils/vector2';
+import { Game } from '../../game';
+import { TickerReturnData } from '../ticker';
+import { Vector3 } from '../math/vector3';
+import { GLRendable } from '../rendable';
+import { GlElement } from '../elementBase';
+import { Vector2 } from '../math/vector2';
 import { GLTranslator } from './glTranslator';
-import { Matrix4 } from '../utils/matrix4';
+import { Matrix4 } from '../math/matrix4';
 
 export interface bufferDataInitilizers {
     indices: WebGLBuffer;

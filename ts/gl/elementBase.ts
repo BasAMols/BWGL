@@ -1,11 +1,11 @@
-import { Element, ElementAttributes } from "../utils/element";
-import { GlElementType } from './glRenderer';
-import { TickerReturnData } from '../utils/ticker';
-import { Vector2, v2 } from "../utils/vector2";
-import { Vector3, v3 } from '../utils/vector3';
+import { Element, ElementAttributes } from "./element";
+import { GlElementType } from './rendering/glRenderer';
+import { TickerReturnData } from './ticker';
+import { Vector2, v2 } from "./math/vector2";
+import { Vector3, v3 } from './math/vector3';
 import { GlController } from './controller';
-import { Matrix4 } from '../utils/matrix4';
-import { Zone } from '../utils/zone';
+import { Matrix4 } from './math/matrix4';
+import { Zone } from './zone';
 
 export type GlElementAttributes = ElementAttributes & {
     autoReady?: boolean,
