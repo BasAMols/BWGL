@@ -1,6 +1,6 @@
-import { GLobj } from '../../gl/objects/obj';
-import { v3 } from '../../gl/math/vector3';
-import { HumanSkeleton } from '../../gl/animation/skeleton_human';
+import { GLobj } from '../../../gl/objects/obj';
+import { v3 } from '../../../gl/math/vector3';
+import { HumanSkeleton } from '../../../gl/animation/skeleton_human';
 
 export class npcSkeleton extends HumanSkeleton{
     constructor() {

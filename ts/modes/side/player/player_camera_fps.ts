@@ -1,10 +1,10 @@
-import { TickerReturnData } from '../../gl/ticker';
-import { Character } from '../../gl/character';
-import { GlElementType } from '../../gl/rendering/glRenderer';
-import { Vector3, v3 } from '../../gl/math/vector3';
-import { GlController, GlControllerOrder } from '../../gl/controller';
-import { Util } from '../../gl/util/utils';
-import { Vector2, v2 } from '../../gl/math/vector2';
+import { TickerReturnData } from '../../../gl/ticker';
+import { Character } from '../../../gl/character';
+import { GlElementType } from '../../../gl/rendering/glRenderer';
+import { Vector3, v3 } from '../../../gl/math/vector3';
+import { GlController, GlControllerOrder } from '../../../gl/controller';
+import { Util } from '../../../gl/util/utils';
+import { Vector2, v2 } from '../../../gl/math/vector2';
 
 export class fpsCamera extends GlController {
     public type: GlElementType = 'controller';

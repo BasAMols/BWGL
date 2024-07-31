@@ -6,7 +6,7 @@ import { Renderer } from './dom/renderer';
 import { Loader } from './gl/debug/loader';
 import { GLRenderer } from './gl/rendering/glRenderer';
 import { Level } from './gl/level';
-import { OpenWorldMode } from './modes/side/mode';
+import { OpenWorldMode } from './modes/mode';
 
 export var glob = new class{
     public game: Game;

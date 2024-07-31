@@ -2810,7 +2810,7 @@ var GlController = class extends GlElement {
   }
 };
 
-// ts/modes/side/player_controller.ts
+// ts/modes/side/player/player_controller.ts
 var PlayerController = class extends GlController {
   constructor() {
     super(...arguments);
@@ -2935,7 +2935,7 @@ var PlayerController = class extends GlController {
   }
 };
 
-// ts/modes/side/player_camera.ts
+// ts/modes/side/player/player_camera.ts
 var FreeCamera = class extends GlController {
   constructor(target) {
     super({ autoReady: false });
@@ -3967,7 +3967,7 @@ var Bone = class extends GLGroup {
   }
 };
 
-// ts/modes/side/bow.ts
+// ts/modes/side/player/bow.ts
 var BowActor = class extends GLGroup {
   get holding() {
     return this._holding;
@@ -4081,7 +4081,7 @@ var HumanSkeleton = class extends Skeleton {
   }
 };
 
-// ts/modes/side/player_skeleton.ts
+// ts/modes/side/player/player_skeleton.ts
 var PlayerSkel = class extends HumanSkeleton {
   constructor() {
     super({
@@ -4268,7 +4268,7 @@ var Collider = class extends Zone {
   }
 };
 
-// ts/modes/side/player_actor.ts
+// ts/modes/side/player/player_actor.ts
 var Player = class extends Character {
   constructor({
     position = Vector3.f(0),
@@ -4569,7 +4569,7 @@ var World = class extends Level {
   }
 };
 
-// ts/modes/side/mode.ts
+// ts/modes/mode.ts
 var OpenWorldMode = class extends Mode {
   build() {
     super.build();
