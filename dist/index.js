@@ -578,7 +578,7 @@ var Input = class {
 var vertexShaderDir_default = "\nattribute vec4 o_a_position;\nattribute vec3 o_a_normal;\n\nuniform mat4 uModelViewMatrix;\nuniform mat4 uProjectionMatrix;\nattribute vec2 aTextureCoord;\nuniform mat4 uNormalMatrix;\nattribute vec3 aVertexNormal;\n\nuniform vec3 o_u_lightWorldPosition;\nuniform vec3 o_u_viewWorldPosition;\n\nuniform mat4 o_u_world;\nuniform mat4 o_u_worldViewProjection;\nuniform mat4 o_u_worldInverseTranspose;\n\nvarying vec3 o_v_normal;\n\nvarying vec3 o_v_surfaceToLight;\nvarying vec3 o_v_surfaceToView;\n\nvarying highp vec2 vTextureCoord;\n\nvoid main() {\n  gl_Position = uProjectionMatrix * uModelViewMatrix * o_a_position;\n  vTextureCoord = aTextureCoord;\n\n  o_v_normal = (uNormalMatrix * vec4(aVertexNormal, 1.0)).xyz;\n  vec3 surfaceWorldPosition = (uModelViewMatrix * o_a_position).xyz;\n  o_v_surfaceToLight = o_u_lightWorldPosition - surfaceWorldPosition;\n  o_v_surfaceToView = normalize(o_u_viewWorldPosition - surfaceWorldPosition);\n}";
 
 // ts/classes/shaders/fragmentShaderDir.ts
-var fragmentShaderDir_default = "\nprecision mediump float;\n\nvarying vec3 o_v_normal;\nvarying vec3 o_v_surfaceToLight;\nvarying vec3 o_v_surfaceToView;\nvarying highp vec2 vTextureCoord;\n\nuniform sampler2D uSampler;\n\nuniform float o_u_shininess;\nuniform vec3 o_u_lightColor;\nuniform vec3 o_u_specularColor;\nuniform vec3 o_u_lightDirection;\nuniform float o_u_innerLimit;  \nuniform float o_u_outerLimit;  \nuniform float o_u_innerRange;  \nuniform float o_u_outerRange;  \nuniform int o_u_ignoreLighting;  \n\nvoid main() {\n  highp vec4 texelColor = texture2D(uSampler, vTextureCoord);\n\n  vec3 normal = normalize(o_v_normal);\n\n  vec3 surfaceToLightDirection = normalize(o_v_surfaceToLight);\n  vec3 surfaceToViewDirection = normalize(o_v_surfaceToView);\n  vec3 halfVector = normalize(surfaceToLightDirection + surfaceToViewDirection);\n\n  float dotFromDirection = dot(surfaceToLightDirection,-o_u_lightDirection);\n\n  float rangeLight = smoothstep(o_u_outerRange, o_u_innerRange, length(o_v_surfaceToLight));\n  float inLight = smoothstep(o_u_outerLimit, o_u_innerLimit, dotFromDirection);\n  float light = 0.3 + rangeLight*inLight*dot(normal, surfaceToLightDirection);\n  float specular = rangeLight*(inLight*pow(dot(normal, halfVector), o_u_shininess));\n  gl_FragColor = texelColor;\n  if (o_u_ignoreLighting == 0){\n    gl_FragColor.rgb *= light * o_u_lightColor;\n    gl_FragColor.rgb += specular * o_u_specularColor;\n  }\n}\n";
+var fragmentShaderDir_default = "\nprecision mediump float;\n\nvarying vec3 o_v_normal;\nvarying vec3 o_v_surfaceToLight;\nvarying vec3 o_v_surfaceToView;\nvarying highp vec2 vTextureCoord;\n\nuniform sampler2D uSampler;\n\nuniform float o_u_shininess;\nuniform vec3 o_u_lightColor;\nuniform vec3 o_u_specularColor;\nuniform vec3 o_u_lightDirection;\nuniform float o_u_innerLimit;  \nuniform float o_u_outerLimit;  \nuniform float o_u_innerRange;  \nuniform float o_u_outerRange;  \nuniform int o_u_ignoreLighting;  \n\nvoid main() {\n  highp vec4 texelColor = texture2D(uSampler, vTextureCoord);\n\n  vec3 normal = normalize(o_v_normal);\n\n  vec3 surfaceToLightDirection = normalize(o_v_surfaceToLight);\n  vec3 surfaceToViewDirection = normalize(o_v_surfaceToView);\n  vec3 halfVector = normalize(surfaceToLightDirection + surfaceToViewDirection);\n\n  float dotFromDirection = dot(surfaceToLightDirection,-o_u_lightDirection);\n\n  float rangeLight = smoothstep(o_u_outerRange, o_u_innerRange, length(o_v_surfaceToLight));\n  float inLight = smoothstep(o_u_outerLimit, o_u_innerLimit, dotFromDirection);\n  float light = 0.2 + rangeLight*inLight*dot(normal, surfaceToLightDirection);\n  float specular = rangeLight*(inLight*pow(dot(normal, halfVector), o_u_shininess));\n  gl_FragColor = texelColor;\n  if (o_u_ignoreLighting == 0){\n    gl_FragColor.rgb *= light * o_u_lightColor;\n    gl_FragColor.rgb += specular * o_u_specularColor;\n  }\n}\n";
 
 // ts/classes/rendering/glrInit.ts
 function loadShader(gl, type, source) {
@@ -3161,7 +3161,7 @@ var GLCuboid = class _GLCuboid extends GLRendable {
         this.size,
         72
       ),
-      v3(size.x, size.y, size.z * -1)
+      size
     );
   }
   normalBuffer() {
@@ -4617,7 +4617,7 @@ var World = class extends Level {
   constructor() {
     super();
     this.start = Vector2.zero;
-    this.background = [0.67451 * 0.6, 0.603922 * 0.6, 0.968627 * 0.9, 1];
+    this.background = [1 * 0.07, 1 * 0.07, 1 * 0.1, 1];
     this.light = v3(0, 400, 500);
     this.addControllers([
       new Collider({
@@ -4709,16 +4709,16 @@ var World = class extends Level {
   build() {
     super.build();
     this.player = new Player({
-      position: v3(10, 1, 420),
-      rotation: v3(0, -2.3, 0)
+      position: v3(0, 0, 650),
+      rotation: v3(0, 2.3, 0)
     });
     this.addChild(this.player);
     this.addLight(new Light({
-      position: v3(0, 10, 50),
+      position: v3(0, 70, 100),
       color: [0.9, 0.9, 0.85, 1],
       specular: [0.3, 0.3, 0.3, 1],
-      limit: [13, 13.1],
-      range: [2e3, 2500],
+      limit: [10, 10.1],
+      range: [600, 1001],
       direction: v3(0, 0, -1)
     }));
     this.addChild(new GLCuboid({ size: v3(1e4, 1, 1e4), position: v3(-5e3, -6, -5e3), colors: [[103 / 350, 119 / 350, 107 / 350, 1]] }));
@@ -4731,6 +4731,24 @@ var World = class extends Level {
       storage: this.mode.storage,
       position: v3(-2e3, 0, 800),
       area: v2(4e3, 2e3),
+      density: 3e-3
+    }));
+    this.addChild(new Forrest({
+      storage: this.mode.storage,
+      position: v3(-2e3, 0, -1800),
+      area: v2(4e3, 2e3),
+      density: 3e-3
+    }));
+    this.addChild(new Forrest({
+      storage: this.mode.storage,
+      position: v3(-2300, 0, -1800),
+      area: v2(2e3, 4e3),
+      density: 3e-3
+    }));
+    this.addChild(new Forrest({
+      storage: this.mode.storage,
+      position: v3(300, 0, -1800),
+      area: v2(2e3, 4e3),
       density: 3e-3
     }));
   }

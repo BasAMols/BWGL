@@ -17,7 +17,7 @@ import { Forrest } from './trees/forrest';
 
 export class World extends Level {
     public start = Vector2.zero;
-    public background: Color = [0.67451 * 0.6, 0.603922 * 0.6, 0.968627 * 0.9, 1];
+    public background: Color = [1 * 0.07,1 * 0.07, 1 * 0.1, 1];
     public character: Player;
     public mo: DomText;
     public st: ObjStorage;
@@ -136,8 +136,8 @@ export class World extends Level {
         // }));
 
         this.player = new Player({
-            position: v3(10, 1, 420),
-            rotation: v3(0, -2.3, 0)
+            position: v3(0, 0, 650),
+            rotation: v3(0, 2.3, 0)
         });
         this.addChild(this.player);
         // this.car = new Driver({
@@ -149,11 +149,11 @@ export class World extends Level {
         // this.car.active = false;
 
         this.addLight(new Light({
-            position: v3(0,10,50),
+            position: v3(0,70,100),
             color: [0.9,0.9,0.85,1],
             specular: [0.3,0.3,0.3,1],
-            limit: [13,13.1],
-            range: [2000,2500],
+            limit: [10,10.1],
+            range: [600,1001],
             direction: v3(0,0,-1),
         }))
         this.addChild(new GLCuboid({ size: v3(10000, 1, 10000), position: v3(-5000, -6, -5000), colors: [[103 / 350, 119 / 350, 107 / 350, 1]] }));
@@ -194,24 +194,24 @@ export class World extends Level {
             area: v2(4000, 2000),
             density: 0.003
         }));
-        // this.addChild(new Forrest({
-        //     storage: this.mode.storage,
-        //     position: v3(-2000, 0, -1800),
-        //     area: v2(4000, 2000),
-        //     density: 0.003
-        // }));
-        // this.addChild(new Forrest({
-        //     storage: this.mode.storage,
-        //     position: v3(-2300, 0, -1800),
-        //     area: v2(2000, 4000),
-        //     density: 0.003
-        // }));
-        // this.addChild(new Forrest({
-        //     storage: this.mode.storage,
-        //     position: v3(300, 0, -1800),
-        //     area: v2(2000, 4000),
-        //     density: 0.003
-        // }));
+        this.addChild(new Forrest({
+            storage: this.mode.storage,
+            position: v3(-2000, 0, -1800),
+            area: v2(4000, 2000),
+            density: 0.003
+        }));
+        this.addChild(new Forrest({
+            storage: this.mode.storage,
+            position: v3(-2300, 0, -1800),
+            area: v2(2000, 4000),
+            density: 0.003
+        }));
+        this.addChild(new Forrest({
+            storage: this.mode.storage,
+            position: v3(300, 0, -1800),
+            area: v2(2000, 4000),
+            density: 0.003
+        }));
 
         // this.addChild(new GLobj({
         //     controllers: [new Collider({

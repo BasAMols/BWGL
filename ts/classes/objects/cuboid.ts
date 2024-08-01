@@ -1,6 +1,6 @@
 import { GlElementType } from '../rendering/glRenderer';
 import { Color, Colors } from '../util/colors';
-import { Vector3, v3 } from '../math/vector3';
+import { Vector3 } from '../math/vector3';
 import { GLRendable, GLRendableAttributes } from '../rendable';
 import { GLTexture } from '../texture';
 
@@ -77,7 +77,7 @@ export class GLCuboid extends GLRendable {
                 this.size,
                 72
             ),
-            v3(size.x,size.y,size.z*-1)
+            size
         );
     }
 
