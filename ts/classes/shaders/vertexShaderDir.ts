@@ -6,6 +6,7 @@ uniform mat4 uModelViewMatrix;
 uniform mat4 uProjectionMatrix;
 attribute vec2 aTextureCoord;
 uniform mat4 uNormalMatrix;
+attribute vec3 aVertexNormal;
 
 uniform vec3 o_u_lightWorldPosition;
 uniform vec3 o_u_viewWorldPosition;
@@ -25,8 +26,8 @@ void main() {
   gl_Position = uProjectionMatrix * uModelViewMatrix * o_a_position;
   vTextureCoord = aTextureCoord;
 
-  o_v_normal = mat3(o_u_worldInverseTranspose) * o_a_normal;
+  o_v_normal = (uNormalMatrix * vec4(aVertexNormal, 1.0)).xyz;
   vec3 surfaceWorldPosition = (uModelViewMatrix * o_a_position).xyz;
   o_v_surfaceToLight = o_u_lightWorldPosition - surfaceWorldPosition;
-  o_v_surfaceToView = o_u_viewWorldPosition - surfaceWorldPosition;
+  o_v_surfaceToView = normalize(o_u_viewWorldPosition - surfaceWorldPosition);
 }`

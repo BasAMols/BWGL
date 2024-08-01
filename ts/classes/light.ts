@@ -1,7 +1,8 @@
 import { GlElementAttributes } from './elementBase';
-import { Vector3 } from './math/vector3';
+import { Vector3, v3 } from './math/vector3';
 import { Color, Colors } from './util/colors';
 import { GLGroup } from './group';
+import { GLCuboid } from './objects/cuboid';
 
 
 export type LightAttributes = GlElementAttributes & {
@@ -44,5 +45,14 @@ export class Light extends GLGroup{
         this.color = attr.color || Colors.w;
         this.specular = attr.specular;
         this.direction = attr.direction || Vector3.forwards;
+    }
+
+    public build(): void {
+        super.build();
+        this.addChild(new GLCuboid({
+            colors: [Colors.y],
+            size: v3(50,50,2),
+            rotation: this.direction
+        }))
     }
 }

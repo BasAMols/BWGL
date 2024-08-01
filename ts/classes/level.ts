@@ -55,6 +55,7 @@ export abstract class Level extends GlElement {
 
     addLight(c: Light) {
         this.lights.push(c);
+        this.addChild(c);
     }
 
     public get camera(): typeof this._camera {

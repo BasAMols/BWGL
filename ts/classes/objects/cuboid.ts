@@ -82,7 +82,7 @@ export class GLCuboid extends GLRendable {
 
     protected normalBuffer() {
         return GLCuboid.sliceToDimension(
-            this.getBufferData().normal,
+            this.getBufferData().normal.map((v)=>v*-1),
             this.size,
             72
         );

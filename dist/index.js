@@ -574,7 +574,7 @@ var Input = class {
 };
 
 // ts/classes/shaders/vertexShaderDir.ts
-var vertexShaderDir_default = "\nattribute vec4 o_a_position;\nattribute vec3 o_a_normal;\n\nuniform mat4 uModelViewMatrix;\nuniform mat4 uProjectionMatrix;\nattribute vec2 aTextureCoord;\nuniform mat4 uNormalMatrix;\n\nuniform vec3 o_u_lightWorldPosition;\nuniform vec3 o_u_viewWorldPosition;\n\nuniform mat4 o_u_world;\nuniform mat4 o_u_worldViewProjection;\nuniform mat4 o_u_worldInverseTranspose;\n\nvarying vec3 o_v_normal;\n\nvarying vec3 o_v_surfaceToLight;\nvarying vec3 o_v_surfaceToView;\n\nvarying highp vec2 vTextureCoord;\n\nvoid main() {\n  gl_Position = uProjectionMatrix * uModelViewMatrix * o_a_position;\n  vTextureCoord = aTextureCoord;\n\n  o_v_normal = mat3(o_u_worldInverseTranspose) * o_a_normal;\n  vec3 surfaceWorldPosition = (uModelViewMatrix * o_a_position).xyz;\n  o_v_surfaceToLight = o_u_lightWorldPosition - surfaceWorldPosition;\n  o_v_surfaceToView = o_u_viewWorldPosition - surfaceWorldPosition;\n}";
+var vertexShaderDir_default = "\nattribute vec4 o_a_position;\nattribute vec3 o_a_normal;\n\nuniform mat4 uModelViewMatrix;\nuniform mat4 uProjectionMatrix;\nattribute vec2 aTextureCoord;\nuniform mat4 uNormalMatrix;\nattribute vec3 aVertexNormal;\n\nuniform vec3 o_u_lightWorldPosition;\nuniform vec3 o_u_viewWorldPosition;\n\nuniform mat4 o_u_world;\nuniform mat4 o_u_worldViewProjection;\nuniform mat4 o_u_worldInverseTranspose;\n\nvarying vec3 o_v_normal;\n\nvarying vec3 o_v_surfaceToLight;\nvarying vec3 o_v_surfaceToView;\n\nvarying highp vec2 vTextureCoord;\n\nvoid main() {\n  gl_Position = uProjectionMatrix * uModelViewMatrix * o_a_position;\n  vTextureCoord = aTextureCoord;\n\n  o_v_normal = (uNormalMatrix * vec4(aVertexNormal, 1.0)).xyz;\n  vec3 surfaceWorldPosition = (uModelViewMatrix * o_a_position).xyz;\n  o_v_surfaceToLight = o_u_lightWorldPosition - surfaceWorldPosition;\n  o_v_surfaceToView = normalize(o_u_viewWorldPosition - surfaceWorldPosition);\n}";
 
 // ts/classes/shaders/fragmentShaderDir.ts
 var fragmentShaderDir_default = "\nprecision mediump float;\n\nvarying vec3 o_v_normal;\nvarying vec3 o_v_surfaceToLight;\nvarying vec3 o_v_surfaceToView;\nvarying highp vec2 vTextureCoord;\n\nuniform sampler2D uSampler;\nuniform float o_u_shininess;\n\nuniform vec3 o_u_lightColor;\nuniform vec3 o_u_specularColor;\nuniform vec3 o_u_lightDirection;\nuniform float o_u_innerLimit;  \nuniform float o_u_outerLimit;  \nuniform float o_u_innerRange;  \nuniform float o_u_outerRange;  \n\nvoid main() {\n  highp vec4 texelColor = texture2D(uSampler, vTextureCoord);\n\n  vec3 normal = normalize(o_v_normal);\n\n  vec3 surfaceToLightDirection = normalize(o_v_surfaceToLight);\n  vec3 surfaceToViewDirection = normalize(o_v_surfaceToView);\n  vec3 halfVector = normalize(surfaceToLightDirection + surfaceToViewDirection);\n\n  float dotFromDirection = dot(surfaceToLightDirection,-o_u_lightDirection);\n\n  float rangeLight = smoothstep(o_u_outerRange, o_u_innerRange, length(o_v_surfaceToLight));\n  float inLight = smoothstep(o_u_outerLimit, o_u_innerLimit, dotFromDirection);\n  float light = 0.2 + rangeLight*inLight*dot(normal, surfaceToLightDirection);\n  float specular = rangeLight*inLight*pow(dot(normal, halfVector), o_u_shininess);\n\n  gl_FragColor = texelColor;\n  gl_FragColor.rgb *= light * o_u_lightColor;\n  gl_FragColor.rgb += specular * o_u_specularColor;\n}\n";
@@ -2531,7 +2531,9 @@ var GLRenderer = class {
   }
   renderMesh(mesh, currentModelview) {
     this.glt.sendBuffer(mesh.buffer.indices, "element");
+    this.glt.sendAttribute("aVertexNormal", mesh.buffer.normalBuffer);
     this.glt.sendUniform("uModelViewMatrix", currentModelview.mat4);
+    this.glt.sendUniform("uNormalMatrix", currentModelview.invert().transpose().mat4);
     this.glt.sendAttribute("aTextureCoord", mesh.buffer.textureCoord);
     this.glt.sendTexture(mesh.texture.texture);
     const projectionMatrix = this.getProjection();
@@ -2545,7 +2547,6 @@ var GLRenderer = class {
     this.glt.sendUniform("o_u_worldInverseTranspose", worldInverseTransposeMatrix.mat4);
     this.glt.sendUniform("o_u_shininess", 300);
     this.glt.sendAttribute("o_a_position", mesh.buffer.positionBuffer);
-    this.glt.sendAttribute("o_a_normal", mesh.buffer.normalBuffer);
     this.glt.sendUniform("o_u_world", currentModelview.mat4);
     this.glt.drawElements(mesh.verticesCount);
   }
@@ -2971,6 +2972,7 @@ var Level = class extends GlElement {
   }
   addLight(c) {
     this.lights.push(c);
+    this.addChild(c);
   }
   get camera() {
     return this._camera;
@@ -3002,36 +3004,6 @@ Colors.y = [1, 1, 0, 1];
 Colors.c = [0, 1, 1, 1];
 Colors.m = [1, 0, 1, 1];
 Colors.w = [1, 1, 1, 1];
-
-// ts/classes/light.ts
-var Light = class extends GLGroup {
-  get range() {
-    return this._range;
-  }
-  set range(value) {
-    this._range = [
-      value[0],
-      value[1] === void 0 || value[1] <= value[0] ? value[0] + 1 : value[1]
-    ];
-  }
-  get limit() {
-    return this._limit;
-  }
-  set limit(value) {
-    this._limit = [
-      value[0],
-      value[1] === void 0 || value[1] <= value[0] ? value[0] + 1 : value[1]
-    ];
-  }
-  constructor(attr) {
-    super(attr);
-    this.range = attr.range;
-    this.limit = attr.limit;
-    this.color = attr.color || Colors.w;
-    this.specular = attr.specular;
-    this.direction = attr.direction || Vector3.forwards;
-  }
-};
 
 // ts/classes/rendable.ts
 var GLRendable = class extends GlElement {
@@ -3186,7 +3158,7 @@ var GLCuboid = class _GLCuboid extends GLRendable {
   }
   normalBuffer() {
     return _GLCuboid.sliceToDimension(
-      this.getBufferData().normal,
+      this.getBufferData().normal.map((v) => v * -1),
       this.size,
       72
     );
@@ -3480,6 +3452,44 @@ var GLCuboid = class _GLCuboid extends GLRendable {
   }
   static scale(array, size) {
     return size ? array.map((n, i) => n * size.array[i % 3]) : array;
+  }
+};
+
+// ts/classes/light.ts
+var Light = class extends GLGroup {
+  get range() {
+    return this._range;
+  }
+  set range(value) {
+    this._range = [
+      value[0],
+      value[1] === void 0 || value[1] <= value[0] ? value[0] + 1 : value[1]
+    ];
+  }
+  get limit() {
+    return this._limit;
+  }
+  set limit(value) {
+    this._limit = [
+      value[0],
+      value[1] === void 0 || value[1] <= value[0] ? value[0] + 1 : value[1]
+    ];
+  }
+  constructor(attr) {
+    super(attr);
+    this.range = attr.range;
+    this.limit = attr.limit;
+    this.color = attr.color || Colors.w;
+    this.specular = attr.specular;
+    this.direction = attr.direction || Vector3.forwards;
+  }
+  build() {
+    super.build();
+    this.addChild(new GLCuboid({
+      colors: [Colors.y],
+      size: v3(50, 50, 2),
+      rotation: this.direction
+    }));
   }
 };
 

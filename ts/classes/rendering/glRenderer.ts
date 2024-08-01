@@ -119,14 +119,11 @@ export class GLRenderer {
 
     renderMesh(mesh: GLRendable, currentModelview: Matrix4) {
         this.glt.sendBuffer(mesh.buffer.indices, 'element');
-
-        // this.glt.sendAttribute('aVertexPosition', mesh.buffer.positionBuffer);
-        // this.glt.sendAttribute('aVertexNormal', mesh.buffer.normalBuffer);
+        this.glt.sendAttribute('aVertexNormal', mesh.buffer.normalBuffer);
 
         this.glt.sendUniform('uModelViewMatrix', currentModelview.mat4);
         // this.glt.sendUniform('uOpacity', mesh.opacity);
-        // this.glt.sendUniform('uIntensity', mesh.colorIntensity);
-        // this.glt.sendUniform('uNormalMatrix', currentModelview.invert().transpose().mat4);
+        this.glt.sendUniform('uNormalMatrix', currentModelview.invert().transpose().mat4);
         this.glt.sendAttribute('aTextureCoord', mesh.buffer.textureCoord);
         this.glt.sendTexture(mesh.texture.texture);
 
@@ -145,7 +142,6 @@ export class GLRenderer {
         this.glt.sendUniform('o_u_shininess', 300);
 
         this.glt.sendAttribute('o_a_position', mesh.buffer.positionBuffer);
-        this.glt.sendAttribute('o_a_normal', mesh.buffer.normalBuffer);
         this.glt.sendUniform('o_u_world', currentModelview.mat4);
 
 
