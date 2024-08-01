@@ -94,6 +94,8 @@ export class GLRenderer {
         this.glt.sendUniform('o_u_lightDirection', Vector3.backwards.vec);
         this.glt.sendUniform('o_u_innerLimit',  Math.cos(Util.degToRad(10)));
         this.glt.sendUniform('o_u_outerLimit',  Math.cos(Util.degToRad(11)));
+        this.glt.sendUniform('o_u_innerRange',  1000);
+        this.glt.sendUniform('o_u_outerRange',  2000);
 
         this.drawChildren(this.game.level);
     }

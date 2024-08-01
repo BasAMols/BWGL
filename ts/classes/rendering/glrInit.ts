@@ -115,6 +115,14 @@ export function initShaderProgram(gl: WebGLRenderingContext): [WebGLProgram, uni
                 pointer: gl.getUniformLocation(shaderProgram, "o_u_outerLimit"),
                 type: 'float'
             },
+            'o_u_innerRange':{
+                pointer: gl.getUniformLocation(shaderProgram, "o_u_innerRange"),
+                type: 'float'
+            },
+            'o_u_outerRange':{
+                pointer: gl.getUniformLocation(shaderProgram, "o_u_outerRange"),
+                type: 'float'
+            },
         },
         {
             'aVertexPosition':{

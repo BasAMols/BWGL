@@ -855,7 +855,7 @@ var Vector3 = class _Vector3 {
 var vertexShaderDir_default = "\nattribute vec4 o_a_position;\nattribute vec3 o_a_normal;\n\nuniform mat4 uModelViewMatrix;\nuniform mat4 uProjectionMatrix;\nattribute vec2 aTextureCoord;\nuniform mat4 uNormalMatrix;\n\nuniform vec3 o_u_lightWorldPosition;\nuniform vec3 o_u_viewWorldPosition;\n\nuniform mat4 o_u_world;\nuniform mat4 o_u_worldViewProjection;\nuniform mat4 o_u_worldInverseTranspose;\n\nvarying vec3 o_v_normal;\n\nvarying vec3 o_v_surfaceToLight;\nvarying vec3 o_v_surfaceToView;\n\nvarying highp vec2 vTextureCoord;\n\nvoid main() {\n  gl_Position = uProjectionMatrix * uModelViewMatrix * o_a_position;\n  vTextureCoord = aTextureCoord;\n\n  o_v_normal = mat3(o_u_worldInverseTranspose) * o_a_normal;\n  vec3 surfaceWorldPosition = (uModelViewMatrix * o_a_position).xyz;\n  o_v_surfaceToLight = o_u_lightWorldPosition - surfaceWorldPosition;\n  o_v_surfaceToView = normalize(o_u_viewWorldPosition - surfaceWorldPosition);\n}";
 
 // ts/classes/shaders/fragmentShaderDir.ts
-var fragmentShaderDir_default = "\nprecision mediump float;\n\nvarying vec3 o_v_normal;\nvarying vec3 o_v_surfaceToLight;\nvarying vec3 o_v_surfaceToView;\nvarying highp vec2 vTextureCoord;\n\nuniform sampler2D uSampler;\nuniform float o_u_shininess;\nuniform vec3 o_u_lightColor;\nuniform vec3 o_u_specularColor;\n\nuniform vec3 o_u_lightDirection;\nuniform float o_u_innerLimit;  \nuniform float o_u_outerLimit;  \n\nvoid main() {\n  highp vec4 texelColor = texture2D(uSampler, vTextureCoord);\n\n  vec3 normal = normalize(o_v_normal);\n\n  vec3 surfaceToLightDirection = normalize(o_v_surfaceToLight);\n  vec3 surfaceToViewDirection = normalize(o_v_surfaceToView);\n  vec3 halfVector = normalize(surfaceToLightDirection + surfaceToViewDirection);\n\n  float dotFromDirection = dot(surfaceToLightDirection,-o_u_lightDirection);\n\n  float inLight = smoothstep(o_u_outerLimit, o_u_innerLimit, dotFromDirection);\n  float light = 0.2 + inLight*dot(normal, surfaceToLightDirection);\n  float specular = inLight*pow(dot(normal, halfVector), o_u_shininess);\n\n  gl_FragColor = texelColor;\n  gl_FragColor.rgb *= light * o_u_lightColor;\n  gl_FragColor.rgb += specular * o_u_specularColor;\n}\n";
+var fragmentShaderDir_default = "\nprecision mediump float;\n\nvarying vec3 o_v_normal;\nvarying vec3 o_v_surfaceToLight;\nvarying vec3 o_v_surfaceToView;\nvarying highp vec2 vTextureCoord;\n\nuniform sampler2D uSampler;\nuniform float o_u_shininess;\n\nuniform vec3 o_u_lightColor;\nuniform vec3 o_u_specularColor;\nuniform vec3 o_u_lightDirection;\nuniform float o_u_innerLimit;  \nuniform float o_u_outerLimit;  \nuniform float o_u_innerRange;  \nuniform float o_u_outerRange;  \n\nvoid main() {\n  highp vec4 texelColor = texture2D(uSampler, vTextureCoord);\n\n  vec3 normal = normalize(o_v_normal);\n\n  vec3 surfaceToLightDirection = normalize(o_v_surfaceToLight);\n  vec3 surfaceToViewDirection = normalize(o_v_surfaceToView);\n  vec3 halfVector = normalize(surfaceToLightDirection + surfaceToViewDirection);\n\n  float dotFromDirection = dot(surfaceToLightDirection,-o_u_lightDirection);\n\n  float rangeLight = smoothstep(o_u_outerRange, o_u_innerRange, length(o_v_surfaceToLight));\n  float inLight = smoothstep(o_u_outerLimit, o_u_innerLimit, dotFromDirection);\n  float light = 0.2 + rangeLight*inLight*dot(normal, surfaceToLightDirection);\n  float specular = rangeLight*inLight*pow(dot(normal, halfVector), o_u_shininess);\n\n  gl_FragColor = texelColor;\n  gl_FragColor.rgb *= light * o_u_lightColor;\n  gl_FragColor.rgb += specular * o_u_specularColor;\n}\n";
 
 // ts/classes/rendering/glrInit.ts
 function loadShader(gl, type, source) {
@@ -953,6 +953,14 @@ function initShaderProgram(gl) {
       },
       "o_u_outerLimit": {
         pointer: gl.getUniformLocation(shaderProgram, "o_u_outerLimit"),
+        type: "float"
+      },
+      "o_u_innerRange": {
+        pointer: gl.getUniformLocation(shaderProgram, "o_u_innerRange"),
+        type: "float"
+      },
+      "o_u_outerRange": {
+        pointer: gl.getUniformLocation(shaderProgram, "o_u_outerRange"),
         type: "float"
       }
     },
@@ -2503,6 +2511,8 @@ var GLRenderer = class {
     this.glt.sendUniform("o_u_lightDirection", Vector3.backwards.vec);
     this.glt.sendUniform("o_u_innerLimit", Math.cos(Util.degToRad(10)));
     this.glt.sendUniform("o_u_outerLimit", Math.cos(Util.degToRad(11)));
+    this.glt.sendUniform("o_u_innerRange", 1e3);
+    this.glt.sendUniform("o_u_outerRange", 2e3);
     this.drawChildren(this.game.level);
   }
   drawChildren(element) {

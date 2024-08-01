@@ -8,12 +8,14 @@ varying highp vec2 vTextureCoord;
 
 uniform sampler2D uSampler;
 uniform float o_u_shininess;
+
 uniform vec3 o_u_lightColor;
 uniform vec3 o_u_specularColor;
-
 uniform vec3 o_u_lightDirection;
 uniform float o_u_innerLimit;  
 uniform float o_u_outerLimit;  
+uniform float o_u_innerRange;  
+uniform float o_u_outerRange;  
 
 void main() {
   highp vec4 texelColor = texture2D(uSampler, vTextureCoord);
@@ -26,9 +28,10 @@ void main() {
 
   float dotFromDirection = dot(surfaceToLightDirection,-o_u_lightDirection);
 
+  float rangeLight = smoothstep(o_u_outerRange, o_u_innerRange, length(o_v_surfaceToLight));
   float inLight = smoothstep(o_u_outerLimit, o_u_innerLimit, dotFromDirection);
-  float light = 0.2 + inLight*dot(normal, surfaceToLightDirection);
-  float specular = inLight*pow(dot(normal, halfVector), o_u_shininess);
+  float light = 0.2 + rangeLight*inLight*dot(normal, surfaceToLightDirection);
+  float specular = rangeLight*inLight*pow(dot(normal, halfVector), o_u_shininess);
 
   gl_FragColor = texelColor;
   gl_FragColor.rgb *= light * o_u_lightColor;
