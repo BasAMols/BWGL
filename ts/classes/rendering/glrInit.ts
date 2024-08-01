@@ -107,8 +107,12 @@ export function initShaderProgram(gl: WebGLRenderingContext): [WebGLProgram, uni
                 pointer: gl.getUniformLocation(shaderProgram, "o_u_lightDirection"),
                 type: 'vector3'
             },
-            'o_u_limit':{
-                pointer: gl.getUniformLocation(shaderProgram, "o_u_limit"),
+            'o_u_innerLimit':{
+                pointer: gl.getUniformLocation(shaderProgram, "o_u_innerLimit"),
+                type: 'float'
+            },
+            'o_u_outerLimit':{
+                pointer: gl.getUniformLocation(shaderProgram, "o_u_outerLimit"),
                 type: 'float'
             },
         },

@@ -12,7 +12,8 @@ uniform vec3 o_u_lightColor;
 uniform vec3 o_u_specularColor;
 
 uniform vec3 o_u_lightDirection;
-uniform float o_u_limit;  
+uniform float o_u_innerLimit;  
+uniform float o_u_outerLimit;  
 
 void main() {
   highp vec4 texelColor = texture2D(uSampler, vTextureCoord);
@@ -25,7 +26,7 @@ void main() {
 
   float dotFromDirection = dot(surfaceToLightDirection,-o_u_lightDirection);
 
-  float inLight = step(o_u_limit, dotFromDirection);
+  float inLight = smoothstep(o_u_outerLimit, o_u_innerLimit, dotFromDirection);
   float light = 0.2 + inLight*dot(normal, surfaceToLightDirection);
   float specular = inLight*pow(dot(normal, halfVector), o_u_shininess);
 
