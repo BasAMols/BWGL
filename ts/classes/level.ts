@@ -2,6 +2,7 @@ import { glob } from '../game';
 import { DomElement } from './dom/domElement';
 import { Interface } from './dom/interface';
 import { GlElementAttributes, GlElement } from './elementBase';
+import { Light } from './light';
 import { Vector2 } from './math/vector2';
 import { Vector3 } from './math/vector3';
 import { GLCuboid } from './objects/cuboid';
@@ -19,6 +20,7 @@ export abstract class Level extends GlElement {
     abstract background: Color;
     public type: GlElementType = 'group';
     public levelZones: Zone[] = [];
+    public lights: Light[] = [];
     private colliderMeshes: GLCuboid[] = [];
     public interface: Interface = new Interface();
 
@@ -49,6 +51,10 @@ export abstract class Level extends GlElement {
         // });
         // this.colliderMeshes.push(mesh);
         // this.addChild(mesh);
+    }
+
+    addLight(c: Light) {
+        this.lights.push(c);
     }
 
     public get camera(): typeof this._camera {

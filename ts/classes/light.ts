@@ -1,51 +1,48 @@
 import { GlElementAttributes } from './elementBase';
-import { GlElementType } from './rendering/glRenderer';
-import { GlController } from './controller';
-import { Vector3, v3 } from './math/vector3';
+import { Vector3 } from './math/vector3';
+import { Color, Colors } from './util/colors';
+import { GLGroup } from './group';
 
 
-export type ZoneAttributes = GlElementAttributes & {
-    fixed?: boolean;
-    absoluteOffset?: Vector3
+export type LightAttributes = GlElementAttributes & {
+    range: [number,number];
+    limit: [number,number];
+    color?: Color,
+    specular?: Color,
+    direction?: Vector3
 };
 
-export type ZoneType = 'collider' | 'trigger' | 'interact';
-export abstract class Zone extends GlController {
-    public type: GlElementType = 'collider';
-    public fixed: boolean;
-    public abstract zoneType: ZoneType;
-    public overlaps: Zone[] = [];
-    public absoluteOffset: Vector3;
+export class Light extends GLGroup{
+    private _range: [number, number];
+    public get range(): [number, number] {
+        return this._range;
+    }
+    public set range(value: [number, number?]) {
+        this._range = [
+            value[0],
+            value[1]===undefined || value[1]<=value[0]?value[0]+1:value[1],
+        ]
+    }
+    private _limit: [number, number];
+    public get limit(): [number, number] {
+        return this._limit;
+    }
+    public set limit(value: [number, number]) {
+        this._limit = [
+            value[0],
+            value[1]===undefined || value[1]<=value[0]?value[0]+1:value[1],
+        ]
+    }
+    public specular: Color;
+    public direction: Vector3;
+    public color: Color;
 
-    public constructor(attr: ZoneAttributes) {
+    public constructor(attr: LightAttributes) {
         super(attr);
-        this.fixed = Boolean(attr.fixed);
-        this.absoluteOffset = attr.absoluteOffset || v3();
-    }
-
-    get globalPosition(){
-        return super.globalPosition.add(this.absoluteOffset);
-    }
-
-    public calculateOverlaps() {
-        this.overlaps = this.level.levelZones.filter(this.overlap.bind(this)) || [];
-    }
-
-    public overlap(othr: Zone): boolean {
-        //myself
-        if (this === othr) return false;
-        
-        //fixed objects dont react
-        if (this.fixed) return false;
-
-        //do these NOT overlap?
-        if (this.globalPosition.x + this.size.x < othr.globalPosition.x) return false; // to the x- of other
-        if (this.globalPosition.x > othr.globalPosition.x + othr.size.x) return false; // to the x+ of other
-        if (this.globalPosition.y + this.size.y < othr.globalPosition.y) return false; // to the y- of other
-        if (this.globalPosition.y > othr.globalPosition.y + othr.size.y) return false; // to the y+ of other
-        if (this.globalPosition.z + this.size.z < othr.globalPosition.z) return false; // to the z- of other
-        if (this.globalPosition.z > othr.globalPosition.z + othr.size.z) return false; // to the z+ of other
-
-        return true;
+        this.range = attr.range;
+        this.limit = attr.limit;
+        this.color = attr.color || Colors.w;
+        this.specular = attr.specular;
+        this.direction = attr.direction || Vector3.forwards;
     }
 }

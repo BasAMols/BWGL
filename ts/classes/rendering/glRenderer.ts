@@ -1,7 +1,7 @@
 import { vec4 } from 'gl-matrix';
 import { Game } from '../../game';
 import { TickerReturnData } from '../ticker';
-import { Vector3, v3 } from '../math/vector3';
+import { Vector3 } from '../math/vector3';
 import { GLRendable } from '../rendable';
 import { GlElement } from '../elementBase';
 import { Vector2 } from '../math/vector2';
@@ -85,17 +85,18 @@ export class GLRenderer {
         this.gl.useProgram(this.glt.program);
         this.glt.sendUniform('uSampler', 0);
         this.glt.sendUniform('uProjectionMatrix', this.getProjection().mat4);
-
-        this.glt.sendUniform('o_u_lightColor', v3(1, 1, 1).vec);
-        this.glt.sendUniform('o_u_specularColor', v3(0.6, 0.6, 0.6).scale(0.6).vec);
-        this.glt.sendUniform('o_u_lightWorldPosition', v3(0,100,500).vec);
         this.glt.sendUniform('o_u_viewWorldPosition', this.game.mode.camera.target.vec);
 
-        this.glt.sendUniform('o_u_lightDirection', Vector3.backwards.vec);
-        this.glt.sendUniform('o_u_innerLimit',  Math.cos(Util.degToRad(10)));
-        this.glt.sendUniform('o_u_outerLimit',  Math.cos(Util.degToRad(11)));
-        this.glt.sendUniform('o_u_innerRange',  1000);
-        this.glt.sendUniform('o_u_outerRange',  2000);
+        const light = this.game.level.lights[0]
+        this.glt.sendUniform('o_u_lightDirection', light.direction.vec);
+        this.glt.sendUniform('o_u_innerLimit',  Math.cos(Util.degToRad(light.limit[0])));
+        this.glt.sendUniform('o_u_outerLimit',  Math.cos(Util.degToRad(light.limit[1])));
+        this.glt.sendUniform('o_u_innerRange',  light.range[0]);
+        this.glt.sendUniform('o_u_outerRange',  light.range[1]);
+        this.glt.sendUniform('o_u_lightColor', light.color.slice(0,3));
+        this.glt.sendUniform('o_u_specularColor', light.specular.slice(0,3));
+        this.glt.sendUniform('o_u_lightWorldPosition', light.globalPosition.vec);
+
 
         this.drawChildren(this.game.level);
     }
@@ -141,7 +142,7 @@ export class GLRenderer {
 
         this.glt.sendUniform('o_u_worldViewProjection', worldViewProjectionMatrix.mat4);
         this.glt.sendUniform('o_u_worldInverseTranspose', worldInverseTransposeMatrix.mat4);
-        this.glt.sendUniform('o_u_shininess', 500);
+        this.glt.sendUniform('o_u_shininess', 300);
 
         this.glt.sendAttribute('o_a_position', mesh.buffer.positionBuffer);
         this.glt.sendAttribute('o_a_normal', mesh.buffer.normalBuffer);

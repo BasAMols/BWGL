@@ -2,13 +2,14 @@ import { Collider } from '../../classes/collider';
 import { TestObj } from '../../classes/debug/testObj';
 import { DomText } from '../../classes/dom/domText';
 import { Level } from '../../classes/level';
+import { Light } from '../../classes/light';
 import { Vector2, v2 } from '../../classes/math/vector2';
 import { Vector3, v3 } from '../../classes/math/vector3';
 import { ObjStorage } from '../../classes/objStorage';
 import { GLCuboid } from '../../classes/objects/cuboid';
 import { GLobj } from '../../classes/objects/obj';
 import { TickerReturnData } from '../../classes/ticker';
-import { Color } from '../../classes/util/colors';
+import { Color, Colors } from '../../classes/util/colors';
 import { glob } from '../../game';
 import { Driver } from './car/car_actor';
 import { Sky } from './entities/sky';
@@ -147,6 +148,15 @@ export class World extends Level {
         // });
         // this.addChild(this.car);
         // this.car.active = false;
+
+        this.addLight(new Light({
+            position: v3(0,100,500),
+            color: Colors.w,
+            specular: [0.3,0.3,0.3,1],
+            limit: [10,12],
+            range: [1500,2000],
+            direction: Vector3.backwards
+        }))
         this.addChild(new GLCuboid({ size: v3(10000, 1, 10000), position: v3(-5000, -6, -5000), colors: [[103 / 350, 119 / 350, 107 / 350, 1]] }));
         for (let x = 0; x < 20; x++) {
             for (let y = 0; y < 20; y++) {
