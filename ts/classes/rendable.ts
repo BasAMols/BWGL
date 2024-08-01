@@ -6,6 +6,7 @@ import { GLTexture } from './texture';
 export type GLRendableAttributes = GlElementAttributes & {
     opacity?: number;
     colorIntensity?: number;
+    ignoreLighting?: boolean;
 };
 
 export abstract class GLRendable extends GlElement {
@@ -13,6 +14,7 @@ export abstract class GLRendable extends GlElement {
     public colorIntensity: number = 1;
     public opacity: number = 1;
     public colors: [number, number, number, number][] = [];
+    public ignoreLighting: boolean;
     public abstract verticesCount: number;
     public abstract texture: GLTexture;
 
@@ -20,6 +22,7 @@ export abstract class GLRendable extends GlElement {
         super(attr);
         this.opacity = attr.opacity !== undefined ? attr.opacity : 1;
         this.colorIntensity = attr.colorIntensity !== undefined ? attr.colorIntensity : 1;
+        this.ignoreLighting = attr.ignoreLighting !== undefined ? attr.ignoreLighting : false;
     }
 
     public build() {

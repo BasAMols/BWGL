@@ -1,6 +1,6 @@
 import { GlElementType } from '../rendering/glRenderer';
 import { Color, Colors } from '../util/colors';
-import { Vector3 } from '../math/vector3';
+import { Vector3, v3 } from '../math/vector3';
 import { GLRendable, GLRendableAttributes } from '../rendable';
 import { GLTexture } from '../texture';
 
@@ -25,6 +25,7 @@ export class GLCuboid extends GLRendable {
     public dimensions = 0 | 1 | 2 | 3;
     public textureUrl: string;
     private faceCount: number;
+    public ignoreLighting: boolean;
 
     public get size(): Vector3 {
         return super.size;
@@ -76,13 +77,13 @@ export class GLCuboid extends GLRendable {
                 this.size,
                 72
             ),
-            size
+            v3(size.x,size.y,size.z*-1)
         );
     }
 
     protected normalBuffer() {
         return GLCuboid.sliceToDimension(
-            this.getBufferData().normal.map((v)=>v*-1),
+            this.getBufferData().normal,
             this.size,
             72
         );

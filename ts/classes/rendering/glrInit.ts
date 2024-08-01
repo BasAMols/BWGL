@@ -123,6 +123,10 @@ export function initShaderProgram(gl: WebGLRenderingContext): [WebGLProgram, uni
                 pointer: gl.getUniformLocation(shaderProgram, "o_u_outerRange"),
                 type: 'float'
             },
+            'o_u_ignoreLighting':{
+                pointer: gl.getUniformLocation(shaderProgram, "o_u_ignoreLighting"),
+                type: 'int'
+            },
         },
         {
             'aVertexPosition':{

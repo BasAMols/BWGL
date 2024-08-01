@@ -77,25 +77,31 @@ export class GLRenderer {
             )
             .translate(this.game.mode.camera.offset.multiply(1, 1, -1))
             .rotate(this.game.mode.camera.rotation)
-            .translate(this.game.mode.camera.target.multiply(-1, -1, 1))
+            .translate(this.game.mode.camera.target.multiply(-1, -1, 1));
     }
 
     draw() {
         this.clear();
         this.gl.useProgram(this.glt.program);
+        const camera = m4()
+            .translate(this.game.mode.camera.offset.multiply(1, 1, -1))
+            .rotate(this.game.mode.camera.rotation)
+            .translate(this.game.mode.camera.target.multiply(-1, -1, 1))
+
         this.glt.sendUniform('uSampler', 0);
         this.glt.sendUniform('uProjectionMatrix', this.getProjection().mat4);
-        this.glt.sendUniform('o_u_viewWorldPosition', this.game.mode.camera.target.vec);
+        this.glt.sendUniform('o_u_viewWorldPosition', camera.invert().position.vec);
 
-        const light = this.game.level.lights[0]
+
+        const light = this.game.level.lights[0];
         this.glt.sendUniform('o_u_lightDirection', light.direction.vec);
-        this.glt.sendUniform('o_u_innerLimit',  Math.cos(Util.degToRad(light.limit[0])));
-        this.glt.sendUniform('o_u_outerLimit',  Math.cos(Util.degToRad(light.limit[1])));
-        this.glt.sendUniform('o_u_innerRange',  light.range[0]);
-        this.glt.sendUniform('o_u_outerRange',  light.range[1]);
-        this.glt.sendUniform('o_u_lightColor', light.color.slice(0,3));
-        this.glt.sendUniform('o_u_specularColor', light.specular.slice(0,3));
-        this.glt.sendUniform('o_u_lightWorldPosition', light.globalPosition.vec);
+        this.glt.sendUniform('o_u_innerLimit', Math.cos(Util.degToRad(light.limit[0])));
+        this.glt.sendUniform('o_u_outerLimit', Math.cos(Util.degToRad(light.limit[1])));
+        this.glt.sendUniform('o_u_innerRange', light.range[0]);
+        this.glt.sendUniform('o_u_outerRange', light.range[1]);
+        this.glt.sendUniform('o_u_lightColor', light.color.slice(0, 3));
+        this.glt.sendUniform('o_u_specularColor', light.specular.slice(0, 3));
+        this.glt.sendUniform('o_u_lightWorldPosition', light.globalPosition.multiply(1,1,-1).vec);
 
 
         this.drawChildren(this.game.level);
@@ -139,7 +145,9 @@ export class GLRenderer {
 
         this.glt.sendUniform('o_u_worldViewProjection', worldViewProjectionMatrix.mat4);
         this.glt.sendUniform('o_u_worldInverseTranspose', worldInverseTransposeMatrix.mat4);
-        this.glt.sendUniform('o_u_shininess', 300);
+        this.glt.sendUniform('o_u_shininess', 600);
+        this.glt.sendUniform('o_u_ignoreLighting', Number(mesh.ignoreLighting));
+
 
         this.glt.sendAttribute('o_a_position', mesh.buffer.positionBuffer);
         this.glt.sendUniform('o_u_world', currentModelview.mat4);

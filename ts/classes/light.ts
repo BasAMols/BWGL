@@ -50,9 +50,12 @@ export class Light extends GLGroup{
     public build(): void {
         super.build();
         this.addChild(new GLCuboid({
-            colors: [Colors.y],
-            size: v3(50,50,2),
-            rotation: this.direction
+            anchorPoint: v3(2.5,2.5,1),
+            position: v3(-2.5,-2.5,0),
+            colors: [this.color, Colors.k,Colors.k,Colors.k,Colors.k,Colors.k],
+            size: v3(5,5,1),
+            rotation: v3(this.direction.y,this.direction.z,this.direction.x).scale(Math.PI),
+            ignoreLighting: true,
         }))
     }
 }

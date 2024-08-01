@@ -9,8 +9,7 @@ import { ObjStorage } from '../../classes/objStorage';
 import { GLCuboid } from '../../classes/objects/cuboid';
 import { GLobj } from '../../classes/objects/obj';
 import { TickerReturnData } from '../../classes/ticker';
-import { Color, Colors } from '../../classes/util/colors';
-import { glob } from '../../game';
+import { Color } from '../../classes/util/colors';
 import { Driver } from './car/car_actor';
 import { Sky } from './entities/sky';
 import { Player } from './player/player_actor';
@@ -52,7 +51,7 @@ export class World extends Level {
             color: 'white',
             text: '0'
         });
-        // this.addUi(this.test2d);
+        this.addUi(this.test2d);
     }
 
     keyDown(e: KeyboardEvent): void {
@@ -150,11 +149,11 @@ export class World extends Level {
         // this.car.active = false;
 
         this.addLight(new Light({
-            position: v3(0,100,500),
-            color: Colors.w,
+            position: v3(0,10,50),
+            color: [0.9,0.9,0.85,1],
             specular: [0.3,0.3,0.3,1],
-            limit: [10,12],
-            range: [1500,2000],
+            limit: [13,13.1],
+            range: [2000,2500],
             direction: v3(0,0,-1),
         }))
         this.addChild(new GLCuboid({ size: v3(10000, 1, 10000), position: v3(-5000, -6, -5000), colors: [[103 / 350, 119 / 350, 107 / 350, 1]] }));
@@ -195,24 +194,24 @@ export class World extends Level {
             area: v2(4000, 2000),
             density: 0.003
         }));
-        this.addChild(new Forrest({
-            storage: this.mode.storage,
-            position: v3(-2000, 0, -1800),
-            area: v2(4000, 2000),
-            density: 0.003
-        }));
-        this.addChild(new Forrest({
-            storage: this.mode.storage,
-            position: v3(-2300, 0, -1800),
-            area: v2(2000, 4000),
-            density: 0.003
-        }));
-        this.addChild(new Forrest({
-            storage: this.mode.storage,
-            position: v3(300, 0, -1800),
-            area: v2(2000, 4000),
-            density: 0.003
-        }));
+        // this.addChild(new Forrest({
+        //     storage: this.mode.storage,
+        //     position: v3(-2000, 0, -1800),
+        //     area: v2(4000, 2000),
+        //     density: 0.003
+        // }));
+        // this.addChild(new Forrest({
+        //     storage: this.mode.storage,
+        //     position: v3(-2300, 0, -1800),
+        //     area: v2(2000, 4000),
+        //     density: 0.003
+        // }));
+        // this.addChild(new Forrest({
+        //     storage: this.mode.storage,
+        //     position: v3(300, 0, -1800),
+        //     area: v2(2000, 4000),
+        //     density: 0.003
+        // }));
 
         // this.addChild(new GLobj({
         //     controllers: [new Collider({
@@ -239,14 +238,14 @@ export class World extends Level {
 
         // this.sky = this.addChild(new Sky()) as Sky;
 
-        console.log(glob);
+        // console.log(glob);
                 
 
     }
 
     public tick(obj: TickerReturnData): void {
         super.tick(obj);
-        this.test2d.position = this.player.screenPosition;
+        this.test2d.text = this.player.globalPosition.vec.map((v)=>+v.toFixed(1)).join('\n');
     }
 
 }

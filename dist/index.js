@@ -334,6 +334,7 @@ var DomText = class extends DomElement {
     this.dom.style.pointerEvents = "none";
     this.dom.style.userSelect = "none";
     this.dom.style.zIndex = "1";
+    this.dom.style.whiteSpace = "pre-line";
   }
 };
 
@@ -577,7 +578,7 @@ var Input = class {
 var vertexShaderDir_default = "\nattribute vec4 o_a_position;\nattribute vec3 o_a_normal;\n\nuniform mat4 uModelViewMatrix;\nuniform mat4 uProjectionMatrix;\nattribute vec2 aTextureCoord;\nuniform mat4 uNormalMatrix;\nattribute vec3 aVertexNormal;\n\nuniform vec3 o_u_lightWorldPosition;\nuniform vec3 o_u_viewWorldPosition;\n\nuniform mat4 o_u_world;\nuniform mat4 o_u_worldViewProjection;\nuniform mat4 o_u_worldInverseTranspose;\n\nvarying vec3 o_v_normal;\n\nvarying vec3 o_v_surfaceToLight;\nvarying vec3 o_v_surfaceToView;\n\nvarying highp vec2 vTextureCoord;\n\nvoid main() {\n  gl_Position = uProjectionMatrix * uModelViewMatrix * o_a_position;\n  vTextureCoord = aTextureCoord;\n\n  o_v_normal = (uNormalMatrix * vec4(aVertexNormal, 1.0)).xyz;\n  vec3 surfaceWorldPosition = (uModelViewMatrix * o_a_position).xyz;\n  o_v_surfaceToLight = o_u_lightWorldPosition - surfaceWorldPosition;\n  o_v_surfaceToView = normalize(o_u_viewWorldPosition - surfaceWorldPosition);\n}";
 
 // ts/classes/shaders/fragmentShaderDir.ts
-var fragmentShaderDir_default = "\nprecision mediump float;\n\nvarying vec3 o_v_normal;\nvarying vec3 o_v_surfaceToLight;\nvarying vec3 o_v_surfaceToView;\nvarying highp vec2 vTextureCoord;\n\nuniform sampler2D uSampler;\nuniform float o_u_shininess;\n\nuniform vec3 o_u_lightColor;\nuniform vec3 o_u_specularColor;\nuniform vec3 o_u_lightDirection;\nuniform float o_u_innerLimit;  \nuniform float o_u_outerLimit;  \nuniform float o_u_innerRange;  \nuniform float o_u_outerRange;  \n\nvoid main() {\n  highp vec4 texelColor = texture2D(uSampler, vTextureCoord);\n\n  vec3 normal = normalize(o_v_normal);\n\n  vec3 surfaceToLightDirection = normalize(o_v_surfaceToLight);\n  vec3 surfaceToViewDirection = normalize(o_v_surfaceToView);\n  vec3 halfVector = normalize(surfaceToLightDirection + surfaceToViewDirection);\n\n  float dotFromDirection = dot(surfaceToLightDirection,-o_u_lightDirection);\n\n  float rangeLight = smoothstep(o_u_outerRange, o_u_innerRange, length(o_v_surfaceToLight));\n  float inLight = smoothstep(o_u_outerLimit, o_u_innerLimit, dotFromDirection);\n  float light = 0.2 + rangeLight*inLight*dot(normal, surfaceToLightDirection);\n  float specular = rangeLight*inLight*pow(dot(normal, halfVector), o_u_shininess);\n\n  gl_FragColor = texelColor;\n  gl_FragColor.rgb *= light * o_u_lightColor;\n  gl_FragColor.rgb += specular * o_u_specularColor;\n}\n";
+var fragmentShaderDir_default = "\nprecision mediump float;\n\nvarying vec3 o_v_normal;\nvarying vec3 o_v_surfaceToLight;\nvarying vec3 o_v_surfaceToView;\nvarying highp vec2 vTextureCoord;\n\nuniform sampler2D uSampler;\n\nuniform float o_u_shininess;\nuniform vec3 o_u_lightColor;\nuniform vec3 o_u_specularColor;\nuniform vec3 o_u_lightDirection;\nuniform float o_u_innerLimit;  \nuniform float o_u_outerLimit;  \nuniform float o_u_innerRange;  \nuniform float o_u_outerRange;  \nuniform int o_u_ignoreLighting;  \n\nvoid main() {\n  highp vec4 texelColor = texture2D(uSampler, vTextureCoord);\n\n  vec3 normal = normalize(o_v_normal);\n\n  vec3 surfaceToLightDirection = normalize(o_v_surfaceToLight);\n  vec3 surfaceToViewDirection = normalize(o_v_surfaceToView);\n  vec3 halfVector = normalize(surfaceToLightDirection + surfaceToViewDirection);\n\n  float dotFromDirection = dot(surfaceToLightDirection,-o_u_lightDirection);\n\n  float rangeLight = smoothstep(o_u_outerRange, o_u_innerRange, length(o_v_surfaceToLight));\n  float inLight = smoothstep(o_u_outerLimit, o_u_innerLimit, dotFromDirection);\n  float light = 0.3 + rangeLight*inLight*dot(normal, surfaceToLightDirection);\n  float specular = rangeLight*(inLight*pow(dot(normal, halfVector), o_u_shininess));\n  gl_FragColor = texelColor;\n  if (o_u_ignoreLighting == 0){\n    gl_FragColor.rgb *= light * o_u_lightColor;\n    gl_FragColor.rgb += specular * o_u_specularColor;\n  }\n}\n";
 
 // ts/classes/rendering/glrInit.ts
 function loadShader(gl, type, source) {
@@ -684,6 +685,10 @@ function initShaderProgram(gl) {
       "o_u_outerRange": {
         pointer: gl.getUniformLocation(shaderProgram, "o_u_outerRange"),
         type: "float"
+      },
+      "o_u_ignoreLighting": {
+        pointer: gl.getUniformLocation(shaderProgram, "o_u_ignoreLighting"),
+        type: "int"
       }
     },
     {
@@ -2502,9 +2507,10 @@ var GLRenderer = class {
   draw() {
     this.clear();
     this.gl.useProgram(this.glt.program);
+    const camera = m4().translate(this.game.mode.camera.offset.multiply(1, 1, -1)).rotate(this.game.mode.camera.rotation).translate(this.game.mode.camera.target.multiply(-1, -1, 1));
     this.glt.sendUniform("uSampler", 0);
     this.glt.sendUniform("uProjectionMatrix", this.getProjection().mat4);
-    this.glt.sendUniform("o_u_viewWorldPosition", this.game.mode.camera.target.vec);
+    this.glt.sendUniform("o_u_viewWorldPosition", camera.invert().position.vec);
     const light = this.game.level.lights[0];
     this.glt.sendUniform("o_u_lightDirection", light.direction.vec);
     this.glt.sendUniform("o_u_innerLimit", Math.cos(Util.degToRad(light.limit[0])));
@@ -2513,7 +2519,7 @@ var GLRenderer = class {
     this.glt.sendUniform("o_u_outerRange", light.range[1]);
     this.glt.sendUniform("o_u_lightColor", light.color.slice(0, 3));
     this.glt.sendUniform("o_u_specularColor", light.specular.slice(0, 3));
-    this.glt.sendUniform("o_u_lightWorldPosition", light.globalPosition.vec);
+    this.glt.sendUniform("o_u_lightWorldPosition", light.globalPosition.multiply(1, 1, -1).vec);
     this.drawChildren(this.game.level);
   }
   drawChildren(element) {
@@ -2545,7 +2551,8 @@ var GLRenderer = class {
     const worldInverseTransposeMatrix = worldInverseMatrix.transpose();
     this.glt.sendUniform("o_u_worldViewProjection", worldViewProjectionMatrix.mat4);
     this.glt.sendUniform("o_u_worldInverseTranspose", worldInverseTransposeMatrix.mat4);
-    this.glt.sendUniform("o_u_shininess", 300);
+    this.glt.sendUniform("o_u_shininess", 600);
+    this.glt.sendUniform("o_u_ignoreLighting", Number(mesh.ignoreLighting));
     this.glt.sendAttribute("o_a_position", mesh.buffer.positionBuffer);
     this.glt.sendUniform("o_u_world", currentModelview.mat4);
     this.glt.drawElements(mesh.verticesCount);
@@ -3014,6 +3021,7 @@ var GLRendable = class extends GlElement {
     this.colors = [];
     this.opacity = attr.opacity !== void 0 ? attr.opacity : 1;
     this.colorIntensity = attr.colorIntensity !== void 0 ? attr.colorIntensity : 1;
+    this.ignoreLighting = attr.ignoreLighting !== void 0 ? attr.ignoreLighting : false;
   }
   build() {
     this.buffer = {
@@ -3153,12 +3161,12 @@ var GLCuboid = class _GLCuboid extends GLRendable {
         this.size,
         72
       ),
-      size
+      v3(size.x, size.y, size.z * -1)
     );
   }
   normalBuffer() {
     return _GLCuboid.sliceToDimension(
-      this.getBufferData().normal.map((v) => v * -1),
+      this.getBufferData().normal,
       this.size,
       72
     );
@@ -3486,9 +3494,12 @@ var Light = class extends GLGroup {
   build() {
     super.build();
     this.addChild(new GLCuboid({
-      colors: [Colors.y],
-      size: v3(50, 50, 2),
-      rotation: this.direction
+      anchorPoint: v3(2.5, 2.5, 1),
+      position: v3(-2.5, -2.5, 0),
+      colors: [this.color, Colors.k, Colors.k, Colors.k, Colors.k, Colors.k],
+      size: v3(5, 5, 1),
+      rotation: v3(this.direction.y, this.direction.z, this.direction.x).scale(Math.PI),
+      ignoreLighting: true
     }));
   }
 };
@@ -4627,6 +4638,7 @@ var World = class extends Level {
       color: "white",
       text: "0"
     });
+    this.addUi(this.test2d);
   }
   keyDown(e) {
     if (e.key === "Enter") {
@@ -4702,11 +4714,11 @@ var World = class extends Level {
     });
     this.addChild(this.player);
     this.addLight(new Light({
-      position: v3(0, 100, 500),
-      color: Colors.w,
+      position: v3(0, 10, 50),
+      color: [0.9, 0.9, 0.85, 1],
       specular: [0.3, 0.3, 0.3, 1],
-      limit: [10, 12],
-      range: [1500, 2e3],
+      limit: [13, 13.1],
+      range: [2e3, 2500],
       direction: v3(0, 0, -1)
     }));
     this.addChild(new GLCuboid({ size: v3(1e4, 1, 1e4), position: v3(-5e3, -6, -5e3), colors: [[103 / 350, 119 / 350, 107 / 350, 1]] }));
@@ -4721,29 +4733,10 @@ var World = class extends Level {
       area: v2(4e3, 2e3),
       density: 3e-3
     }));
-    this.addChild(new Forrest({
-      storage: this.mode.storage,
-      position: v3(-2e3, 0, -1800),
-      area: v2(4e3, 2e3),
-      density: 3e-3
-    }));
-    this.addChild(new Forrest({
-      storage: this.mode.storage,
-      position: v3(-2300, 0, -1800),
-      area: v2(2e3, 4e3),
-      density: 3e-3
-    }));
-    this.addChild(new Forrest({
-      storage: this.mode.storage,
-      position: v3(300, 0, -1800),
-      area: v2(2e3, 4e3),
-      density: 3e-3
-    }));
-    console.log(glob);
   }
   tick(obj) {
     super.tick(obj);
-    this.test2d.position = this.player.screenPosition;
+    this.test2d.text = this.player.globalPosition.vec.map((v) => +v.toFixed(1)).join("\n");
   }
 };
 
