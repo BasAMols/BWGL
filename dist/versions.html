@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Versions</title>
+    <style>
+        body {
+            display: flex;
+            margin: 0;
+            padding: 50px;
+            margin: 0px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        a {
+            width: 600px;
+            border: 3px solid black;
+            text-decoration: none !important;
+            margin: 10px;
+            border-radius: 4px;
+            overflow: hidden;
+            padding: 0 !IMPORTANT;
+            height: 402px;
+            box-shadow: 0px 0px 70px #00000549;
+            transition: opacity 0.2s;
+        }
+
+        img {
+            width: 100%;
+            height: 340px;
+            object-fit: cover;
+            z-index: 9;
+            position: relative;
+        }
+
+        h2 {
+            padding: 14px;
+            line-height: 1em;
+            margin: 0;
+            text-decoration: none;
+            font-size: 30px;
+            font-family: system-ui;
+            height: 58px;
+        }
+
+        a:hover {
+            opacity: 0.7;
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            ['v0001'].forEach((s) => {
+                const a = document.createElement('a');
+                a.href = `/${s}/`
+                a.appendChild(document.createElement('h2')).innerHTML = s;
+                a.appendChild(document.createElement('img')).src = `screenshots/${s}.png`;
+                document.body.appendChild(a)
+            })
+        });
+
+    </script>
+</head>
+
+<body>
+
+</body>
+
+</html>
