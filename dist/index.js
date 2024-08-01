@@ -2492,8 +2492,8 @@ var GLRenderer = class {
     this.gl.useProgram(this.glt.program);
     this.glt.sendUniform("uSampler", 0);
     this.glt.sendUniform("uProjectionMatrix", this.getProjection().mat4);
-    this.glt.sendUniform("o_u_lightColor", v3(0, 1, 1).vec);
-    this.glt.sendUniform("o_u_specularColor", v3(0, 0.5, 0.5).vec);
+    this.glt.sendUniform("o_u_lightColor", v3(1, 1, 1).vec);
+    this.glt.sendUniform("o_u_specularColor", v3(0.6, 0.6, 0.6).scale(0.6).vec);
     this.glt.sendUniform("o_u_lightWorldPosition", v3(0, 100, 500).vec);
     this.glt.sendUniform("o_u_viewWorldPosition", this.game.mode.camera.target.vec);
     this.glt.sendUniform("o_u_lightDirection", Vector3.backwards.vec);
@@ -2527,7 +2527,7 @@ var GLRenderer = class {
     const worldInverseTransposeMatrix = worldInverseMatrix.transpose();
     this.glt.sendUniform("o_u_worldViewProjection", worldViewProjectionMatrix.mat4);
     this.glt.sendUniform("o_u_worldInverseTranspose", worldInverseTransposeMatrix.mat4);
-    this.glt.sendUniform("o_u_shininess", 2e3);
+    this.glt.sendUniform("o_u_shininess", 500);
     this.glt.sendAttribute("o_a_position", mesh.buffer.positionBuffer);
     this.glt.sendAttribute("o_a_normal", mesh.buffer.normalBuffer);
     this.glt.sendUniform("o_u_world", currentModelview.mat4);
