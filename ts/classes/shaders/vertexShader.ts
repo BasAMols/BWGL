@@ -29,3 +29,4 @@ void main(void) {
     vLighting = ambientLight + (directionalLightColor * directional);
   }
 }`
+

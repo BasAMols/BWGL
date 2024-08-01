@@ -1,15 +1,15 @@
 import { Vector3 } from '../math/vector3';
 
-export abstract class Util{
-    public static clamp(value:number, min:number, max:number) {
+export abstract class Util {
+    public static clamp(value: number, min: number, max: number) {
         return Math.max(Math.min(value, max), min);
     }
-    public static to0(value:number, tolerance: number = 0.1) {
+    public static to0(value: number, tolerance: number = 0.1) {
         return Math.abs(value) < tolerance ? 0 : value;
     }
 
     public static padArray(ar: any[], b: any, len: number) {
-        return ar.concat(Array.from(Array(len).fill(b))).slice(0,len);
+        return ar.concat(Array.from(Array(len).fill(b))).slice(0, len);
     }
 
     public static addArrays(ar: number[], br: number[]) {
@@ -28,17 +28,25 @@ export abstract class Util{
         return ar.map((a, i) => a * b);
     }
 
+    public static radToDeg(r: number) {
+        return r * 180 / Math.PI;
+    }
+
+    public static degToRad(d: number) {
+        return d * Math.PI / 180;
+    }
+
     public static closestVectorMagniture(vectors: Vector3[], target: number): Vector3 {
         let current: Vector3;
-        vectors.forEach((v)=>{
+        vectors.forEach((v) => {
             if (current === undefined || Math.abs(v.magnitude()) < Math.abs(current.magnitude())) current = v;
             else {
                 // console.log(current.magnitude(), v.magnitude());
             }
 
-        })
+        });
         return current;
     }
-    
-    
+
+
 }

@@ -1,12 +1,13 @@
 import { vec4 } from 'gl-matrix';
 import { Game } from '../../game';
 import { TickerReturnData } from '../ticker';
-import { Vector3 } from '../math/vector3';
+import { Vector3, v3 } from '../math/vector3';
 import { GLRendable } from '../rendable';
 import { GlElement } from '../elementBase';
 import { Vector2 } from '../math/vector2';
 import { GLTranslator } from './glTranslator';
-import { Matrix4 } from '../math/matrix4';
+import { Matrix4, m4 } from '../math/matrix4';
+import { Util } from '../util/utils';
 
 export interface bufferDataInitilizers {
     indices: WebGLBuffer;
@@ -62,6 +63,7 @@ export class GLRenderer {
         this.gl.clearColor(...this.game.level.background);
         this.gl.clearDepth(1.0);
         this.gl.enable(this.gl.DEPTH_TEST);
+        this.gl.enable(this.gl.CULL_FACE);
         this.gl.depthFunc(this.gl.LEQUAL);
         this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
     }
@@ -80,10 +82,17 @@ export class GLRenderer {
 
     draw() {
         this.clear();
-
         this.gl.useProgram(this.glt.program);
         this.glt.sendUniform('uSampler', 0);
         this.glt.sendUniform('uProjectionMatrix', this.getProjection().mat4);
+
+        this.glt.sendUniform('o_u_lightColor', v3(0, 1, 1).vec);
+        this.glt.sendUniform('o_u_specularColor', v3(0, 0.5, 0.5).vec);
+        this.glt.sendUniform('o_u_lightWorldPosition', v3(0,100,500).vec);
+        this.glt.sendUniform('o_u_viewWorldPosition', this.game.mode.camera.target.vec);
+
+        this.glt.sendUniform('o_u_lightDirection', Vector3.backwards.vec);
+        this.glt.sendUniform('o_u_limit',  Math.cos(Util.degToRad(10)));
 
         this.drawChildren(this.game.level);
     }
@@ -107,16 +116,35 @@ export class GLRenderer {
     renderMesh(mesh: GLRendable, currentModelview: Matrix4) {
         this.glt.sendBuffer(mesh.buffer.indices, 'element');
 
-        this.glt.sendAttribute('aVertexPosition', mesh.buffer.positionBuffer);
-        this.glt.sendAttribute('aVertexNormal', mesh.buffer.normalBuffer);
-        this.glt.sendAttribute('aTextureCoord', mesh.buffer.textureCoord);
+        // this.glt.sendAttribute('aVertexPosition', mesh.buffer.positionBuffer);
+        // this.glt.sendAttribute('aVertexNormal', mesh.buffer.normalBuffer);
 
         this.glt.sendUniform('uModelViewMatrix', currentModelview.mat4);
-        this.glt.sendUniform('uOpacity', mesh.opacity);
-        this.glt.sendUniform('uIntensity', mesh.colorIntensity);
-        this.glt.sendUniform('uNormalMatrix', currentModelview.invert().transpose().mat4);
-
+        // this.glt.sendUniform('uOpacity', mesh.opacity);
+        // this.glt.sendUniform('uIntensity', mesh.colorIntensity);
+        // this.glt.sendUniform('uNormalMatrix', currentModelview.invert().transpose().mat4);
+        this.glt.sendAttribute('aTextureCoord', mesh.buffer.textureCoord);
         this.glt.sendTexture(mesh.texture.texture);
+
+        const projectionMatrix = this.getProjection();
+
+        const cameraMatrix = m4();
+        const viewMatrix = cameraMatrix.invert();
+        const viewProjectionMatrix = projectionMatrix.multiply(viewMatrix);
+
+        const worldViewProjectionMatrix = viewProjectionMatrix.multiply(currentModelview);
+        const worldInverseMatrix = currentModelview.invert();
+        const worldInverseTransposeMatrix = worldInverseMatrix.transpose();
+
+        this.glt.sendUniform('o_u_worldViewProjection', worldViewProjectionMatrix.mat4);
+        this.glt.sendUniform('o_u_worldInverseTranspose', worldInverseTransposeMatrix.mat4);
+        this.glt.sendUniform('o_u_shininess', 2000);
+
+        this.glt.sendAttribute('o_a_position', mesh.buffer.positionBuffer);
+        this.glt.sendAttribute('o_a_normal', mesh.buffer.normalBuffer);
+        this.glt.sendUniform('o_u_world', currentModelview.mat4);
+
+
         this.glt.drawElements(mesh.verticesCount);
     }
 }

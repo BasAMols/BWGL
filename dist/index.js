@@ -573,11 +573,289 @@ var Input = class {
   }
 };
 
-// ts/classes/shaders/vertexShader.ts
-var vertexShader_default = "\nattribute vec4 aVertexPosition;\nattribute vec3 aVertexNormal;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uModelViewMatrix;\nuniform mat4 uProjectionMatrix;\nuniform mat4 uNormalMatrix;\n\nvarying highp vec2 vTextureCoord;\nvarying highp vec3 vLighting;\nvarying highp vec3 vCloudLighting;\n\nuniform mat4 u_world;\nuniform mat4 u_worldViewProjection;\nuniform mat4 u_worldInverseTranspose;\n\nvarying vec3 v_normal;\n\nvarying vec3 v_surfaceToLight;\nvarying vec3 v_surfaceToView;\n\nvoid main(void) {\n  gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;\n  vTextureCoord = aTextureCoord;\n\n  v_normal = mat3(u_worldInverseTranspose) * a_normal;\n  vec3 surfaceWorldPosition = (u_world * a_position).xyz;\n  v_surfaceToLight = u_lightWorldPosition - surfaceWorldPosition;\n  v_surfaceToView = normalize(u_viewWorldPosition - surfaceWorldPosition);\n\n\n  highp vec3 ambientLight = vec3(0.8, 0.8, 1) *0.7;\n  highp vec3 directionalLightColor = vec3(1, 1, 1);\n  highp vec3 directionalVector = normalize(vec3(-0.7, .7, 0.3));\n\n  highp vec4 transformedNormal = uNormalMatrix * vec4(aVertexNormal, 1.0);\n  highp float directional = max(dot(transformedNormal.xyz, directionalVector), 0.0);\n  lowp vec3 vCloudLighting = vec3(1, 1, 1)*0.9 + (vec3(1, 1, 1) * max(dot(transformedNormal.xyz, normalize(vec3(0, -1, 0))), 0.0)*0.0)*0.6;\n\n  if ((uModelViewMatrix * aVertexPosition).y > 600.0) {\n    vLighting = vCloudLighting * 0.9;\n  } else {\n    vLighting = ambientLight + (directionalLightColor * directional);\n  }\n}";
+// ts/classes/util/utils.ts
+var Util = class {
+  static clamp(value, min, max) {
+    return Math.max(Math.min(value, max), min);
+  }
+  static to0(value, tolerance = 0.1) {
+    return Math.abs(value) < tolerance ? 0 : value;
+  }
+  static padArray(ar, b, len) {
+    return ar.concat(Array.from(Array(len).fill(b))).slice(0, len);
+  }
+  static addArrays(ar, br) {
+    return ar.map((a, i) => a + br[i]);
+  }
+  static subtractArrays(ar, br) {
+    return ar.map((a, i) => a - br[i]);
+  }
+  static multiplyArrays(ar, br) {
+    return ar.map((a, i) => a * br[i]);
+  }
+  static scaleArrays(ar, b) {
+    return ar.map((a, i) => a * b);
+  }
+  static radToDeg(r) {
+    return r * 180 / Math.PI;
+  }
+  static degToRad(d) {
+    return d * Math.PI / 180;
+  }
+  static closestVectorMagniture(vectors, target) {
+    let current;
+    vectors.forEach((v) => {
+      if (current === void 0 || Math.abs(v.magnitude()) < Math.abs(current.magnitude()))
+        current = v;
+      else {
+      }
+    });
+    return current;
+  }
+};
 
-// ts/classes/shaders/fragmentShader.ts
-var fragmentShader_default = "\nprecision mediump float;\n\nvarying highp vec2 vTextureCoord;\nvarying highp vec3 vLighting;\n\nuniform sampler2D uSampler;\nuniform lowp float uOpacity;\nuniform lowp float uIntensity;\n\nvarying vec3 v_normal;\nvarying vec3 v_surfaceToLight;\nvarying vec3 v_surfaceToView;\n\nuniform float u_shininess;\nuniform vec3 u_lightColor;\nuniform vec3 u_specularColor;\n\nvoid main(void) {\n    highp vec4 texelColor = texture2D(uSampler, vTextureCoord);\n\n    vec3 normal = normalize(v_normal);\n    \n    vec3 surfaceToLightDirection = normalize(v_surfaceToLight);\n    vec3 surfaceToViewDirection = normalize(v_surfaceToView);\n    vec3 halfVector = normalize(surfaceToLightDirection + surfaceToViewDirection);\n\n    float light = dot(normal, surfaceToLightDirection);\n    float specular = 0.0;\n    if (light > 0.0) {\n        specular = pow(dot(normal, halfVector), u_shininess);\n    }\n\n    gl_FragColor = vec4((texelColor.rgb+texelColor.rgb * (uIntensity-1.0)) * light * u_lightColor, texelColor.a*uOpacity);\n}\n";
+// ts/classes/math/vector3.ts
+function v3(a, b, c) {
+  if (typeof a === "number") {
+    return Vector3.f(a, b, c);
+  } else if (typeof a === "undefined") {
+    return Vector3.f(0);
+  } else {
+    return Vector3.f(...a);
+  }
+}
+var Vector3 = class _Vector3 {
+  get pitch() {
+    return this.x;
+  }
+  set pitch(value) {
+    this.x = value;
+  }
+  get yaw() {
+    return this.y;
+  }
+  set yaw(value) {
+    this.y = value;
+  }
+  get roll() {
+    return this.z;
+  }
+  set roll(value) {
+    this.z = value;
+  }
+  get x() {
+    return this.vec[0];
+  }
+  set x(value) {
+    this.vec[0] = value;
+  }
+  get y() {
+    return this.vec[1];
+  }
+  set y(value) {
+    this.vec[1] = value;
+  }
+  get z() {
+    return this.vec[2];
+  }
+  set z(value) {
+    this.vec[2] = value;
+  }
+  get xy() {
+    return v2(this.x, this.y);
+  }
+  set xy(v) {
+    this.x = v.x;
+    this.y = v.y;
+  }
+  get xz() {
+    return v2(this.x, this.z);
+  }
+  set xz(v) {
+    this.x = v.x;
+    this.z = v.y;
+  }
+  get yx() {
+    return v2(this.y, this.x);
+  }
+  set yx(v) {
+    this.y = v.x;
+    this.x = v.y;
+  }
+  get yz() {
+    return v2(this.y, this.z);
+  }
+  set yz(v) {
+    this.y = v.x;
+    this.z = v.y;
+  }
+  get zx() {
+    return v2(this.z, this.x);
+  }
+  set zx(v) {
+    this.z = v.x;
+    this.x = v.y;
+  }
+  get zy() {
+    return v2(this.z, this.y);
+  }
+  set zy(v) {
+    this.z = v.x;
+    this.y = v.y;
+  }
+  constructor(x = 0, y = 0, z = 0) {
+    this.vec = [x, y, z];
+  }
+  static from2(vector, z = 0) {
+    return new _Vector3(vector.x, vector.y, z);
+  }
+  static f(x = 0, y = x, z = x) {
+    return new _Vector3(x, y, z);
+  }
+  static get forwards() {
+    return new _Vector3(0, 0, 1);
+  }
+  static get backwards() {
+    return new _Vector3(0, 0, -1);
+  }
+  static get up() {
+    return new _Vector3(0, 1, 0);
+  }
+  static get down() {
+    return new _Vector3(0, -1, 0);
+  }
+  static get left() {
+    return new _Vector3(-1, 0, 0);
+  }
+  static get right() {
+    return new _Vector3(1, 0, 0);
+  }
+  static get PI() {
+    return new _Vector3(Math.PI, Math.PI, Math.PI);
+  }
+  static get TAU() {
+    return _Vector3.PI.scale(0.5);
+  }
+  get array() {
+    return [this.x, this.y, this.z];
+  }
+  set array(a) {
+    [this.x, this.y, this.z] = a;
+  }
+  forEach(callbackfn) {
+    this.array.forEach(callbackfn);
+  }
+  get c() {
+    return this.clone();
+  }
+  equals(vector) {
+    return this.x === vector.x && this.y === vector.y && this.z === vector.z;
+  }
+  clone() {
+    return new _Vector3(
+      this.x,
+      this.y,
+      this.z
+    );
+  }
+  add(vector) {
+    return new _Vector3(
+      this.x + vector.x,
+      this.y + vector.y,
+      this.z + vector.z
+    );
+  }
+  multiply(a, b, c) {
+    const [x, y, z] = typeof a === "number" ? [a, b, c] : a.array;
+    return new _Vector3(
+      this.x * x,
+      this.y * y,
+      this.z * z
+    );
+  }
+  subtract(vector) {
+    return new _Vector3(
+      this.x - vector.x,
+      this.y - vector.y,
+      this.z - vector.z
+    );
+  }
+  scale(scalar) {
+    return new _Vector3(
+      this.x * scalar,
+      this.y * scalar,
+      this.z * scalar
+    );
+  }
+  divide(vector) {
+    return new _Vector3(
+      this.x / vector.x,
+      this.y / vector.y,
+      this.z / vector.z
+    );
+  }
+  rotateXY(rad) {
+    const [a, b] = this.xy.rotate(rad).array;
+    return new _Vector3(
+      a,
+      this.y,
+      b
+    );
+  }
+  rotateXZ(rad) {
+    const [a, b] = this.xz.rotate(rad).array;
+    return new _Vector3(
+      a,
+      b,
+      this.z
+    );
+  }
+  rotateYZ(rad) {
+    const [a, b] = this.yz.rotate(rad).array;
+    return new _Vector3(
+      this.x,
+      a,
+      b
+    );
+  }
+  magnitude() {
+    return Math.sqrt(this.magnitudeSqr());
+  }
+  magnitudeSqr() {
+    return this.x * this.x + this.y * this.y + this.z * this.z;
+  }
+  mod(max) {
+    return new _Vector3(
+      this.x % max.x,
+      this.y % max.y,
+      this.z % max.z
+    );
+  }
+  clamp(min, max) {
+    return new _Vector3(
+      Util.clamp(this.x, min.x, max.x),
+      Util.clamp(this.y, min.y, max.y),
+      Util.clamp(this.z, min.z, max.z)
+    );
+  }
+  normalize() {
+    let len = this.x * this.x + this.y * this.y + this.z * this.z;
+    if (len > 0) {
+      len = 1 / Math.sqrt(len);
+    }
+    return v3(
+      this.x * len,
+      this.y * len,
+      this.z * len
+    );
+  }
+};
+
+// ts/classes/shaders/vertexShaderDir.ts
+var vertexShaderDir_default = "\nattribute vec4 o_a_position;\nattribute vec3 o_a_normal;\n\nuniform mat4 uModelViewMatrix;\nuniform mat4 uProjectionMatrix;\nattribute vec2 aTextureCoord;\nuniform mat4 uNormalMatrix;\n\nuniform vec3 o_u_lightWorldPosition;\nuniform vec3 o_u_viewWorldPosition;\n\nuniform mat4 o_u_world;\nuniform mat4 o_u_worldViewProjection;\nuniform mat4 o_u_worldInverseTranspose;\n\nvarying vec3 o_v_normal;\n\nvarying vec3 o_v_surfaceToLight;\nvarying vec3 o_v_surfaceToView;\n\nvarying highp vec2 vTextureCoord;\n\nvoid main() {\n  gl_Position = uProjectionMatrix * uModelViewMatrix * o_a_position;\n  vTextureCoord = aTextureCoord;\n\n  o_v_normal = mat3(o_u_worldInverseTranspose) * o_a_normal;\n  vec3 surfaceWorldPosition = (uModelViewMatrix * o_a_position).xyz;\n  o_v_surfaceToLight = o_u_lightWorldPosition - surfaceWorldPosition;\n  o_v_surfaceToView = normalize(o_u_viewWorldPosition - surfaceWorldPosition);\n}";
+
+// ts/classes/shaders/fragmentShaderDir.ts
+var fragmentShaderDir_default = "\nprecision mediump float;\n\nvarying vec3 o_v_normal;\nvarying vec3 o_v_surfaceToLight;\nvarying vec3 o_v_surfaceToView;\nvarying highp vec2 vTextureCoord;\n\nuniform sampler2D uSampler;\nuniform float o_u_shininess;\nuniform vec3 o_u_lightColor;\nuniform vec3 o_u_specularColor;\n\nuniform vec3 o_u_lightDirection;\nuniform float o_u_limit;  \n\nvoid main() {\n  highp vec4 texelColor = texture2D(uSampler, vTextureCoord);\n\n  vec3 normal = normalize(o_v_normal);\n\n  vec3 surfaceToLightDirection = normalize(o_v_surfaceToLight);\n  vec3 surfaceToViewDirection = normalize(o_v_surfaceToView);\n  vec3 halfVector = normalize(surfaceToLightDirection + surfaceToViewDirection);\n\n  float dotFromDirection = dot(surfaceToLightDirection,-o_u_lightDirection);\n\n  float inLight = step(o_u_limit, dotFromDirection);\n  float light = 0.2 + inLight*dot(normal, surfaceToLightDirection);\n  float specular = inLight*pow(dot(normal, halfVector), o_u_shininess);\n\n  gl_FragColor = texelColor;\n  gl_FragColor.rgb *= light * o_u_lightColor;\n  gl_FragColor.rgb += specular * o_u_specularColor;\n}\n";
 
 // ts/classes/rendering/glrInit.ts
 function loadShader(gl, type, source) {
@@ -592,8 +870,8 @@ function loadShader(gl, type, source) {
   return shader;
 }
 function initShaderProgram(gl) {
-  const vertexShader = loadShader(gl, gl.VERTEX_SHADER, vertexShader_default);
-  const fragmentShader = loadShader(gl, gl.FRAGMENT_SHADER, fragmentShader_default);
+  const vertexShader = loadShader(gl, gl.VERTEX_SHADER, vertexShaderDir_default);
+  const fragmentShader = loadShader(gl, gl.FRAGMENT_SHADER, fragmentShaderDir_default);
   const shaderProgram = gl.createProgram();
   gl.attachShader(shaderProgram, vertexShader);
   gl.attachShader(shaderProgram, fragmentShader);
@@ -632,6 +910,46 @@ function initShaderProgram(gl) {
       "uSampler": {
         pointer: gl.getUniformLocation(shaderProgram, "uSampler"),
         type: "int"
+      },
+      "o_u_worldViewProjection": {
+        pointer: gl.getUniformLocation(shaderProgram, "o_u_worldViewProjection"),
+        type: "matrix4"
+      },
+      "o_u_worldInverseTranspose": {
+        pointer: gl.getUniformLocation(shaderProgram, "o_u_worldInverseTranspose"),
+        type: "matrix4"
+      },
+      "o_u_lightColor": {
+        pointer: gl.getUniformLocation(shaderProgram, "o_u_lightColor"),
+        type: "vector3"
+      },
+      "o_u_specularColor": {
+        pointer: gl.getUniformLocation(shaderProgram, "o_u_specularColor"),
+        type: "vector3"
+      },
+      "o_u_shininess": {
+        pointer: gl.getUniformLocation(shaderProgram, "o_u_shininess"),
+        type: "float"
+      },
+      "o_u_lightWorldPosition": {
+        pointer: gl.getUniformLocation(shaderProgram, "o_u_lightWorldPosition"),
+        type: "vector3"
+      },
+      "o_u_viewWorldPosition": {
+        pointer: gl.getUniformLocation(shaderProgram, "o_u_viewWorldPosition"),
+        type: "vector3"
+      },
+      "o_u_world": {
+        pointer: gl.getUniformLocation(shaderProgram, "o_u_world"),
+        type: "matrix4"
+      },
+      "o_u_lightDirection": {
+        pointer: gl.getUniformLocation(shaderProgram, "o_u_lightDirection"),
+        type: "vector3"
+      },
+      "o_u_limit": {
+        pointer: gl.getUniformLocation(shaderProgram, "o_u_limit"),
+        type: "float"
       }
     },
     {
@@ -646,6 +964,14 @@ function initShaderProgram(gl) {
       "aTextureCoord": {
         pointer: gl.getAttribLocation(shaderProgram, "aTextureCoord"),
         count: 2
+      },
+      "o_a_position": {
+        pointer: gl.getAttribLocation(shaderProgram, "o_a_position"),
+        count: 3
+      },
+      "o_a_normal": {
+        pointer: gl.getAttribLocation(shaderProgram, "o_a_normal"),
+        count: 3
       }
     }
   ];
@@ -703,6 +1029,12 @@ var GLTranslator = class {
         this.sendFloat(un.pointer, data);
       if (un.type === "int")
         this.sendInt(un.pointer, data);
+      if (un.type === "vector2")
+        this.sendVector2(un.pointer, data);
+      if (un.type === "vector3")
+        this.sendVector3(un.pointer, data);
+      if (un.type === "vector4")
+        this.sendVector4(un.pointer, data);
     } else {
       throw new Error("unform doesnt exist");
     }
@@ -730,6 +1062,24 @@ var GLTranslator = class {
   }
   sendInt(pointer, data) {
     this.gl.uniform1i(
+      pointer,
+      data
+    );
+  }
+  sendVector2(pointer, data) {
+    this.gl.uniform2fv(
+      pointer,
+      data
+    );
+  }
+  sendVector3(pointer, data) {
+    this.gl.uniform3fv(
+      pointer,
+      data
+    );
+  }
+  sendVector4(pointer, data) {
+    this.gl.uniform4fv(
       pointer,
       data
     );
@@ -2001,283 +2351,17 @@ function equals(a, b) {
 var mul = multiply;
 var sub = subtract;
 
-// ts/classes/util/utils.ts
-var Util = class {
-  static clamp(value, min, max) {
-    return Math.max(Math.min(value, max), min);
-  }
-  static to0(value, tolerance = 0.1) {
-    return Math.abs(value) < tolerance ? 0 : value;
-  }
-  static padArray(ar, b, len) {
-    return ar.concat(Array.from(Array(len).fill(b))).slice(0, len);
-  }
-  static addArrays(ar, br) {
-    return ar.map((a, i) => a + br[i]);
-  }
-  static subtractArrays(ar, br) {
-    return ar.map((a, i) => a - br[i]);
-  }
-  static multiplyArrays(ar, br) {
-    return ar.map((a, i) => a * br[i]);
-  }
-  static scaleArrays(ar, b) {
-    return ar.map((a, i) => a * b);
-  }
-  static closestVectorMagniture(vectors, target) {
-    let current;
-    vectors.forEach((v) => {
-      if (current === void 0 || Math.abs(v.magnitude()) < Math.abs(current.magnitude()))
-        current = v;
-      else {
-      }
-    });
-    return current;
-  }
-};
-
-// ts/classes/math/vector3.ts
-function v3(a, b, c) {
-  if (typeof a === "number") {
-    return Vector3.f(a, b, c);
-  } else if (typeof a === "undefined") {
-    return Vector3.f(0);
-  } else {
-    return Vector3.f(...a);
-  }
-}
-var Vector3 = class _Vector3 {
-  get pitch() {
-    return this.x;
-  }
-  set pitch(value) {
-    this.x = value;
-  }
-  get yaw() {
-    return this.y;
-  }
-  set yaw(value) {
-    this.y = value;
-  }
-  get roll() {
-    return this.z;
-  }
-  set roll(value) {
-    this.z = value;
-  }
-  get x() {
-    return this.vec[0];
-  }
-  set x(value) {
-    this.vec[0] = value;
-  }
-  get y() {
-    return this.vec[1];
-  }
-  set y(value) {
-    this.vec[1] = value;
-  }
-  get z() {
-    return this.vec[2];
-  }
-  set z(value) {
-    this.vec[2] = value;
-  }
-  get xy() {
-    return v2(this.x, this.y);
-  }
-  set xy(v) {
-    this.x = v.x;
-    this.y = v.y;
-  }
-  get xz() {
-    return v2(this.x, this.z);
-  }
-  set xz(v) {
-    this.x = v.x;
-    this.z = v.y;
-  }
-  get yx() {
-    return v2(this.y, this.x);
-  }
-  set yx(v) {
-    this.y = v.x;
-    this.x = v.y;
-  }
-  get yz() {
-    return v2(this.y, this.z);
-  }
-  set yz(v) {
-    this.y = v.x;
-    this.z = v.y;
-  }
-  get zx() {
-    return v2(this.z, this.x);
-  }
-  set zx(v) {
-    this.z = v.x;
-    this.x = v.y;
-  }
-  get zy() {
-    return v2(this.z, this.y);
-  }
-  set zy(v) {
-    this.z = v.x;
-    this.y = v.y;
-  }
-  constructor(x = 0, y = 0, z = 0) {
-    this.vec = [x, y, z];
-  }
-  static from2(vector, z = 0) {
-    return new _Vector3(vector.x, vector.y, z);
-  }
-  static f(x = 0, y = x, z = x) {
-    return new _Vector3(x, y, z);
-  }
-  static get forwards() {
-    return new _Vector3(0, 0, 1);
-  }
-  static get backwards() {
-    return new _Vector3(0, 0, -1);
-  }
-  static get up() {
-    return new _Vector3(0, 1, 0);
-  }
-  static get down() {
-    return new _Vector3(0, -1, 0);
-  }
-  static get left() {
-    return new _Vector3(-1, 0, 0);
-  }
-  static get right() {
-    return new _Vector3(1, 0, 0);
-  }
-  static get PI() {
-    return new _Vector3(Math.PI, Math.PI, Math.PI);
-  }
-  static get TAU() {
-    return _Vector3.PI.scale(0.5);
-  }
-  get array() {
-    return [this.x, this.y, this.z];
-  }
-  set array(a) {
-    [this.x, this.y, this.z] = a;
-  }
-  forEach(callbackfn) {
-    this.array.forEach(callbackfn);
-  }
-  get c() {
-    return this.clone();
-  }
-  equals(vector) {
-    return this.x === vector.x && this.y === vector.y && this.z === vector.z;
-  }
-  clone() {
-    return new _Vector3(
-      this.x,
-      this.y,
-      this.z
-    );
-  }
-  add(vector) {
-    return new _Vector3(
-      this.x + vector.x,
-      this.y + vector.y,
-      this.z + vector.z
-    );
-  }
-  multiply(a, b, c) {
-    const [x, y, z] = typeof a === "number" ? [a, b, c] : a.array;
-    return new _Vector3(
-      this.x * x,
-      this.y * y,
-      this.z * z
-    );
-  }
-  subtract(vector) {
-    return new _Vector3(
-      this.x - vector.x,
-      this.y - vector.y,
-      this.z - vector.z
-    );
-  }
-  scale(scalar) {
-    return new _Vector3(
-      this.x * scalar,
-      this.y * scalar,
-      this.z * scalar
-    );
-  }
-  divide(vector) {
-    return new _Vector3(
-      this.x / vector.x,
-      this.y / vector.y,
-      this.z / vector.z
-    );
-  }
-  rotateXY(rad) {
-    const [a, b] = this.xy.rotate(rad).array;
-    return new _Vector3(
-      a,
-      this.y,
-      b
-    );
-  }
-  rotateXZ(rad) {
-    const [a, b] = this.xz.rotate(rad).array;
-    return new _Vector3(
-      a,
-      b,
-      this.z
-    );
-  }
-  rotateYZ(rad) {
-    const [a, b] = this.yz.rotate(rad).array;
-    return new _Vector3(
-      this.x,
-      a,
-      b
-    );
-  }
-  magnitude() {
-    return Math.sqrt(this.magnitudeSqr());
-  }
-  magnitudeSqr() {
-    return this.x * this.x + this.y * this.y + this.z * this.z;
-  }
-  mod(max) {
-    return new _Vector3(
-      this.x % max.x,
-      this.y % max.y,
-      this.z % max.z
-    );
-  }
-  clamp(min, max) {
-    return new _Vector3(
-      Util.clamp(this.x, min.x, max.x),
-      Util.clamp(this.y, min.y, max.y),
-      Util.clamp(this.z, min.z, max.z)
-    );
-  }
-  normalize() {
-    let len = this.x * this.x + this.y * this.y + this.z * this.z;
-    if (len > 0) {
-      len = 1 / Math.sqrt(len);
-    }
-    return v3(
-      this.x * len,
-      this.y * len,
-      this.z * len
-    );
-  }
-};
-
 // ts/classes/math/matrix4.ts
+function m4() {
+  return Matrix4.f();
+}
 var Matrix4 = class _Matrix4 {
   constructor(source) {
     this.mat4 = source ? mat4_exports.clone(source) : mat4_exports.create();
     return this;
+  }
+  static f() {
+    return new _Matrix4();
   }
   add(mat) {
     mat4_exports.add(
@@ -2353,6 +2437,16 @@ var Matrix4 = class _Matrix4 {
   clone() {
     return new _Matrix4(this.mat4);
   }
+  static lookAt(camera, target) {
+    let matrix = m4();
+    mat4_exports.lookAt(
+      matrix.mat4,
+      camera.vec,
+      target.vec,
+      v3(0, 1, 0).vec
+    );
+    return matrix;
+  }
   get position() {
     return v3(this.mat4[12], this.mat4[13], this.mat4[14]);
   }
@@ -2382,6 +2476,7 @@ var GLRenderer = class {
     this.gl.clearColor(...this.game.level.background);
     this.gl.clearDepth(1);
     this.gl.enable(this.gl.DEPTH_TEST);
+    this.gl.enable(this.gl.CULL_FACE);
     this.gl.depthFunc(this.gl.LEQUAL);
     this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
   }
@@ -2397,6 +2492,12 @@ var GLRenderer = class {
     this.gl.useProgram(this.glt.program);
     this.glt.sendUniform("uSampler", 0);
     this.glt.sendUniform("uProjectionMatrix", this.getProjection().mat4);
+    this.glt.sendUniform("o_u_lightColor", v3(0, 1, 1).vec);
+    this.glt.sendUniform("o_u_specularColor", v3(0, 0.5, 0.5).vec);
+    this.glt.sendUniform("o_u_lightWorldPosition", v3(0, 100, 500).vec);
+    this.glt.sendUniform("o_u_viewWorldPosition", this.game.mode.camera.target.vec);
+    this.glt.sendUniform("o_u_lightDirection", Vector3.backwards.vec);
+    this.glt.sendUniform("o_u_limit", Math.cos(Util.degToRad(10)));
     this.drawChildren(this.game.level);
   }
   drawChildren(element) {
@@ -2414,14 +2515,22 @@ var GLRenderer = class {
   }
   renderMesh(mesh, currentModelview) {
     this.glt.sendBuffer(mesh.buffer.indices, "element");
-    this.glt.sendAttribute("aVertexPosition", mesh.buffer.positionBuffer);
-    this.glt.sendAttribute("aVertexNormal", mesh.buffer.normalBuffer);
-    this.glt.sendAttribute("aTextureCoord", mesh.buffer.textureCoord);
     this.glt.sendUniform("uModelViewMatrix", currentModelview.mat4);
-    this.glt.sendUniform("uOpacity", mesh.opacity);
-    this.glt.sendUniform("uIntensity", mesh.colorIntensity);
-    this.glt.sendUniform("uNormalMatrix", currentModelview.invert().transpose().mat4);
+    this.glt.sendAttribute("aTextureCoord", mesh.buffer.textureCoord);
     this.glt.sendTexture(mesh.texture.texture);
+    const projectionMatrix = this.getProjection();
+    const cameraMatrix = m4();
+    const viewMatrix = cameraMatrix.invert();
+    const viewProjectionMatrix = projectionMatrix.multiply(viewMatrix);
+    const worldViewProjectionMatrix = viewProjectionMatrix.multiply(currentModelview);
+    const worldInverseMatrix = currentModelview.invert();
+    const worldInverseTransposeMatrix = worldInverseMatrix.transpose();
+    this.glt.sendUniform("o_u_worldViewProjection", worldViewProjectionMatrix.mat4);
+    this.glt.sendUniform("o_u_worldInverseTranspose", worldInverseTransposeMatrix.mat4);
+    this.glt.sendUniform("o_u_shininess", 2e3);
+    this.glt.sendAttribute("o_a_position", mesh.buffer.positionBuffer);
+    this.glt.sendAttribute("o_a_normal", mesh.buffer.normalBuffer);
+    this.glt.sendUniform("o_u_world", currentModelview.mat4);
     this.glt.drawElements(mesh.verticesCount);
   }
 };
@@ -4438,6 +4547,7 @@ var World = class extends Level {
     super();
     this.start = Vector2.zero;
     this.background = [0.67451 * 0.6, 0.603922 * 0.6, 0.968627 * 0.9, 1];
+    this.light = v3(0, 400, 500);
     this.addControllers([
       new Collider({
         position: v3(-5e3, -1e3, -2e3),

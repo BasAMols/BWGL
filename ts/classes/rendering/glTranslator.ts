@@ -1,4 +1,4 @@
-import { mat4 } from 'gl-matrix';
+import { mat4, vec2, vec3, vec4 } from 'gl-matrix';
 import { Game } from '../../game';
 import { GLRenderer } from './glRenderer';
 import { attributes, initShaderProgram, uniforms } from './glrInit';
@@ -61,6 +61,9 @@ export class GLTranslator {
             if (un.type === 'matrix4') this.sendMat4(un.pointer, data as mat4);
             if (un.type === 'float') this.sendFloat(un.pointer, data as number);
             if (un.type === 'int') this.sendInt(un.pointer, data as number);
+            if (un.type === 'vector2') this.sendVector2(un.pointer, data as vec2);
+            if (un.type === 'vector3') this.sendVector3(un.pointer, data as vec3);
+            if (un.type === 'vector4') this.sendVector4(un.pointer, data as vec4);
         } else {
             throw new Error('unform doesnt exist')
         }
@@ -90,6 +93,24 @@ export class GLTranslator {
     }
     private sendInt(pointer: WebGLUniformLocation, data: number) {
         this.gl.uniform1i(
+            pointer,
+            data,
+        );
+    }
+    private sendVector2(pointer: WebGLUniformLocation, data: vec2) {
+        this.gl.uniform2fv(
+            pointer,
+            data,
+        );
+    }
+    private sendVector3(pointer: WebGLUniformLocation, data: vec3) {
+        this.gl.uniform3fv(
+            pointer,
+            data,
+        );
+    }
+    private sendVector4(pointer: WebGLUniformLocation, data: vec4) {
+        this.gl.uniform4fv(
             pointer,
             data,
         );

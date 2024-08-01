@@ -1,5 +1,5 @@
-import vs from '../shaders/vertexShader';
-import fs from '../shaders/fragmentShader';
+import vs from '../shaders/vertexShaderDir';
+import fs from '../shaders/fragmentShaderDir';
 
 function loadShader(gl: WebGLRenderingContext, type: number, source: string) {
     const shader = gl.createShader(type);
@@ -18,7 +18,7 @@ function loadShader(gl: WebGLRenderingContext, type: number, source: string) {
 
 export type uniforms = Record<string, {
     pointer: WebGLUniformLocation,
-    type: 'matrix4' | 'float' | 'int';
+    type: 'matrix4' | 'float' | 'int' | 'vector2' | 'vector3' | 'vector4';
 }>
 export type attributes = Record<string, {
     pointer: number,
@@ -71,6 +71,46 @@ export function initShaderProgram(gl: WebGLRenderingContext): [WebGLProgram, uni
                 pointer: gl.getUniformLocation(shaderProgram, "uSampler"),
                 type: 'int'
             },
+            'o_u_worldViewProjection':{
+                pointer: gl.getUniformLocation(shaderProgram, "o_u_worldViewProjection"),
+                type: 'matrix4'
+            },
+            'o_u_worldInverseTranspose':{
+                pointer: gl.getUniformLocation(shaderProgram, "o_u_worldInverseTranspose"),
+                type: 'matrix4'
+            },
+            'o_u_lightColor':{
+                pointer: gl.getUniformLocation(shaderProgram, "o_u_lightColor"),
+                type: 'vector3'
+            },
+            'o_u_specularColor':{
+                pointer: gl.getUniformLocation(shaderProgram, "o_u_specularColor"),
+                type: 'vector3'
+            },
+            'o_u_shininess':{
+                pointer: gl.getUniformLocation(shaderProgram, "o_u_shininess"),
+                type: 'float'
+            },
+            'o_u_lightWorldPosition':{
+                pointer: gl.getUniformLocation(shaderProgram, "o_u_lightWorldPosition"),
+                type: 'vector3'
+            },
+            'o_u_viewWorldPosition':{
+                pointer: gl.getUniformLocation(shaderProgram, "o_u_viewWorldPosition"),
+                type: 'vector3'
+            },
+            'o_u_world':{
+                pointer: gl.getUniformLocation(shaderProgram, "o_u_world"),
+                type: 'matrix4'
+            },
+            'o_u_lightDirection':{
+                pointer: gl.getUniformLocation(shaderProgram, "o_u_lightDirection"),
+                type: 'vector3'
+            },
+            'o_u_limit':{
+                pointer: gl.getUniformLocation(shaderProgram, "o_u_limit"),
+                type: 'float'
+            },
         },
         {
             'aVertexPosition':{
@@ -84,6 +124,14 @@ export function initShaderProgram(gl: WebGLRenderingContext): [WebGLProgram, uni
             'aTextureCoord':{
                 pointer: gl.getAttribLocation(shaderProgram, "aTextureCoord"),
                 count: 2,
+            },
+            'o_a_position':{
+                pointer: gl.getAttribLocation(shaderProgram, "o_a_position"),
+                count: 3,
+            },
+            'o_a_normal':{
+                pointer: gl.getAttribLocation(shaderProgram, "o_a_normal"),
+                count: 3,
             },
         }
     ]

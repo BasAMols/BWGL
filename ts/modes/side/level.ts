@@ -3,7 +3,7 @@ import { TestObj } from '../../classes/debug/testObj';
 import { DomText } from '../../classes/dom/domText';
 import { Level } from '../../classes/level';
 import { Vector2, v2 } from '../../classes/math/vector2';
-import { v3 } from '../../classes/math/vector3';
+import { Vector3, v3 } from '../../classes/math/vector3';
 import { ObjStorage } from '../../classes/objStorage';
 import { GLCuboid } from '../../classes/objects/cuboid';
 import { GLobj } from '../../classes/objects/obj';
@@ -26,6 +26,7 @@ export class World extends Level {
     public player: Player;
     public sky: Sky;
     public test: TestObj;
+    public light: Vector3 = v3(0,400,500);
     test2d: DomText;
 
     constructor() {

@@ -1,12 +1,21 @@
 import { mat4, vec3 } from 'gl-matrix';
 import { Vector3, v3 } from './vector3';
 
+export function m4() {
+	return Matrix4.f()
+}
+
 export class Matrix4 {
     public mat4: mat4;
     public constructor(source?: mat4) {
         this.mat4 = source?mat4.clone(source):mat4.create();
         return this
     }
+
+    static f() {
+		return new Matrix4();
+	}
+
     public add(mat: Matrix4) {
         mat4.add(
             this.mat4,
@@ -80,6 +89,17 @@ export class Matrix4 {
     }
     public clone() {
         return new Matrix4(this.mat4);
+    }
+
+    public static lookAt(camera: Vector3, target: Vector3): Matrix4 {
+        let matrix = m4();
+        mat4.lookAt(
+            matrix.mat4,
+            camera.vec,
+            target.vec,
+            v3(0,1,0).vec
+        );
+        return matrix;
     }
 
     public get position() {
