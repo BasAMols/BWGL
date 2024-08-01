@@ -155,7 +155,7 @@ export class World extends Level {
             specular: [0.3,0.3,0.3,1],
             limit: [10,12],
             range: [1500,2000],
-            direction: Vector3.backwards
+            direction: v3(0,0,-1),
         }))
         this.addChild(new GLCuboid({ size: v3(10000, 1, 10000), position: v3(-5000, -6, -5000), colors: [[103 / 350, 119 / 350, 107 / 350, 1]] }));
         for (let x = 0; x < 20; x++) {
