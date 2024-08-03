@@ -1,5 +1,5 @@
-import { glob } from '../game';
-import { DomText } from './dom/domText';
+import { glob } from '../../game';
+import { DomText } from '../dom/domText';
 
 export class Keyboard {
 

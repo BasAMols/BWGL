@@ -1,5 +1,5 @@
-import { glob } from '../game';
-import { Vector2, v2 } from './math/vector2';
+import { glob } from '../../game';
+import { Vector2, v2 } from '../math/vector2';
 
 
 export abstract class InputReader<T extends number | Vector2> {

@@ -1,7 +1,7 @@
 import { Collider } from '../../classes/collider';
 import { TestObj } from '../../classes/debug/testObj';
 import { DomText } from '../../classes/dom/domText';
-import { InputMap, KeyboardJoyStickReader, KeyboardReader, MouseMoveReader, MouseScrollReader } from '../../classes/inputCombiner';
+import { InputMap, KeyboardJoyStickReader, KeyboardReader, MouseMoveReader, MouseScrollReader } from '../../classes/input/inputCombiner';
 import { Level } from '../../classes/level';
 import { Light } from '../../classes/light';
 import { Vector2, v2 } from '../../classes/math/vector2';

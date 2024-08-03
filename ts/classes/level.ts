@@ -2,7 +2,7 @@ import { glob } from '../game';
 import { DomElement } from './dom/domElement';
 import { Interface } from './dom/interface';
 import { GlElementAttributes, GlElement } from './elementBase';
-import { InputMap } from './inputCombiner';
+import { InputMap } from './input/inputCombiner';
 import { Light } from './light';
 import { Vector2 } from './math/vector2';
 import { Vector3 } from './math/vector3';

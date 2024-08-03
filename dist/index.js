@@ -497,7 +497,7 @@ var PadManager = class {
   }
 };
 
-// ts/classes/inputDevices.ts
+// ts/classes/input/inputDevices.ts
 var Keyboard = class {
   constructor() {
     this.keyDown = {};
@@ -2910,7 +2910,7 @@ var Collider = class extends Zone {
   }
 };
 
-// ts/classes/inputCombiner.ts
+// ts/classes/input/inputCombiner.ts
 var InputReader = class {
   tick() {
   }

@@ -2,7 +2,7 @@ import { FPS } from './classes/debug/fps';
 import { Loader } from './classes/debug/loader';
 import { Renderer } from './classes/dom/renderer';
 import { PadManager } from './classes/gamepadManager';
-import { InputDevices } from './classes/inputDevices';
+import { InputDevices } from './classes/input/inputDevices';
 import { Level } from './classes/level';
 import { Mode } from './classes/mode';
 import { GLRenderer } from './classes/rendering/glRenderer';
