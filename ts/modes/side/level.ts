@@ -1,6 +1,7 @@
 import { Collider } from '../../classes/collider';
 import { TestObj } from '../../classes/debug/testObj';
 import { DomText } from '../../classes/dom/domText';
+import { InputMap, KeyboardJoyStickReader, KeyboardReader, MouseMoveReader, MouseScrollReader } from '../../classes/inputCombiner';
 import { Level } from '../../classes/level';
 import { Light } from '../../classes/light';
 import { Vector2, v2 } from '../../classes/math/vector2';
@@ -17,7 +18,7 @@ import { Forrest } from './trees/forrest';
 
 export class World extends Level {
     public start = Vector2.zero;
-    public background: Color = [1 * 0.07,1 * 0.07, 1 * 0.1, 1];
+    public background: Color = [1 * 0.07, 1 * 0.07, 1 * 0.1, 1];
     public character: Player;
     public mo: DomText;
     public st: ObjStorage;
@@ -26,8 +27,19 @@ export class World extends Level {
     public player: Player;
     public sky: Sky;
     public test: TestObj;
-    public light: Vector3 = v3(0,400,500);
-    test2d: DomText;
+    public light: Vector3 = v3(0, 400, 500);
+    public test2d: DomText;
+    public inputMap = new InputMap( 
+        {
+            'camera': [new MouseMoveReader()],
+            'movement': [new KeyboardJoyStickReader(['a', 'd', 's', 'w'])],
+        },
+        {
+            'jump': [new KeyboardReader(' ')],
+            'aim': [new KeyboardReader('e')],
+            'zoom': [new MouseScrollReader()],
+        }
+    );
 
     constructor() {
         super();
@@ -149,13 +161,13 @@ export class World extends Level {
         // this.car.active = false;
 
         this.addLight(new Light({
-            position: v3(0,70,100),
-            color: [0.9,0.9,0.85,1],
-            specular: [0.3,0.3,0.3,1],
-            limit: [10,10.1],
-            range: [600,1001],
-            direction: v3(0,0,-1),
-        }))
+            position: v3(0, 70, 100),
+            color: [0.9, 0.9, 0.85, 1],
+            specular: [0.3, 0.3, 0.3, 1],
+            limit: [10, 10.1],
+            range: [600, 1001],
+            direction: v3(0, 0, -1),
+        }));
         this.addChild(new GLCuboid({ size: v3(10000, 1, 10000), position: v3(-5000, -6, -5000), colors: [[103 / 350, 119 / 350, 107 / 350, 1]] }));
         for (let x = 0; x < 20; x++) {
             for (let y = 0; y < 20; y++) {
@@ -239,13 +251,16 @@ export class World extends Level {
         // this.sky = this.addChild(new Sky()) as Sky;
 
         // console.log(glob);
-                
+
 
     }
 
     public tick(obj: TickerReturnData): void {
         super.tick(obj);
-        this.test2d.text = this.player.globalPosition.vec.map((v)=>+v.toFixed(1)).join('\n');
+        this.test2d.text = this.player.globalPosition.vec.map((v) => +v.toFixed(0)).join('\n');
+        // console.log(this.inputMap.axis('camera'));
+        
     }
+
 
 }

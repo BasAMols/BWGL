@@ -2,6 +2,7 @@ import { glob } from '../game';
 import { DomElement } from './dom/domElement';
 import { Interface } from './dom/interface';
 import { GlElementAttributes, GlElement } from './elementBase';
+import { InputMap } from './inputCombiner';
 import { Light } from './light';
 import { Vector2 } from './math/vector2';
 import { Vector3 } from './math/vector3';
@@ -23,6 +24,7 @@ export abstract class Level extends GlElement {
     public lights: Light[] = [];
     private colliderMeshes: GLCuboid[] = [];
     public interface: Interface = new Interface();
+    public abstract inputMap: InputMap; 
 
     private _camera: {
         target: Vector3;
@@ -79,12 +81,15 @@ export abstract class Level extends GlElement {
         super.tick(obj);
 
         this.colliderMeshes.forEach((c, i) => {
-            // console.log(c.size.vec);
             c.position = this.levelZones[i].globalPosition;
             c.size = this.levelZones[i].size.clone();
-            // c.rotation = this.levelColliders[i].worldRotation.clone();
         });
 
+    }
+
+    public afterTick(obj: TickerReturnData): void {
+        super.afterTick(obj);
+        this.inputMap.tick();
     }
 
 }

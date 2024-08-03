@@ -57,18 +57,18 @@ export abstract class GlElement extends Element {
 
     public get localMatrix() {
         return new Matrix4()
-        .translate((this.position || v3(0)).multiply(new Vector3(1, 1, -1)))
-        .translate((this.anchorPoint || v3(0)).multiply(1, 1, -1))
-        .rotate((this.rotation || v3(0)).multiply(new Vector3(1, -1, -1)))
-        .translate((this.anchorPoint || v3(0)).multiply(-1, -1, 1))
+            .translate((this.position || v3(0)).multiply(new Vector3(1, 1, -1)))
+            .translate((this.anchorPoint || v3(0)).multiply(1, 1, -1))
+            .rotate((this.rotation || v3(0)).multiply(new Vector3(1, -1, -1)))
+            .translate((this.anchorPoint || v3(0)).multiply(-1, -1, 1));
     }
 
     public get globalMatrix(): Matrix4 {
         return (this.parent?.globalMatrix || new Matrix4()).multiply(this.localMatrix);
     }
-    
+
     public get globalPosition(): Vector3 {
-        return this.globalMatrix.position.multiply(v3(1,1,-1));
+        return this.globalMatrix.position.multiply(v3(1, 1, -1));
     }
 
     public get worldRotation(): Vector3 {
@@ -76,7 +76,7 @@ export abstract class GlElement extends Element {
     }
 
     public get screenPosition(): Vector2 {
-        return v2(0)
+        return v2(0);
     }
 
     private _active: boolean = true;
@@ -104,6 +104,14 @@ export abstract class GlElement extends Element {
     }
     public set camera(c: typeof this.mode.camera) {
         this.mode.camera = c;
+    }
+
+    public get axis(): (v: string) => Vector2 {
+        return this.level.inputMap.axis.bind(this.level.inputMap);
+    }
+
+    public get button(): (v: string) => number {
+        return this.level.inputMap.button.bind(this.level.inputMap);
     }
 
     constructor(attr: GlElementAttributes = {}) {

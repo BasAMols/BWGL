@@ -73,6 +73,9 @@ var Vector2 = class _Vector2 {
   static f(x = 0, y = x) {
     return new _Vector2(x, y);
   }
+  isZero() {
+    return this.x === 0 && this.y === 0;
+  }
   clone() {
     return new _Vector2(this.x, this.y);
   }
@@ -464,23 +467,73 @@ var Renderer = class extends DomElement {
   }
 };
 
-// ts/classes/input.ts
-var Input = class {
-  get locked() {
-    return this._locked;
+// ts/classes/gamepad.ts
+var Pad = class {
+  constructor(gamepad) {
+    this.gamepad = gamepad;
   }
-  set locked(value) {
-    this._locked = value;
-    this.overlay.dom.style.display = !value ? "block" : "none";
+  tick() {
+    this.recentPad = navigator.getGamepads().find((g) => g.id === this.gamepad.id);
   }
-  constructor(game) {
-    this.game = game;
-    this.canvas = game.renderer;
-    this.canvas.dom.addEventListener("mousemove", this.mouseMove.bind(this));
-    this.canvas.dom.addEventListener("keydown", this.keyDown.bind(this));
-    this.canvas.dom.addEventListener("keyup", this.keyUp.bind(this));
-    this.canvas.dom.addEventListener("click", this.mouseClick.bind(this));
-    this.canvas.dom.addEventListener("wheel", this.scroll.bind(this));
+};
+
+// ts/classes/gamepadManager.ts
+var PadManager = class {
+  constructor() {
+    this.pads = {};
+    window.addEventListener("gamepadconnected", this.connect.bind(this));
+    window.addEventListener("gamepaddisconnected", this.disconnect.bind(this));
+  }
+  connect(e) {
+    this.pads[e.gamepad.id] = new Pad(e.gamepad);
+  }
+  disconnect(e) {
+    delete this.pads[e.gamepad.id];
+  }
+  tick() {
+    Object.values(this.pads).forEach((pad) => {
+      pad.tick();
+    });
+  }
+};
+
+// ts/classes/inputDevices.ts
+var Keyboard = class {
+  constructor() {
+    this.keyDown = {};
+    this.keyUp = {};
+  }
+  ready() {
+    glob.renderer.dom.addEventListener("keydown", (e) => {
+      const k = e.key.toLowerCase();
+      if (this.keyDown[k])
+        this.keyDown[k].forEach((c) => {
+          c();
+        });
+    });
+    glob.renderer.dom.addEventListener("keyup", (e) => {
+      const k = e.key.toLowerCase();
+      if (this.keyUp[k])
+        this.keyUp[k].forEach((c) => {
+          c();
+        });
+    });
+  }
+  register(key, down, up) {
+    const k = key.toLowerCase();
+    if (this.keyDown[k])
+      this.keyDown[k].push(down);
+    else
+      this.keyDown[k] = [down];
+    if (this.keyUp[k])
+      this.keyUp[k].push(up);
+    else
+      this.keyUp[k] = [up];
+  }
+};
+var InputDevices = class {
+  constructor() {
+    this.keyboard = new Keyboard();
     this.overlay = new DomText({
       text: "Pauzed"
     });
@@ -488,89 +541,25 @@ var Input = class {
       "style",
       "\n            transform-origin: left bottom;\n            pointer-events: none;\n            bottom: 0px;\n            left: 0px;\n            user-select: none;\n            z-index: 999;\n            position: absolute;\n            height: 100vh;\n            width: 100vw;\n            color: white !important;\n            font-family: monospace;\n            font-weight: bold;\n            font-size: 40px;\n            padding-left: 50px;\n            padding-top: 20px;\n            box-sizing: border-box;\n            text-transform: uppercase;"
     );
-    document.body.appendChild(this.overlay.dom);
+  }
+  get locked() {
+    return this._locked;
+  }
+  set locked(value) {
+    this._locked = value;
+    this.overlay.dom.style.display = !value ? "block" : "none";
+  }
+  ready() {
+    glob.renderer.dom.addEventListener("click", (e) => {
+      if (!this.locked) {
+        glob.renderer.dom.requestPointerLock();
+      }
+    });
     document.addEventListener("pointerlockchange", () => {
-      this.locked = document.pointerLockElement === this.canvas.dom;
+      this.locked = document.pointerLockElement === glob.renderer.dom;
     });
-    document.addEventListener("startstart", (e) => {
-      this.lastTouch = v2(
-        e.touches[0].clientX,
-        e.touches[0].clientY
-      );
-    });
-    document.addEventListener("touchmove", (e) => {
-      const t = v2(
-        e.touches[0].clientX,
-        e.touches[0].clientY
-      );
-      if (this.lastTouch) {
-        this.sendTouchMove(t.subtract(this.lastTouch));
-      }
-      this.lastTouch = v2(
-        e.touches[0].clientX,
-        e.touches[0].clientY
-      );
-    });
-    document.addEventListener("touchend", (e) => {
-      this.lastTouch = void 0;
-    });
-  }
-  mouseClick(e) {
-    if (this.locked) {
-      this.send("click", e);
-    } else {
-      this.canvas.dom.requestPointerLock();
-    }
-  }
-  mouseMove(e) {
-    if (this.locked) {
-      this.send("mouseMove", e);
-    }
-  }
-  scroll(e) {
-    if (this.locked) {
-      this.send("scroll", e);
-    }
-  }
-  keyDown(e) {
-    if (this.locked) {
-      this.send("keyDown", e);
-    }
-  }
-  keyUp(e) {
-    if (this.locked) {
-      this.send("keyUp", e);
-    }
-  }
-  sendTouchMove(d) {
-    this.recursiveTouchMove(this.game.mode, d);
-  }
-  recursiveTouchMove(element, d) {
-    if (element.active) {
-      if (element.drag) {
-        element.drag(d);
-      }
-      element.controllers.forEach((child) => this.recursiveTouchMove(child, d));
-      element.children.forEach((child) => this.recursiveTouchMove(child, d));
-    }
-  }
-  send(event, e) {
-    this.recursive(event, this.game.mode, e);
-  }
-  recursive(event, element, e) {
-    if (element.active) {
-      if (element[event]) {
-        if (event === "mouseMove" || event === "click") {
-          element[event](e);
-        } else if (event === "scroll") {
-          element[event](e);
-        } else {
-          element[event](e);
-        }
-      }
-      element.controllers.forEach((child) => this.recursive(event, child, e));
-      element.children.forEach((child) => this.recursive(event, child, e));
-    }
+    document.body.appendChild(this.overlay.dom);
+    this.keyboard.ready();
   }
 };
 
@@ -2707,6 +2696,12 @@ var GlElement = class _GlElement extends Element {
   set camera(c) {
     this.mode.camera = c;
   }
+  get axis() {
+    return this.level.inputMap.axis.bind(this.level.inputMap);
+  }
+  get button() {
+    return this.level.inputMap.button.bind(this.level.inputMap);
+  }
   ready() {
     this.build();
   }
@@ -2813,24 +2808,6 @@ var Mode = class extends GLGroup {
   constructor(attr = {}) {
     super(attr);
     this.levels = {};
-    this.keyAliases = {
-      "w": "up",
-      "a": "left",
-      "s": "down",
-      "d": "right",
-      " ": "space",
-      "ArrowUp": "up",
-      "ArrowLeft": "left",
-      "ArrowDown": "down",
-      "ArrowRight": "right"
-    };
-    this.input = {
-      "up": false,
-      "left": false,
-      "down": false,
-      "right": false,
-      "space": false
-    };
   }
   get camera() {
     return this.level.camera;
@@ -2852,16 +2829,6 @@ var Mode = class extends GLGroup {
     Object.entries(this.levels).forEach(([key, level]) => {
       level.active = key === s;
     });
-  }
-  keyDown(e) {
-    if (Object.keys(this.keyAliases).includes(e.key)) {
-      this.input[this.keyAliases[e.key]] = true;
-    }
-  }
-  keyUp(e) {
-    if (Object.keys(this.keyAliases).includes(e.key)) {
-      this.input[this.keyAliases[e.key]] = false;
-    }
   }
   tick(obj) {
     super.tick(obj);
@@ -2943,6 +2910,144 @@ var Collider = class extends Zone {
   }
 };
 
+// ts/classes/inputCombiner.ts
+var InputReader = class {
+  tick() {
+  }
+};
+var KeyboardReader = class extends InputReader {
+  constructor(key) {
+    super();
+    this._state = false;
+    glob.device.keyboard.register(
+      key,
+      () => {
+        this._state = true;
+      },
+      () => {
+        this._state = false;
+      }
+    );
+  }
+  get value() {
+    return Number(this._state);
+  }
+};
+var KeyboardJoyStickReader = class extends InputReader {
+  constructor(keys) {
+    super();
+    this._state = [[false, false], [false, false]];
+    this._vector = v2(0);
+    keys.forEach((k, i) => {
+      glob.device.keyboard.register(
+        k,
+        () => {
+          this._state[Math.floor(i / 2)][i % 2] = true;
+          this.setVector();
+        },
+        () => {
+          this._state[Math.floor(i / 2)][i % 2] = false;
+          this.setVector();
+        }
+      );
+    });
+  }
+  setVector() {
+    this._vector = v2(
+      -this._state[0][0] + +this._state[0][1],
+      -this._state[1][0] + +this._state[1][1]
+    );
+  }
+  get value() {
+    return this._vector;
+  }
+};
+var MouseMoveReader = class extends InputReader {
+  constructor() {
+    super();
+    this._delta = v2(0);
+    glob.renderer.dom.addEventListener("mousemove", (e) => {
+      this._delta.x += e.movementX;
+      this._delta.y += e.movementY;
+    });
+  }
+  get value() {
+    return this._delta;
+  }
+  tick() {
+    this._delta = v2(0);
+  }
+};
+var MouseScrollReader = class extends InputReader {
+  constructor() {
+    super();
+    this._delta = 0;
+    glob.renderer.dom.addEventListener("wheel", (e) => {
+      this._delta += e.deltaY;
+    });
+  }
+  get value() {
+    return this._delta;
+  }
+  tick() {
+    this._delta = 0;
+  }
+};
+var Input = class {
+  constructor(readers) {
+    this.readers = readers;
+  }
+  tick() {
+    this.readers.forEach((r) => {
+      r.tick();
+    });
+  }
+};
+var JoyStick = class extends Input {
+  get value() {
+    let total = v2(0);
+    this.readers.forEach((r) => {
+      total = total.add(r.value);
+    });
+    return total;
+  }
+};
+var Button = class extends Input {
+  get value() {
+    let total = 0;
+    this.readers.forEach((r) => {
+      total += r.value;
+    });
+    return total;
+  }
+};
+var InputMap = class {
+  constructor(joysticks = {}, buttons = {}) {
+    this.joysticks = {};
+    this.buttons = {};
+    Object.entries(joysticks).forEach(([key, readers]) => {
+      this.joysticks[key] = new JoyStick(readers);
+    });
+    Object.entries(buttons).forEach(([key, readers]) => {
+      this.buttons[key] = new Button(readers);
+    });
+  }
+  tick() {
+    Object.values(this.joysticks).forEach((j) => {
+      j.tick();
+    });
+    Object.values(this.buttons).forEach((j) => {
+      j.tick();
+    });
+  }
+  axis(key) {
+    return this.joysticks[key].value;
+  }
+  button(key) {
+    return this.buttons[key].value;
+  }
+};
+
 // ts/classes/dom/interface.ts
 var Interface = class extends DomElement {
   constructor(attr = {}) {
@@ -2997,6 +3102,10 @@ var Level = class extends GlElement {
       c.position = this.levelZones[i].globalPosition;
       c.size = this.levelZones[i].size.clone();
     });
+  }
+  afterTick(obj) {
+    super.afterTick(obj);
+    this.inputMap.tick();
   }
 };
 
@@ -4117,6 +4226,7 @@ var FreeCamera = class extends GlController {
     this.order = "after";
     this.lagList = [];
     this.lagCount = 1;
+    this.zoom = 0;
   }
   get active() {
     return super.active;
@@ -4124,53 +4234,25 @@ var FreeCamera = class extends GlController {
   set active(value) {
     super.active = value;
     if (value) {
-      this.camera.offset = v3(0, -15, 60);
+      this.camera.offset = v3(0, -15, this.zoom);
       this.camera.rotation = v3(0.3, Math.PI / 8, 0);
       this.camera.fov = 60;
     }
   }
-  mouseMove(e) {
-    const r = v2(e.movementX, e.movementY).scale(5e-3);
-    this.camera.rotation = v3(
-      Util.clamp(this.camera.rotation.x + r.y, -1, Math.PI / 2),
-      this.camera.rotation.y + r.x,
-      this.camera.rotation.z
-    );
-  }
-  drag(d) {
-    const r = d.scale(0.01);
-    this.camera.rotation = v3(
-      Util.clamp(this.camera.rotation.x + r.y, -1, Math.PI / 2),
-      this.camera.rotation.y + r.x,
-      this.camera.rotation.z
-    );
-  }
-  scroll(e) {
-    if (!this.parent.aiming) {
-      this.camera.offset.z = Util.clamp(this.camera.offset.z + e.deltaY * 0.1, 10, 300);
-    }
-  }
-  build() {
-    super.build();
-    this.active = true;
-  }
-  keyUp(e) {
-    if (e.key === "e" || e.key === "E") {
-      this.camera.offset = v3(0, -15, 60);
-    }
-  }
-  keyDown(e) {
-    if (e.key === "e" || e.key === "E") {
-      this.camera.offset = v3(-15, -10, 30);
-    }
-  }
   tick(o) {
     super.tick(o);
-    const nP = this.target.position.add(this.target.size.multiply(0.5, 0.3, 0.5));
-    while (this.lagList.length < this.lagCount) {
-      this.lagList.push(nP);
+    if (glob.device.locked) {
+      const r = this.axis("camera").scale(5e-3);
+      this.camera.rotation = v3(
+        Util.clamp(this.camera.rotation.x + r.y, -1, Math.PI / 2),
+        this.camera.rotation.y + r.x,
+        this.camera.rotation.z
+      );
+      this.zoom = Util.clamp(this.zoom + this.button("zoom") * 0.1, 10, 300);
+      this.camera.offset = this.button("aim") ? v3(-15, -10, 30) : v3(0, -15, this.zoom);
+      const nP = this.target.position.add(this.target.size.multiply(0.5, 0.3, 0.5));
+      this.camera.target = nP;
     }
-    this.camera.target = this.lagList.shift();
   }
 };
 
@@ -4182,26 +4264,18 @@ var PlayerController = class extends GlController {
     this.stat = { jumping: false, falling: false, running: false };
     this.cnst = { runTime: 250, runSlowDownFactor: 0.7, runSpeed: 0.5, minJumpTime: 200, jumpTime: 300, jumpSpeed: 0.6 };
     this.velocity = Vector3.f(0);
-    this.aiming = false;
   }
-  keyDown(e) {
-    if (e.key === "e" || e.key === "E") {
-      this.aiming = true;
-    }
-  }
-  keyUp(e) {
-    if (e.key === "e" || e.key === "E") {
-      this.aiming = false;
-    }
+  get aiming() {
+    return this.button("aim");
   }
   setMovementVelocity(interval) {
     const setter = (key, cond, interval2) => {
       this.intr[key] = Util.clamp((this.intr[key] || 0) + (cond ? interval2 : -(interval2 * this.cnst.runSlowDownFactor)), 0, this.cnst.runTime);
     };
-    setter("right", this.mode.input.right && !this.mode.input.left, interval);
-    setter("left", this.mode.input.left && !this.mode.input.right, interval);
-    setter("up", this.mode.input.up && !this.mode.input.down, interval);
-    setter("down", this.mode.input.down && !this.mode.input.up, interval);
+    setter("right", this.axis("movement").x === 1, interval);
+    setter("left", this.axis("movement").x === -1, interval);
+    setter("up", this.axis("movement").y === 1, interval);
+    setter("down", this.axis("movement").y === -1, interval);
     if (!this.aiming) {
       const plane = v2(
         (this.intr.right - this.intr.left) / this.cnst.runTime,
@@ -4225,14 +4299,14 @@ var PlayerController = class extends GlController {
           this.parent.stat.jumping = true;
           this.parent.stat.falling = false;
         } else if (this.intr.jump < this.cnst.jumpTime) {
-          this.parent.stat.jumping = this.mode.input.space;
+          this.parent.stat.jumping = Boolean(this.button("jump"));
         } else {
           this.parent.stat.jumping = false;
           this.parent.stat.falling = true;
           this.intr.jump = this.cnst.jumpTime;
         }
       } else {
-        this.parent.stat.jumping = this.mode.input.space;
+        this.parent.stat.jumping = Boolean(this.button("jump"));
       }
     }
   }
@@ -4258,7 +4332,7 @@ var PlayerController = class extends GlController {
     if (sc.xz.magnitude() > 0) {
       const [x, z] = sc.xz.rotate(-this.camera.rotation.y).array;
       this.newPosition = this.parent.position.add(v3(x, sc.y, z));
-      if (this.mode.input.right || this.mode.input.left || this.mode.input.up || this.mode.input.down) {
+      if (!this.axis("movement").isZero()) {
         this.parent.rotation = this.camera.rotation.multiply(0, 1, 0).add(v3(0, Math.PI / 2, 0)).add(v3(0, -sc.xz.angle(), 0));
       }
       this.parent.stat.running = true;
@@ -4619,6 +4693,17 @@ var World = class extends Level {
     this.start = Vector2.zero;
     this.background = [1 * 0.07, 1 * 0.07, 1 * 0.1, 1];
     this.light = v3(0, 400, 500);
+    this.inputMap = new InputMap(
+      {
+        "camera": [new MouseMoveReader()],
+        "movement": [new KeyboardJoyStickReader(["a", "d", "s", "w"])]
+      },
+      {
+        "jump": [new KeyboardReader(" ")],
+        "aim": [new KeyboardReader("e")],
+        "zoom": [new MouseScrollReader()]
+      }
+    );
     this.addControllers([
       new Collider({
         position: v3(-5e3, -1e3, -2e3),
@@ -4754,7 +4839,7 @@ var World = class extends Level {
   }
   tick(obj) {
     super.tick(obj);
-    this.test2d.text = this.player.globalPosition.vec.map((v) => +v.toFixed(1)).join("\n");
+    this.test2d.text = this.player.globalPosition.vec.map((v) => +v.toFixed(0)).join("\n");
   }
 };
 
@@ -4769,6 +4854,9 @@ var OpenWorldMode = class extends Mode {
 
 // ts/game.ts
 var glob = new class {
+  constructor() {
+    this.device = new InputDevices();
+  }
   get renderer() {
     return this.game.renderer;
   }
@@ -4789,12 +4877,14 @@ var Game2 = class {
     this._waitCount = 0;
     this.started = false;
     this.total = 0;
+    this.padManager = new PadManager();
     this.active = {
       mode: void 0,
       level: void 0
     };
     glob.game = this;
     this.build();
+    glob.device.ready();
   }
   get t() {
     return this.renderer.tickerData;
@@ -4823,7 +4913,6 @@ var Game2 = class {
     this.setupModes();
     this.ticker = new Ticker();
     this.ticker.add(this.tick.bind(this));
-    this.input = new Input(this);
     this.debug();
     this.fps.visible = false;
     if (this.waitCount === 0) {

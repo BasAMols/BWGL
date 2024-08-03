@@ -15,36 +15,31 @@ export class CarController extends GlController {
     public parent: Character;
     public direction: number = 0;
 
-    constructor(attr:GlElementAttributes) {
+    constructor(attr: GlElementAttributes) {
         super(attr);
-        
+
     }
 
     public setMovementVelocity(interval: number) {
-        if (this.mode.input.space) {
+        if (this.axis('jump')) {
             this.intr.acc = 0;
-        } else if (this.mode.input.up) {
+        } else if (this.axis('movement').y === 1) {
             this.intr.acc = Util.clamp((this.intr.acc | 0) + interval, -(this.cnst.runTime / 3), this.cnst.runTime);
-        } {
-            if (this.mode.input.down) {
-                this.intr.acc = Util.clamp((this.intr.acc | 0) - interval * 0.8, -(this.cnst.runTime / 3), this.cnst.runTime);
+        }
+
+        
+        if (this.axis('movement').y === -1) {
+            this.intr.acc = Util.clamp((this.intr.acc | 0) - interval * 0.8, -(this.cnst.runTime / 3), this.cnst.runTime);
+        } else {
+            if (this.intr.acc >= 0) {
+                this.intr.acc = Util.clamp((this.intr.acc | 0) - interval * this.cnst.runSlowDownFactor, 0, this.cnst.runTime);
             } else {
-                if (this.intr.acc >= 0) {
-                    this.intr.acc = Util.clamp((this.intr.acc | 0) - interval * this.cnst.runSlowDownFactor, 0, this.cnst.runTime);
-                } else {
-                    this.intr.acc = Util.clamp((this.intr.acc | 0) + interval * this.cnst.runSlowDownFactor, -(this.cnst.runTime / 3), 0);
-                }
+                this.intr.acc = Util.clamp((this.intr.acc | 0) + interval * this.cnst.runSlowDownFactor, -(this.cnst.runTime / 3), 0);
             }
         }
 
-        this.direction = this.direction - ((0.001) * interval * (+this.mode.input.left - +this.mode.input.right) * (1.5 - this.intr.acc / this.cnst.runTime) * (this.intr.acc / this.cnst.runTime));
+        this.direction = this.direction - ((0.001) * interval * this.axis('movement').x * (1.5 - this.intr.acc / this.cnst.runTime) * (this.intr.acc / this.cnst.runTime));
         this.parent.rotation = v3(0, this.direction, 0);
-
-        // setter('acc', this.mode.input.up && !this.mode.input.down, interval);
-        // setter('right', this.mode.input.right && !this.mode.input.left, interval);
-        // setter('left', this.mode.input.left && !this.mode.input.right, interval);
-        // setter('up', this.mode.input.up && !this.mode.input.down, interval);
-        // setter('down', this.mode.input.down && !this.mode.input.up, interval);
 
         const plane = Vector2.up.clampMagnitude(1).scale(this.intr.acc / this.cnst.runTime).scale(this.cnst.runSpeed).rotate(-this.direction);
 
@@ -95,7 +90,7 @@ export class CarController extends GlController {
         // console.log(this.parent.colliders[0]);
         // this.parent.colliders[0].position = v3(100,0,0)
         // console.log(this.parent.size.rotateXZ(this.parent.rotation.z).x);
-        
+
         // this.parent.size.rotateXZ(this.parent.rotation.z).x
         // this.parent.colliders[0].position.xz = v2(
         //     Math.min(this, this.parent.size.x),

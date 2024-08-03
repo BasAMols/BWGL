@@ -1,7 +1,8 @@
 import { FPS } from './classes/debug/fps';
 import { Loader } from './classes/debug/loader';
 import { Renderer } from './classes/dom/renderer';
-import { Input } from './classes/input';
+import { PadManager } from './classes/gamepadManager';
+import { InputDevices } from './classes/inputDevices';
 import { Level } from './classes/level';
 import { Mode } from './classes/mode';
 import { GLRenderer } from './classes/rendering/glRenderer';
@@ -23,6 +24,7 @@ export var glob = new class{
     public get storage() {
         return this.mode.storage
     }
+    public device: InputDevices = new InputDevices();
 }
 
 export class Game {
@@ -30,12 +32,12 @@ export class Game {
     public renderer: Renderer;
     private fps: FPS;
     public modes: Record<string, Mode> = {};
-    public input: Input;
     public readyToStart: boolean = false;
     private _waitCount: number = 0;
     private started: boolean = false;
     private loader: Loader;
     public total: number = 0;
+    public padManager: PadManager = new PadManager();
     public GLR: GLRenderer;
     public active: {
         mode: Mode,
@@ -68,6 +70,7 @@ export class Game {
     public constructor() {
         glob.game = this;
         this.build();
+        glob.device.ready();
     }
     build() {
         this.renderer = new Renderer();
@@ -80,7 +83,6 @@ export class Game {
 
         this.ticker = new Ticker();
         this.ticker.add(this.tick.bind(this));
-        this.input = new Input(this);
         this.debug();
         this.fps.visible = false;
 

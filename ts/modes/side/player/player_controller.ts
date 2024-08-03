@@ -14,30 +14,19 @@ export class PlayerController extends GlController {
     private velocity: Vector3 = Vector3.f(0);
     private newPosition: Vector3;
     public parent: Player;
-    public aiming: boolean = false;
-
-    keyDown(e: KeyboardEvent): void {
-        if (e.key === 'e' || e.key === 'E'){
-            this.aiming = true;
-        }
-    }
-
-    keyUp(e: KeyboardEvent): void {
-        if (e.key === 'e' || e.key === 'E'){
-            this.aiming = false;
-        }
-    }
-
+    public get aiming (){
+        return this.button('aim')
+    };
 
     public setMovementVelocity(interval: number) {
         const setter = (key: string, cond: boolean, interval: number) => {
             this.intr[key] = Util.clamp((this.intr[key] || 0) + (cond ? interval : -(interval * this.cnst.runSlowDownFactor)), 0, this.cnst.runTime);
         };
 
-        setter('right', this.mode.input.right && !this.mode.input.left, interval);
-        setter('left', this.mode.input.left && !this.mode.input.right, interval);
-        setter('up', this.mode.input.up && !this.mode.input.down, interval);
-        setter('down', this.mode.input.down && !this.mode.input.up, interval);
+        setter('right', this.axis('movement').x === 1, interval);
+        setter('left', this.axis('movement').x === -1, interval);
+        setter('up', this.axis('movement').y === 1, interval);
+        setter('down', this.axis('movement').y === -1, interval);
 
         if (!this.aiming) {
 
@@ -68,14 +57,14 @@ export class PlayerController extends GlController {
                     this.parent.stat.jumping = true;
                     this.parent.stat.falling = false;
                 } else if (this.intr.jump < this.cnst.jumpTime) {
-                    this.parent.stat.jumping = this.mode.input.space;
+                    this.parent.stat.jumping = Boolean(this.button('jump'));
                 } else {
                     this.parent.stat.jumping = false;
                     this.parent.stat.falling = true;
                     this.intr.jump = this.cnst.jumpTime;
                 }
             } else {
-                this.parent.stat.jumping = this.mode.input.space;
+                this.parent.stat.jumping = Boolean(this.button('jump'));
             }
         }
     }
@@ -107,7 +96,7 @@ export class PlayerController extends GlController {
         if (sc.xz.magnitude() > 0) {
             const [x, z] = sc.xz.rotate(-this.camera.rotation.y).array;
             this.newPosition = this.parent.position.add(v3(x, sc.y, z));
-            if (this.mode.input.right || this.mode.input.left || this.mode.input.up || this.mode.input.down) {
+            if (!this.axis('movement').isZero()) {
                 this.parent.rotation = this.camera.rotation.multiply(0, 1, 0).add(v3(0, Math.PI / 2, 0)).add(v3(0, -sc.xz.angle(), 0));
             }
             this.parent.stat.running = true;

@@ -21,6 +21,10 @@ export class Vector2 {
 		return new Vector2(x, y);
 	}
 
+	isZero(): boolean {
+		return (this.x === 0 && this.y === 0)
+	}
+
 	clone(): Vector2 {
 		return new Vector2(this.x, this.y);
 	}
