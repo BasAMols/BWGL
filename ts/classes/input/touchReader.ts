@@ -12,24 +12,25 @@ export class TouchButtonReader extends InputReader<number> {
             width: 70px;
             height: 70px;
             border-radius: 10px;
-            background: #00000024;
+            background: #000000;
             z-index: 99999999999999999999999;
             position: absolute;
             pointer-events: all;
-            box-shadow: inset 0px 0px 9px white;
+            box-shadow: inset 0px 0px 29px white;
+            opacity: 0.4;
             ${this.alignment.slice(-4) === "Left" ? 'left' : 'right'}:${this.offset.x}px;
             ${this.alignment.slice(3) === "top" ? 'top' : 'bottom'}:${this.offset.y}px;
         `);
         this.button.addEventListener('touchstart', (e) => {
             this._state = true;
-            e.stopImmediatePropagation();
+            e.preventDefault();
 
         });
         this.button.addEventListener('touchend', (e) => {
             this._state = false;
-            e.stopImmediatePropagation();
+            e.preventDefault();
         });
-        this.ui.dom.appendChild(this.button);
+        this.ui.touchControls.appendChild(this.button);
     }
     private _state: boolean = false;
     get value(): number {
@@ -46,15 +47,16 @@ export class TouchAxisReader extends InputReader<Vector2> {
         super();
         this.shell = document.createElement('div');
         this.shell.setAttribute('style', `
-            width: 20px;
-            height: 20px;
+            width: ${70 + (this.limit * 2)}px;
+            height: ${70 + (this.limit * 2)}px;
             border-radius: 100%;
             background: #000000;
             z-index: 99999999999999999999999;
             position: absolute;
             pointer-events: all;
-            ${this.alignment.slice(-4) === "Left" ? 'left' : 'right'}:${this.offset.x + 25}px;
-            ${this.alignment.slice(3) === "top" ? 'top' : 'bottom'}:${this.offset.y + 25}px;
+            opacity: 0.4;
+            ${this.alignment.slice(-4) === "Left" ? 'left' : 'right'}:${this.offset.x - this.limit}px;
+            ${this.alignment.slice(3) === "top" ? 'top' : 'bottom'}:${this.offset.y - this.limit}px;
         `);
 
         this.stick = document.createElement('div');
@@ -62,19 +64,18 @@ export class TouchAxisReader extends InputReader<Vector2> {
             width: 70px;
             height: 70px;
             border-radius: 100%;
-            background: #00000024;
             z-index: 99999999999999999999999;
             position: absolute;
             pointer-events: all;
-            box-shadow: inset 0px 0px 9px white;
-            left: -25px;
-            top: -25px;
+            box-shadow: inset 0px 0px 29px white;
+            left: ${this.limit}px;
+            top: ${this.limit}px;
         `);
         // this.stick.addEventListener('touch');
         this.stick.addEventListener('touchstart', (e) => {
             this._dragging = true;
             this._touchStart = v2(e.touches[0].screenX, e.touches[0].screenY);
-            e.stopImmediatePropagation();
+            e.preventDefault();
         });
         this.stick.addEventListener('touchmove', (e) => {
             if (this._dragging) {
@@ -82,15 +83,15 @@ export class TouchAxisReader extends InputReader<Vector2> {
                 this.stick.style.transform = `translate(${rel.x}px,${rel.y}px)`;
                 this._state = rel.scale(1 / this.limit).multiply(this.scale);
             }
-            e.stopImmediatePropagation();
+            e.preventDefault();
         });
         this.stick.addEventListener('touchend', (e) => {
             this._dragging = false;
             this._state = v2(0);
             this.stick.style.transform = 'translate(0,0)';
-            e.stopImmediatePropagation();
+            e.preventDefault();
         });
-        this.ui.dom.appendChild(this.shell);
+        this.ui.touchControls.appendChild(this.shell);
         this.shell.appendChild(this.stick);
     }
     private _state: Vector2 = v2(0);
@@ -108,34 +109,34 @@ export class TouchVerticalReader extends InputReader<number> {
         super();
         this.shell = document.createElement('div');
         this.shell.setAttribute('style', `
-            width: 40px;
-            height: 140px;
-            border-radius: 10px;
-            background: #00000024;
+            width: 70px;
+            height: ${70+(this.limit*2)}px;
+            border-radius: 35px;
+            background: #000000;
             z-index: 99999999999999999999999;
             position: absolute;
             pointer-events: all;
+            opacity: 0.4;
             ${this.alignment.slice(-4) === "Left" ? 'left' : 'right'}:${this.offset.x}px;
-            ${this.alignment.slice(0,3) === "top" ? 'top' : 'bottom'}:${this.offset.y}px;
+            ${this.alignment.slice(0, 3) === "top" ? 'top' : 'bottom'}:${this.offset.y - this.limit}px;
         `);
 
         this.stick = document.createElement('div');
         this.stick.setAttribute('style', `
-            width: 40px;
+            width: 70px;
             height: 70px;
-            border-radius: 10px;
-            background: #00000024;
+            border-radius: 35px;
             z-index: 99999999999999999999999;
             position: absolute;
             pointer-events: all;
-            box-shadow: inset 0px 0px 9px white;
-            top: 35px;
+            box-shadow: inset 0px 0px 29px white;
+            top: ${this.limit}px;
         `);
         // this.stick.addEventListener('touch');
         this.stick.addEventListener('touchstart', (e) => {
             this._dragging = true;
             this._touchStart = e.touches[0].screenY;
-            e.stopImmediatePropagation();
+            e.preventDefault();
         });
         this.stick.addEventListener('touchmove', (e) => {
             if (this._dragging) {
@@ -148,14 +149,14 @@ export class TouchVerticalReader extends InputReader<number> {
                     this.stick.style.transform = 'translate(0,0)';
                 }
             }
-            e.stopImmediatePropagation();
+            e.preventDefault();
         });
         this.stick.addEventListener('touchend', () => {
             this._dragging = false;
             this._state = 0;
             this.stick.style.transform = 'translate(0,0)';
         });
-        this.ui.dom.appendChild(this.shell);
+        this.ui.touchControls.appendChild(this.shell);
         this.shell.appendChild(this.stick);
     }
     private _state: number = 0;
@@ -173,35 +174,61 @@ export class TouchLiniarAxisReader extends InputReader<Vector2> {
         super();
         this.shell = document.createElement('div');
         this.shell.setAttribute('style', `
-            width: 20px;
-            height: 20px;
-            border-radius: 100%;
+        width: ${70 + (this.limit * 2)}px;
+        height: ${70 + (this.limit * 2)}px;
+            z-index: 99999999999999999999999;
+            position: absolute;
+            pointer-events: all;
+            opacity: 0.4;
+            ${this.alignment.slice(-4) === "Left" ? 'left' : 'right'}:${this.offset.x - this.limit}px;
+            ${this.alignment.slice(3) === "top" ? 'top' : 'bottom'}:${this.offset.y - this.limit}px;
+        `);
+
+        const l1 = document.createElement('div');
+        l1.setAttribute('style', `
+        width: ${70 + (this.limit * 2)}px;
+        height: 70px;
+            border-radius: 35px;
             background: #000000;
             z-index: 99999999999999999999999;
             position: absolute;
             pointer-events: all;
-            ${this.alignment.slice(-4) === "Left" ? 'left' : 'right'}:${this.offset.x + 25}px;
-            ${this.alignment.slice(3) === "top" ? 'top' : 'bottom'}:${this.offset.y + 25}px;
+            top: ${this.limit}px;
+            left: 0px;
         `);
+        this.shell.appendChild(l1);
+
+        const l2 = document.createElement('div');
+        l2.setAttribute('style', `
+        height: ${70 + (this.limit * 2)}px;
+        width: 70px;
+            border-radius: 35px;
+            background: #000000;
+            z-index: 99999999999999999999999;
+            position: absolute;
+            pointer-events: all;
+            left: ${this.limit}px;
+            top: 0px;
+        `);
+        this.shell.appendChild(l2);
 
         this.stick = document.createElement('div');
         this.stick.setAttribute('style', `
             width: 70px;
             height: 70px;
             border-radius: 100%;
-            background: #00000024;
             z-index: 99999999999999999999999;
             position: absolute;
             pointer-events: all;
-            box-shadow: inset 0px 0px 9px white;
-            left: -25px;
-            top: -25px;
+            box-shadow: inset 0px 0px 29px white;
+            left: ${this.limit}px;
+            top: ${this.limit}px;
         `);
         // this.stick.addEventListener('touch');
         this.stick.addEventListener('touchstart', (e) => {
             this._dragging = true;
             this._touchStart = v2(e.touches[0].screenX, e.touches[0].screenY);
-            e.stopImmediatePropagation();
+            e.preventDefault();
         });
         this.stick.addEventListener('touchmove', (e) => {
             if (this._dragging) {
@@ -214,8 +241,6 @@ export class TouchLiniarAxisReader extends InputReader<Vector2> {
                         this.stick.style.transform = `translate(${rel.x * this.limit / 2}px,${rel.y * this.limit / 2}px)`;
                     } else {
                         this._state = rel.multiply(this.scale).toPrecision(1);
-                        console.log(this._state);
-
                         this.stick.style.transform = `translate(${rel.x * this.limit}px,${rel.y * this.limit}px)`;
                     }
                 } else {
@@ -223,14 +248,14 @@ export class TouchLiniarAxisReader extends InputReader<Vector2> {
                     this.stick.style.transform = 'translate(0,0)';
                 }
             }
-            e.stopImmediatePropagation();
+            e.preventDefault();
         });
         this.stick.addEventListener('touchend', () => {
             this._dragging = false;
             this._state = v2(0);
             this.stick.style.transform = 'translate(0,0)';
         });
-        this.ui.dom.appendChild(this.shell);
+        this.ui.touchControls.appendChild(this.shell);
         this.shell.appendChild(this.stick);
     }
     private _state: Vector2 = v2(0);

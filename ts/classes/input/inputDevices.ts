@@ -78,6 +78,7 @@ export class InputDevices {
             this.locked = true;
 
         } else {
+            glob.level.interface.touchControls.style.display = 'none';
             glob.renderer.dom.addEventListener('click', (e) => {
                 if (!this.locked) {
                     glob.renderer.dom.requestPointerLock();

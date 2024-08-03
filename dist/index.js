@@ -556,6 +556,7 @@ var InputDevices = class {
     if (this.mobile) {
       this.locked = true;
     } else {
+      glob.level.interface.touchControls.style.display = "none";
       glob.renderer.dom.addEventListener("click", (e) => {
         if (!this.locked) {
           glob.renderer.dom.requestPointerLock();
@@ -3071,6 +3072,8 @@ var UI = class extends DomElement {
     this.dom.style.height = "100%";
     this.dom.style.zIndex = "3";
     this.dom.style.pointerEvents = "none";
+    this.touchControls = document.createElement("div");
+    this.dom.appendChild(this.touchControls);
   }
 };
 
@@ -4715,13 +4718,13 @@ var TouchAxisReader = class extends InputReader {
     this.scale = scale2;
     this._state = v2(0);
     this.shell = document.createElement("div");
-    this.shell.setAttribute("style", "\n            width: 20px;\n            height: 20px;\n            border-radius: 100%;\n            background: #000000;\n            z-index: 99999999999999999999999;\n            position: absolute;\n            pointer-events: all;\n            ".concat(this.alignment.slice(-4) === "Left" ? "left" : "right", ":").concat(this.offset.x + 25, "px;\n            ").concat(this.alignment.slice(3) === "top" ? "top" : "bottom", ":").concat(this.offset.y + 25, "px;\n        "));
+    this.shell.setAttribute("style", "\n            width: ".concat(70 + this.limit * 2, "px;\n            height: ").concat(70 + this.limit * 2, "px;\n            border-radius: 100%;\n            background: #000000;\n            z-index: 99999999999999999999999;\n            position: absolute;\n            pointer-events: all;\n            opacity: 0.4;\n            ").concat(this.alignment.slice(-4) === "Left" ? "left" : "right", ":").concat(this.offset.x - this.limit, "px;\n            ").concat(this.alignment.slice(3) === "top" ? "top" : "bottom", ":").concat(this.offset.y - this.limit, "px;\n        "));
     this.stick = document.createElement("div");
-    this.stick.setAttribute("style", "\n            width: 70px;\n            height: 70px;\n            border-radius: 100%;\n            background: #00000024;\n            z-index: 99999999999999999999999;\n            position: absolute;\n            pointer-events: all;\n            box-shadow: inset 0px 0px 9px white;\n            left: -25px;\n            top: -25px;\n        ");
+    this.stick.setAttribute("style", "\n            width: 70px;\n            height: 70px;\n            border-radius: 100%;\n            z-index: 99999999999999999999999;\n            position: absolute;\n            pointer-events: all;\n            box-shadow: inset 0px 0px 29px white;\n            left: ".concat(this.limit, "px;\n            top: ").concat(this.limit, "px;\n        "));
     this.stick.addEventListener("touchstart", (e) => {
       this._dragging = true;
       this._touchStart = v2(e.touches[0].screenX, e.touches[0].screenY);
-      e.stopImmediatePropagation();
+      e.preventDefault();
     });
     this.stick.addEventListener("touchmove", (e) => {
       if (this._dragging) {
@@ -4729,15 +4732,15 @@ var TouchAxisReader = class extends InputReader {
         this.stick.style.transform = "translate(".concat(rel.x, "px,").concat(rel.y, "px)");
         this._state = rel.scale(1 / this.limit).multiply(this.scale);
       }
-      e.stopImmediatePropagation();
+      e.preventDefault();
     });
     this.stick.addEventListener("touchend", (e) => {
       this._dragging = false;
       this._state = v2(0);
       this.stick.style.transform = "translate(0,0)";
-      e.stopImmediatePropagation();
+      e.preventDefault();
     });
-    this.ui.dom.appendChild(this.shell);
+    this.ui.touchControls.appendChild(this.shell);
     this.shell.appendChild(this.stick);
   }
   get value() {
@@ -4754,13 +4757,13 @@ var TouchVerticalReader = class extends InputReader {
     this.scale = scale2;
     this._state = 0;
     this.shell = document.createElement("div");
-    this.shell.setAttribute("style", "\n            width: 40px;\n            height: 140px;\n            border-radius: 10px;\n            background: #00000024;\n            z-index: 99999999999999999999999;\n            position: absolute;\n            pointer-events: all;\n            ".concat(this.alignment.slice(-4) === "Left" ? "left" : "right", ":").concat(this.offset.x, "px;\n            ").concat(this.alignment.slice(0, 3) === "top" ? "top" : "bottom", ":").concat(this.offset.y, "px;\n        "));
+    this.shell.setAttribute("style", "\n            width: 70px;\n            height: ".concat(70 + this.limit * 2, "px;\n            border-radius: 35px;\n            background: #000000;\n            z-index: 99999999999999999999999;\n            position: absolute;\n            pointer-events: all;\n            opacity: 0.4;\n            ").concat(this.alignment.slice(-4) === "Left" ? "left" : "right", ":").concat(this.offset.x, "px;\n            ").concat(this.alignment.slice(0, 3) === "top" ? "top" : "bottom", ":").concat(this.offset.y - this.limit, "px;\n        "));
     this.stick = document.createElement("div");
-    this.stick.setAttribute("style", "\n            width: 40px;\n            height: 70px;\n            border-radius: 10px;\n            background: #00000024;\n            z-index: 99999999999999999999999;\n            position: absolute;\n            pointer-events: all;\n            box-shadow: inset 0px 0px 9px white;\n            top: 35px;\n        ");
+    this.stick.setAttribute("style", "\n            width: 70px;\n            height: 70px;\n            border-radius: 35px;\n            z-index: 99999999999999999999999;\n            position: absolute;\n            pointer-events: all;\n            box-shadow: inset 0px 0px 29px white;\n            top: ".concat(this.limit, "px;\n        "));
     this.stick.addEventListener("touchstart", (e) => {
       this._dragging = true;
       this._touchStart = e.touches[0].screenY;
-      e.stopImmediatePropagation();
+      e.preventDefault();
     });
     this.stick.addEventListener("touchmove", (e) => {
       if (this._dragging) {
@@ -4773,14 +4776,14 @@ var TouchVerticalReader = class extends InputReader {
           this.stick.style.transform = "translate(0,0)";
         }
       }
-      e.stopImmediatePropagation();
+      e.preventDefault();
     });
     this.stick.addEventListener("touchend", () => {
       this._dragging = false;
       this._state = 0;
       this.stick.style.transform = "translate(0,0)";
     });
-    this.ui.dom.appendChild(this.shell);
+    this.ui.touchControls.appendChild(this.shell);
     this.shell.appendChild(this.stick);
   }
   get value() {
@@ -4797,13 +4800,19 @@ var TouchLiniarAxisReader = class extends InputReader {
     this.scale = scale2;
     this._state = v2(0);
     this.shell = document.createElement("div");
-    this.shell.setAttribute("style", "\n            width: 20px;\n            height: 20px;\n            border-radius: 100%;\n            background: #000000;\n            z-index: 99999999999999999999999;\n            position: absolute;\n            pointer-events: all;\n            ".concat(this.alignment.slice(-4) === "Left" ? "left" : "right", ":").concat(this.offset.x + 25, "px;\n            ").concat(this.alignment.slice(3) === "top" ? "top" : "bottom", ":").concat(this.offset.y + 25, "px;\n        "));
+    this.shell.setAttribute("style", "\n        width: ".concat(70 + this.limit * 2, "px;\n        height: ").concat(70 + this.limit * 2, "px;\n            z-index: 99999999999999999999999;\n            position: absolute;\n            pointer-events: all;\n            opacity: 0.4;\n            ").concat(this.alignment.slice(-4) === "Left" ? "left" : "right", ":").concat(this.offset.x - this.limit, "px;\n            ").concat(this.alignment.slice(3) === "top" ? "top" : "bottom", ":").concat(this.offset.y - this.limit, "px;\n        "));
+    const l1 = document.createElement("div");
+    l1.setAttribute("style", "\n        width: ".concat(70 + this.limit * 2, "px;\n        height: 70px;\n            border-radius: 35px;\n            background: #000000;\n            z-index: 99999999999999999999999;\n            position: absolute;\n            pointer-events: all;\n            top: ").concat(this.limit, "px;\n            left: 0px;\n        "));
+    this.shell.appendChild(l1);
+    const l2 = document.createElement("div");
+    l2.setAttribute("style", "\n        height: ".concat(70 + this.limit * 2, "px;\n        width: 70px;\n            border-radius: 35px;\n            background: #000000;\n            z-index: 99999999999999999999999;\n            position: absolute;\n            pointer-events: all;\n            left: ").concat(this.limit, "px;\n            top: 0px;\n        "));
+    this.shell.appendChild(l2);
     this.stick = document.createElement("div");
-    this.stick.setAttribute("style", "\n            width: 70px;\n            height: 70px;\n            border-radius: 100%;\n            background: #00000024;\n            z-index: 99999999999999999999999;\n            position: absolute;\n            pointer-events: all;\n            box-shadow: inset 0px 0px 9px white;\n            left: -25px;\n            top: -25px;\n        ");
+    this.stick.setAttribute("style", "\n            width: 70px;\n            height: 70px;\n            border-radius: 100%;\n            z-index: 99999999999999999999999;\n            position: absolute;\n            pointer-events: all;\n            box-shadow: inset 0px 0px 29px white;\n            left: ".concat(this.limit, "px;\n            top: ").concat(this.limit, "px;\n        "));
     this.stick.addEventListener("touchstart", (e) => {
       this._dragging = true;
       this._touchStart = v2(e.touches[0].screenX, e.touches[0].screenY);
-      e.stopImmediatePropagation();
+      e.preventDefault();
     });
     this.stick.addEventListener("touchmove", (e) => {
       if (this._dragging) {
@@ -4816,7 +4825,6 @@ var TouchLiniarAxisReader = class extends InputReader {
             this.stick.style.transform = "translate(".concat(rel.x * this.limit / 2, "px,").concat(rel.y * this.limit / 2, "px)");
           } else {
             this._state = rel.multiply(this.scale).toPrecision(1);
-            console.log(this._state);
             this.stick.style.transform = "translate(".concat(rel.x * this.limit, "px,").concat(rel.y * this.limit, "px)");
           }
         } else {
@@ -4824,14 +4832,14 @@ var TouchLiniarAxisReader = class extends InputReader {
           this.stick.style.transform = "translate(0,0)";
         }
       }
-      e.stopImmediatePropagation();
+      e.preventDefault();
     });
     this.stick.addEventListener("touchend", () => {
       this._dragging = false;
       this._state = v2(0);
       this.stick.style.transform = "translate(0,0)";
     });
-    this.ui.dom.appendChild(this.shell);
+    this.ui.touchControls.appendChild(this.shell);
     this.shell.appendChild(this.stick);
   }
   get value() {
@@ -4855,7 +4863,7 @@ var World = class extends Level {
       {
         "jump": [new KeyboardReader(" ")],
         "aim": [new KeyboardReader("e")],
-        "zoom": [new MouseScrollReader(), new TouchVerticalReader(this.interface, "topRight", v2(60, 60), 25, 1)]
+        "zoom": [new MouseScrollReader(), new TouchVerticalReader(this.interface, "topRight", v2(60, 60), 30, 1)]
       }
     );
     this.addControllers([

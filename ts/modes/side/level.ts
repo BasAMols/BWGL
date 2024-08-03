@@ -40,7 +40,7 @@ export class World extends Level {
         {
             'jump': [new KeyboardReader(' '),],
             'aim': [new KeyboardReader('e')],
-            'zoom': [new MouseScrollReader(), new TouchVerticalReader(this.interface, 'topRight', v2(60, 60), 25, 1)],
+            'zoom': [new MouseScrollReader(), new TouchVerticalReader(this.interface, 'topRight', v2(60, 60), 30, 1)],
         }
     );
     // new TouchButtonReader(this.interface)
