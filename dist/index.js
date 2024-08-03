@@ -574,7 +574,7 @@ var InputDevices = class {
 var vertexShaderDir_default = "\nattribute vec4 o_a_position;\nattribute vec3 o_a_normal;\n\nuniform mat4 uModelViewMatrix;\nuniform mat4 uProjectionMatrix;\nattribute vec2 aTextureCoord;\nuniform mat4 uNormalMatrix;\nattribute vec3 aVertexNormal;\n\nuniform vec3 o_u_lightWorldPosition;\nuniform vec3 o_u_viewWorldPosition;\n\nuniform mat4 o_u_world;\nuniform mat4 o_u_worldViewProjection;\nuniform mat4 o_u_worldInverseTranspose;\n\nvarying vec3 o_v_normal;\n\nvarying vec3 o_v_surfaceToLight;\nvarying vec3 o_v_surfaceToView;\n\nvarying highp vec2 vTextureCoord;\n\nvoid main() {\n  gl_Position = uProjectionMatrix * uModelViewMatrix * o_a_position;\n  vTextureCoord = aTextureCoord;\n\n  o_v_normal = (uNormalMatrix * vec4(aVertexNormal, 1.0)).xyz;\n  vec3 surfaceWorldPosition = (uModelViewMatrix * o_a_position).xyz;\n  o_v_surfaceToLight = o_u_lightWorldPosition - surfaceWorldPosition;\n  o_v_surfaceToView = normalize(o_u_viewWorldPosition - surfaceWorldPosition);\n}";
 
 // ts/classes/shaders/fragmentShaderDir.ts
-var fragmentShaderDir_default = "\nprecision mediump float;\n\nvarying vec3 o_v_normal;\nvarying vec3 o_v_surfaceToLight;\nvarying vec3 o_v_surfaceToView;\nvarying highp vec2 vTextureCoord;\n\nuniform sampler2D uSampler;\n\nuniform float o_u_shininess;\nuniform vec3 o_u_lightColor;\nuniform vec3 o_u_specularColor;\nuniform vec3 o_u_lightDirection;\nuniform float o_u_innerLimit;  \nuniform float o_u_outerLimit;  \nuniform float o_u_innerRange;  \nuniform float o_u_outerRange;  \nuniform int o_u_ignoreLighting;  \n\nvoid main() {\n  highp vec4 texelColor = texture2D(uSampler, vTextureCoord);\n\n  vec3 normal = normalize(o_v_normal);\n\n  vec3 surfaceToLightDirection = normalize(o_v_surfaceToLight);\n  vec3 surfaceToViewDirection = normalize(o_v_surfaceToView);\n  vec3 halfVector = normalize(surfaceToLightDirection + surfaceToViewDirection);\n\n  float dotFromDirection = dot(surfaceToLightDirection,-o_u_lightDirection);\n\n  float rangeLight = smoothstep(o_u_outerRange, o_u_innerRange, length(o_v_surfaceToLight));\n  float inLight = smoothstep(o_u_outerLimit, o_u_innerLimit, dotFromDirection);\n  float light = 0.2 + rangeLight*inLight*dot(normal, surfaceToLightDirection);\n  float specular = rangeLight*(inLight*pow(dot(normal, halfVector), o_u_shininess));\n  gl_FragColor = texelColor;\n  if (o_u_ignoreLighting == 0){\n    gl_FragColor.rgb *= light * o_u_lightColor;\n    gl_FragColor.rgb += specular * o_u_specularColor;\n  }\n}\n";
+var fragmentShaderDir_default = "\nprecision highp float;\n\nvarying vec3 o_v_normal;\nvarying vec3 o_v_surfaceToLight;\nvarying vec3 o_v_surfaceToView;\nvarying highp vec2 vTextureCoord;\n\nuniform sampler2D uSampler;\n\nuniform float o_u_shininess;\nuniform vec3 o_u_lightColor;\nuniform vec3 o_u_specularColor;\nuniform vec3 o_u_lightDirection;\nuniform float o_u_innerLimit;  \nuniform float o_u_outerLimit;  \nuniform float o_u_innerRange;  \nuniform float o_u_outerRange;  \nuniform int o_u_ignoreLighting;  \n\nvoid main() {\n  highp vec4 texelColor = texture2D(uSampler, vTextureCoord);\n\n  vec3 normal = normalize(o_v_normal);\n\n  vec3 surfaceToLightDirection = normalize(o_v_surfaceToLight);\n  vec3 surfaceToViewDirection = normalize(o_v_surfaceToView);\n  vec3 halfVector = normalize(surfaceToLightDirection + surfaceToViewDirection);\n\n  float dotFromDirection = dot(surfaceToLightDirection,-o_u_lightDirection);\n\n  float rangeLight = smoothstep(o_u_outerRange, o_u_innerRange, length(o_v_surfaceToLight));\n  float inLight = smoothstep(o_u_outerLimit, o_u_innerLimit, dotFromDirection);\n  float light = 0.2 + rangeLight*inLight*dot(normal, surfaceToLightDirection);\n  float specular = rangeLight*(inLight*pow(dot(normal, halfVector), o_u_shininess));\n  gl_FragColor = texelColor;\n  if (o_u_ignoreLighting == 0){\n    gl_FragColor.rgb *= light * o_u_lightColor;\n    gl_FragColor.rgb += specular * o_u_specularColor;\n  }\n}\n";
 
 // ts/classes/rendering/glrInit.ts
 function loadShader(gl, type, source) {
@@ -3063,7 +3063,7 @@ var KeyboardJoyStickReader = class extends InputReader {
   }
 };
 
-// ts/classes/dom/interface.ts
+// ts/classes/dom/UI.ts
 var UI = class extends DomElement {
   constructor(attr = {}) {
     super("div", attr);
@@ -4801,8 +4801,8 @@ var World = class extends Level {
     this.light = v3(0, 400, 500);
     this.inputMap = new InputMap(
       {
-        "camera": [new MouseMoveReader(), new TouchAxisReader(this.interface, "bottomRight", v2(100, 100), 40, v2(4))],
-        "movement": [new KeyboardJoyStickReader(["a", "d", "s", "w"]), new TouchLiniarAxisReader(this.interface, "bottomLeft", v2(100, 100), 40, v2(1, -1))]
+        "camera": [new MouseMoveReader(), new TouchAxisReader(this.interface, "bottomRight", v2(60, 60), 40, v2(4))],
+        "movement": [new KeyboardJoyStickReader(["a", "d", "s", "w"]), new TouchLiniarAxisReader(this.interface, "bottomLeft", v2(60, 60), 40, v2(1, -1))]
       },
       {
         "jump": [new KeyboardReader(" ")],

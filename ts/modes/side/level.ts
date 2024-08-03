@@ -34,8 +34,8 @@ export class World extends Level {
     public test2d: DomText;
     public inputMap = new InputMap( 
         {
-            'camera': [new MouseMoveReader(), new TouchAxisReader(this.interface, 'bottomRight', v2(100,100), 40, v2(4))],
-            'movement': [new KeyboardJoyStickReader(['a', 'd', 's', 'w']), new TouchLiniarAxisReader(this.interface, 'bottomLeft', v2(100,100), 40, v2(1, -1))],
+            'camera': [new MouseMoveReader(), new TouchAxisReader(this.interface, 'bottomRight', v2(60,60), 40, v2(4))],
+            'movement': [new KeyboardJoyStickReader(['a', 'd', 's', 'w']), new TouchLiniarAxisReader(this.interface, 'bottomLeft', v2(60,60), 40, v2(1, -1))],
         },
         {
             'jump': [new KeyboardReader(' '), ],

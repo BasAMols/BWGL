@@ -1,4 +1,4 @@
-import { UI } from '../dom/interface';
+import { UI } from '../dom/UI';
 import { Vector2, v2 } from '../math/vector2';
 import { InputReader } from './input';
 

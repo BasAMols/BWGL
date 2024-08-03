@@ -1,6 +1,6 @@
 import { glob } from '../game';
 import { DomElement } from './dom/domElement';
-import { UI } from './dom/interface';
+import { UI } from './dom/UI';
 import { GlElementAttributes, GlElement } from './elementBase';
 import { InputMap } from './input/input';
 import { Light } from './light';

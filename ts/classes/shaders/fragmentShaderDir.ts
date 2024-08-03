@@ -1,5 +1,5 @@
 export default `
-precision mediump float;
+precision highp float;
 
 varying vec3 o_v_normal;
 varying vec3 o_v_surfaceToLight;
