@@ -9,13 +9,13 @@ export class Keyboard {
     ready() {
         glob.renderer.dom.addEventListener('keydown', (e) => {
             const k = e.key.toLowerCase();
-            if (this.keyDown[k]) this.keyDown[k].forEach((c) => {
+            this.keyDown[k]?.forEach((c) => {
                 c();
             });
         });
         glob.renderer.dom.addEventListener('keyup', (e) => {
             const k = e.key.toLowerCase();
-            if (this.keyUp[k]) this.keyUp[k].forEach((c) => {
+            this.keyUp[k]?.forEach((c) => {
                 c();
             });
         });

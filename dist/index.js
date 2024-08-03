@@ -505,18 +505,18 @@ var Keyboard = class {
   }
   ready() {
     glob.renderer.dom.addEventListener("keydown", (e) => {
+      var _a;
       const k = e.key.toLowerCase();
-      if (this.keyDown[k])
-        this.keyDown[k].forEach((c) => {
-          c();
-        });
+      (_a = this.keyDown[k]) == null ? void 0 : _a.forEach((c) => {
+        c();
+      });
     });
     glob.renderer.dom.addEventListener("keyup", (e) => {
+      var _a;
       const k = e.key.toLowerCase();
-      if (this.keyUp[k])
-        this.keyUp[k].forEach((c) => {
-          c();
-        });
+      (_a = this.keyUp[k]) == null ? void 0 : _a.forEach((c) => {
+        c();
+      });
     });
   }
   register(key, down, up) {
