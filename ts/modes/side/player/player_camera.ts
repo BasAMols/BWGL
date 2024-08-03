@@ -29,6 +29,9 @@ export class FreeCamera extends GlController {
 
     constructor(public target: Character) {
         super({ autoReady: false });
+        this.camera.offset = v3(0, -15, this.zoom);
+        this.camera.rotation = v3(0.3, Math.PI / 8, 0);
+        this.camera.fov = 60;
     }
 
     public tick(o: TickerReturnData) {
@@ -44,7 +47,7 @@ export class FreeCamera extends GlController {
             );
 
             //zoom
-            this.zoom = Util.clamp(this.zoom + (this.button('zoom') * 0.1), 10, 300);
+            this.zoom = Util.clamp(this.zoom + (this.button('zoom') * 0.1), 30, 300);
 
             //aim
             this.camera.offset = this.button('aim') ? v3(-15, -10, 30) : v3(0, -15, this.zoom);

@@ -1,10 +1,10 @@
 import { DomElement, DomElementAttributes } from "./domElement";
 
-export type  InterfaceAttributes = DomElementAttributes & {
+export type  UIAttributes = DomElementAttributes & {
    
 }
-export class Interface extends DomElement<'div'> {
-    public constructor(attr: InterfaceAttributes = {}) {
+export class UI extends DomElement<'div'> {
+    public constructor(attr: UIAttributes = {}) {
         super('div', attr);
         this.dom.style.width = '100%';
         this.dom.style.height = '100%';

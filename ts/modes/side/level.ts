@@ -1,7 +1,9 @@
 import { Collider } from '../../classes/collider';
 import { TestObj } from '../../classes/debug/testObj';
 import { DomText } from '../../classes/dom/domText';
-import { InputMap, KeyboardJoyStickReader, KeyboardReader, MouseMoveReader, MouseScrollReader } from '../../classes/input/inputCombiner';
+import { InputMap } from '../../classes/input/input';
+import { MouseMoveReader, MouseScrollReader } from '../../classes/input/mouseReader';
+import { KeyboardJoyStickReader, KeyboardReader } from '../../classes/input/keyboardReader';
 import { Level } from '../../classes/level';
 import { Light } from '../../classes/light';
 import { Vector2, v2 } from '../../classes/math/vector2';
@@ -15,6 +17,7 @@ import { Driver } from './car/car_actor';
 import { Sky } from './entities/sky';
 import { Player } from './player/player_actor';
 import { Forrest } from './trees/forrest';
+import { TouchAxisReader, TouchLiniarAxisReader } from '../../classes/input/touchReader';
 
 export class World extends Level {
     public start = Vector2.zero;
@@ -31,15 +34,16 @@ export class World extends Level {
     public test2d: DomText;
     public inputMap = new InputMap( 
         {
-            'camera': [new MouseMoveReader()],
-            'movement': [new KeyboardJoyStickReader(['a', 'd', 's', 'w'])],
+            'camera': [new MouseMoveReader(), new TouchAxisReader(this.interface, 'bottomRight', v2(100,100), 40, v2(4))],
+            'movement': [new KeyboardJoyStickReader(['a', 'd', 's', 'w']), new TouchLiniarAxisReader(this.interface, 'bottomLeft', v2(100,100), 40, v2(1, -1))],
         },
         {
-            'jump': [new KeyboardReader(' ')],
+            'jump': [new KeyboardReader(' '), ],
             'aim': [new KeyboardReader('e')],
             'zoom': [new MouseScrollReader()],
         }
     );
+    // new TouchButtonReader(this.interface)
 
     constructor() {
         super();
@@ -63,7 +67,7 @@ export class World extends Level {
             color: 'white',
             text: '0'
         });
-        this.addUi(this.test2d);
+        // this.addUi(this.test2d);
     }
 
     keyDown(e: KeyboardEvent): void {
@@ -257,7 +261,7 @@ export class World extends Level {
 
     public tick(obj: TickerReturnData): void {
         super.tick(obj);
-        this.test2d.text = this.player.globalPosition.vec.map((v) => +v.toFixed(0)).join('\n');
+        // this.test2d.text = this.player.globalPosition.vec.map((v) => +v.toFixed(0)).join('\n');
         // console.log(this.inputMap.axis('camera'));
         
     }

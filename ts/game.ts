@@ -1,7 +1,7 @@
 import { FPS } from './classes/debug/fps';
 import { Loader } from './classes/debug/loader';
 import { Renderer } from './classes/dom/renderer';
-import { PadManager } from './classes/gamepadManager';
+import { PadManager } from './classes/input/gamepadManager';
 import { InputDevices } from './classes/input/inputDevices';
 import { Level } from './classes/level';
 import { Mode } from './classes/mode';
@@ -25,6 +25,9 @@ export var glob = new class{
         return this.mode.storage
     }
     public device: InputDevices = new InputDevices();
+    public get mobile():boolean {
+        return this.device.mobile
+    } 
 }
 
 export class Game {

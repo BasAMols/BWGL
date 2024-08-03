@@ -1,8 +1,8 @@
 import { glob } from '../game';
 import { DomElement } from './dom/domElement';
-import { Interface } from './dom/interface';
+import { UI } from './dom/interface';
 import { GlElementAttributes, GlElement } from './elementBase';
-import { InputMap } from './input/inputCombiner';
+import { InputMap } from './input/input';
 import { Light } from './light';
 import { Vector2 } from './math/vector2';
 import { Vector3 } from './math/vector3';
@@ -23,7 +23,7 @@ export abstract class Level extends GlElement {
     public levelZones: Zone[] = [];
     public lights: Light[] = [];
     private colliderMeshes: GLCuboid[] = [];
-    public interface: Interface = new Interface();
+    public interface: UI = new UI();
     public abstract inputMap: InputMap; 
 
     private _camera: {

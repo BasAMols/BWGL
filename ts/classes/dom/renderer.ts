@@ -20,10 +20,11 @@ export class Renderer extends DomElement<'canvas'> {
         this.dom.style.position = 'absolute';
         this.dom.style.pointerEvents = 'all';
         this.dom.style.bottom = '0px';
+        this.dom.style.touchAction = 'none';
         this.dom.tabIndex = 1;
 
-        window.addEventListener("resize", () => { 
-            this.resize(); 
+        window.addEventListener("resize", () => {
+            this.resize();
         });
 
         this.addEvent(new Events('resize'));

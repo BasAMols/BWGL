@@ -36,6 +36,7 @@ export class InputDevices {
     public keyboard: Keyboard = new Keyboard();
     private overlay: DomText;
     private _locked: boolean;
+    mobile: boolean;
     public get locked(): boolean {
         return this._locked;
     }
@@ -69,18 +70,26 @@ export class InputDevices {
     }
 
     ready() {
-        glob.renderer.dom.addEventListener('click', (e) => {
-            if (!this.locked) {
-                glob.renderer.dom.requestPointerLock();
-            }
-        });
+        window.addEventListener(`contextmenu`, (e) => e.preventDefault());
 
-        document.addEventListener('pointerlockchange', () => {
-            this.locked = (document.pointerLockElement === glob.renderer.dom);
-        });
+        this.mobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        if (this.mobile) {
+            //mobile
+            this.locked = true;
 
-        document.body.appendChild(this.overlay.dom);
+        } else {
+            glob.renderer.dom.addEventListener('click', (e) => {
+                if (!this.locked) {
+                    glob.renderer.dom.requestPointerLock();
+                }
+            });
 
+            document.addEventListener('pointerlockchange', () => {
+                this.locked = (document.pointerLockElement === glob.renderer.dom);
+            });
+            document.body.appendChild(this.overlay.dom);
+
+        }
         this.keyboard.ready();
     }
 }

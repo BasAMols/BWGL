@@ -421,6 +421,7 @@ var Renderer = class extends DomElement {
     this.dom.style.position = "absolute";
     this.dom.style.pointerEvents = "all";
     this.dom.style.bottom = "0px";
+    this.dom.style.touchAction = "none";
     this.dom.tabIndex = 1;
     window.addEventListener("resize", () => {
       this.resize();
@@ -467,7 +468,7 @@ var Renderer = class extends DomElement {
   }
 };
 
-// ts/classes/gamepad.ts
+// ts/classes/input/gamepad.ts
 var Pad = class {
   constructor(gamepad) {
     this.gamepad = gamepad;
@@ -477,7 +478,7 @@ var Pad = class {
   }
 };
 
-// ts/classes/gamepadManager.ts
+// ts/classes/input/gamepadManager.ts
 var PadManager = class {
   constructor() {
     this.pads = {};
@@ -550,15 +551,21 @@ var InputDevices = class {
     this.overlay.dom.style.display = !value ? "block" : "none";
   }
   ready() {
-    glob.renderer.dom.addEventListener("click", (e) => {
-      if (!this.locked) {
-        glob.renderer.dom.requestPointerLock();
-      }
-    });
-    document.addEventListener("pointerlockchange", () => {
-      this.locked = document.pointerLockElement === glob.renderer.dom;
-    });
-    document.body.appendChild(this.overlay.dom);
+    window.addEventListener("contextmenu", (e) => e.preventDefault());
+    this.mobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    if (this.mobile) {
+      this.locked = true;
+    } else {
+      glob.renderer.dom.addEventListener("click", (e) => {
+        if (!this.locked) {
+          glob.renderer.dom.requestPointerLock();
+        }
+      });
+      document.addEventListener("pointerlockchange", () => {
+        this.locked = document.pointerLockElement === glob.renderer.dom;
+      });
+      document.body.appendChild(this.overlay.dom);
+    }
     this.keyboard.ready();
   }
 };
@@ -2910,87 +2917,9 @@ var Collider = class extends Zone {
   }
 };
 
-// ts/classes/input/inputCombiner.ts
+// ts/classes/input/input.ts
 var InputReader = class {
   tick() {
-  }
-};
-var KeyboardReader = class extends InputReader {
-  constructor(key) {
-    super();
-    this._state = false;
-    glob.device.keyboard.register(
-      key,
-      () => {
-        this._state = true;
-      },
-      () => {
-        this._state = false;
-      }
-    );
-  }
-  get value() {
-    return Number(this._state);
-  }
-};
-var KeyboardJoyStickReader = class extends InputReader {
-  constructor(keys) {
-    super();
-    this._state = [[false, false], [false, false]];
-    this._vector = v2(0);
-    keys.forEach((k, i) => {
-      glob.device.keyboard.register(
-        k,
-        () => {
-          this._state[Math.floor(i / 2)][i % 2] = true;
-          this.setVector();
-        },
-        () => {
-          this._state[Math.floor(i / 2)][i % 2] = false;
-          this.setVector();
-        }
-      );
-    });
-  }
-  setVector() {
-    this._vector = v2(
-      -this._state[0][0] + +this._state[0][1],
-      -this._state[1][0] + +this._state[1][1]
-    );
-  }
-  get value() {
-    return this._vector;
-  }
-};
-var MouseMoveReader = class extends InputReader {
-  constructor() {
-    super();
-    this._delta = v2(0);
-    glob.renderer.dom.addEventListener("mousemove", (e) => {
-      this._delta.x += e.movementX;
-      this._delta.y += e.movementY;
-    });
-  }
-  get value() {
-    return this._delta;
-  }
-  tick() {
-    this._delta = v2(0);
-  }
-};
-var MouseScrollReader = class extends InputReader {
-  constructor() {
-    super();
-    this._delta = 0;
-    glob.renderer.dom.addEventListener("wheel", (e) => {
-      this._delta += e.deltaY;
-    });
-  }
-  get value() {
-    return this._delta;
-  }
-  tick() {
-    this._delta = 0;
   }
 };
 var Input = class {
@@ -3048,8 +2977,94 @@ var InputMap = class {
   }
 };
 
+// ts/classes/input/mouseReader.ts
+var MouseMoveReader = class extends InputReader {
+  constructor() {
+    super();
+    this._delta = v2(0);
+    if (!glob.mobile) {
+      glob.renderer.dom.addEventListener("mousemove", (e) => {
+        this._delta.x += e.movementX;
+        this._delta.y += e.movementY;
+      });
+    }
+  }
+  get value() {
+    return this._delta;
+  }
+  tick() {
+    this._delta = v2(0);
+  }
+};
+var MouseScrollReader = class extends InputReader {
+  constructor() {
+    super();
+    this._delta = 0;
+    if (!glob.mobile) {
+      glob.renderer.dom.addEventListener("wheel", (e) => {
+        this._delta += e.deltaY;
+      });
+    }
+  }
+  get value() {
+    return this._delta;
+  }
+  tick() {
+    this._delta = 0;
+  }
+};
+
+// ts/classes/input/keyboardReader.ts
+var KeyboardReader = class extends InputReader {
+  constructor(key) {
+    super();
+    this._state = false;
+    glob.device.keyboard.register(
+      key,
+      () => {
+        this._state = true;
+      },
+      () => {
+        this._state = false;
+      }
+    );
+  }
+  get value() {
+    return Number(this._state);
+  }
+};
+var KeyboardJoyStickReader = class extends InputReader {
+  constructor(keys) {
+    super();
+    this._state = [[false, false], [false, false]];
+    this._vector = v2(0);
+    keys.forEach((k, i) => {
+      glob.device.keyboard.register(
+        k,
+        () => {
+          this._state[Math.floor(i / 2)][i % 2] = true;
+          this.setVector();
+        },
+        () => {
+          this._state[Math.floor(i / 2)][i % 2] = false;
+          this.setVector();
+        }
+      );
+    });
+  }
+  setVector() {
+    this._vector = v2(
+      -this._state[0][0] + +this._state[0][1],
+      -this._state[1][0] + +this._state[1][1]
+    );
+  }
+  get value() {
+    return this._vector;
+  }
+};
+
 // ts/classes/dom/interface.ts
-var Interface = class extends DomElement {
+var UI = class extends DomElement {
   constructor(attr = {}) {
     super("div", attr);
     this.dom.style.width = "100%";
@@ -3067,7 +3082,7 @@ var Level = class extends GlElement {
     this.levelZones = [];
     this.lights = [];
     this.colliderMeshes = [];
-    this.interface = new Interface();
+    this.interface = new UI();
     this._camera = {
       target: Vector3.f(0),
       rotation: Vector3.f(0),
@@ -4227,6 +4242,9 @@ var FreeCamera = class extends GlController {
     this.lagList = [];
     this.lagCount = 1;
     this.zoom = 0;
+    this.camera.offset = v3(0, -15, this.zoom);
+    this.camera.rotation = v3(0.3, Math.PI / 8, 0);
+    this.camera.fov = 60;
   }
   get active() {
     return super.active;
@@ -4248,7 +4266,7 @@ var FreeCamera = class extends GlController {
         this.camera.rotation.y + r.x,
         this.camera.rotation.z
       );
-      this.zoom = Util.clamp(this.zoom + this.button("zoom") * 0.1, 10, 300);
+      this.zoom = Util.clamp(this.zoom + this.button("zoom") * 0.1, 30, 300);
       this.camera.offset = this.button("aim") ? v3(-15, -10, 30) : v3(0, -15, this.zoom);
       const nP = this.target.position.add(this.target.size.multiply(0.5, 0.3, 0.5));
       this.camera.target = nP;
@@ -4686,8 +4704,96 @@ var Forrest = class extends GLGroup {
   }
 };
 
+// ts/classes/input/touchReader.ts
+var TouchAxisReader = class extends InputReader {
+  constructor(ui, alignment = "bottomLeft", offset = v2(0), limit = 20, scale2 = v2(1)) {
+    super();
+    this.ui = ui;
+    this.alignment = alignment;
+    this.offset = offset;
+    this.limit = limit;
+    this.scale = scale2;
+    this._state = v2(0);
+    this.shell = document.createElement("div");
+    this.shell.setAttribute("style", "\n            width: 20px;\n            height: 20px;\n            border-radius: 100%;\n            background: #000000;\n            z-index: 99999999999999999999999;\n            position: absolute;\n            pointer-events: all;\n            ".concat(this.alignment.slice(-4) === "Left" ? "left" : "right", ":").concat(this.offset.x + 25, "px;\n            ").concat(this.alignment.slice(3) === "top" ? "top" : "bottom", ":").concat(this.offset.y + 25, "px;\n        "));
+    this.stick = document.createElement("div");
+    this.stick.setAttribute("style", "\n            width: 70px;\n            height: 70px;\n            border-radius: 100%;\n            background: #00000024;\n            z-index: 99999999999999999999999;\n            position: absolute;\n            pointer-events: all;\n            box-shadow: inset 0px 0px 9px white;\n            left: -25px;\n            top: -25px;\n        ");
+    this.stick.addEventListener("touchstart", (e) => {
+      this._dragging = true;
+      this._touchStart = v2(e.touches[0].screenX, e.touches[0].screenY);
+    });
+    this.stick.addEventListener("touchmove", (e) => {
+      if (this._dragging) {
+        const rel = v2(e.touches[0].screenX, e.touches[0].screenY).subtract(this._touchStart).clampMagnitude(this.limit);
+        this.stick.style.transform = "translate(".concat(rel.x, "px,").concat(rel.y, "px)");
+        this._state = rel.scale(1 / this.limit).multiply(this.scale);
+      }
+    });
+    this.stick.addEventListener("touchend", () => {
+      this._dragging = false;
+      this._state = v2(0);
+      this.stick.style.transform = "translate(0,0)";
+    });
+    this.ui.dom.appendChild(this.shell);
+    this.shell.appendChild(this.stick);
+  }
+  get value() {
+    return this._state;
+  }
+};
+var TouchLiniarAxisReader = class extends InputReader {
+  constructor(ui, alignment = "bottomLeft", offset = v2(0), limit = 20, scale2 = v2(1)) {
+    super();
+    this.ui = ui;
+    this.alignment = alignment;
+    this.offset = offset;
+    this.limit = limit;
+    this.scale = scale2;
+    this._state = v2(0);
+    this.shell = document.createElement("div");
+    this.shell.setAttribute("style", "\n            width: 20px;\n            height: 20px;\n            border-radius: 100%;\n            background: #000000;\n            z-index: 99999999999999999999999;\n            position: absolute;\n            pointer-events: all;\n            ".concat(this.alignment.slice(-4) === "Left" ? "left" : "right", ":").concat(this.offset.x + 25, "px;\n            ").concat(this.alignment.slice(3) === "top" ? "top" : "bottom", ":").concat(this.offset.y + 25, "px;\n        "));
+    this.stick = document.createElement("div");
+    this.stick.setAttribute("style", "\n            width: 70px;\n            height: 70px;\n            border-radius: 100%;\n            background: #00000024;\n            z-index: 99999999999999999999999;\n            position: absolute;\n            pointer-events: all;\n            box-shadow: inset 0px 0px 9px white;\n            left: -25px;\n            top: -25px;\n        ");
+    this.stick.addEventListener("touchstart", (e) => {
+      this._dragging = true;
+      this._touchStart = v2(e.touches[0].screenX, e.touches[0].screenY);
+    });
+    this.stick.addEventListener("touchmove", (e) => {
+      if (this._dragging) {
+        let direct = v2(e.touches[0].screenX, e.touches[0].screenY).subtract(this._touchStart).clampMagnitude(this.limit);
+        if (direct.magnitude() > this.limit / 4) {
+          let rel = Vector2.right.rotate(Math.round(direct.angle() / Math.PI * 2) * Math.PI / 2);
+          this.stick.style.transform = "translate(".concat(rel.x * this.limit, "px,").concat(rel.y * this.limit, "px)");
+          if (direct.magnitude() < this.limit / 2) {
+            this._state = v2(0);
+            this.stick.style.transform = "translate(".concat(rel.x * this.limit / 2, "px,").concat(rel.y * this.limit / 2, "px)");
+          } else {
+            this._state = rel.multiply(this.scale).toPrecision(1);
+            console.log(this._state);
+            this.stick.style.transform = "translate(".concat(rel.x * this.limit, "px,").concat(rel.y * this.limit, "px)");
+          }
+        } else {
+          this._state = v2(0);
+          this.stick.style.transform = "translate(0,0)";
+        }
+      }
+    });
+    this.stick.addEventListener("touchend", () => {
+      this._dragging = false;
+      this._state = v2(0);
+      this.stick.style.transform = "translate(0,0)";
+    });
+    this.ui.dom.appendChild(this.shell);
+    this.shell.appendChild(this.stick);
+  }
+  get value() {
+    return this._state;
+  }
+};
+
 // ts/modes/side/level.ts
 var World = class extends Level {
+  // new TouchButtonReader(this.interface)
   constructor() {
     super();
     this.start = Vector2.zero;
@@ -4695,8 +4801,8 @@ var World = class extends Level {
     this.light = v3(0, 400, 500);
     this.inputMap = new InputMap(
       {
-        "camera": [new MouseMoveReader()],
-        "movement": [new KeyboardJoyStickReader(["a", "d", "s", "w"])]
+        "camera": [new MouseMoveReader(), new TouchAxisReader(this.interface, "bottomRight", v2(100, 100), 40, v2(4))],
+        "movement": [new KeyboardJoyStickReader(["a", "d", "s", "w"]), new TouchLiniarAxisReader(this.interface, "bottomLeft", v2(100, 100), 40, v2(1, -1))]
       },
       {
         "jump": [new KeyboardReader(" ")],
@@ -4723,7 +4829,6 @@ var World = class extends Level {
       color: "white",
       text: "0"
     });
-    this.addUi(this.test2d);
   }
   keyDown(e) {
     if (e.key === "Enter") {
@@ -4839,7 +4944,6 @@ var World = class extends Level {
   }
   tick(obj) {
     super.tick(obj);
-    this.test2d.text = this.player.globalPosition.vec.map((v) => +v.toFixed(0)).join("\n");
   }
 };
 
@@ -4868,6 +4972,9 @@ var glob = new class {
   }
   get storage() {
     return this.mode.storage;
+  }
+  get mobile() {
+    return this.device.mobile;
   }
 }();
 var Game2 = class {
