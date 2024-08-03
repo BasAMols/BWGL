@@ -4744,6 +4744,49 @@ var TouchAxisReader = class extends InputReader {
     return this._state;
   }
 };
+var TouchVerticalReader = class extends InputReader {
+  constructor(ui, alignment = "bottomLeft", offset = v2(0), limit = 20, scale2 = 1) {
+    super();
+    this.ui = ui;
+    this.alignment = alignment;
+    this.offset = offset;
+    this.limit = limit;
+    this.scale = scale2;
+    this._state = 0;
+    this.shell = document.createElement("div");
+    this.shell.setAttribute("style", "\n            width: 40px;\n            height: 140px;\n            border-radius: 10px;\n            background: #00000024;\n            z-index: 99999999999999999999999;\n            position: absolute;\n            pointer-events: all;\n            ".concat(this.alignment.slice(-4) === "Left" ? "left" : "right", ":").concat(this.offset.x, "px;\n            ").concat(this.alignment.slice(0, 3) === "top" ? "top" : "bottom", ":").concat(this.offset.y, "px;\n        "));
+    this.stick = document.createElement("div");
+    this.stick.setAttribute("style", "\n            width: 40px;\n            height: 70px;\n            border-radius: 10px;\n            background: #00000024;\n            z-index: 99999999999999999999999;\n            position: absolute;\n            pointer-events: all;\n            box-shadow: inset 0px 0px 9px white;\n            top: 35px;\n        ");
+    this.stick.addEventListener("touchstart", (e) => {
+      this._dragging = true;
+      this._touchStart = e.touches[0].screenY;
+      e.stopImmediatePropagation();
+    });
+    this.stick.addEventListener("touchmove", (e) => {
+      if (this._dragging) {
+        let rel = Util.clamp(e.touches[0].screenY - this._touchStart, -this.limit, this.limit);
+        if (rel !== 0) {
+          this._state = rel * this.scale;
+          this.stick.style.transform = "translate(0,".concat(rel, "px)");
+        } else {
+          this._state = 0;
+          this.stick.style.transform = "translate(0,0)";
+        }
+      }
+      e.stopImmediatePropagation();
+    });
+    this.stick.addEventListener("touchend", () => {
+      this._dragging = false;
+      this._state = 0;
+      this.stick.style.transform = "translate(0,0)";
+    });
+    this.ui.dom.appendChild(this.shell);
+    this.shell.appendChild(this.stick);
+  }
+  get value() {
+    return this._state;
+  }
+};
 var TouchLiniarAxisReader = class extends InputReader {
   constructor(ui, alignment = "bottomLeft", offset = v2(0), limit = 20, scale2 = v2(1)) {
     super();
@@ -4812,7 +4855,7 @@ var World = class extends Level {
       {
         "jump": [new KeyboardReader(" ")],
         "aim": [new KeyboardReader("e")],
-        "zoom": [new MouseScrollReader()]
+        "zoom": [new MouseScrollReader(), new TouchVerticalReader(this.interface, "topRight", v2(60, 60), 25, 1)]
       }
     );
     this.addControllers([
@@ -4853,14 +4896,10 @@ var World = class extends Level {
   spawnTile(x, y) {
     const p = v3(
       200 * x - 2e3,
-      -3,
+      -2,
       200 * y - 100
     );
-    if (Math.random() < 0.5) {
-      this.addChild(new GLobj({ url: "CountrySide-3-GroundTile1.obj", size: v3(20, 20, 20), position: p }));
-    } else {
-      this.addChild(new GLobj({ url: "CountrySide-2-GroundTile2.obj", size: v3(20, 20, 20), position: p }));
-    }
+    this.addChild(new GLobj({ url: Math.random() < 0.5 ? "CountrySide-3-GroundTile1.obj" : "CountrySide-2-GroundTile2.obj", size: v3(20, 20, 20), position: p }));
     for (let rx = 0; rx < 5; rx++) {
       for (let ry = 0; ry < 5; ry++) {
         if (Math.random() < 0.1) {

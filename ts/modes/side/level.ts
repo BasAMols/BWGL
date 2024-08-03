@@ -17,7 +17,7 @@ import { Driver } from './car/car_actor';
 import { Sky } from './entities/sky';
 import { Player } from './player/player_actor';
 import { Forrest } from './trees/forrest';
-import { TouchAxisReader, TouchLiniarAxisReader } from '../../classes/input/touchReader';
+import { TouchAxisReader, TouchLiniarAxisReader, TouchVerticalReader } from '../../classes/input/touchReader';
 
 export class World extends Level {
     public start = Vector2.zero;
@@ -32,15 +32,15 @@ export class World extends Level {
     public test: TestObj;
     public light: Vector3 = v3(0, 400, 500);
     public test2d: DomText;
-    public inputMap = new InputMap( 
+    public inputMap = new InputMap(
         {
-            'camera': [new MouseMoveReader(), new TouchAxisReader(this.interface, 'bottomRight', v2(60,60), 40, v2(4))],
-            'movement': [new KeyboardJoyStickReader(['a', 'd', 's', 'w']), new TouchLiniarAxisReader(this.interface, 'bottomLeft', v2(60,60), 40, v2(1, -1))],
+            'camera': [new MouseMoveReader(), new TouchAxisReader(this.interface, 'bottomRight', v2(60, 60), 40, v2(4))],
+            'movement': [new KeyboardJoyStickReader(['a', 'd', 's', 'w']), new TouchLiniarAxisReader(this.interface, 'bottomLeft', v2(60, 60), 40, v2(1, -1))],
         },
         {
-            'jump': [new KeyboardReader(' '), ],
+            'jump': [new KeyboardReader(' '),],
             'aim': [new KeyboardReader('e')],
-            'zoom': [new MouseScrollReader()],
+            'zoom': [new MouseScrollReader(), new TouchVerticalReader(this.interface, 'topRight', v2(60, 60), 25, 1)],
         }
     );
     // new TouchButtonReader(this.interface)
@@ -90,14 +90,10 @@ export class World extends Level {
     spawnTile(x: number, y: number) {
         const p = v3(
             200 * x - 2000,
-            -3,
+            -2,
             200 * y - 100
         );
-        if (Math.random() < 0.5) {
-            this.addChild(new GLobj({ url: 'CountrySide-3-GroundTile1.obj', size: v3(20, 20, 20), position: p }));
-        } else {
-            this.addChild(new GLobj({ url: 'CountrySide-2-GroundTile2.obj', size: v3(20, 20, 20), position: p }));
-        }
+        this.addChild(new GLobj({ url: Math.random() < 0.5 ? 'CountrySide-3-GroundTile1.obj' : 'CountrySide-2-GroundTile2.obj', size: v3(20, 20, 20), position: p }));
 
         for (let rx = 0; rx < 5; rx++) {
             for (let ry = 0; ry < 5; ry++) {
@@ -263,7 +259,7 @@ export class World extends Level {
         super.tick(obj);
         // this.test2d.text = this.player.globalPosition.vec.map((v) => +v.toFixed(0)).join('\n');
         // console.log(this.inputMap.axis('camera'));
-        
+
     }
 
 

@@ -1,5 +1,6 @@
 import { UI } from '../dom/UI';
 import { Vector2, v2 } from '../math/vector2';
+import { Util } from '../util/utils';
 import { InputReader } from './input';
 
 export class TouchButtonReader extends InputReader<number> {
@@ -94,6 +95,71 @@ export class TouchAxisReader extends InputReader<Vector2> {
     }
     private _state: Vector2 = v2(0);
     get value(): Vector2 {
+        return this._state;
+    }
+}
+
+export class TouchVerticalReader extends InputReader<number> {
+    shell: HTMLDivElement;
+    stick: HTMLDivElement;
+    private _dragging: boolean;
+    private _touchStart: number;
+    constructor(public ui: UI, private alignment: 'topLeft' | 'topRight' | 'bottomLeft' | 'bottomRight' = 'bottomLeft', private offset: Vector2 = v2(0), private limit: number = 20, private scale: number = 1) {
+        super();
+        this.shell = document.createElement('div');
+        this.shell.setAttribute('style', `
+            width: 40px;
+            height: 140px;
+            border-radius: 10px;
+            background: #00000024;
+            z-index: 99999999999999999999999;
+            position: absolute;
+            pointer-events: all;
+            ${this.alignment.slice(-4) === "Left" ? 'left' : 'right'}:${this.offset.x}px;
+            ${this.alignment.slice(0,3) === "top" ? 'top' : 'bottom'}:${this.offset.y}px;
+        `);
+
+        this.stick = document.createElement('div');
+        this.stick.setAttribute('style', `
+            width: 40px;
+            height: 70px;
+            border-radius: 10px;
+            background: #00000024;
+            z-index: 99999999999999999999999;
+            position: absolute;
+            pointer-events: all;
+            box-shadow: inset 0px 0px 9px white;
+            top: 35px;
+        `);
+        // this.stick.addEventListener('touch');
+        this.stick.addEventListener('touchstart', (e) => {
+            this._dragging = true;
+            this._touchStart = e.touches[0].screenY;
+            e.stopImmediatePropagation();
+        });
+        this.stick.addEventListener('touchmove', (e) => {
+            if (this._dragging) {
+                let rel = Util.clamp(e.touches[0].screenY - this._touchStart, -this.limit, this.limit);
+                if (rel !== 0) {
+                    this._state = rel * this.scale;
+                    this.stick.style.transform = `translate(0,${rel}px)`;
+                } else {
+                    this._state = 0;
+                    this.stick.style.transform = 'translate(0,0)';
+                }
+            }
+            e.stopImmediatePropagation();
+        });
+        this.stick.addEventListener('touchend', () => {
+            this._dragging = false;
+            this._state = 0;
+            this.stick.style.transform = 'translate(0,0)';
+        });
+        this.ui.dom.appendChild(this.shell);
+        this.shell.appendChild(this.stick);
+    }
+    private _state: number = 0;
+    get value(): number {
         return this._state;
     }
 }
