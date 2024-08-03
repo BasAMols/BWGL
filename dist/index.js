@@ -4721,6 +4721,7 @@ var TouchAxisReader = class extends InputReader {
     this.stick.addEventListener("touchstart", (e) => {
       this._dragging = true;
       this._touchStart = v2(e.touches[0].screenX, e.touches[0].screenY);
+      e.stopImmediatePropagation();
     });
     this.stick.addEventListener("touchmove", (e) => {
       if (this._dragging) {
@@ -4728,11 +4729,13 @@ var TouchAxisReader = class extends InputReader {
         this.stick.style.transform = "translate(".concat(rel.x, "px,").concat(rel.y, "px)");
         this._state = rel.scale(1 / this.limit).multiply(this.scale);
       }
+      e.stopImmediatePropagation();
     });
-    this.stick.addEventListener("touchend", () => {
+    this.stick.addEventListener("touchend", (e) => {
       this._dragging = false;
       this._state = v2(0);
       this.stick.style.transform = "translate(0,0)";
+      e.stopImmediatePropagation();
     });
     this.ui.dom.appendChild(this.shell);
     this.shell.appendChild(this.stick);
@@ -4757,6 +4760,7 @@ var TouchLiniarAxisReader = class extends InputReader {
     this.stick.addEventListener("touchstart", (e) => {
       this._dragging = true;
       this._touchStart = v2(e.touches[0].screenX, e.touches[0].screenY);
+      e.stopImmediatePropagation();
     });
     this.stick.addEventListener("touchmove", (e) => {
       if (this._dragging) {
@@ -4777,6 +4781,7 @@ var TouchLiniarAxisReader = class extends InputReader {
           this.stick.style.transform = "translate(0,0)";
         }
       }
+      e.stopImmediatePropagation();
     });
     this.stick.addEventListener("touchend", () => {
       this._dragging = false;

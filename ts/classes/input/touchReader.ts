@@ -19,12 +19,14 @@ export class TouchButtonReader extends InputReader<number> {
             ${this.alignment.slice(-4) === "Left" ? 'left' : 'right'}:${this.offset.x}px;
             ${this.alignment.slice(3) === "top" ? 'top' : 'bottom'}:${this.offset.y}px;
         `);
-        this.button.addEventListener('touchstart', () => {
+        this.button.addEventListener('touchstart', (e) => {
             this._state = true;
+            e.stopImmediatePropagation();
 
         });
-        this.button.addEventListener('touchend', () => {
+        this.button.addEventListener('touchend', (e) => {
             this._state = false;
+            e.stopImmediatePropagation();
         });
         this.ui.dom.appendChild(this.button);
     }
@@ -71,6 +73,7 @@ export class TouchAxisReader extends InputReader<Vector2> {
         this.stick.addEventListener('touchstart', (e) => {
             this._dragging = true;
             this._touchStart = v2(e.touches[0].screenX, e.touches[0].screenY);
+            e.stopImmediatePropagation();
         });
         this.stick.addEventListener('touchmove', (e) => {
             if (this._dragging) {
@@ -78,11 +81,13 @@ export class TouchAxisReader extends InputReader<Vector2> {
                 this.stick.style.transform = `translate(${rel.x}px,${rel.y}px)`;
                 this._state = rel.scale(1 / this.limit).multiply(this.scale);
             }
+            e.stopImmediatePropagation();
         });
-        this.stick.addEventListener('touchend', () => {
+        this.stick.addEventListener('touchend', (e) => {
             this._dragging = false;
             this._state = v2(0);
             this.stick.style.transform = 'translate(0,0)';
+            e.stopImmediatePropagation();
         });
         this.ui.dom.appendChild(this.shell);
         this.shell.appendChild(this.stick);
@@ -130,6 +135,7 @@ export class TouchLiniarAxisReader extends InputReader<Vector2> {
         this.stick.addEventListener('touchstart', (e) => {
             this._dragging = true;
             this._touchStart = v2(e.touches[0].screenX, e.touches[0].screenY);
+            e.stopImmediatePropagation();
         });
         this.stick.addEventListener('touchmove', (e) => {
             if (this._dragging) {
@@ -151,6 +157,7 @@ export class TouchLiniarAxisReader extends InputReader<Vector2> {
                     this.stick.style.transform = 'translate(0,0)';
                 }
             }
+            e.stopImmediatePropagation();
         });
         this.stick.addEventListener('touchend', () => {
             this._dragging = false;
