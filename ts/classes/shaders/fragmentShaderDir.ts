@@ -31,7 +31,7 @@ void main() {
 
   float rangeLight = smoothstep(o_u_outerRange, o_u_innerRange, length(o_v_surfaceToLight));
   float inLight = smoothstep(o_u_outerLimit, o_u_innerLimit, dotFromDirection);
-  float light = 0.4 + rangeLight*inLight*dot(normal, surfaceToLightDirection);
+  float light = 0.6 + rangeLight*inLight*dot(normal, surfaceToLightDirection);
   float specular = rangeLight*(inLight*pow(dot(normal, halfVector), o_u_shininess));
   gl_FragColor = texelColor;
   if (o_u_ignoreLighting == 0){
