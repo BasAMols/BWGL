@@ -557,17 +557,303 @@ var InputDevices = class {
       this.locked = true;
     } else {
       glob.level.interface.touchControls.style.display = "none";
-      glob.renderer.dom.addEventListener("click", (e) => {
-        if (!this.locked) {
-          glob.renderer.dom.requestPointerLock();
-        }
-      });
-      document.addEventListener("pointerlockchange", () => {
-        this.locked = document.pointerLockElement === glob.renderer.dom;
-      });
+      if (glob.level.lockMouse) {
+        glob.renderer.dom.addEventListener("click", (e) => {
+          if (!this.locked) {
+            glob.renderer.dom.requestPointerLock();
+          }
+        });
+        document.addEventListener("pointerlockchange", () => {
+          this.locked = document.pointerLockElement === glob.renderer.dom;
+        });
+      } else {
+        glob.renderer.dom.addEventListener("click", (e) => {
+          if (!this.locked) {
+            this.locked = true;
+          }
+        });
+      }
       document.body.appendChild(this.overlay.dom);
     }
     this.keyboard.ready();
+  }
+};
+
+// ts/classes/util/utils.ts
+var Util = class {
+  static clamp(value, min, max) {
+    return Math.max(Math.min(value, max), min);
+  }
+  static to0(value, tolerance = 0.1) {
+    return Math.abs(value) < tolerance ? 0 : value;
+  }
+  static padArray(ar, b, len) {
+    return ar.concat(Array.from(Array(len).fill(b))).slice(0, len);
+  }
+  static addArrays(ar, br) {
+    return ar.map((a, i) => a + br[i]);
+  }
+  static subtractArrays(ar, br) {
+    return ar.map((a, i) => a - br[i]);
+  }
+  static multiplyArrays(ar, br) {
+    return ar.map((a, i) => a * br[i]);
+  }
+  static scaleArrays(ar, b) {
+    return ar.map((a, i) => a * b);
+  }
+  static radToDeg(r) {
+    return r * 180 / Math.PI;
+  }
+  static degToRad(d) {
+    return d * Math.PI / 180;
+  }
+  static closestVectorMagniture(vectors, target) {
+    let current;
+    vectors.forEach((v) => {
+      if (current === void 0 || Math.abs(v.magnitude()) < Math.abs(current.magnitude()))
+        current = v;
+      else {
+      }
+    });
+    return current;
+  }
+};
+
+// ts/classes/math/vector3.ts
+function v3(a, b, c) {
+  if (typeof a === "number") {
+    return Vector3.f(a, b, c);
+  } else if (typeof a === "undefined") {
+    return Vector3.f(0);
+  } else {
+    return Vector3.f(...a);
+  }
+}
+var Vector3 = class _Vector3 {
+  get pitch() {
+    return this.x;
+  }
+  set pitch(value) {
+    this.x = value;
+  }
+  get yaw() {
+    return this.y;
+  }
+  set yaw(value) {
+    this.y = value;
+  }
+  get roll() {
+    return this.z;
+  }
+  set roll(value) {
+    this.z = value;
+  }
+  get x() {
+    return this.vec[0];
+  }
+  set x(value) {
+    this.vec[0] = value;
+  }
+  get y() {
+    return this.vec[1];
+  }
+  set y(value) {
+    this.vec[1] = value;
+  }
+  get z() {
+    return this.vec[2];
+  }
+  set z(value) {
+    this.vec[2] = value;
+  }
+  get xy() {
+    return v2(this.x, this.y);
+  }
+  set xy(v) {
+    this.x = v.x;
+    this.y = v.y;
+  }
+  get xz() {
+    return v2(this.x, this.z);
+  }
+  set xz(v) {
+    this.x = v.x;
+    this.z = v.y;
+  }
+  get yx() {
+    return v2(this.y, this.x);
+  }
+  set yx(v) {
+    this.y = v.x;
+    this.x = v.y;
+  }
+  get yz() {
+    return v2(this.y, this.z);
+  }
+  set yz(v) {
+    this.y = v.x;
+    this.z = v.y;
+  }
+  get zx() {
+    return v2(this.z, this.x);
+  }
+  set zx(v) {
+    this.z = v.x;
+    this.x = v.y;
+  }
+  get zy() {
+    return v2(this.z, this.y);
+  }
+  set zy(v) {
+    this.z = v.x;
+    this.y = v.y;
+  }
+  constructor(x = 0, y = 0, z = 0) {
+    this.vec = [x, y, z];
+  }
+  static from2(vector, z = 0) {
+    return new _Vector3(vector.x, vector.y, z);
+  }
+  static f(x = 0, y = x, z = x) {
+    return new _Vector3(x, y, z);
+  }
+  static get forwards() {
+    return new _Vector3(0, 0, 1);
+  }
+  static get backwards() {
+    return new _Vector3(0, 0, -1);
+  }
+  static get up() {
+    return new _Vector3(0, 1, 0);
+  }
+  static get down() {
+    return new _Vector3(0, -1, 0);
+  }
+  static get left() {
+    return new _Vector3(-1, 0, 0);
+  }
+  static get right() {
+    return new _Vector3(1, 0, 0);
+  }
+  static get PI() {
+    return new _Vector3(Math.PI, Math.PI, Math.PI);
+  }
+  static get TAU() {
+    return _Vector3.PI.scale(0.5);
+  }
+  get array() {
+    return [this.x, this.y, this.z];
+  }
+  set array(a) {
+    [this.x, this.y, this.z] = a;
+  }
+  forEach(callbackfn) {
+    this.array.forEach(callbackfn);
+  }
+  get c() {
+    return this.clone();
+  }
+  equals(vector) {
+    return this.x === vector.x && this.y === vector.y && this.z === vector.z;
+  }
+  clone() {
+    return new _Vector3(
+      this.x,
+      this.y,
+      this.z
+    );
+  }
+  add(vector) {
+    return new _Vector3(
+      this.x + vector.x,
+      this.y + vector.y,
+      this.z + vector.z
+    );
+  }
+  multiply(a, b, c) {
+    const [x, y, z] = typeof a === "number" ? [a, b, c] : a.array;
+    return new _Vector3(
+      this.x * x,
+      this.y * y,
+      this.z * z
+    );
+  }
+  subtract(vector) {
+    return new _Vector3(
+      this.x - vector.x,
+      this.y - vector.y,
+      this.z - vector.z
+    );
+  }
+  scale(scalar) {
+    return new _Vector3(
+      this.x * scalar,
+      this.y * scalar,
+      this.z * scalar
+    );
+  }
+  divide(vector) {
+    return new _Vector3(
+      this.x / vector.x,
+      this.y / vector.y,
+      this.z / vector.z
+    );
+  }
+  rotateXY(rad) {
+    const [a, b] = this.xy.rotate(rad).array;
+    return new _Vector3(
+      a,
+      this.y,
+      b
+    );
+  }
+  rotateXZ(rad) {
+    const [a, b] = this.xz.rotate(rad).array;
+    return new _Vector3(
+      a,
+      b,
+      this.z
+    );
+  }
+  rotateYZ(rad) {
+    const [a, b] = this.yz.rotate(rad).array;
+    return new _Vector3(
+      this.x,
+      a,
+      b
+    );
+  }
+  magnitude() {
+    return Math.sqrt(this.magnitudeSqr());
+  }
+  magnitudeSqr() {
+    return this.x * this.x + this.y * this.y + this.z * this.z;
+  }
+  mod(max) {
+    return new _Vector3(
+      this.x % max.x,
+      this.y % max.y,
+      this.z % max.z
+    );
+  }
+  clamp(min, max) {
+    return new _Vector3(
+      Util.clamp(this.x, min.x, max.x),
+      Util.clamp(this.y, min.y, max.y),
+      Util.clamp(this.z, min.z, max.z)
+    );
+  }
+  normalize() {
+    let len = this.x * this.x + this.y * this.y + this.z * this.z;
+    if (len > 0) {
+      len = 1 / Math.sqrt(len);
+    }
+    return v3(
+      this.x * len,
+      this.y * len,
+      this.z * len
+    );
   }
 };
 
@@ -575,7 +861,7 @@ var InputDevices = class {
 var vertexShaderDir_default = "\nattribute vec4 o_a_position;\nattribute vec3 o_a_normal;\n\nuniform mat4 uModelViewMatrix;\nuniform mat4 uProjectionMatrix;\nattribute vec2 aTextureCoord;\nuniform mat4 uNormalMatrix;\nattribute vec3 aVertexNormal;\n\nuniform vec3 o_u_lightWorldPosition;\nuniform vec3 o_u_viewWorldPosition;\n\nuniform mat4 o_u_world;\nuniform mat4 o_u_worldViewProjection;\nuniform mat4 o_u_worldInverseTranspose;\n\nvarying vec3 o_v_normal;\n\nvarying vec3 o_v_surfaceToLight;\nvarying vec3 o_v_surfaceToView;\n\nvarying highp vec2 vTextureCoord;\n\nvoid main() {\n  gl_Position = uProjectionMatrix * uModelViewMatrix * o_a_position;\n  vTextureCoord = aTextureCoord;\n\n  o_v_normal = (uNormalMatrix * vec4(aVertexNormal, 1.0)).xyz;\n  vec3 surfaceWorldPosition = (uModelViewMatrix * o_a_position).xyz;\n  o_v_surfaceToLight = o_u_lightWorldPosition - surfaceWorldPosition;\n  o_v_surfaceToView = normalize(o_u_viewWorldPosition - surfaceWorldPosition);\n}";
 
 // ts/classes/shaders/fragmentShaderDir.ts
-var fragmentShaderDir_default = "\nprecision highp float;\n\nvarying vec3 o_v_normal;\nvarying vec3 o_v_surfaceToLight;\nvarying vec3 o_v_surfaceToView;\nvarying highp vec2 vTextureCoord;\n\nuniform sampler2D uSampler;\n\nuniform float o_u_shininess;\nuniform vec3 o_u_lightColor;\nuniform vec3 o_u_specularColor;\nuniform vec3 o_u_lightDirection;\nuniform float o_u_innerLimit;  \nuniform float o_u_outerLimit;  \nuniform float o_u_innerRange;  \nuniform float o_u_outerRange;  \nuniform int o_u_ignoreLighting;  \n\nvoid main() {\n  highp vec4 texelColor = texture2D(uSampler, vTextureCoord);\n\n  vec3 normal = normalize(o_v_normal);\n\n  vec3 surfaceToLightDirection = normalize(o_v_surfaceToLight);\n  vec3 surfaceToViewDirection = normalize(o_v_surfaceToView);\n  vec3 halfVector = normalize(surfaceToLightDirection + surfaceToViewDirection);\n\n  float dotFromDirection = dot(surfaceToLightDirection,-o_u_lightDirection);\n\n  float rangeLight = smoothstep(o_u_outerRange, o_u_innerRange, length(o_v_surfaceToLight));\n  float inLight = smoothstep(o_u_outerLimit, o_u_innerLimit, dotFromDirection);\n  float light = 0.2 + rangeLight*inLight*dot(normal, surfaceToLightDirection);\n  float specular = rangeLight*(inLight*pow(dot(normal, halfVector), o_u_shininess));\n  gl_FragColor = texelColor;\n  if (o_u_ignoreLighting == 0){\n    gl_FragColor.rgb *= light * o_u_lightColor;\n    gl_FragColor.rgb += specular * o_u_specularColor;\n  }\n}\n";
+var fragmentShaderDir_default = "\nprecision highp float;\n\nvarying vec3 o_v_normal;\nvarying vec3 o_v_surfaceToLight;\nvarying vec3 o_v_surfaceToView;\nvarying highp vec2 vTextureCoord;\n\nuniform sampler2D uSampler;\n\nuniform float o_u_shininess;\nuniform vec3 o_u_lightColor;\nuniform vec3 o_u_specularColor;\nuniform vec3 o_u_lightDirection;\nuniform float o_u_innerLimit;  \nuniform float o_u_outerLimit;  \nuniform float o_u_innerRange;  \nuniform float o_u_outerRange;  \nuniform int o_u_ignoreLighting;  \n\nvoid main() {\n  highp vec4 texelColor = texture2D(uSampler, vTextureCoord);\n\n  vec3 normal = normalize(o_v_normal);\n\n  vec3 surfaceToLightDirection = normalize(o_v_surfaceToLight);\n\n  float dotFromDirection = dot(surfaceToLightDirection,-o_u_lightDirection);\n\n  float light = 0.2 + dot(normal, surfaceToLightDirection);\n  gl_FragColor = texelColor;\n  gl_FragColor.rgb *= light * o_u_lightColor*0.8;\n  \n}\n";
 
 // ts/classes/rendering/glrInit.ts
 function loadShader(gl, type, source) {
@@ -2087,284 +2373,6 @@ function equals(a, b) {
 var mul = multiply;
 var sub = subtract;
 
-// ts/classes/util/utils.ts
-var Util = class {
-  static clamp(value, min, max) {
-    return Math.max(Math.min(value, max), min);
-  }
-  static to0(value, tolerance = 0.1) {
-    return Math.abs(value) < tolerance ? 0 : value;
-  }
-  static padArray(ar, b, len) {
-    return ar.concat(Array.from(Array(len).fill(b))).slice(0, len);
-  }
-  static addArrays(ar, br) {
-    return ar.map((a, i) => a + br[i]);
-  }
-  static subtractArrays(ar, br) {
-    return ar.map((a, i) => a - br[i]);
-  }
-  static multiplyArrays(ar, br) {
-    return ar.map((a, i) => a * br[i]);
-  }
-  static scaleArrays(ar, b) {
-    return ar.map((a, i) => a * b);
-  }
-  static radToDeg(r) {
-    return r * 180 / Math.PI;
-  }
-  static degToRad(d) {
-    return d * Math.PI / 180;
-  }
-  static closestVectorMagniture(vectors, target) {
-    let current;
-    vectors.forEach((v) => {
-      if (current === void 0 || Math.abs(v.magnitude()) < Math.abs(current.magnitude()))
-        current = v;
-      else {
-      }
-    });
-    return current;
-  }
-};
-
-// ts/classes/math/vector3.ts
-function v3(a, b, c) {
-  if (typeof a === "number") {
-    return Vector3.f(a, b, c);
-  } else if (typeof a === "undefined") {
-    return Vector3.f(0);
-  } else {
-    return Vector3.f(...a);
-  }
-}
-var Vector3 = class _Vector3 {
-  get pitch() {
-    return this.x;
-  }
-  set pitch(value) {
-    this.x = value;
-  }
-  get yaw() {
-    return this.y;
-  }
-  set yaw(value) {
-    this.y = value;
-  }
-  get roll() {
-    return this.z;
-  }
-  set roll(value) {
-    this.z = value;
-  }
-  get x() {
-    return this.vec[0];
-  }
-  set x(value) {
-    this.vec[0] = value;
-  }
-  get y() {
-    return this.vec[1];
-  }
-  set y(value) {
-    this.vec[1] = value;
-  }
-  get z() {
-    return this.vec[2];
-  }
-  set z(value) {
-    this.vec[2] = value;
-  }
-  get xy() {
-    return v2(this.x, this.y);
-  }
-  set xy(v) {
-    this.x = v.x;
-    this.y = v.y;
-  }
-  get xz() {
-    return v2(this.x, this.z);
-  }
-  set xz(v) {
-    this.x = v.x;
-    this.z = v.y;
-  }
-  get yx() {
-    return v2(this.y, this.x);
-  }
-  set yx(v) {
-    this.y = v.x;
-    this.x = v.y;
-  }
-  get yz() {
-    return v2(this.y, this.z);
-  }
-  set yz(v) {
-    this.y = v.x;
-    this.z = v.y;
-  }
-  get zx() {
-    return v2(this.z, this.x);
-  }
-  set zx(v) {
-    this.z = v.x;
-    this.x = v.y;
-  }
-  get zy() {
-    return v2(this.z, this.y);
-  }
-  set zy(v) {
-    this.z = v.x;
-    this.y = v.y;
-  }
-  constructor(x = 0, y = 0, z = 0) {
-    this.vec = [x, y, z];
-  }
-  static from2(vector, z = 0) {
-    return new _Vector3(vector.x, vector.y, z);
-  }
-  static f(x = 0, y = x, z = x) {
-    return new _Vector3(x, y, z);
-  }
-  static get forwards() {
-    return new _Vector3(0, 0, 1);
-  }
-  static get backwards() {
-    return new _Vector3(0, 0, -1);
-  }
-  static get up() {
-    return new _Vector3(0, 1, 0);
-  }
-  static get down() {
-    return new _Vector3(0, -1, 0);
-  }
-  static get left() {
-    return new _Vector3(-1, 0, 0);
-  }
-  static get right() {
-    return new _Vector3(1, 0, 0);
-  }
-  static get PI() {
-    return new _Vector3(Math.PI, Math.PI, Math.PI);
-  }
-  static get TAU() {
-    return _Vector3.PI.scale(0.5);
-  }
-  get array() {
-    return [this.x, this.y, this.z];
-  }
-  set array(a) {
-    [this.x, this.y, this.z] = a;
-  }
-  forEach(callbackfn) {
-    this.array.forEach(callbackfn);
-  }
-  get c() {
-    return this.clone();
-  }
-  equals(vector) {
-    return this.x === vector.x && this.y === vector.y && this.z === vector.z;
-  }
-  clone() {
-    return new _Vector3(
-      this.x,
-      this.y,
-      this.z
-    );
-  }
-  add(vector) {
-    return new _Vector3(
-      this.x + vector.x,
-      this.y + vector.y,
-      this.z + vector.z
-    );
-  }
-  multiply(a, b, c) {
-    const [x, y, z] = typeof a === "number" ? [a, b, c] : a.array;
-    return new _Vector3(
-      this.x * x,
-      this.y * y,
-      this.z * z
-    );
-  }
-  subtract(vector) {
-    return new _Vector3(
-      this.x - vector.x,
-      this.y - vector.y,
-      this.z - vector.z
-    );
-  }
-  scale(scalar) {
-    return new _Vector3(
-      this.x * scalar,
-      this.y * scalar,
-      this.z * scalar
-    );
-  }
-  divide(vector) {
-    return new _Vector3(
-      this.x / vector.x,
-      this.y / vector.y,
-      this.z / vector.z
-    );
-  }
-  rotateXY(rad) {
-    const [a, b] = this.xy.rotate(rad).array;
-    return new _Vector3(
-      a,
-      this.y,
-      b
-    );
-  }
-  rotateXZ(rad) {
-    const [a, b] = this.xz.rotate(rad).array;
-    return new _Vector3(
-      a,
-      b,
-      this.z
-    );
-  }
-  rotateYZ(rad) {
-    const [a, b] = this.yz.rotate(rad).array;
-    return new _Vector3(
-      this.x,
-      a,
-      b
-    );
-  }
-  magnitude() {
-    return Math.sqrt(this.magnitudeSqr());
-  }
-  magnitudeSqr() {
-    return this.x * this.x + this.y * this.y + this.z * this.z;
-  }
-  mod(max) {
-    return new _Vector3(
-      this.x % max.x,
-      this.y % max.y,
-      this.z % max.z
-    );
-  }
-  clamp(min, max) {
-    return new _Vector3(
-      Util.clamp(this.x, min.x, max.x),
-      Util.clamp(this.y, min.y, max.y),
-      Util.clamp(this.z, min.z, max.z)
-    );
-  }
-  normalize() {
-    let len = this.x * this.x + this.y * this.y + this.z * this.z;
-    if (len > 0) {
-      len = 1 / Math.sqrt(len);
-    }
-    return v3(
-      this.x * len,
-      this.y * len,
-      this.z * len
-    );
-  }
-};
-
 // ts/classes/math/matrix4.ts
 function m4() {
   return Matrix4.f();
@@ -2448,6 +2456,18 @@ var Matrix4 = class _Matrix4 {
     );
     return this;
   }
+  ortho(left, right, bottom, top, near = 1, far = Infinity) {
+    mat4_exports.ortho(
+      this.mat4,
+      left,
+      right,
+      bottom,
+      top,
+      near,
+      far
+    );
+    return this;
+  }
   clone() {
     return new _Matrix4(this.mat4);
   }
@@ -2490,13 +2510,15 @@ var GLRenderer = class {
     this.gl.clearColor(...this.game.level.background);
     this.gl.clearDepth(1);
     this.gl.enable(this.gl.DEPTH_TEST);
-    this.gl.enable(this.gl.CULL_FACE);
     this.gl.depthFunc(this.gl.LEQUAL);
     this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
   }
-  getProjection() {
-    return new Matrix4().perspective(
-      this.game.mode.camera.fov * Math.PI / 180,
+  getOrtho() {
+    return new Matrix4().ortho(
+      -this.game.renderer.width / 10,
+      this.game.renderer.width / 10,
+      -this.game.renderer.height / 10,
+      this.game.renderer.height / 10,
       1,
       2e4
     ).translate(this.game.mode.camera.offset.multiply(1, 1, -1)).rotate(this.game.mode.camera.rotation).translate(this.game.mode.camera.target.multiply(-1, -1, 1));
@@ -2506,17 +2528,21 @@ var GLRenderer = class {
     this.gl.useProgram(this.glt.program);
     const camera = m4().translate(this.game.mode.camera.offset.multiply(1, 1, -1)).rotate(this.game.mode.camera.rotation).translate(this.game.mode.camera.target.multiply(-1, -1, 1));
     this.glt.sendUniform("uSampler", 0);
-    this.glt.sendUniform("uProjectionMatrix", this.getProjection().mat4);
+    this.glt.sendUniform("uProjectionMatrix", this.getOrtho().mat4);
     this.glt.sendUniform("o_u_viewWorldPosition", camera.invert().position.vec);
     const light = this.game.level.lights[0];
-    this.glt.sendUniform("o_u_lightDirection", light.direction.vec);
-    this.glt.sendUniform("o_u_innerLimit", Math.cos(Util.degToRad(light.limit[0])));
-    this.glt.sendUniform("o_u_outerLimit", Math.cos(Util.degToRad(light.limit[1])));
-    this.glt.sendUniform("o_u_innerRange", light.range[0]);
-    this.glt.sendUniform("o_u_outerRange", light.range[1]);
-    this.glt.sendUniform("o_u_lightColor", light.color.slice(0, 3));
-    this.glt.sendUniform("o_u_specularColor", light.specular.slice(0, 3));
-    this.glt.sendUniform("o_u_lightWorldPosition", light.globalPosition.multiply(1, 1, -1).vec);
+    if (light) {
+      this.glt.sendUniform("o_u_lightDirection", light.direction.vec);
+      this.glt.sendUniform("o_u_innerLimit", Math.cos(Util.degToRad(light.limit[0])));
+      this.glt.sendUniform("o_u_outerLimit", Math.cos(Util.degToRad(light.limit[1])));
+      this.glt.sendUniform("o_u_innerRange", light.range[0]);
+      this.glt.sendUniform("o_u_outerRange", light.range[1]);
+      this.glt.sendUniform("o_u_lightColor", light.color.slice(0, 3));
+      this.glt.sendUniform("o_u_specularColor", light.specular.slice(0, 3));
+      this.glt.sendUniform("o_u_lightWorldPosition", light.globalPosition.multiply(1, 1, -1).vec);
+    } else {
+      this.glt.sendUniform("o_u_lightDirection", v3(0, 1, 0).vec);
+    }
     this.drawChildren(this.game.level);
   }
   drawChildren(element) {
@@ -2539,7 +2565,7 @@ var GLRenderer = class {
     this.glt.sendUniform("uNormalMatrix", currentModelview.invert().transpose().mat4);
     this.glt.sendAttribute("aTextureCoord", mesh.buffer.textureCoord);
     this.glt.sendTexture(mesh.texture.texture);
-    const projectionMatrix = this.getProjection();
+    const projectionMatrix = this.getOrtho();
     const cameraMatrix = m4();
     const viewMatrix = cameraMatrix.invert();
     const viewProjectionMatrix = projectionMatrix.multiply(viewMatrix);
@@ -2978,43 +3004,6 @@ var InputMap = class {
   }
 };
 
-// ts/classes/input/mouseReader.ts
-var MouseMoveReader = class extends InputReader {
-  constructor() {
-    super();
-    this._delta = v2(0);
-    if (!glob.mobile) {
-      glob.renderer.dom.addEventListener("mousemove", (e) => {
-        this._delta.x += e.movementX;
-        this._delta.y += e.movementY;
-      });
-    }
-  }
-  get value() {
-    return this._delta;
-  }
-  tick() {
-    this._delta = v2(0);
-  }
-};
-var MouseScrollReader = class extends InputReader {
-  constructor() {
-    super();
-    this._delta = 0;
-    if (!glob.mobile) {
-      glob.renderer.dom.addEventListener("wheel", (e) => {
-        this._delta += e.deltaY;
-      });
-    }
-  }
-  get value() {
-    return this._delta;
-  }
-  tick() {
-    this._delta = 0;
-  }
-};
-
 // ts/classes/input/keyboardReader.ts
 var KeyboardReader = class extends InputReader {
   constructor(key) {
@@ -3084,6 +3073,7 @@ var Level = class extends GlElement {
     this.type = "group";
     this.levelZones = [];
     this.lights = [];
+    this.lockMouse = false;
     this.colliderMeshes = [];
     this.interface = new UI();
     this._camera = {
@@ -3124,6 +3114,146 @@ var Level = class extends GlElement {
   afterTick(obj) {
     super.afterTick(obj);
     this.inputMap.tick();
+  }
+};
+
+// ts/classes/character.ts
+var Character = class extends GlElement {
+  constructor(attr) {
+    super(attr);
+    this.type = "group";
+    this.stat = {};
+  }
+  get ani() {
+    return this.skeleton.animator;
+  }
+};
+
+// ts/modes/halfd/player/player_camera.ts
+var FreeCamera = class extends GlController {
+  constructor(target) {
+    super({ autoReady: false });
+    this.target = target;
+    this.type = "controller";
+    this.order = "after";
+  }
+  build() {
+    this.camera.target = v3(0, 100, -200);
+    this.camera.offset = v3(0, 0, 250);
+    this.camera.rotation = v3(0.01, 0, 0);
+    this.camera.fov = 30;
+  }
+  tick(o) {
+    super.tick(o);
+    if (glob.device.locked) {
+      this.camera.target.x = this.target.position.x;
+    }
+  }
+};
+
+// ts/modes/halfd/player/player_controller.ts
+var PlayerController = class extends GlController {
+  constructor() {
+    super(...arguments);
+    this.intr = { fall: 0, jump: 0, landDelay: 0 };
+    this.cnst = { runTime: 250, runSlowDownFactor: 0.7, runSpeed: 0.5, minJumpTime: 200, jumpTime: 300, jumpSpeed: 0.6 };
+    this.velocity = Vector3.f(0);
+  }
+  setMovementVelocity(interval) {
+    const setter = (key, cond, interval2) => {
+      this.intr[key] = Util.clamp((this.intr[key] || 0) + (cond ? interval2 : -(interval2 * this.cnst.runSlowDownFactor)), 0, this.cnst.runTime);
+    };
+    setter("right", this.axis("movement").x === 1, interval);
+    setter("left", this.axis("movement").x === -1, interval);
+    setter("up", this.axis("movement").y === 1, interval);
+    setter("down", this.axis("movement").y === -1, interval);
+    const plane = v2(
+      (this.intr.right - this.intr.left) / this.cnst.runTime,
+      (this.intr.up - this.intr.down) / this.cnst.runTime
+    ).clampMagnitude(1).scale(this.cnst.runSpeed);
+    this.velocity = v3(
+      plane.x,
+      0,
+      0
+    );
+  }
+  determineStates(interval) {
+    if (this.parent.stat.falling) {
+      this.parent.stat.jumping = false;
+    } else {
+      if (this.parent.stat.jumping) {
+        if (this.intr.jump < this.cnst.minJumpTime) {
+          this.parent.stat.jumping = true;
+          this.parent.stat.falling = false;
+        } else if (this.intr.jump < this.cnst.jumpTime) {
+          this.parent.stat.jumping = Boolean(this.button("jump"));
+        } else {
+          this.parent.stat.jumping = false;
+          this.parent.stat.falling = true;
+          this.intr.jump = this.cnst.jumpTime;
+        }
+      } else {
+        this.parent.stat.jumping = Boolean(this.button("jump"));
+      }
+    }
+  }
+  setJumpVelocity(interval) {
+    this.determineStates(interval);
+    if (this.parent.stat.jumping) {
+      this.intr.jump = Math.min(this.intr.jump + interval, this.cnst.jumpTime);
+      this.intr.fall = -this.intr.jump;
+    } else if (this.parent.stat.falling) {
+      this.intr.jump = this.cnst.jumpTime;
+      this.intr.fall += interval;
+    } else {
+      this.velocity.y = 0;
+      return;
+    }
+    const y = (this.cnst.jumpTime - this.intr.jump - this.intr.fall) / this.cnst.jumpTime * this.cnst.jumpSpeed;
+    this.velocity.y = y;
+  }
+  setVelocity(obj) {
+    this.setMovementVelocity(obj.intervalS10);
+    this.setJumpVelocity(obj.intervalS10);
+    const sc = this.velocity.scale(obj.intervalS10 / 6);
+    if (sc.xz.magnitude() > 0) {
+      const [x, z] = sc.xz.rotate(-this.camera.rotation.y).array;
+      this.newPosition = this.parent.position.add(v3(x, sc.y, z));
+      if (!this.axis("movement").isZero()) {
+        this.parent.rotation = this.camera.rotation.multiply(0, 1, 0).add(v3(0, Math.PI / 2, 0)).add(v3(0, -sc.xz.angle(), 0));
+      }
+      this.parent.stat.running = true;
+    } else {
+      this.newPosition = this.parent.position.add(v3(0, sc.y, 0));
+      this.parent.stat.running = false;
+    }
+  }
+  collide(obj) {
+    this.parent.stat.ground = false;
+    const collisions = this.parent.zones[0].calculateCollision();
+    collisions.forEach((v) => {
+      if (v.y >= 0) {
+        this.intr.fall = 0;
+        this.intr.jump = 0;
+        this.parent.stat.falling = false;
+        this.parent.stat.ground = true;
+      } else {
+        this.parent.stat.falling = true;
+        this.parent.stat.ground = false;
+      }
+      this.velocity.subtract(v);
+      this.parent.position = this.newPosition.clone();
+      this.newPosition = this.newPosition.add(v);
+    });
+    if (!this.parent.stat.jumping) {
+      this.parent.stat.falling = !this.parent.stat.ground;
+    }
+  }
+  tick(obj) {
+    super.tick(obj);
+    this.setVelocity(obj);
+    this.collide(obj);
+    this.parent.position = this.newPosition.clone();
   }
 };
 
@@ -3590,222 +3720,60 @@ var GLCuboid = class _GLCuboid extends GLRendable {
   }
 };
 
-// ts/classes/light.ts
-var Light = class extends GLGroup {
-  get range() {
-    return this._range;
-  }
-  set range(value) {
-    this._range = [
-      value[0],
-      value[1] === void 0 || value[1] <= value[0] ? value[0] + 1 : value[1]
-    ];
-  }
-  get limit() {
-    return this._limit;
-  }
-  set limit(value) {
-    this._limit = [
-      value[0],
-      value[1] === void 0 || value[1] <= value[0] ? value[0] + 1 : value[1]
-    ];
-  }
-  constructor(attr) {
+// ts/classes/animation/skeleton_bone.ts
+var Bone = class extends GLGroup {
+  constructor(attr = {}) {
     super(attr);
-    this.range = attr.range;
-    this.limit = attr.limit;
-    this.color = attr.color || Colors.w;
-    this.specular = attr.specular;
-    this.direction = attr.direction || Vector3.forwards;
+    this.mesh = attr.mesh === void 0 ? false : attr.mesh;
+    this.length = attr.length === void 0 ? 10 : attr.length;
+    this.profile = attr.profile || v2(0);
+    this.speed = attr.speed === void 0 ? 0.02 : attr.speed;
+    this.baseRotation = attr.baseRotation || v3(0);
+    this.basePosition = this.position || v3(0);
+    this.size = v3(this.profile.x, this.length, this.profile.y);
+    if (!attr.anchorPoint) {
+      this.anchorPoint = v3(
+        this.profile.x / 2,
+        this.length,
+        this.profile.y / 2
+      );
+    }
+    this.rotation = this.baseRotation;
+  }
+  setRotation(r, dynamically = false) {
+    this.target = this.baseRotation.add(r.clone());
+    if (!dynamically) {
+      this.rotation = this.target.clone();
+    }
+  }
+  setPosition(r, dynamically = false) {
+    this.position = this.basePosition.add(r.clone());
+  }
+  tick(obj) {
+    super.tick(obj);
+    if (!this.target)
+      return;
+    const dif = this.rotation.subtract(this.target);
+    if (dif.magnitude() === 0)
+      return;
+    const movement = v3(
+      this.target.x > this.rotation.x ? Math.abs(dif.x) : -Math.abs(dif.x),
+      this.target.y > this.rotation.y ? Math.abs(dif.y) : -Math.abs(dif.y),
+      this.target.z > this.rotation.z ? Math.abs(dif.z) : -Math.abs(dif.z)
+    ).clamp(
+      v3(-this.speed, -this.speed, -this.speed).scale(obj.interval / 6),
+      v3(this.speed, this.speed, this.speed).scale(obj.interval / 6)
+    );
+    this.rotation = this.rotation.add(movement);
   }
   build() {
     super.build();
-    this.addChild(new GLCuboid({
-      anchorPoint: v3(2.5, 2.5, 1),
-      position: v3(-2.5, -2.5, 0),
-      colors: [this.color, Colors.k, Colors.k, Colors.k, Colors.k, Colors.k],
-      size: v3(5, 5, 1),
-      rotation: v3(this.direction.y, this.direction.z, this.direction.x).scale(Math.PI),
-      ignoreLighting: true
-    }));
-  }
-};
-
-// ts/classes/objects/obj.ts
-var GLobj = class extends GLRendable {
-  constructor(attr = {}) {
-    super(__spreadValues(__spreadValues({}, attr), { autoReady: false }));
-    this.type = "mesh";
-    this.verticesCount = 0;
-    this.matIndeces = [];
-    this.mats = {};
-    this.matsData = {};
-    this.positionIndeces = [];
-    this.indexIndeces = [];
-    this.normalIndeces = [];
-    this.textureIndeces = [];
-    this.texturePositionIndeces = [];
-    this.opacity = attr.opacity !== void 0 ? attr.opacity : 1;
-    this.colorIntensity = attr.colorIntensity !== void 0 ? attr.colorIntensity : 1;
-    this.path = attr.url.split("/").slice(0, -1).join("/") + "/";
-    if (glob.storage.register(attr.url, this)) {
-      this.loadFile("".concat(window.location.href, "/obj/").concat(attr.url)).then(this.parseMtl.bind(this)).then(this.parseObj.bind(this)).then(() => {
-        this.ready();
-        glob.storage.loaded(attr.url);
-      });
+    if (this.mesh) {
+      this.addChild(new GLCuboid({
+        colors: [[0.8, 0.8, 0.8, 1], [0.8, 0.8, 0.8, 1], [0.8, 0.8, 0.8, 1], [0.8, 0.8, 0.8, 1], [0.8, 0.8, 0.8, 1], [0.8, 0.8, 0.8, 1]],
+        size: this.size
+      }));
     }
-  }
-  getData() {
-    return {
-      verticesCount: this.verticesCount,
-      matIndeces: this.matIndeces,
-      matsData: this.matsData,
-      positionIndeces: this.positionIndeces,
-      indexIndeces: this.indexIndeces,
-      normalIndeces: this.normalIndeces,
-      texturePositionIndeces: this.texturePositionIndeces
-    };
-  }
-  giveData(data) {
-    this.verticesCount = data.verticesCount;
-    this.matIndeces = data.matIndeces;
-    this.matsData = data.matsData;
-    this.positionIndeces = data.positionIndeces;
-    this.indexIndeces = data.indexIndeces;
-    this.normalIndeces = data.normalIndeces;
-    this.texturePositionIndeces = data.texturePositionIndeces;
-  }
-  async parseMtl(str2) {
-    if (/mtllib/.test(str2)) {
-      await this.loadFile("".concat(window.location.href, "obj/").concat(this.path).concat(str2.split(/mtllib/)[1].split(/\n/)[0].trim())).then((v) => {
-        v.split("newmtl ").slice(1).forEach((s) => {
-          const lines = s.split(/\r\n|\r|\n/).filter((n) => n);
-          this.matsData[lines.shift()] = Object.fromEntries(lines.map((line) => {
-            const a = line.split(" ");
-            return [a.shift(), a];
-          }));
-        });
-      });
-      return str2;
-    } else {
-      return str2;
-    }
-  }
-  parseFaces(lineArray, mat, points, normals, tCoords) {
-    const textRemainder = lineArray.slice(1);
-    const numbRemainder = textRemainder.map(Number);
-    ({
-      usemtl: () => {
-        mat = textRemainder[0];
-      },
-      f: () => {
-        if (numbRemainder.length === 3) {
-          this.positionIndeces.push(...points[numbRemainder[0] - 1]);
-          this.positionIndeces.push(...points[numbRemainder[1] - 1]);
-          this.positionIndeces.push(...points[numbRemainder[2] - 1]);
-        } else if (numbRemainder.length === 6) {
-          this.positionIndeces.push(...points[numbRemainder[0] - 1]);
-          this.positionIndeces.push(...points[numbRemainder[2] - 1]);
-          this.positionIndeces.push(...points[numbRemainder[4] - 1]);
-          this.texturePositionIndeces.push(...tCoords[numbRemainder[1] - 1]);
-          this.texturePositionIndeces.push(...tCoords[numbRemainder[3] - 1]);
-          this.texturePositionIndeces.push(...tCoords[numbRemainder[5] - 1]);
-        } else {
-          this.positionIndeces.push(...points[numbRemainder[0] - 1]);
-          this.positionIndeces.push(...points[numbRemainder[3] - 1]);
-          this.positionIndeces.push(...points[numbRemainder[6] - 1]);
-          this.texturePositionIndeces.push(...tCoords[numbRemainder[1] - 1]);
-          this.texturePositionIndeces.push(...tCoords[numbRemainder[4] - 1]);
-          this.texturePositionIndeces.push(...tCoords[numbRemainder[7] - 1]);
-          this.normalIndeces.push(...normals[numbRemainder[2] - 1]);
-          this.normalIndeces.push(...normals[numbRemainder[5] - 1]);
-          this.normalIndeces.push(...normals[numbRemainder[8] - 1]);
-          this.textureIndeces.push(
-            ...GLTexture.textureOffset(Object.keys(this.mats).indexOf(mat), Object.keys(this.mats).length)
-          );
-        }
-        this.indexIndeces.push(this.indexIndeces.length);
-        this.indexIndeces.push(this.indexIndeces.length);
-        this.indexIndeces.push(this.indexIndeces.length);
-        this.matIndeces.push(mat);
-        this.matIndeces.push(mat);
-        this.matIndeces.push(mat);
-      }
-    }[lineArray[0]] || (() => {
-    }))();
-    return mat;
-  }
-  parseObj(str2) {
-    let mat = "none";
-    const lines = str2.split(/\r\n|\r|\n/);
-    const nonVertex = [];
-    const points = [];
-    const normals = [];
-    const tCoords = [];
-    lines.forEach(async (line) => {
-      const words = line.split(/(?: |\/)/);
-      const command = words[0];
-      const numbers = words.slice(1).map(Number);
-      if (command === "v") {
-        points.push([numbers[0], numbers[1], numbers[2]]);
-      } else if (command === "vn") {
-        normals.push([numbers[0], numbers[1], numbers[2]]);
-      } else if (command === "vt") {
-        tCoords.push([numbers[0], numbers[1]]);
-      } else {
-        nonVertex.push(words);
-      }
-    });
-    nonVertex.forEach((words) => {
-      mat = this.parseFaces(words, mat, points, normals, tCoords);
-    });
-    this.verticesCount = this.indexIndeces.length;
-  }
-  async loadFile(url) {
-    const response = await fetch(url);
-    const data = await response.text();
-    return data;
-  }
-  indexBuffer() {
-    return this.indexIndeces;
-  }
-  positionBuffer(size) {
-    return this.positionIndeces.map((n, i) => n * size.array[i % 3]);
-  }
-  normalBuffer() {
-    return this.normalIndeces;
-  }
-  textureBuffer(size) {
-    this.texture = new GLTexture(this.game, {});
-    if (Object.values(this.matsData).length) {
-      const matArray = Object.values(this.matsData);
-      const matImage = matArray.find((m) => m.map_Kd);
-      if (matImage) {
-        this.texture = new GLTexture(this.game, {
-          url: "obj/".concat(this.path).concat(matImage.map_Kd.join(" ").trim())
-        });
-      } else {
-        this.texture = new GLTexture(this.game, {
-          color: matArray.map((m) => [
-            ...m.Kd ? m.Kd.map(Number) : [0, 0, 0],
-            m.d ? Number(m.d[0]) : 1
-          ])
-        });
-      }
-    }
-    return this.texturePositionIndeces;
-  }
-};
-
-// ts/classes/character.ts
-var Character = class extends GlElement {
-  constructor(attr) {
-    super(attr);
-    this.type = "group";
-    this.stat = {};
-  }
-  get ani() {
-    return this.skeleton.animator;
   }
 };
 
@@ -4090,310 +4058,6 @@ var Skeleton = class extends GLGroup {
   }
 };
 
-// ts/classes/animation/skeleton_bone.ts
-var Bone = class extends GLGroup {
-  constructor(attr = {}) {
-    super(attr);
-    this.mesh = attr.mesh === void 0 ? false : attr.mesh;
-    this.length = attr.length === void 0 ? 10 : attr.length;
-    this.profile = attr.profile || v2(0);
-    this.speed = attr.speed === void 0 ? 0.02 : attr.speed;
-    this.baseRotation = attr.baseRotation || v3(0);
-    this.basePosition = this.position || v3(0);
-    this.size = v3(this.profile.x, this.length, this.profile.y);
-    if (!attr.anchorPoint) {
-      this.anchorPoint = v3(
-        this.profile.x / 2,
-        this.length,
-        this.profile.y / 2
-      );
-    }
-    this.rotation = this.baseRotation;
-  }
-  setRotation(r, dynamically = false) {
-    this.target = this.baseRotation.add(r.clone());
-    if (!dynamically) {
-      this.rotation = this.target.clone();
-    }
-  }
-  setPosition(r, dynamically = false) {
-    this.position = this.basePosition.add(r.clone());
-  }
-  tick(obj) {
-    super.tick(obj);
-    if (!this.target)
-      return;
-    const dif = this.rotation.subtract(this.target);
-    if (dif.magnitude() === 0)
-      return;
-    const movement = v3(
-      this.target.x > this.rotation.x ? Math.abs(dif.x) : -Math.abs(dif.x),
-      this.target.y > this.rotation.y ? Math.abs(dif.y) : -Math.abs(dif.y),
-      this.target.z > this.rotation.z ? Math.abs(dif.z) : -Math.abs(dif.z)
-    ).clamp(
-      v3(-this.speed, -this.speed, -this.speed).scale(obj.interval / 6),
-      v3(this.speed, this.speed, this.speed).scale(obj.interval / 6)
-    );
-    this.rotation = this.rotation.add(movement);
-  }
-  build() {
-    super.build();
-    if (this.mesh) {
-      this.addChild(new GLCuboid({
-        colors: [[0.8, 0.8, 0.8, 1], [0.8, 0.8, 0.8, 1], [0.8, 0.8, 0.8, 1], [0.8, 0.8, 0.8, 1], [0.8, 0.8, 0.8, 1], [0.8, 0.8, 0.8, 1]],
-        size: this.size
-      }));
-    }
-  }
-};
-
-// ts/modes/side/player/bow.ts
-var BowActor = class extends GLGroup {
-  get holding() {
-    return this._holding;
-  }
-  set holding(value) {
-    this._holding = value;
-    this.backBow.active = !value;
-    this.backBow.visible = !value;
-    this.handBow.active = value;
-    this.handBow.visible = value;
-    this.backBow.tension = 0.999;
-    this.handBow.tension = 0.999;
-  }
-  build() {
-    super.build();
-    this.handBow = new Bow({ parentBone: this.parent.skeleton.bones["lHand"], offsetR: v3(0, 0, 0.2) });
-    this.addChild(this.handBow);
-    this.backBow = new Bow({
-      parentBone: this.parent.skeleton.bones["torso"],
-      offsetP: v3(0, 6, -3),
-      offsetR: v3(
-        Math.PI / 2,
-        0.5,
-        Math.PI / 2 + 0.9
-      )
-    });
-    this.addChild(this.backBow);
-    this.holding = false;
-  }
-};
-var Bow = class extends GlElement {
-  constructor(attr) {
-    super(attr);
-    this.stat = {};
-    this.parentBone = attr.parentBone;
-    this.bowRig = new BowSkeleton(attr.offsetP, attr.offsetR);
-  }
-  get visible() {
-    return super.visible;
-  }
-  set visible(value) {
-    super.visible = value;
-    this.bowRig.visible = value;
-  }
-  set tension(v) {
-    this.bowRig.animator.setToInterval("tension", v);
-  }
-  build() {
-    super.build();
-    this.parentBone.addChild(this.bowRig);
-    this.tension = 0.999;
-  }
-};
-var BowSkeleton = class extends Skeleton {
-  constructor(offsetP = v3(0), offsetR = v3(0)) {
-    super({
-      bones: [
-        ["bow", new Bone({ profile: v2(1, 28), length: 6, position: v3(0, 0, 0), mesh: false }), ""],
-        ["bowS1", new Bone({ profile: v2(1, 13), length: 1, position: v3(0, 5, -12), mesh: false }), "bow"],
-        ["bowS2", new Bone({ profile: v2(1, 13), length: 1, position: v3(0, 5, 1), mesh: false }), "bow"]
-      ]
-    });
-    this.offsetP = offsetP;
-    this.offsetR = offsetR;
-    this.rotation = offsetR;
-    this.position = offsetP;
-  }
-  get visible() {
-    return super.visible;
-  }
-  set visible(value) {
-    super.visible = value;
-    this.bones["bow"].visible = value;
-  }
-  build() {
-    super.build();
-    this.bones["bow"].addChild(new GLobj({ colorIntensity: 1.3, url: "RPGCharacters_Source-2-LongBow.obj", size: v3(10, 10, 10), rotation: v3(0, Math.PI, 0), position: v3(0.5, 2.5, 1) }));
-    this.bones["bowS1"].addChild(new GLobj({ colorIntensity: 1.3, url: "RPGCharacters_Source-0-BowRope.obj", size: v3(10, 10, 10), rotation: v3(0, Math.PI, 0), position: v3(0.5, 0.5, 6.5) }));
-    this.bones["bowS2"].addChild(new GLobj({ colorIntensity: 1.3, url: "RPGCharacters_Source-1-BowRope-1.obj", size: v3(10, 10, 10), rotation: v3(0, Math.PI, 0), position: v3(0.5, 0.5, 6.5) }));
-    this.animator.add("tension", 100, {
-      bow: [[0, [0, 0, 0]], [1, [1, 1, 0]]],
-      bowS1: [[0, [0, 0, 0]], [1, [1, 1, 1]]],
-      bowS2: [[0, [0, 0, 0]], [1, [1, 1, 1]]]
-    }, { loop: false, bounce: false, once: false, dynamic: false });
-  }
-};
-
-// ts/modes/side/player/player_camera.ts
-var FreeCamera = class extends GlController {
-  constructor(target) {
-    super({ autoReady: false });
-    this.target = target;
-    this.type = "controller";
-    this.order = "after";
-    this.lagList = [];
-    this.lagCount = 1;
-    this.zoom = 0;
-    this.camera.offset = v3(0, -15, this.zoom);
-    this.camera.rotation = v3(0.3, Math.PI / 8, 0);
-    this.camera.fov = 60;
-  }
-  get active() {
-    return super.active;
-  }
-  set active(value) {
-    super.active = value;
-    if (value) {
-      this.camera.offset = v3(0, -15, this.zoom);
-      this.camera.rotation = v3(0.3, Math.PI / 8, 0);
-      this.camera.fov = 60;
-    }
-  }
-  tick(o) {
-    super.tick(o);
-    if (glob.device.locked) {
-      const r = this.axis("camera").scale(5e-3);
-      this.camera.rotation = v3(
-        Util.clamp(this.camera.rotation.x + r.y, -1, Math.PI / 2),
-        this.camera.rotation.y + r.x,
-        this.camera.rotation.z
-      );
-      this.zoom = Util.clamp(this.zoom + this.button("zoom") * 0.1, 30, 300);
-      this.camera.offset = this.button("aim") ? v3(-15, -10, 30) : v3(0, -15, this.zoom);
-      const nP = this.target.position.add(this.target.size.multiply(0.5, 0.3, 0.5));
-      this.camera.target = nP;
-    }
-  }
-};
-
-// ts/modes/side/player/player_controller.ts
-var PlayerController = class extends GlController {
-  constructor() {
-    super(...arguments);
-    this.intr = { fall: 0, jump: 0, landDelay: 0 };
-    this.stat = { jumping: false, falling: false, running: false };
-    this.cnst = { runTime: 250, runSlowDownFactor: 0.7, runSpeed: 0.5, minJumpTime: 200, jumpTime: 300, jumpSpeed: 0.6 };
-    this.velocity = Vector3.f(0);
-  }
-  get aiming() {
-    return this.button("aim");
-  }
-  setMovementVelocity(interval) {
-    const setter = (key, cond, interval2) => {
-      this.intr[key] = Util.clamp((this.intr[key] || 0) + (cond ? interval2 : -(interval2 * this.cnst.runSlowDownFactor)), 0, this.cnst.runTime);
-    };
-    setter("right", this.axis("movement").x === 1, interval);
-    setter("left", this.axis("movement").x === -1, interval);
-    setter("up", this.axis("movement").y === 1, interval);
-    setter("down", this.axis("movement").y === -1, interval);
-    if (!this.aiming) {
-      const plane = v2(
-        (this.intr.right - this.intr.left) / this.cnst.runTime,
-        (this.intr.up - this.intr.down) / this.cnst.runTime
-      ).clampMagnitude(1).scale(this.cnst.runSpeed);
-      this.velocity = v3(
-        plane.x,
-        0,
-        plane.y
-      );
-    } else {
-      this.velocity = v3(0);
-    }
-  }
-  determineStates(interval) {
-    if (this.parent.stat.falling) {
-      this.parent.stat.jumping = false;
-    } else {
-      if (this.parent.stat.jumping) {
-        if (this.intr.jump < this.cnst.minJumpTime) {
-          this.parent.stat.jumping = true;
-          this.parent.stat.falling = false;
-        } else if (this.intr.jump < this.cnst.jumpTime) {
-          this.parent.stat.jumping = Boolean(this.button("jump"));
-        } else {
-          this.parent.stat.jumping = false;
-          this.parent.stat.falling = true;
-          this.intr.jump = this.cnst.jumpTime;
-        }
-      } else {
-        this.parent.stat.jumping = Boolean(this.button("jump"));
-      }
-    }
-  }
-  setJumpVelocity(interval) {
-    this.determineStates(interval);
-    if (this.parent.stat.jumping) {
-      this.intr.jump = Math.min(this.intr.jump + interval, this.cnst.jumpTime);
-      this.intr.fall = -this.intr.jump;
-    } else if (this.parent.stat.falling) {
-      this.intr.jump = this.cnst.jumpTime;
-      this.intr.fall += interval;
-    } else {
-      this.velocity.y = 0;
-      return;
-    }
-    const y = (this.cnst.jumpTime - this.intr.jump - this.intr.fall) / this.cnst.jumpTime * this.cnst.jumpSpeed;
-    this.velocity.y = y;
-  }
-  setVelocity(obj) {
-    this.setMovementVelocity(obj.intervalS10);
-    this.setJumpVelocity(obj.intervalS10);
-    const sc = this.velocity.scale(obj.intervalS10 / 6);
-    if (sc.xz.magnitude() > 0) {
-      const [x, z] = sc.xz.rotate(-this.camera.rotation.y).array;
-      this.newPosition = this.parent.position.add(v3(x, sc.y, z));
-      if (!this.axis("movement").isZero()) {
-        this.parent.rotation = this.camera.rotation.multiply(0, 1, 0).add(v3(0, Math.PI / 2, 0)).add(v3(0, -sc.xz.angle(), 0));
-      }
-      this.parent.stat.running = true;
-    } else {
-      this.newPosition = this.parent.position.add(v3(0, sc.y, 0));
-      this.parent.stat.running = false;
-    }
-    if (this.aiming) {
-      this.parent.rotation = this.camera.rotation.multiply(0, 1, 0);
-    }
-  }
-  collide(obj) {
-    this.parent.stat.ground = false;
-    const collisions = this.parent.zones[0].calculateCollision();
-    collisions.forEach((v) => {
-      if (v.y >= 0) {
-        this.intr.fall = 0;
-        this.intr.jump = 0;
-        this.parent.stat.falling = false;
-        this.parent.stat.ground = true;
-      } else {
-        this.parent.stat.falling = true;
-        this.parent.stat.ground = false;
-      }
-      this.velocity.subtract(v);
-      this.parent.position = this.newPosition.clone();
-      this.newPosition = this.newPosition.add(v);
-    });
-    if (!this.parent.stat.jumping) {
-      this.parent.stat.falling = !this.parent.stat.ground;
-    }
-  }
-  tick(obj) {
-    super.tick(obj);
-    this.setVelocity(obj);
-    this.collide(obj);
-    this.parent.position = this.newPosition.clone();
-  }
-};
-
 // ts/classes/animation/skeleton_human.ts
 var HumanSkeleton = class extends Skeleton {
   constructor(attr) {
@@ -4420,7 +4084,173 @@ var HumanSkeleton = class extends Skeleton {
   }
 };
 
-// ts/modes/side/player/player_skeleton.ts
+// ts/classes/objects/obj.ts
+var GLobj = class extends GLRendable {
+  constructor(attr = {}) {
+    super(__spreadValues(__spreadValues({}, attr), { autoReady: false }));
+    this.type = "mesh";
+    this.verticesCount = 0;
+    this.matIndeces = [];
+    this.mats = {};
+    this.matsData = {};
+    this.positionIndeces = [];
+    this.indexIndeces = [];
+    this.normalIndeces = [];
+    this.textureIndeces = [];
+    this.texturePositionIndeces = [];
+    this.opacity = attr.opacity !== void 0 ? attr.opacity : 1;
+    this.colorIntensity = attr.colorIntensity !== void 0 ? attr.colorIntensity : 1;
+    this.path = attr.url.split("/").slice(0, -1).join("/") + "/";
+    if (glob.storage.register(attr.url, this)) {
+      this.loadFile("".concat(window.location.href, "/obj/").concat(attr.url)).then(this.parseMtl.bind(this)).then(this.parseObj.bind(this)).then(() => {
+        this.ready();
+        glob.storage.loaded(attr.url);
+      });
+    }
+  }
+  getData() {
+    return {
+      verticesCount: this.verticesCount,
+      matIndeces: this.matIndeces,
+      matsData: this.matsData,
+      positionIndeces: this.positionIndeces,
+      indexIndeces: this.indexIndeces,
+      normalIndeces: this.normalIndeces,
+      texturePositionIndeces: this.texturePositionIndeces
+    };
+  }
+  giveData(data) {
+    this.verticesCount = data.verticesCount;
+    this.matIndeces = data.matIndeces;
+    this.matsData = data.matsData;
+    this.positionIndeces = data.positionIndeces;
+    this.indexIndeces = data.indexIndeces;
+    this.normalIndeces = data.normalIndeces;
+    this.texturePositionIndeces = data.texturePositionIndeces;
+  }
+  async parseMtl(str2) {
+    if (/mtllib/.test(str2)) {
+      await this.loadFile("".concat(window.location.href, "obj/").concat(this.path).concat(str2.split(/mtllib/)[1].split(/\n/)[0].trim())).then((v) => {
+        v.split("newmtl ").slice(1).forEach((s) => {
+          const lines = s.split(/\r\n|\r|\n/).filter((n) => n);
+          this.matsData[lines.shift()] = Object.fromEntries(lines.map((line) => {
+            const a = line.split(" ");
+            return [a.shift(), a];
+          }));
+        });
+      });
+      return str2;
+    } else {
+      return str2;
+    }
+  }
+  parseFaces(lineArray, mat, points, normals, tCoords) {
+    const textRemainder = lineArray.slice(1);
+    const numbRemainder = textRemainder.map(Number);
+    ({
+      usemtl: () => {
+        mat = textRemainder[0];
+      },
+      f: () => {
+        if (numbRemainder.length === 3) {
+          this.positionIndeces.push(...points[numbRemainder[0] - 1]);
+          this.positionIndeces.push(...points[numbRemainder[1] - 1]);
+          this.positionIndeces.push(...points[numbRemainder[2] - 1]);
+        } else if (numbRemainder.length === 6) {
+          this.positionIndeces.push(...points[numbRemainder[0] - 1]);
+          this.positionIndeces.push(...points[numbRemainder[2] - 1]);
+          this.positionIndeces.push(...points[numbRemainder[4] - 1]);
+          this.texturePositionIndeces.push(...tCoords[numbRemainder[1] - 1]);
+          this.texturePositionIndeces.push(...tCoords[numbRemainder[3] - 1]);
+          this.texturePositionIndeces.push(...tCoords[numbRemainder[5] - 1]);
+        } else {
+          this.positionIndeces.push(...points[numbRemainder[0] - 1]);
+          this.positionIndeces.push(...points[numbRemainder[3] - 1]);
+          this.positionIndeces.push(...points[numbRemainder[6] - 1]);
+          this.texturePositionIndeces.push(...tCoords[numbRemainder[1] - 1]);
+          this.texturePositionIndeces.push(...tCoords[numbRemainder[4] - 1]);
+          this.texturePositionIndeces.push(...tCoords[numbRemainder[7] - 1]);
+          this.normalIndeces.push(...normals[numbRemainder[2] - 1]);
+          this.normalIndeces.push(...normals[numbRemainder[5] - 1]);
+          this.normalIndeces.push(...normals[numbRemainder[8] - 1]);
+          this.textureIndeces.push(
+            ...GLTexture.textureOffset(Object.keys(this.mats).indexOf(mat), Object.keys(this.mats).length)
+          );
+        }
+        this.indexIndeces.push(this.indexIndeces.length);
+        this.indexIndeces.push(this.indexIndeces.length);
+        this.indexIndeces.push(this.indexIndeces.length);
+        this.matIndeces.push(mat);
+        this.matIndeces.push(mat);
+        this.matIndeces.push(mat);
+      }
+    }[lineArray[0]] || (() => {
+    }))();
+    return mat;
+  }
+  parseObj(str2) {
+    let mat = "none";
+    const lines = str2.split(/\r\n|\r|\n/);
+    const nonVertex = [];
+    const points = [];
+    const normals = [];
+    const tCoords = [];
+    lines.forEach(async (line) => {
+      const words = line.split(/(?: |\/)/);
+      const command = words[0];
+      const numbers = words.slice(1).map(Number);
+      if (command === "v") {
+        points.push([numbers[0], numbers[1], numbers[2]]);
+      } else if (command === "vn") {
+        normals.push([numbers[0], numbers[1], numbers[2]]);
+      } else if (command === "vt") {
+        tCoords.push([numbers[0], numbers[1]]);
+      } else {
+        nonVertex.push(words);
+      }
+    });
+    nonVertex.forEach((words) => {
+      mat = this.parseFaces(words, mat, points, normals, tCoords);
+    });
+    this.verticesCount = this.indexIndeces.length;
+  }
+  async loadFile(url) {
+    const response = await fetch(url);
+    const data = await response.text();
+    return data;
+  }
+  indexBuffer() {
+    return this.indexIndeces;
+  }
+  positionBuffer(size) {
+    return this.positionIndeces.map((n, i) => n * size.array[i % 3]);
+  }
+  normalBuffer() {
+    return this.normalIndeces;
+  }
+  textureBuffer(size) {
+    this.texture = new GLTexture(this.game, {});
+    if (Object.values(this.matsData).length) {
+      const matArray = Object.values(this.matsData);
+      const matImage = matArray.find((m) => m.map_Kd);
+      if (matImage) {
+        this.texture = new GLTexture(this.game, {
+          url: "obj/".concat(this.path).concat(matImage.map_Kd.join(" ").trim())
+        });
+      } else {
+        this.texture = new GLTexture(this.game, {
+          color: matArray.map((m) => [
+            ...m.Kd ? m.Kd.map(Number) : [0, 0, 0],
+            m.d ? Number(m.d[0]) : 1
+          ])
+        });
+      }
+    }
+    return this.texturePositionIndeces;
+  }
+};
+
+// ts/modes/halfd/player/player_skeleton.ts
 var PlayerSkel = class extends HumanSkeleton {
   constructor() {
     super({
@@ -4523,7 +4353,6 @@ var PlayerSkel = class extends HumanSkeleton {
       rLegLower: [],
       rFoot: []
     }, { once: true, ease: "easeInOutSine" });
-    this.animator.play("aim");
   }
   tick(obj) {
     super.tick(obj);
@@ -4533,17 +4362,13 @@ var PlayerSkel = class extends HumanSkeleton {
       if (this.parent.stat.running) {
         this.animator.play("running");
       } else {
-        if (this.parent.aiming) {
-          this.animator.play("aim");
-        } else {
-          this.animator.play("idle");
-        }
+        this.animator.play("idle");
       }
     }
   }
 };
 
-// ts/modes/side/player/player_actor.ts
+// ts/modes/halfd/player/player_actor.ts
 var Player = class extends Character {
   constructor({
     position = Vector3.f(0),
@@ -4567,229 +4392,15 @@ var Player = class extends Character {
       new FreeCamera(this)
     ]);
   }
-  get aiming() {
-    const a = this.controllers[1].aiming;
-    return a;
-  }
   build() {
     GlElement.registerControllers(this);
     this.skeleton = new PlayerSkel();
     this.addChild(this.skeleton);
     this.skeleton.position = v3(0, 0, 0);
-    this.bow = new BowActor();
-    this.addChild(this.bow);
-  }
-  tick(obj) {
-    super.tick(obj);
-  }
-};
-
-// ts/modes/side/trees/treeBase.ts
-var TreeBase = class extends GLobj {
-  constructor(attr) {
-    super({
-      url: "treeModels/".concat(attr.name, ".obj"),
-      rotation: attr.rotation || v3(),
-      size: v3(70, 70, 70).scale(attr.scale || 1),
-      position: attr.position || v3()
-    });
-  }
-};
-
-// ts/modes/side/trees/tree1.ts
-var Tree1 = class extends TreeBase {
-  constructor(attr) {
-    super({
-      name: "tree0_1",
-      position: attr.position,
-      rotation: attr.rotation,
-      scale: attr.scale * 0.7
-    });
-  }
-};
-
-// ts/modes/side/trees/tree2.ts
-var Tree2 = class extends TreeBase {
-  constructor(attr) {
-    super({
-      name: "tree0_2",
-      position: attr.position,
-      rotation: attr.rotation,
-      scale: attr.scale
-    });
-  }
-};
-
-// ts/modes/side/trees/tree3.ts
-var Tree3 = class extends TreeBase {
-  constructor(attr) {
-    super({
-      name: "tree0_3",
-      position: attr.position,
-      rotation: attr.rotation,
-      scale: attr.scale
-    });
-  }
-};
-
-// ts/modes/side/trees/tree4.ts
-var Tree4 = class extends TreeBase {
-  constructor(attr) {
-    super({
-      name: "tree0_4",
-      position: attr.position,
-      rotation: attr.rotation,
-      scale: attr.scale
-    });
-  }
-};
-
-// ts/modes/side/trees/tree5.ts
-var Tree5 = class extends TreeBase {
-  constructor(attr) {
-    super({
-      name: "tree0_5",
-      position: attr.position,
-      rotation: attr.rotation,
-      scale: attr.scale
-    });
-  }
-};
-
-// ts/modes/side/trees/tree6.ts
-var Tree6 = class extends TreeBase {
-  constructor(attr) {
-    super({
-      name: "tree0_6",
-      position: attr.position,
-      rotation: attr.rotation,
-      scale: attr.scale
-    });
-  }
-};
-
-// ts/modes/side/trees/randomTree.ts
-var RandomTree = class extends GLGroup {
-  constructor(attr) {
-    super({
-      position: attr.position
-    });
-  }
-  build() {
-    super.build();
-    this.addChild(new [Tree1, Tree2, Tree3, Tree4, Tree5, Tree6, Tree2, Tree3, Tree4, Tree5, Tree6][Math.floor(Math.random() * 11)]({
-      rotation: v3(0, Math.random() * Math.PI, 0),
-      scale: 0.8 + 0.4 * Math.random()
-    }));
-  }
-};
-
-// ts/modes/side/trees/forrest.ts
-var Forrest = class extends GLGroup {
-  constructor(attr) {
-    super({
-      position: attr.position
-    });
-    this.area = attr.area;
-    this.density = attr.density;
-  }
-  build() {
-    super.build();
-    for (let x = 0; x < this.area.x; x += 10) {
-      for (let y = 0; y < this.area.y; y += 10) {
-        if (Math.random() < this.density) {
-          this.addChild(new RandomTree({
-            position: v3(x, 0, y)
-          }));
-        }
-      }
-    }
   }
 };
 
 // ts/classes/input/touchReader.ts
-var TouchAxisReader = class extends InputReader {
-  constructor(ui, alignment = "bottomLeft", offset = v2(0), limit = 20, scale2 = v2(1)) {
-    super();
-    this.ui = ui;
-    this.alignment = alignment;
-    this.offset = offset;
-    this.limit = limit;
-    this.scale = scale2;
-    this._state = v2(0);
-    this.shell = document.createElement("div");
-    this.shell.setAttribute("style", "\n            width: ".concat(70 + this.limit * 2, "px;\n            height: ").concat(70 + this.limit * 2, "px;\n            border-radius: 100%;\n            background: #000000;\n            z-index: 99999999999999999999999;\n            position: absolute;\n            pointer-events: all;\n            opacity: 0.4;\n            ").concat(this.alignment.slice(-4) === "Left" ? "left" : "right", ":").concat(this.offset.x - this.limit, "px;\n            ").concat(this.alignment.slice(3) === "top" ? "top" : "bottom", ":").concat(this.offset.y - this.limit, "px;\n        "));
-    this.stick = document.createElement("div");
-    this.stick.setAttribute("style", "\n            width: 70px;\n            height: 70px;\n            border-radius: 100%;\n            z-index: 99999999999999999999999;\n            position: absolute;\n            pointer-events: all;\n            box-shadow: inset 0px 0px 29px white;\n            left: ".concat(this.limit, "px;\n            top: ").concat(this.limit, "px;\n        "));
-    this.stick.addEventListener("touchstart", (e) => {
-      this._dragging = true;
-      this._touchStart = v2(e.touches[0].screenX, e.touches[0].screenY);
-      e.preventDefault();
-    });
-    this.stick.addEventListener("touchmove", (e) => {
-      if (this._dragging) {
-        const rel = v2(e.touches[0].screenX, e.touches[0].screenY).subtract(this._touchStart).clampMagnitude(this.limit);
-        this.stick.style.transform = "translate(".concat(rel.x, "px,").concat(rel.y, "px)");
-        this._state = rel.scale(1 / this.limit).multiply(this.scale);
-      }
-      e.preventDefault();
-    });
-    this.stick.addEventListener("touchend", (e) => {
-      this._dragging = false;
-      this._state = v2(0);
-      this.stick.style.transform = "translate(0,0)";
-      e.preventDefault();
-    });
-    this.ui.touchControls.appendChild(this.shell);
-    this.shell.appendChild(this.stick);
-  }
-  get value() {
-    return this._state;
-  }
-};
-var TouchVerticalReader = class extends InputReader {
-  constructor(ui, alignment = "bottomLeft", offset = v2(0), limit = 20, scale2 = 1) {
-    super();
-    this.ui = ui;
-    this.alignment = alignment;
-    this.offset = offset;
-    this.limit = limit;
-    this.scale = scale2;
-    this._state = 0;
-    this.shell = document.createElement("div");
-    this.shell.setAttribute("style", "\n            width: 70px;\n            height: ".concat(70 + this.limit * 2, "px;\n            border-radius: 35px;\n            background: #000000;\n            z-index: 99999999999999999999999;\n            position: absolute;\n            pointer-events: all;\n            opacity: 0.4;\n            ").concat(this.alignment.slice(-4) === "Left" ? "left" : "right", ":").concat(this.offset.x, "px;\n            ").concat(this.alignment.slice(0, 3) === "top" ? "top" : "bottom", ":").concat(this.offset.y - this.limit, "px;\n        "));
-    this.stick = document.createElement("div");
-    this.stick.setAttribute("style", "\n            width: 70px;\n            height: 70px;\n            border-radius: 35px;\n            z-index: 99999999999999999999999;\n            position: absolute;\n            pointer-events: all;\n            box-shadow: inset 0px 0px 29px white;\n            top: ".concat(this.limit, "px;\n        "));
-    this.stick.addEventListener("touchstart", (e) => {
-      this._dragging = true;
-      this._touchStart = e.touches[0].screenY;
-      e.preventDefault();
-    });
-    this.stick.addEventListener("touchmove", (e) => {
-      if (this._dragging) {
-        let rel = Util.clamp(e.touches[0].screenY - this._touchStart, -this.limit, this.limit);
-        if (rel !== 0) {
-          this._state = rel * this.scale;
-          this.stick.style.transform = "translate(0,".concat(rel, "px)");
-        } else {
-          this._state = 0;
-          this.stick.style.transform = "translate(0,0)";
-        }
-      }
-      e.preventDefault();
-    });
-    this.stick.addEventListener("touchend", () => {
-      this._dragging = false;
-      this._state = 0;
-      this.stick.style.transform = "translate(0,0)";
-    });
-    this.ui.touchControls.appendChild(this.shell);
-    this.shell.appendChild(this.stick);
-  }
-  get value() {
-    return this._state;
-  }
-};
 var TouchLiniarAxisReader = class extends InputReader {
   constructor(ui, alignment = "bottomLeft", offset = v2(0), limit = 20, scale2 = v2(1)) {
     super();
@@ -4847,163 +4458,237 @@ var TouchLiniarAxisReader = class extends InputReader {
   }
 };
 
-// ts/modes/side/level.ts
-var World = class extends Level {
-  // new TouchButtonReader(this.interface)
-  constructor() {
-    super();
-    this.start = Vector2.zero;
-    this.background = [1 * 0.07, 1 * 0.07, 1 * 0.1, 1];
-    this.light = v3(0, 400, 500);
-    this.inputMap = new InputMap(
-      {
-        "camera": [new MouseMoveReader(), new TouchAxisReader(this.interface, "bottomRight", v2(60, 60), 40, v2(4))],
-        "movement": [new KeyboardJoyStickReader(["a", "d", "s", "w"]), new TouchLiniarAxisReader(this.interface, "bottomLeft", v2(60, 60), 40, v2(1, -1))]
-      },
-      {
-        "jump": [new KeyboardReader(" ")],
-        "aim": [new KeyboardReader("e")],
-        "zoom": [new MouseScrollReader(), new TouchVerticalReader(this.interface, "topRight", v2(60, 60), 30, 1)]
-      }
-    );
-    this.addControllers([
-      new Collider({
-        position: v3(-5e3, -1e3, -2e3),
-        size: v3(1e4, 1e3, 4e3),
-        fixed: true
-      })
-      // new Collider({
-      //     position: v3(150, -6, 727),
-      //     size: v3(100, 20, 168),
-      //     fixed: true
-      // }),
-    ]);
-    this.test2d = new DomText({
-      position: v2(100, 100),
-      fontSize: 40,
-      fontFamily: "monospace",
-      color: "white",
-      text: "0"
+// ts/modes/halfd/trees/treeBase.ts
+var TreeBase = class extends GLobj {
+  constructor(attr) {
+    super({
+      url: "treeModels/".concat(attr.name, ".obj"),
+      rotation: attr.rotation || v3(),
+      size: v3(70, 70, 70).scale(attr.scale || 1),
+      position: attr.position || v3()
     });
   }
-  keyDown(e) {
-    if (e.key === "Enter") {
-      this.drive();
-    }
+};
+
+// ts/modes/halfd/trees/tree1.ts
+var Tree1 = class extends TreeBase {
+  constructor(attr) {
+    super({
+      name: "tree0_1",
+      position: attr.position,
+      rotation: attr.rotation,
+      scale: attr.scale * 0.7
+    });
   }
-  drive(b = !this.driving) {
-    this.driving = b;
-    this.player.active = !this.driving;
-    this.car.active = this.driving;
-    if (this.driving) {
-      this.player.position = v3(0, -100, 0);
-    } else {
-      this.player.position = this.car.position.add(v3(10, 0, 0).rotateXZ(-this.car.rotation.xz.angle())).clone();
-    }
+};
+
+// ts/modes/halfd/trees/tree2.ts
+var Tree2 = class extends TreeBase {
+  constructor(attr) {
+    super({
+      name: "tree0_2",
+      position: attr.position,
+      rotation: attr.rotation,
+      scale: attr.scale
+    });
   }
-  spawnTile(x, y) {
-    const p = v3(
-      200 * x - 2e3,
-      -2,
-      200 * y - 100
-    );
-    this.addChild(new GLobj({ url: Math.random() < 0.5 ? "CountrySide-3-GroundTile1.obj" : "CountrySide-2-GroundTile2.obj", size: v3(20, 20, 20), position: p }));
-    for (let rx = 0; rx < 5; rx++) {
-      for (let ry = 0; ry < 5; ry++) {
-        if (Math.random() < 0.1) {
-          this.addChild(new GLobj({
-            url: ["CountrySide-6-Vegetation5.obj", "CountrySide-0-Vegetation3.obj", "CountrySide-6-Vegetation5.obj", "CountrySide-8-Rock.obj"][Math.floor(Math.random() * 4)],
-            size: v3(
-              10,
-              10,
-              10
-            ).scale(Math.ceil(Math.random() * 3)),
-            position: p.add(v3(
-              40 * rx + Math.random() * 6,
-              3,
-              40 * ry + Math.random() * 6 - 80
-            )),
-            rotation: v3(
-              0,
-              Math.floor(Math.random() * 4) * Math.PI,
-              0
-            )
+};
+
+// ts/modes/halfd/trees/tree3.ts
+var Tree3 = class extends TreeBase {
+  constructor(attr) {
+    super({
+      name: "tree0_3",
+      position: attr.position,
+      rotation: attr.rotation,
+      scale: attr.scale
+    });
+  }
+};
+
+// ts/modes/halfd/trees/tree4.ts
+var Tree4 = class extends TreeBase {
+  constructor(attr) {
+    super({
+      name: "tree0_4",
+      position: attr.position,
+      rotation: attr.rotation,
+      scale: attr.scale
+    });
+  }
+};
+
+// ts/modes/halfd/trees/tree5.ts
+var Tree5 = class extends TreeBase {
+  constructor(attr) {
+    super({
+      name: "tree0_5",
+      position: attr.position,
+      rotation: attr.rotation,
+      scale: attr.scale
+    });
+  }
+};
+
+// ts/modes/halfd/trees/tree6.ts
+var Tree6 = class extends TreeBase {
+  constructor(attr) {
+    super({
+      name: "tree0_6",
+      position: attr.position,
+      rotation: attr.rotation,
+      scale: attr.scale
+    });
+  }
+};
+
+// ts/modes/halfd/trees/randomTree.ts
+var RandomTree = class extends GLGroup {
+  constructor(attr) {
+    super({
+      position: attr.position
+    });
+  }
+  build() {
+    super.build();
+    this.addChild(new [Tree1, Tree2, Tree3, Tree4, Tree5, Tree6, Tree2, Tree3, Tree4, Tree5, Tree6][Math.floor(Math.random() * 11)]({
+      rotation: v3(0, Math.random() * Math.PI, 0),
+      scale: 0.4 + 0.4 * Math.random()
+    }));
+  }
+};
+
+// ts/modes/halfd/trees/forrest.ts
+var Forrest = class extends GLGroup {
+  constructor(attr) {
+    super({
+      position: attr.position
+    });
+    this.area = attr.area;
+    this.density = attr.density;
+  }
+  build() {
+    super.build();
+    for (let x = 0; x < this.area.x; x += 10) {
+      for (let y = 0; y < this.area.y; y += 10) {
+        if (Math.random() < this.density) {
+          this.addChild(new RandomTree({
+            position: v3(x, 0, y)
           }));
         }
       }
     }
   }
-  spawnRoad(x, y) {
-    if (Math.random() < 0.5) {
-      this.addChild(new GLobj({ url: "apoc/VoxelNuke-18-RoadTile-1.obj", size: v3(100, 100, 100), position: v3(x * 200 - 2200, -6, y * 200 - 100) }));
-    } else {
-      this.addChild(new GLobj({ url: "apoc/VoxelNuke-17-RoadTile-0.obj", size: v3(100, 100, 100), position: v3(x * 200 - 2e3, -6, y * 200 - 100) }));
-    }
-    for (let i = 0; i < 6; i++) {
-      if (Math.random() < 0.2) {
-        this.addChild(new GLobj({ url: "apoc/VoxelNuke-0-Overgrowth-0.obj", size: v3(50, 50, 50), position: v3(x * 200 - 2e3 + i * 33, -4, y * 200 - 55) }));
+};
+
+// ts/classes/light.ts
+var Light = class extends GLGroup {
+  get range() {
+    return this._range;
+  }
+  set range(value) {
+    this._range = [
+      value[0],
+      value[1] === void 0 || value[1] <= value[0] ? value[0] + 1 : value[1]
+    ];
+  }
+  get limit() {
+    return this._limit;
+  }
+  set limit(value) {
+    this._limit = [
+      value[0],
+      value[1] === void 0 || value[1] <= value[0] ? value[0] + 1 : value[1]
+    ];
+  }
+  constructor(attr) {
+    super(attr);
+    this.range = attr.range;
+    this.limit = attr.limit;
+    this.color = attr.color || Colors.w;
+    this.specular = attr.specular;
+    this.direction = attr.direction || Vector3.forwards;
+  }
+  build() {
+    super.build();
+    this.addChild(new GLCuboid({
+      anchorPoint: v3(2.5, 2.5, 1),
+      position: v3(-2.5, -2.5, 0),
+      colors: [this.color, Colors.k, Colors.k, Colors.k, Colors.k, Colors.k],
+      size: v3(5, 5, 1),
+      rotation: v3(this.direction.y, this.direction.z, this.direction.x).scale(Math.PI),
+      ignoreLighting: true
+    }));
+  }
+};
+
+// ts/modes/halfd/level.ts
+var HalfDimensionWorld = class extends Level {
+  constructor() {
+    super();
+    this.start = Vector2.zero;
+    this.background = [1 * 0.2, 1 * 0.2, 1 * 0.5, 1];
+    this.inputMap = new InputMap(
+      {
+        "movement": [new KeyboardJoyStickReader(["a", "d", "s", "w"]), new TouchLiniarAxisReader(this.interface, "bottomLeft", v2(60, 60), 40, v2(1, -1))]
+      },
+      {
+        "jump": [new KeyboardReader(" ")]
       }
-      if (Math.random() < 0.2) {
-        this.addChild(new GLobj({ url: "apoc/VoxelNuke-0-Overgrowth-0.obj", size: v3(50, 50, 50), position: v3(x * 200 - 2e3 + i * 33, -4, y * 200 - 145), rotation: v3(0, Math.PI, 0) }));
-      }
-    }
+    );
+    this.addControllers([
+      new Collider({
+        position: v3(-5e3, -100, -200),
+        size: v3(1e4, 100, 400),
+        fixed: true
+      }),
+      new Collider({
+        position: v3(-5e3, 0, 200),
+        size: v3(1e4, 100, 10),
+        fixed: true
+      }),
+      new Collider({
+        position: v3(-5e3, 0, -200),
+        size: v3(1e4, 100, 10),
+        fixed: true
+      })
+    ]);
   }
   build() {
     super.build();
     this.player = new Player({
-      position: v3(0, 0, 650),
+      position: v3(0, 0, 0),
       rotation: v3(0, 2.3, 0)
     });
     this.addChild(this.player);
-    this.addLight(new Light({
-      position: v3(0, 70, 100),
-      color: [0.9, 0.9, 0.85, 1],
+    this.light = new Light({
+      position: v3(0, 600, -300),
+      color: [0.9, 0.9, 1, 1],
       specular: [0.3, 0.3, 0.3, 1],
       limit: [10, 10.1],
       range: [600, 1001],
       direction: v3(0, 0, -1)
-    }));
-    this.addChild(new GLCuboid({ size: v3(1e4, 1, 1e4), position: v3(-5e3, -6, -5e3), colors: [[103 / 350, 119 / 350, 107 / 350, 1]] }));
-    for (let x = 0; x < 20; x++) {
-      for (let y = 0; y < 20; y++) {
-        this.spawnTile(x, y);
-      }
-    }
+    });
+    this.addLight(this.light);
+    this.addChild(new GLCuboid({ size: v3(1e4, 1, 1e4), position: v3(-5e3, -1, -5e3), colors: [[103 / 350, 180 / 350, 107 / 350, 1]] }));
     this.addChild(new Forrest({
       storage: this.mode.storage,
-      position: v3(-2e3, 0, 800),
-      area: v2(4e3, 2e3),
-      density: 3e-3
-    }));
-    this.addChild(new Forrest({
-      storage: this.mode.storage,
-      position: v3(-2e3, 0, -1800),
-      area: v2(4e3, 2e3),
-      density: 3e-3
-    }));
-    this.addChild(new Forrest({
-      storage: this.mode.storage,
-      position: v3(-2300, 0, -1800),
-      area: v2(2e3, 4e3),
-      density: 3e-3
-    }));
-    this.addChild(new Forrest({
-      storage: this.mode.storage,
-      position: v3(300, 0, -1800),
-      area: v2(2e3, 4e3),
-      density: 3e-3
+      position: v3(-2e3, 0, 300),
+      area: v2(4e3, 4e3),
+      density: 1e-3
     }));
   }
   tick(obj) {
     super.tick(obj);
+    this.light.position.x = this.player.globalPosition.x + 600;
   }
 };
 
-// ts/modes/mode.ts
-var OpenWorldMode = class extends Mode {
+// ts/modes/halfd/mode.ts
+var HalfDimensionMode = class extends Mode {
   build() {
     super.build();
-    this.addLevel("openWorld", new World());
+    this.addLevel("openWorld", new HalfDimensionWorld());
     this.switchLevel("openWorld");
   }
 };
@@ -5084,8 +4769,8 @@ var Game2 = class {
     this.renderer.tick(obj);
   }
   setupModes() {
-    this.addMode("side", new OpenWorldMode());
-    this.switchMode("side");
+    this.addMode("half", new HalfDimensionMode());
+    this.switchMode("half");
   }
   debug() {
     this.fps = new FPS();

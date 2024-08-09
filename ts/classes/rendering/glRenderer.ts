@@ -1,7 +1,7 @@
 import { vec4 } from 'gl-matrix';
 import { Game } from '../../game';
 import { TickerReturnData } from '../ticker';
-import { Vector3 } from '../math/vector3';
+import { Vector3, v3 } from '../math/vector3';
 import { GLRendable } from '../rendable';
 import { GlElement } from '../elementBase';
 import { Vector2 } from '../math/vector2';
@@ -63,15 +63,18 @@ export class GLRenderer {
         this.gl.clearColor(...this.game.level.background);
         this.gl.clearDepth(1.0);
         this.gl.enable(this.gl.DEPTH_TEST);
-        this.gl.enable(this.gl.CULL_FACE);
+        // this.gl.enable(this.gl.CULL_FACE);
         this.gl.depthFunc(this.gl.LEQUAL);
         this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
     }
 
-    getProjection() {
+    getOrtho() {
         return new Matrix4()
-            .perspective(
-                (this.game.mode.camera.fov * Math.PI) / 180,
+            .ortho(
+                -this.game.renderer.width / 10,
+                this.game.renderer.width / 10,
+                -this.game.renderer.height / 10,
+                this.game.renderer.height / 10,
                 1,
                 20000
             )
@@ -86,22 +89,27 @@ export class GLRenderer {
         const camera = m4()
             .translate(this.game.mode.camera.offset.multiply(1, 1, -1))
             .rotate(this.game.mode.camera.rotation)
-            .translate(this.game.mode.camera.target.multiply(-1, -1, 1))
+            .translate(this.game.mode.camera.target.multiply(-1, -1, 1));
 
         this.glt.sendUniform('uSampler', 0);
-        this.glt.sendUniform('uProjectionMatrix', this.getProjection().mat4);
+        this.glt.sendUniform('uProjectionMatrix', this.getOrtho().mat4);
         this.glt.sendUniform('o_u_viewWorldPosition', camera.invert().position.vec);
 
 
         const light = this.game.level.lights[0];
-        this.glt.sendUniform('o_u_lightDirection', light.direction.vec);
-        this.glt.sendUniform('o_u_innerLimit', Math.cos(Util.degToRad(light.limit[0])));
-        this.glt.sendUniform('o_u_outerLimit', Math.cos(Util.degToRad(light.limit[1])));
-        this.glt.sendUniform('o_u_innerRange', light.range[0]);
-        this.glt.sendUniform('o_u_outerRange', light.range[1]);
-        this.glt.sendUniform('o_u_lightColor', light.color.slice(0, 3));
-        this.glt.sendUniform('o_u_specularColor', light.specular.slice(0, 3));
-        this.glt.sendUniform('o_u_lightWorldPosition', light.globalPosition.multiply(1,1,-1).vec);
+        if (light) {
+            this.glt.sendUniform('o_u_lightDirection', light.direction.vec);
+            this.glt.sendUniform('o_u_innerLimit', Math.cos(Util.degToRad(light.limit[0])));
+            this.glt.sendUniform('o_u_outerLimit', Math.cos(Util.degToRad(light.limit[1])));
+            this.glt.sendUniform('o_u_innerRange', light.range[0]);
+            this.glt.sendUniform('o_u_outerRange', light.range[1]);
+            this.glt.sendUniform('o_u_lightColor', light.color.slice(0, 3));
+            this.glt.sendUniform('o_u_specularColor', light.specular.slice(0, 3));
+            this.glt.sendUniform('o_u_lightWorldPosition', light.globalPosition.multiply(1, 1, -1).vec);
+        } else {
+            this.glt.sendUniform('o_u_lightDirection', v3(0, 1, 0).vec);
+        }
+
 
 
         this.drawChildren(this.game.level);
@@ -133,7 +141,7 @@ export class GLRenderer {
         this.glt.sendAttribute('aTextureCoord', mesh.buffer.textureCoord);
         this.glt.sendTexture(mesh.texture.texture);
 
-        const projectionMatrix = this.getProjection();
+        const projectionMatrix = this.getOrtho();
 
         const cameraMatrix = m4();
         const viewMatrix = cameraMatrix.invert();

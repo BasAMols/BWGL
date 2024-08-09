@@ -22,6 +22,7 @@ export abstract class Level extends GlElement {
     public type: GlElementType = 'group';
     public levelZones: Zone[] = [];
     public lights: Light[] = [];
+    public lockMouse: boolean = false
     private colliderMeshes: GLCuboid[] = [];
     public interface: UI = new UI();
     public abstract inputMap: InputMap; 

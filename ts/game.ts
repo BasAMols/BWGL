@@ -7,7 +7,7 @@ import { Level } from './classes/level';
 import { Mode } from './classes/mode';
 import { GLRenderer } from './classes/rendering/glRenderer';
 import { Ticker, TickerReturnData } from './classes/ticker';
-import { OpenWorldMode } from './modes/mode';
+import { HalfDimensionMode } from './modes/halfd/mode';
 
 
 export var glob = new class{
@@ -101,8 +101,8 @@ export class Game {
     }
 
     private setupModes() {
-        this.addMode('side', new OpenWorldMode());
-        this.switchMode('side');
+        this.addMode('half', new HalfDimensionMode());
+        this.switchMode('half');
     }
 
     private debug() {

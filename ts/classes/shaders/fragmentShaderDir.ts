@@ -24,19 +24,12 @@ void main() {
   vec3 normal = normalize(o_v_normal);
 
   vec3 surfaceToLightDirection = normalize(o_v_surfaceToLight);
-  vec3 surfaceToViewDirection = normalize(o_v_surfaceToView);
-  vec3 halfVector = normalize(surfaceToLightDirection + surfaceToViewDirection);
 
   float dotFromDirection = dot(surfaceToLightDirection,-o_u_lightDirection);
 
-  float rangeLight = smoothstep(o_u_outerRange, o_u_innerRange, length(o_v_surfaceToLight));
-  float inLight = smoothstep(o_u_outerLimit, o_u_innerLimit, dotFromDirection);
-  float light = 0.2 + rangeLight*inLight*dot(normal, surfaceToLightDirection);
-  float specular = rangeLight*(inLight*pow(dot(normal, halfVector), o_u_shininess));
+  float light = 0.2 + dot(normal, surfaceToLightDirection);
   gl_FragColor = texelColor;
-  if (o_u_ignoreLighting == 0){
-    gl_FragColor.rgb *= light * o_u_lightColor;
-    gl_FragColor.rgb += specular * o_u_specularColor;
-  }
+  gl_FragColor.rgb *= light * o_u_lightColor*0.8;
+  
 }
 `;

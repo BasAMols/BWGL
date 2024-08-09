@@ -2,19 +2,19 @@ import { mat4, vec3 } from 'gl-matrix';
 import { Vector3, v3 } from './vector3';
 
 export function m4() {
-	return Matrix4.f()
+    return Matrix4.f();
 }
 
 export class Matrix4 {
     public mat4: mat4;
     public constructor(source?: mat4) {
-        this.mat4 = source?mat4.clone(source):mat4.create();
-        return this
+        this.mat4 = source ? mat4.clone(source) : mat4.create();
+        return this;
     }
 
     static f() {
-		return new Matrix4();
-	}
+        return new Matrix4();
+    }
 
     public add(mat: Matrix4) {
         mat4.add(
@@ -58,22 +58,22 @@ export class Matrix4 {
     public transpose(mat?: Matrix4) {
         mat4.transpose(
             this.mat4,
-            mat?mat.mat4:this.mat4,
+            mat ? mat.mat4 : this.mat4,
         );
         return this;
     }
-    public rotateAxis(angle: number, axis: 0|1|2) {
+    public rotateAxis(angle: number, axis: 0 | 1 | 2) {
         mat4.rotate(
             this.mat4,
             this.mat4,
             angle,
-            [[1,0,0], [0,1,0],[0,0,1]][axis] as vec3
+            [[1, 0, 0], [0, 1, 0], [0, 0, 1]][axis] as vec3
         );
         return this;
     }
     public rotate(rotation: Vector3) {
         rotation.forEach((r, i) => {
-            this.rotateAxis(r, i as 0|1|2)
+            this.rotateAxis(r, i as 0 | 1 | 2);
         });
         return this;
     }
@@ -87,6 +87,12 @@ export class Matrix4 {
         );
         return this;
     }
+    public ortho(left: number, right: number, bottom: number, top: number, near: number = 1, far: number = Infinity) {
+        mat4.ortho(this.mat4,
+            left, right, bottom, top, near, far
+        );
+        return this;
+    }
     public clone() {
         return new Matrix4(this.mat4);
     }
@@ -97,12 +103,12 @@ export class Matrix4 {
             matrix.mat4,
             camera.vec,
             target.vec,
-            v3(0,1,0).vec
+            v3(0, 1, 0).vec
         );
         return matrix;
     }
 
     public get position() {
-        return v3(this.mat4[12], this.mat4[13], this.mat4[14])
+        return v3(this.mat4[12], this.mat4[13], this.mat4[14]);
     }
 }

@@ -79,15 +79,24 @@ export class InputDevices {
 
         } else {
             glob.level.interface.touchControls.style.display = 'none';
-            glob.renderer.dom.addEventListener('click', (e) => {
-                if (!this.locked) {
-                    glob.renderer.dom.requestPointerLock();
-                }
-            });
+            if (glob.level.lockMouse) {
+                glob.renderer.dom.addEventListener('click', (e) => {
+                    if (!this.locked) {
+                        glob.renderer.dom.requestPointerLock();
+                    }
+                });
 
-            document.addEventListener('pointerlockchange', () => {
-                this.locked = (document.pointerLockElement === glob.renderer.dom);
-            });
+                document.addEventListener('pointerlockchange', () => {
+                    this.locked = (document.pointerLockElement === glob.renderer.dom);
+                });
+            } else {
+                glob.renderer.dom.addEventListener('click', (e) => {
+                    if (!this.locked) {
+                        this.locked = true;
+                    }
+                });
+
+            }
             document.body.appendChild(this.overlay.dom);
 
         }
