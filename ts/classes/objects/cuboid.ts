@@ -1,6 +1,6 @@
 import { GlElementType } from '../rendering/glRenderer';
 import { Color, Colors } from '../util/colors';
-import { Vector3 } from '../math/vector3';
+import { Vector3, v3 } from '../math/vector3';
 import { GLRendable, GLRendableAttributes } from '../rendable';
 import { GLTexture } from '../texture';
 
@@ -32,8 +32,8 @@ export class GLCuboid extends GLRendable {
     }
     public set size(value: Vector3) {
         super.size = value;
-        if (this.parent){
-            this.buffer.positionBuffer = this.GLT.createBuffer(this.positionBuffer(this.size))
+        if (this.parent) {
+            this.buffer.positionBuffer = this.GLT.createBuffer(this.positionBuffer(this.size));
         }
     }
 
@@ -82,11 +82,11 @@ export class GLCuboid extends GLRendable {
     }
 
     protected normalBuffer() {
-        return GLCuboid.sliceToDimension(
+        return GLCuboid.scale(GLCuboid.sliceToDimension(
             this.getBufferData().normal,
             this.size,
             72
-        );
+        ), v3(1, 1, -1));
     }
 
     protected textureBuffer() {
@@ -132,41 +132,41 @@ export class GLCuboid extends GLRendable {
     }
     protected getPositionBufferData(): number[] {
         return [
-            0.0, 0.0, -1.0,
-            1.0, 0.0, -1.0,
+            0.0, 0.0, -0.0,
+            1.0, 0.0, -0.0,
 
-            1.0, 1.0, -1.0,
+            1.0, 1.0, -0.0,
+            0.0, 1.0, -0.0,
+
+            0.0, 0.0, -1.0,
             0.0, 1.0, -1.0,
 
-            0.0, 0.0, -0.0,
+            1.0, 1.0, -1.0,
+            1.0, 0.0, -1.0,
+
+            0.0, 1.0, -1.0,
             0.0, 1.0, -0.0,
 
             1.0, 1.0, -0.0,
+            1.0, 1.0, -1.0,
+
+            0.0, 0.0, -1.0,
+            1.0, 0.0, -1.0,
+
             1.0, 0.0, -0.0,
+            0.0, 0.0, -0.0,
+
+            1.0, 0.0, -1.0,
+            1.0, 1.0, -1.0,
+
+            1.0, 1.0, -0.0,
+            1.0, 0.0, -0.0,
+
+            0.0, 0.0, -1.0,
+            0.0, 0.0, -0.0,
 
             0.0, 1.0, -0.0,
-            0.0, 1.0, -1.0,
-
-            1.0, 1.0, -1.0,
-            1.0, 1.0, -0.0,
-
-            0.0, 0.0, -0.0,
-            1.0, 0.0, -0.0,
-
-            1.0, 0.0, -1.0,
-            0.0, 0.0, -1.0,
-
-            1.0, 0.0, -0.0,
-            1.0, 1.0, -0.0,
-
-            1.0, 1.0, -1.0,
-            1.0, 0.0, -1.0,
-
-            0.0, 0.0, -0.0,
-            0.0, 0.0, -1.0,
-
-            0.0, 1.0, -1.0,
-            0.0, 1.0, -0.0
+            0.0, 1.0, -1.0
         ];
     }
     protected getNormalBufferData(): number[] {

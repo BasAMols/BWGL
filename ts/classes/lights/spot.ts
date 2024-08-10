@@ -1,19 +1,21 @@
-import { GlElementAttributes } from './elementBase';
-import { Vector3, v3 } from './math/vector3';
-import { Color, Colors } from './util/colors';
-import { GLGroup } from './group';
-import { GLCuboid } from './objects/cuboid';
+import { Vector3, v3 } from '../math/vector3';
+import { Color, Colors } from '../util/colors';
+import { GLCuboid } from '../objects/cuboid';
+import { Light, LightAttributes, LightTypes } from './light';
 
 
-export type LightAttributes = GlElementAttributes & {
+export type SpotAttributes = LightAttributes & {
     range: [number,number];
     limit: [number,number];
-    color?: Color,
     specular?: Color,
     direction?: Vector3
+    color?: Color,
+
 };
 
-export class Light extends GLGroup{
+export class SpotLight extends Light{
+    public lightType: LightTypes = 'spot';
+    public color: Color;
     private _range: [number, number];
     public get range(): [number, number] {
         return this._range;
@@ -36,15 +38,14 @@ export class Light extends GLGroup{
     }
     public specular: Color;
     public direction: Vector3;
-    public color: Color;
 
-    public constructor(attr: LightAttributes) {
+    public constructor(attr: SpotAttributes) {
         super(attr);
         this.range = attr.range;
         this.limit = attr.limit;
-        this.color = attr.color || Colors.w;
         this.specular = attr.specular;
         this.direction = attr.direction || Vector3.forwards;
+        this.color = attr.color || Colors.w;
     }
 
     public build(): void {

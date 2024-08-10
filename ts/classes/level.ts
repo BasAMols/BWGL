@@ -3,7 +3,7 @@ import { DomElement } from './dom/domElement';
 import { UI } from './dom/UI';
 import { GlElementAttributes, GlElement } from './elementBase';
 import { InputMap } from './input/input';
-import { Light } from './light';
+import { Light } from './lights/light';
 import { Vector2 } from './math/vector2';
 import { Vector3 } from './math/vector3';
 import { GLCuboid } from './objects/cuboid';

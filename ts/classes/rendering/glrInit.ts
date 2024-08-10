@@ -79,6 +79,10 @@ export function initShaderProgram(gl: WebGLRenderingContext): [WebGLProgram, uni
                 pointer: gl.getUniformLocation(shaderProgram, "o_u_worldInverseTranspose"),
                 type: 'matrix4'
             },
+            'o_u_ambientLight':{
+                pointer: gl.getUniformLocation(shaderProgram, "o_u_ambientLight"),
+                type: 'vector3'
+            },
             'o_u_lightColor':{
                 pointer: gl.getUniformLocation(shaderProgram, "o_u_lightColor"),
                 type: 'vector3'

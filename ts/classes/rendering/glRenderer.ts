@@ -8,6 +8,8 @@ import { Vector2 } from '../math/vector2';
 import { GLTranslator } from './glTranslator';
 import { Matrix4, m4 } from '../math/matrix4';
 import { Util } from '../util/utils';
+import { SpotLight } from '../lights/spot';
+import { AmbientLight } from '../lights/ambient';
 
 export interface bufferDataInitilizers {
     indices: WebGLBuffer;
@@ -64,6 +66,7 @@ export class GLRenderer {
         this.gl.clearDepth(1.0);
         this.gl.enable(this.gl.DEPTH_TEST);
         this.gl.enable(this.gl.CULL_FACE);
+        this.gl.cullFace(this.gl.BACK);
         this.gl.depthFunc(this.gl.LEQUAL);
         this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
     }
@@ -86,14 +89,13 @@ export class GLRenderer {
         const camera = m4()
             .translate(this.game.mode.camera.offset.multiply(1, 1, -1))
             .rotate(this.game.mode.camera.rotation)
-            .translate(this.game.mode.camera.target.multiply(-1, -1, 1))
+            .translate(this.game.mode.camera.target.multiply(-1, -1, 1));
 
         this.glt.sendUniform('uSampler', 0);
         this.glt.sendUniform('uProjectionMatrix', this.getProjection().mat4);
         this.glt.sendUniform('o_u_viewWorldPosition', camera.invert().position.vec);
 
-
-        const light = this.game.level.lights[0];
+        const light = this.game.level.lights.find((l) => l.lightType === 'spot') as SpotLight;
         this.glt.sendUniform('o_u_lightDirection', light.direction.vec);
         this.glt.sendUniform('o_u_innerLimit', Math.cos(Util.degToRad(light.limit[0])));
         this.glt.sendUniform('o_u_outerLimit', Math.cos(Util.degToRad(light.limit[1])));
@@ -101,8 +103,8 @@ export class GLRenderer {
         this.glt.sendUniform('o_u_outerRange', light.range[1]);
         this.glt.sendUniform('o_u_lightColor', light.color.slice(0, 3));
         this.glt.sendUniform('o_u_specularColor', light.specular.slice(0, 3));
-        this.glt.sendUniform('o_u_lightWorldPosition', light.globalPosition.multiply(1,1,-1).vec);
-
+        this.glt.sendUniform('o_u_lightWorldPosition', light.globalPosition.multiply(1, 1, -1).vec);
+        this.glt.sendUniform('o_u_ambientLight', (this.game.level.lights.find((l) => l.lightType === 'ambient') as AmbientLight)?.color || [0, 0, 0]);
 
         this.drawChildren(this.game.level);
     }
@@ -147,7 +149,6 @@ export class GLRenderer {
         this.glt.sendUniform('o_u_worldInverseTranspose', worldInverseTransposeMatrix.mat4);
         this.glt.sendUniform('o_u_shininess', 600);
         this.glt.sendUniform('o_u_ignoreLighting', Number(mesh.ignoreLighting));
-
 
         this.glt.sendAttribute('o_a_position', mesh.buffer.positionBuffer);
         this.glt.sendUniform('o_u_world', currentModelview.mat4);
