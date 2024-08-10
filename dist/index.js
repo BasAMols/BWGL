@@ -2452,6 +2452,18 @@ var Matrix4 = class _Matrix4 {
     );
     return this;
   }
+  ortho(left, right, bottom, top, near = 1, far = Infinity) {
+    mat4_exports.ortho(
+      this.mat4,
+      left,
+      right,
+      bottom,
+      top,
+      near,
+      far
+    );
+    return this;
+  }
   clone() {
     return new _Matrix4(this.mat4);
   }
