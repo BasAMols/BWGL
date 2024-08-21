@@ -51,6 +51,7 @@ export class GLTexture {
                 1
             );
         }
+        document.body.appendChild(ss);
         this.loadTexture(ss);
 
     }

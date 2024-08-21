@@ -129,7 +129,7 @@ export function initShaderProgram(gl: WebGLRenderingContext): [WebGLProgram, uni
             },
             'o_u_ignoreLighting':{
                 pointer: gl.getUniformLocation(shaderProgram, "o_u_ignoreLighting"),
-                type: 'int'
+                type: 'float'
             },
         },
         {

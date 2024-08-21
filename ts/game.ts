@@ -7,28 +7,27 @@ import { Level } from './classes/level';
 import { Mode } from './classes/mode';
 import { GLRenderer } from './classes/rendering/glRenderer';
 import { Ticker, TickerReturnData } from './classes/ticker';
-import { OpenWorldMode } from './modes/mode';
+import { DeskWorld } from './modes/desk/mode';
 
-
-export var glob = new class{
+export var glob = new class {
     public game: Game;
-    public get renderer(){
+    public get renderer() {
         return this.game.renderer;
     }
-    public get mode(){
+    public get mode() {
         return this.game.active.mode;
     }
-    public get level(){
+    public get level() {
         return this.game.active.level;
     }
     public get storage() {
-        return this.mode.storage
+        return this.mode.storage;
     }
     public device: InputDevices = new InputDevices();
-    public get mobile():boolean {
-        return this.device.mobile
-    } 
-}
+    public get mobile(): boolean {
+        return this.device.mobile;
+    }
+};
 
 export class Game {
     public ticker: Ticker;
@@ -46,9 +45,9 @@ export class Game {
         mode: Mode,
         level: Level,
     } = {
-        mode: undefined,
-        level: undefined,
-    };
+            mode: undefined,
+            level: undefined,
+        };
     get t(): TickerReturnData {
         return this.renderer.tickerData;
     }
@@ -75,6 +74,8 @@ export class Game {
         this.build();
         glob.device.ready();
     }
+
+
     build() {
         this.renderer = new Renderer();
 
@@ -101,8 +102,8 @@ export class Game {
     }
 
     private setupModes() {
-        this.addMode('side', new OpenWorldMode());
-        this.switchMode('side');
+        this.addMode('desk', new DeskWorld());
+        this.switchMode('desk');
     }
 
     private debug() {

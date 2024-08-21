@@ -5,6 +5,9 @@ import { GlElementAttributes } from '../elementBase';
 import { GLRendable } from '../rendable';
 import { GLTexture } from '../texture';
 import { glob } from '../../game';
+import * as FBXParser from 'fbx-parser';
+import { FBXNode, FBXReader } from 'fbx-parser';
+import { Util } from '../util/utils';
 
 export type matData = Record<string, string[]>;
 
@@ -32,7 +35,6 @@ export class GLobj extends GLRendable {
     public texture: GLTexture;
     public verticesCount: number = 0;
     private matIndeces: string[] = [];
-    private mats: Record<string, string[]> = {};
     private matsData: Record<string, matData> = {};
     private positionIndeces: number[] = [];
     private indexIndeces: number[] = [];
@@ -63,6 +65,8 @@ export class GLobj extends GLRendable {
         this.texturePositionIndeces = data.texturePositionIndeces;
     }
 
+
+
     constructor(attr: GLobjAttributes = {}) {
         super({ ...attr, ...{ autoReady: false } });
 
@@ -71,14 +75,22 @@ export class GLobj extends GLRendable {
 
         this.path = attr.url.split('/').slice(0, -1).join('/') + '/';
 
-        if (glob.storage.register(attr.url, this)) {
-            this.loadFile(`${window.location.href}/obj/${attr.url}`)
-                .then(this.parseMtl.bind(this))
-                .then(this.parseObj.bind(this))
-                .then(() => {
+        if (attr.url.includes('fbx')) {
+            if (glob.storage.register(attr.url, this)) {
+                this.loadFBX(`${window.location.href}/obj/${attr.url}`, (reader) => {
                     this.ready();
-                    glob.storage.loaded(attr.url);
                 });
+            }
+        } else {
+            if (glob.storage.register(attr.url, this)) {
+                this.loadFile(`${window.location.href}/obj/${attr.url}`)
+                    .then(this.parseMtl.bind(this))
+                    .then(this.parseObj.bind(this))
+                    .then(() => {
+                        this.ready();
+                        glob.storage.loaded(attr.url);
+                    });
+            }
         }
     }
 
@@ -93,8 +105,11 @@ export class GLobj extends GLRendable {
                             const a = line.split(' ');
                             return [a.shift(), a];
                         }));
+
                     });
                 });
+            console.log(this.matsData);
+
 
             return str;
 
@@ -102,6 +117,7 @@ export class GLobj extends GLRendable {
             return str;
         }
     }
+
 
     private parseFaces(lineArray: string[], mat: string, points: vertexCoords[], normals: vertexCoords[], tCoords: textureCoords[]) {
         const textRemainder = lineArray.slice(1);
@@ -142,16 +158,13 @@ export class GLobj extends GLRendable {
                     this.normalIndeces.push(...normals[numbRemainder[8] - 1]);
 
                     this.textureIndeces.push(
-                        ...GLTexture.textureOffset(Object.keys(this.mats).indexOf(mat), Object.keys(this.mats).length)
+                        ...GLTexture.textureOffset(Object.keys(this.matsData).indexOf(mat), Object.keys(this.matsData).length)
                     );
                 }
 
                 this.indexIndeces.push(this.indexIndeces.length);
                 this.indexIndeces.push(this.indexIndeces.length);
                 this.indexIndeces.push(this.indexIndeces.length);
-                this.matIndeces.push(mat);
-                this.matIndeces.push(mat);
-                this.matIndeces.push(mat);
             },
         } as Record<string, () => void>)[lineArray[0]] || (() => { }))();
 
@@ -183,8 +196,131 @@ export class GLobj extends GLRendable {
 
         });
 
+
+
         nonVertex.forEach((words) => {
             mat = this.parseFaces(words, mat, points, normals, tCoords);
+        });
+
+
+        this.verticesCount = this.indexIndeces.length;
+    }
+
+    private async loadFBX(url: string, done?: (fbx: FBXReader) => void) {
+        let reader = new FileReader();
+
+        const response = await fetch(url);
+        reader.readAsArrayBuffer(await response.blob());
+        reader.addEventListener('load', () => {
+            let fbx = new FBXParser.FBXReader(FBXParser.parseBinary(new Uint8Array(reader.result as ArrayBuffer)));
+            this.parsePBX(fbx);
+            if (done) done(fbx);
+        });
+    }
+
+    private static byName(node: FBXParser.FBXNode, name: any): FBXParser.FBXNode {
+        return node.nodes.find((o) => o.name === name);
+    }
+    private static byProp(node: FBXParser.FBXNode, name: any, index: number = 0): FBXParser.FBXNode {
+        return node.nodes.find((o) => o.props[index] === name);
+    }
+
+    private parsePBX(reader: FBXReader) {
+        const fbx = reader.fbx;
+        const objs = GLobj.byName(reader.fbxNode, 'Objects');
+
+        const globalSettings: Record<string, unknown> = Object.fromEntries(Object.values(GLobj.byName(reader.fbxNode, "GlobalSettings").nodes[1].nodes).map((n) => ([n.props[0], n.props[4]])));
+
+        // Models and Geometry
+        const linked: Record<number, {
+            model?: FBXNode,
+            material?: FBXNode,
+            geometry?: FBXNode,
+            texture?: FBXNode,
+        }> = {};
+
+        GLobj.byName(reader.fbxNode, "Connections").nodes.forEach((c) => {
+            const a = c.props[1];
+            const b = c.props[2];
+
+            if (a && b) {
+                const aNode = GLobj.byProp(objs, a);
+                const bNode = GLobj.byProp(objs, b);
+
+                if (bNode.name === 'Model') {
+                    let obj = linked[bNode.props[0] as number];
+                    if (!obj) {
+                        obj = {
+                            model: bNode
+                        };
+                        linked[bNode.props[0] as number] = obj;
+                    }
+                    if (aNode.name === 'Geometry') obj.geometry = aNode;
+                    if (aNode.name === 'Material') {
+                        obj.material = aNode;
+                        obj.texture = GLobj.byProp(objs, GLobj.byProp(GLobj.byName(reader.fbxNode, "Connections"), a, 2)?.props[1] || 0);
+                    }
+                    if (aNode.name === 'Texture') obj.texture = aNode;
+
+
+
+                }
+            }
+        });
+
+        Object.values(linked).forEach((obj) => {
+            const props = GLobj.byName(obj.material, 'Properties70');
+
+            this.matsData[(obj.material.props[1] as string).split('::')[1]] = {
+                ka: ['1.000000', '1.000000', '1.000000'],
+                Kd: GLobj.byProp(props, 'DiffuseColor').props.slice(4).map(String),
+                Ke: ['0.000000', '0.000000', '0.000000'],
+                Ks: ['0.500000', '0.500000', '0.500000'],
+                Ni: ['1.450000'],
+                Ns: ['250.000000'],
+                d: ['1.000000'],
+                illum: ['2'],
+                map_kd: GLobj.byName(obj.texture, 'RelativeFilename').props as [string]
+            };
+        });
+
+
+        Object.values(linked).forEach(({ model, material, geometry, texture }) => {
+            const matIndex = Object.keys(this.matsData).indexOf((material.props[1] as string).split('::')[1]);
+
+            // UV
+            const uvBlob = GLobj.byName(geometry, 'LayerElementUV');
+            const uv = Util.chunk(GLobj.byName(uvBlob, 'UV').props[0] as number[], 2) as [number, number][];
+
+            (GLobj.byName(uvBlob, 'UVIndex').props[0] as number[]).forEach((v) => {
+                this.texturePositionIndeces.push(...uv[v]);
+            });
+
+            // Normals
+            const normalBlob = GLobj.byName(geometry, 'LayerElementNormal');
+            const normals = Util.chunk(GLobj.byName(normalBlob, 'Normals').props[0] as number[], 3) as [number, number, number][];
+
+            (GLobj.byName(normalBlob, 'NormalsIndex').props[0] as number[]).forEach((v) => {
+                this.normalIndeces.push(normals[v][0]*-1,normals[v][1],normals[v][2],);
+            });
+
+            //Polygons
+            const modelTScale = (GLobj.byProp(model.nodes[1], 'Lcl Scaling')?.props.slice(4) || [1, 1, 1]) as [number, number, number];
+
+            let modelTranslation = (GLobj.byProp(model.nodes[1], 'Lcl Translation')?.props.slice(4) || [0, 0, 0]) as [number, number, number];
+            modelTranslation = modelTranslation.map((v, i) => (v / modelTScale[i] as number)) as [number, number, number];
+
+            let verts = Util.chunk(GLobj.byName(geometry, 'Vertices').props[0] as number[], 3) as [number, number, number][];
+            verts = verts.map((v) => ([v[0] + modelTranslation[0], v[1] + modelTranslation[1], v[2] + modelTranslation[2]] as [number, number, number]));
+
+            (GLobj.byName(geometry, 'PolygonVertexIndex').props[0] as number[]).forEach((vi) => {
+                this.positionIndeces.push(...verts[vi < 0 ? Math.abs(vi) - 1 : vi]);
+                this.indexIndeces.push(this.indexIndeces.length);
+            });
+            this.textureIndeces.push(
+                ...GLTexture.textureOffset(matIndex, Object.keys(this.matsData).length)
+            );
+
         });
 
         this.verticesCount = this.indexIndeces.length;
@@ -215,22 +351,27 @@ export class GLobj extends GLRendable {
         if (Object.values(this.matsData).length) {
 
             const matArray = Object.values(this.matsData);
-            const matImage = matArray.find((m) => m.map_Kd);
-
+            const matImage = matArray.find((m)=>m.map_kd);
+            
+            
+            
             if (matImage) {
                 this.texture = new GLTexture(this.game, {
-                    url: `obj/${this.path}${matImage.map_Kd.join(' ').trim()}`,
+                    url: `obj/${this.path}${matImage.map_kd.join(' ').trim()}`,
                 });
+                return this.texturePositionIndeces;
             } else {
                 this.texture = new GLTexture(this.game, {
                     color: matArray.map((m) => [
                         ...(m.Kd ? m.Kd.map(Number) : [0, 0, 0]),
                         m.d ? Number(m.d[0]) : 1] as Color)
                 });
+                return this.textureIndeces;
+
             }
 
         }
 
-        return this.texturePositionIndeces;
+        // return this.texturePositionIndeces;
     }
 }

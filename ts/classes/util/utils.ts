@@ -7,6 +7,13 @@ export abstract class Util {
     public static to0(value: number, tolerance: number = 0.1) {
         return Math.abs(value) < tolerance ? 0 : value;
     }
+    public static chunk(array: unknown[], size: number): typeof array[]{
+        const output: unknown[][] = [];
+        for (let i=0; i < array.length; i += size) {
+            output.push(array.slice(i, i + size));
+        }
+        return output;
+    }
 
     public static padArray(ar: any[], b: any, len: number) {
         return ar.concat(Array.from(Array(len).fill(b))).slice(0, len);

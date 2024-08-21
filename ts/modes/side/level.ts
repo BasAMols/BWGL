@@ -8,7 +8,6 @@ import { Level } from '../../classes/level';
 import { Vector2, v2 } from '../../classes/math/vector2';
 import { Vector3, v3 } from '../../classes/math/vector3';
 import { ObjStorage } from '../../classes/objStorage';
-import { GLCuboid } from '../../classes/objects/cuboid';
 import { GLobj } from '../../classes/objects/obj';
 import { TickerReturnData } from '../../classes/ticker';
 import { Color } from '../../classes/util/colors';
@@ -19,10 +18,12 @@ import { TouchAxisReader, TouchLiniarAxisReader, TouchVerticalReader } from '../
 import { TestPlayer } from './test/test_actor';
 import { SpotLight } from '../../classes/lights/spot';
 import { AmbientLight } from '../../classes/lights/ambient';
+import { Forrest } from './trees/forrest';
+import { GLCuboid } from '../../classes/objects/cuboid';
 
 export class World extends Level {
     public start = Vector2.zero;
-    public background: Color = [0,0,0,1];
+    public background: Color = [0.2,0.2,0.3,1];
     public character: Player;
     public mo: DomText;
     public st: ObjStorage;
@@ -44,7 +45,6 @@ export class World extends Level {
             'zoom': [new MouseScrollReader(), new TouchVerticalReader(this.interface, 'topRight', v2(60, 60), 30, 1)],
         }
     );
-    testObjects: GLCuboid[] = [];
     // new TouchButtonReader(this.interface)
 
     constructor() {
@@ -149,7 +149,7 @@ export class World extends Level {
         //     rotation: v3(0, Math.PI, 0)
         // }));
 
-        this.player = new TestPlayer({
+        this.player = new Player({
             position: v3(0, 0, 0),
             rotation: v3(0, 2.3, 0)
         });
@@ -163,38 +163,29 @@ export class World extends Level {
         // this.car.active = false;
 
         this.addLight(new SpotLight({
-            position: v3(0, 0, 0),
+            position: v3(0, 40,150),
             color: [0.9, 0.9, 0.85, 1],
             specular: [0.3, 0.3, 0.3, 1],
-            limit: [9, 12],
-            range: [900, 1400],
+            limit: [12, 12.1],
+            range: [1600, 2000],
             direction: v3(0, 0, -1),
         }));
 
         this.addLight(new AmbientLight({
-            color: [0.1, 0.1, 0.1],
+            color: [0.3, 0.3, 0.3],
         }));
 
-        for (let x = 0; x < 3000; x++) {
-            const s = v3(1).scale(20+(Math.random()*20))
-            this.testObjects.push(new GLCuboid({ size: s, anchorPoint: s.scale(0.5), position: v3(-400 + Math.random()*800, -400 + Math.random()*800, 0+Math.random()*1500), colors: [[Math.random(), Math.random(), Math.random(), 1]], rotation: v3(0, 1, 0) }));
+        this.addChild(new GLCuboid({ size: v3(10000, 1, 10000), position: v3(-5000, -6, -5000), colors: [[103 / 350, 119 / 350, 107 / 350, 1]] }));
+        for (let x = 0; x < 20; x++) {
+            for (let y = 0; y < 20; y++) {
+                this.spawnTile(x, y);
+                // if (y === 3) {
+                //     this.spawnRoad(x, y);
+                // } else {
+                // }
+
+            }
         }
-
-        this.testObjects.push(new GLCuboid({ size: v3(40, 40, 40), anchorPoint: v3(5, 5, 5), position: v3(-1500, 20, 0), colors: [[Math.random(), Math.random(), Math.random(), 1]], rotation: v3(0, 1, 0) }));
-       
-        this.testObjects.forEach((t) => {
-            this.addChild(t);
-        });
-        // for (let x = 0; x < 20; x++) {
-        //     for (let y = 0; y < 20; y++) {
-        //         this.spawnTile(x, y);
-        //         // if (y === 3) {
-        //         //     this.spawnRoad(x, y);
-        //         // } else {
-        //         // }
-
-        //     }
-        // }
 
 
         // this.addChild(new GLobj({ url: 'CountrySide-5-House.obj', size: v3(18, 18, 18), position: v3(200, 43, 800), rotation: v3(0, -Math.PI / 2, 0) }));
@@ -216,30 +207,30 @@ export class World extends Level {
         //     })], url: 'Medieval Town - Pack 1-0.obj', size: v3(10, 10, 10), position: v3(0, -1, 500)
         // }));
 
-        // this.addChild(new Forrest({
-        //     storage: this.mode.storage,
-        //     position: v3(-2000, 0, 800),
-        //     area: v2(4000, 2000),
-        //     density: 0.003
-        // }));
-        // this.addChild(new Forrest({
-        //     storage: this.mode.storage,
-        //     position: v3(-2000, 0, -1800),
-        //     area: v2(4000, 2000),
-        //     density: 0.003
-        // }));
-        // this.addChild(new Forrest({
-        //     storage: this.mode.storage,
-        //     position: v3(-2300, 0, -1800),
-        //     area: v2(2000, 4000),
-        //     density: 0.003
-        // }));
-        // this.addChild(new Forrest({
-        //     storage: this.mode.storage,
-        //     position: v3(300, 0, -1800),
-        //     area: v2(2000, 4000),
-        //     density: 0.003
-        // }));
+        this.addChild(new Forrest({
+            storage: this.mode.storage,
+            position: v3(-2000, 0, 800),
+            area: v2(4000, 2000),
+            density: 0.003
+        }));
+        this.addChild(new Forrest({
+            storage: this.mode.storage,
+            position: v3(-2000, 0, -1800),
+            area: v2(4000, 2000),
+            density: 0.003
+        }));
+        this.addChild(new Forrest({
+            storage: this.mode.storage,
+            position: v3(-2300, 0, -1800),
+            area: v2(2000, 4000),
+            density: 0.003
+        }));
+        this.addChild(new Forrest({
+            storage: this.mode.storage,
+            position: v3(300, 0, -1800),
+            area: v2(2000, 4000),
+            density: 0.003
+        }));
 
         // this.addChild(new GLobj({
         //     controllers: [new Collider({
@@ -273,13 +264,8 @@ export class World extends Level {
 
     public tick(obj: TickerReturnData): void {
         super.tick(obj);
-        this.test2d.text = this.player.globalPosition.vec.map((v) => +v.toFixed(0)).join('\n');
+        // this.test2d.text = this.player.globalPosition.vec.map((v) => +v.toFixed(0)).join('\n');
         // this.testt.position = this.player.globalPosition.clone()
-        this.testObjects.forEach((t) => {
-            t.rotation.y += 0.02;
-            t.rotation.x += 0.015;
-            t.rotation.z += 0.03;
-        });
 
         // console.log(this.inputMap.axis('camera'));
 

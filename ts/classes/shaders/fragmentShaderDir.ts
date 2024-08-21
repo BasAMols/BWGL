@@ -16,7 +16,7 @@ uniform float o_u_innerLimit;
 uniform float o_u_outerLimit;  
 uniform float o_u_innerRange;  
 uniform float o_u_outerRange;  
-uniform int o_u_ignoreLighting;  
+uniform float o_u_ignoreLighting;  
 uniform vec3 o_u_ambientLight;  
 
 void main() {
@@ -32,15 +32,14 @@ void main() {
 
   float rangeLight = smoothstep(o_u_outerRange, o_u_innerRange, length(o_v_surfaceToLight));
   float inLight = smoothstep(o_u_outerLimit, o_u_innerLimit, dotFromDirection);
-  float combinedLight = (rangeLight * inLight);
+  float combinedLight = clamp(rangeLight * inLight, 0.0,1.0);
   float light = clamp(combinedLight*dot(normal, surfaceToLightDirection),0.0,1.0);
-  float specular = combinedLight*pow(dot(normal, halfVector), o_u_shininess);
+  float specular = clamp(pow(dot(normal, halfVector), o_u_shininess),0.0,1.0)*combinedLight;
   gl_FragColor = texelColor;
   vec3 totalLight = light * o_u_lightColor;
   totalLight += o_u_ambientLight;
-  if (o_u_ignoreLighting == 0){
-    gl_FragColor.rgb *= totalLight;
-    // gl_FragColor.rgb += specular * o_u_specularColor;
-  }
+  totalLight += specular * o_u_specularColor;
+  totalLight *= 1.0 - o_u_ignoreLighting;
+  gl_FragColor.rgb *= totalLight;
 }
 `;

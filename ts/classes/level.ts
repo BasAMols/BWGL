@@ -24,7 +24,7 @@ export abstract class Level extends GlElement {
     public lights: Light[] = [];
     private colliderMeshes: GLCuboid[] = [];
     public interface: UI = new UI();
-    public abstract inputMap: InputMap; 
+    public abstract inputMap: InputMap;
 
     private _camera: {
         target: Vector3;
@@ -38,8 +38,17 @@ export abstract class Level extends GlElement {
             fov: 60,
         };
 
+
+    public get camera(): typeof this._camera {
+        return this._camera;
+    }
+    public set camera(value: typeof this._camera) {
+        this._camera = value;
+    }
+
+
     addUi(element: DomElement<any>) {
-        this.interface.appendChild(element)
+        this.interface.appendChild(element);
     }
 
     addZone(c: Zone) {
@@ -58,13 +67,6 @@ export abstract class Level extends GlElement {
     addLight(c: Light) {
         this.lights.push(c);
         this.addChild(c);
-    }
-
-    public get camera(): typeof this._camera {
-        return this._camera;
-    }
-    public set camera(value: typeof this._camera) {
-        this._camera = value;
     }
 
     constructor(attr: levelAttributes = {}) {
