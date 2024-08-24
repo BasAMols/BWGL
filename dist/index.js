@@ -5339,7 +5339,7 @@ var InputDevices = class {
 var vertexShaderDir_default = "\nattribute vec4 o_a_position;\nattribute vec3 o_a_normal;\n\nuniform mat4 uModelViewMatrix;\nuniform mat4 uProjectionMatrix;\nattribute vec2 aTextureCoord;\nuniform mat4 uNormalMatrix;\nattribute vec3 aVertexNormal;\n\nuniform vec3 o_u_lightWorldPosition;\nuniform vec3 o_u_viewWorldPosition;\n\nuniform mat4 o_u_world;\nuniform mat4 o_u_worldViewProjection;\nuniform mat4 o_u_worldInverseTranspose;\n\nvarying vec3 o_v_normal;\n\nvarying vec3 o_v_surfaceToLight;\nvarying vec3 o_v_surfaceToView;\n\nvarying highp vec2 vTextureCoord;\n\nvoid main() {\n  gl_Position = uProjectionMatrix * uModelViewMatrix * o_a_position;\n  vTextureCoord = aTextureCoord;\n\n  o_v_normal = (uNormalMatrix * vec4(aVertexNormal, 1.0)).xyz;\n  vec3 surfaceWorldPosition = (uModelViewMatrix * o_a_position).xyz;\n  o_v_surfaceToLight = o_u_lightWorldPosition - surfaceWorldPosition;\n  o_v_surfaceToView = normalize(o_u_viewWorldPosition - surfaceWorldPosition);\n}";
 
 // ts/classes/shaders/fragmentShaderDir.ts
-var fragmentShaderDir_default = "\nprecision highp float;\n\nvarying vec3 o_v_normal;\nvarying vec3 o_v_surfaceToLight;\nvarying vec3 o_v_surfaceToView;\nvarying highp vec2 vTextureCoord;\n\nuniform sampler2D uSampler;\n\nuniform float o_u_shininess;\nuniform vec3 o_u_lightColor;\nuniform vec3 o_u_specularColor;\nuniform vec3 o_u_lightDirection;\nuniform float o_u_innerLimit;  \nuniform float o_u_outerLimit;  \nuniform float o_u_innerRange;  \nuniform float o_u_outerRange;  \nuniform float o_u_ignoreLighting;  \nuniform vec3 o_u_ambientLight;  \n\nvoid main() {\n  highp vec4 texelColor = texture2D(uSampler, vTextureCoord);\n\n  vec3 normal = normalize(o_v_normal);\n\n  vec3 surfaceToLightDirection = normalize(o_v_surfaceToLight);\n  vec3 surfaceToViewDirection = normalize(o_v_surfaceToView);\n  vec3 halfVector = normalize(surfaceToLightDirection + surfaceToViewDirection);\n\n  float dotFromDirection = dot(surfaceToLightDirection,-o_u_lightDirection);\n\n  float rangeLight = smoothstep(o_u_outerRange, o_u_innerRange, length(o_v_surfaceToLight));\n  float inLight = smoothstep(o_u_outerLimit, o_u_innerLimit, dotFromDirection);\n  float combinedLight = clamp(rangeLight * inLight, 0.0,1.0);\n  float light = clamp(combinedLight*dot(normal, surfaceToLightDirection),0.0,1.0);\n  float specular = clamp(pow(dot(normal, halfVector), o_u_shininess),0.0,1.0)*combinedLight;\n  gl_FragColor = texelColor;\n  vec3 totalLight = light * o_u_lightColor;\n  totalLight += o_u_ambientLight;\n  totalLight += specular * o_u_specularColor;\n  totalLight *= 1.0 - o_u_ignoreLighting;\n  gl_FragColor.rgb *= totalLight;\n}\n";
+var fragmentShaderDir_default = "\nprecision highp float;\n\nvarying vec3 o_v_normal;\nvarying vec3 o_v_surfaceToLight;\nvarying vec3 o_v_surfaceToView;\nvarying highp vec2 vTextureCoord;\n\nuniform sampler2D uSampler;\n\nuniform float o_u_shininess;\nuniform vec3 o_u_lightColor;\nuniform vec3 o_u_specularColor;\nuniform vec3 o_u_lightDirection;\nuniform float o_u_innerLimit;  \nuniform float o_u_outerLimit;  \nuniform float o_u_innerRange;  \nuniform float o_u_outerRange;  \nuniform float o_u_ignoreLighting;  \nuniform vec3 o_u_ambientLight;  \n\nvoid main() {\n  highp vec4 texelColor = texture2D(uSampler, vTextureCoord);\n\n  vec3 normal = normalize(o_v_normal);\n\n  vec3 surfaceToLightDirection = normalize(o_v_surfaceToLight);\n  vec3 surfaceToViewDirection = normalize(o_v_surfaceToView);\n  vec3 halfVector = normalize(surfaceToLightDirection + surfaceToViewDirection);\n\n  float dotFromDirection = dot(surfaceToLightDirection,-o_u_lightDirection);\n\n  float rangeLight = smoothstep(o_u_outerRange, o_u_innerRange, length(o_v_surfaceToLight));\n  float inLight = smoothstep(o_u_outerLimit, o_u_innerLimit, dotFromDirection);\n  float combinedLight = clamp(rangeLight * inLight, 0.0,1.0);\n  float light = clamp(combinedLight*dot(normal, surfaceToLightDirection),0.0,1.0);\n  float specular = clamp(pow(dot(normal, halfVector), o_u_shininess),0.0,1.0)*combinedLight;\n  gl_FragColor = texelColor;\n  if (o_u_ignoreLighting == 0.0){\n  vec3 totalLight = light * o_u_lightColor;\n  totalLight += o_u_ambientLight;\n  totalLight += specular * o_u_specularColor;\n  totalLight *= 1.0 - o_u_ignoreLighting;\n  gl_FragColor.rgb *= totalLight;\n}\n\n \n}\n";
 
 // ts/classes/rendering/glrInit.ts
 function loadShader(gl, type, source) {
@@ -7929,6 +7929,181 @@ var Character = class extends GlElement {
   }
 };
 
+// ts/modes/desk/player/player_actor.ts
+var Player = class extends Character {
+  constructor({
+    position = Vector3.f(0),
+    rotation = Vector3.f(0)
+  } = {}) {
+    super({
+      position,
+      rotation,
+      size: v3(8, 33, 8),
+      anchorPoint: v3(4, 0, 4)
+    });
+  }
+  build() {
+    super.build();
+    GlElement.registerControllers(this);
+  }
+  tick(obj) {
+    super.tick(obj);
+  }
+};
+
+// ts/classes/input/touchReader.ts
+var TouchAxisReader = class extends InputReader {
+  constructor(ui, alignment = "bottomLeft", offset = v2(0), limit = 20, scale2 = v2(1)) {
+    super();
+    this.ui = ui;
+    this.alignment = alignment;
+    this.offset = offset;
+    this.limit = limit;
+    this.scale = scale2;
+    this._state = v2(0);
+    this.shell = document.createElement("div");
+    this.shell.setAttribute("style", "\n            width: ".concat(70 + this.limit * 2, "px;\n            height: ").concat(70 + this.limit * 2, "px;\n            border-radius: 100%;\n            background: #000000;\n            z-index: 99999999999999999999999;\n            position: absolute;\n            pointer-events: all;\n            opacity: 0.4;\n            ").concat(this.alignment.slice(-4) === "Left" ? "left" : "right", ":").concat(this.offset.x - this.limit, "px;\n            ").concat(this.alignment.slice(3) === "top" ? "top" : "bottom", ":").concat(this.offset.y - this.limit, "px;\n        "));
+    this.stick = document.createElement("div");
+    this.stick.setAttribute("style", "\n            width: 70px;\n            height: 70px;\n            border-radius: 100%;\n            z-index: 99999999999999999999999;\n            position: absolute;\n            pointer-events: all;\n            box-shadow: inset 0px 0px 29px white;\n            left: ".concat(this.limit, "px;\n            top: ").concat(this.limit, "px;\n        "));
+    this.stick.addEventListener("touchstart", (e) => {
+      this._dragging = true;
+      this._touchStart = v2(e.touches[0].screenX, e.touches[0].screenY);
+      e.preventDefault();
+    });
+    this.stick.addEventListener("touchmove", (e) => {
+      if (this._dragging) {
+        const rel = v2(e.touches[0].screenX, e.touches[0].screenY).subtract(this._touchStart).clampMagnitude(this.limit);
+        this.stick.style.transform = "translate(".concat(rel.x, "px,").concat(rel.y, "px)");
+        this._state = rel.scale(1 / this.limit).multiply(this.scale);
+      }
+      e.preventDefault();
+    });
+    this.stick.addEventListener("touchend", (e) => {
+      this._dragging = false;
+      this._state = v2(0);
+      this.stick.style.transform = "translate(0,0)";
+      e.preventDefault();
+    });
+    this.ui.touchControls.appendChild(this.shell);
+    this.shell.appendChild(this.stick);
+  }
+  get value() {
+    return this._state;
+  }
+};
+var TouchVerticalReader = class extends InputReader {
+  constructor(ui, alignment = "bottomLeft", offset = v2(0), limit = 20, scale2 = 1) {
+    super();
+    this.ui = ui;
+    this.alignment = alignment;
+    this.offset = offset;
+    this.limit = limit;
+    this.scale = scale2;
+    this._state = 0;
+    this.shell = document.createElement("div");
+    this.shell.setAttribute("style", "\n            width: 70px;\n            height: ".concat(70 + this.limit * 2, "px;\n            border-radius: 35px;\n            background: #000000;\n            z-index: 99999999999999999999999;\n            position: absolute;\n            pointer-events: all;\n            opacity: 0.4;\n            ").concat(this.alignment.slice(-4) === "Left" ? "left" : "right", ":").concat(this.offset.x, "px;\n            ").concat(this.alignment.slice(0, 3) === "top" ? "top" : "bottom", ":").concat(this.offset.y - this.limit, "px;\n        "));
+    this.stick = document.createElement("div");
+    this.stick.setAttribute("style", "\n            width: 70px;\n            height: 70px;\n            border-radius: 35px;\n            z-index: 99999999999999999999999;\n            position: absolute;\n            pointer-events: all;\n            box-shadow: inset 0px 0px 29px white;\n            top: ".concat(this.limit, "px;\n        "));
+    this.stick.addEventListener("touchstart", (e) => {
+      this._dragging = true;
+      this._touchStart = e.touches[0].screenY;
+      e.preventDefault();
+    });
+    this.stick.addEventListener("touchmove", (e) => {
+      if (this._dragging) {
+        let rel = Util.clamp(e.touches[0].screenY - this._touchStart, -this.limit, this.limit);
+        if (rel !== 0) {
+          this._state = rel * this.scale;
+          this.stick.style.transform = "translate(0,".concat(rel, "px)");
+        } else {
+          this._state = 0;
+          this.stick.style.transform = "translate(0,0)";
+        }
+      }
+      e.preventDefault();
+    });
+    this.stick.addEventListener("touchend", () => {
+      this._dragging = false;
+      this._state = 0;
+      this.stick.style.transform = "translate(0,0)";
+    });
+    this.ui.touchControls.appendChild(this.shell);
+    this.shell.appendChild(this.stick);
+  }
+  get value() {
+    return this._state;
+  }
+};
+var TouchLiniarAxisReader = class extends InputReader {
+  constructor(ui, alignment = "bottomLeft", offset = v2(0), limit = 20, scale2 = v2(1)) {
+    super();
+    this.ui = ui;
+    this.alignment = alignment;
+    this.offset = offset;
+    this.limit = limit;
+    this.scale = scale2;
+    this._state = v2(0);
+    this.shell = document.createElement("div");
+    this.shell.setAttribute("style", "\n        width: ".concat(70 + this.limit * 2, "px;\n        height: ").concat(70 + this.limit * 2, "px;\n            z-index: 99999999999999999999999;\n            position: absolute;\n            pointer-events: all;\n            opacity: 0.4;\n            ").concat(this.alignment.slice(-4) === "Left" ? "left" : "right", ":").concat(this.offset.x - this.limit, "px;\n            ").concat(this.alignment.slice(3) === "top" ? "top" : "bottom", ":").concat(this.offset.y - this.limit, "px;\n        "));
+    const l1 = document.createElement("div");
+    l1.setAttribute("style", "\n        width: ".concat(70 + this.limit * 2, "px;\n        height: 70px;\n            border-radius: 35px;\n            background: #000000;\n            z-index: 99999999999999999999999;\n            position: absolute;\n            pointer-events: all;\n            top: ").concat(this.limit, "px;\n            left: 0px;\n        "));
+    this.shell.appendChild(l1);
+    const l2 = document.createElement("div");
+    l2.setAttribute("style", "\n        height: ".concat(70 + this.limit * 2, "px;\n        width: 70px;\n            border-radius: 35px;\n            background: #000000;\n            z-index: 99999999999999999999999;\n            position: absolute;\n            pointer-events: all;\n            left: ").concat(this.limit, "px;\n            top: 0px;\n        "));
+    this.shell.appendChild(l2);
+    this.stick = document.createElement("div");
+    this.stick.setAttribute("style", "\n            width: 70px;\n            height: 70px;\n            border-radius: 100%;\n            z-index: 99999999999999999999999;\n            position: absolute;\n            pointer-events: all;\n            box-shadow: inset 0px 0px 29px white;\n            left: ".concat(this.limit, "px;\n            top: ").concat(this.limit, "px;\n        "));
+    this.stick.addEventListener("touchstart", (e) => {
+      this._dragging = true;
+      this._touchStart = v2(e.touches[0].screenX, e.touches[0].screenY);
+      e.preventDefault();
+    });
+    this.stick.addEventListener("touchmove", (e) => {
+      if (this._dragging) {
+        let direct = v2(e.touches[0].screenX, e.touches[0].screenY).subtract(this._touchStart).clampMagnitude(this.limit);
+        if (direct.magnitude() > this.limit / 4) {
+          let rel = Vector2.right.rotate(Math.round(direct.angle() / Math.PI * 2) * Math.PI / 2);
+          this.stick.style.transform = "translate(".concat(rel.x * this.limit, "px,").concat(rel.y * this.limit, "px)");
+          if (direct.magnitude() < this.limit / 2) {
+            this._state = v2(0);
+            this.stick.style.transform = "translate(".concat(rel.x * this.limit / 2, "px,").concat(rel.y * this.limit / 2, "px)");
+          } else {
+            this._state = rel.multiply(this.scale).toPrecision(1);
+            this.stick.style.transform = "translate(".concat(rel.x * this.limit, "px,").concat(rel.y * this.limit, "px)");
+          }
+        } else {
+          this._state = v2(0);
+          this.stick.style.transform = "translate(0,0)";
+        }
+      }
+      e.preventDefault();
+    });
+    this.stick.addEventListener("touchend", () => {
+      this._dragging = false;
+      this._state = v2(0);
+      this.stick.style.transform = "translate(0,0)";
+    });
+    this.ui.touchControls.appendChild(this.shell);
+    this.shell.appendChild(this.stick);
+  }
+  get value() {
+    return this._state;
+  }
+};
+
+// ts/classes/lights/light.ts
+var Light = class extends GLGroup {
+};
+
+// ts/classes/lights/ambient.ts
+var AmbientLight = class extends Light {
+  constructor(attr) {
+    super(attr);
+    this.lightType = "ambient";
+    this.color = attr.color;
+  }
+};
+
 // ts/classes/util/colors.ts
 var Colors = class {
 };
@@ -8393,179 +8568,6 @@ var GLCuboid = class _GLCuboid extends GLRendable {
   }
 };
 
-// ts/modes/desk/player/player_actor.ts
-var Player = class extends Character {
-  constructor({
-    position = Vector3.f(0),
-    rotation = Vector3.f(0)
-  } = {}) {
-    super({
-      position,
-      rotation,
-      size: v3(8, 33, 8),
-      anchorPoint: v3(4, 0, 4)
-    });
-    this.addChild(new GLCuboid({ size: this.size }));
-  }
-  build() {
-    super.build();
-    GlElement.registerControllers(this);
-  }
-};
-
-// ts/classes/input/touchReader.ts
-var TouchAxisReader = class extends InputReader {
-  constructor(ui, alignment = "bottomLeft", offset = v2(0), limit = 20, scale2 = v2(1)) {
-    super();
-    this.ui = ui;
-    this.alignment = alignment;
-    this.offset = offset;
-    this.limit = limit;
-    this.scale = scale2;
-    this._state = v2(0);
-    this.shell = document.createElement("div");
-    this.shell.setAttribute("style", "\n            width: ".concat(70 + this.limit * 2, "px;\n            height: ").concat(70 + this.limit * 2, "px;\n            border-radius: 100%;\n            background: #000000;\n            z-index: 99999999999999999999999;\n            position: absolute;\n            pointer-events: all;\n            opacity: 0.4;\n            ").concat(this.alignment.slice(-4) === "Left" ? "left" : "right", ":").concat(this.offset.x - this.limit, "px;\n            ").concat(this.alignment.slice(3) === "top" ? "top" : "bottom", ":").concat(this.offset.y - this.limit, "px;\n        "));
-    this.stick = document.createElement("div");
-    this.stick.setAttribute("style", "\n            width: 70px;\n            height: 70px;\n            border-radius: 100%;\n            z-index: 99999999999999999999999;\n            position: absolute;\n            pointer-events: all;\n            box-shadow: inset 0px 0px 29px white;\n            left: ".concat(this.limit, "px;\n            top: ").concat(this.limit, "px;\n        "));
-    this.stick.addEventListener("touchstart", (e) => {
-      this._dragging = true;
-      this._touchStart = v2(e.touches[0].screenX, e.touches[0].screenY);
-      e.preventDefault();
-    });
-    this.stick.addEventListener("touchmove", (e) => {
-      if (this._dragging) {
-        const rel = v2(e.touches[0].screenX, e.touches[0].screenY).subtract(this._touchStart).clampMagnitude(this.limit);
-        this.stick.style.transform = "translate(".concat(rel.x, "px,").concat(rel.y, "px)");
-        this._state = rel.scale(1 / this.limit).multiply(this.scale);
-      }
-      e.preventDefault();
-    });
-    this.stick.addEventListener("touchend", (e) => {
-      this._dragging = false;
-      this._state = v2(0);
-      this.stick.style.transform = "translate(0,0)";
-      e.preventDefault();
-    });
-    this.ui.touchControls.appendChild(this.shell);
-    this.shell.appendChild(this.stick);
-  }
-  get value() {
-    return this._state;
-  }
-};
-var TouchVerticalReader = class extends InputReader {
-  constructor(ui, alignment = "bottomLeft", offset = v2(0), limit = 20, scale2 = 1) {
-    super();
-    this.ui = ui;
-    this.alignment = alignment;
-    this.offset = offset;
-    this.limit = limit;
-    this.scale = scale2;
-    this._state = 0;
-    this.shell = document.createElement("div");
-    this.shell.setAttribute("style", "\n            width: 70px;\n            height: ".concat(70 + this.limit * 2, "px;\n            border-radius: 35px;\n            background: #000000;\n            z-index: 99999999999999999999999;\n            position: absolute;\n            pointer-events: all;\n            opacity: 0.4;\n            ").concat(this.alignment.slice(-4) === "Left" ? "left" : "right", ":").concat(this.offset.x, "px;\n            ").concat(this.alignment.slice(0, 3) === "top" ? "top" : "bottom", ":").concat(this.offset.y - this.limit, "px;\n        "));
-    this.stick = document.createElement("div");
-    this.stick.setAttribute("style", "\n            width: 70px;\n            height: 70px;\n            border-radius: 35px;\n            z-index: 99999999999999999999999;\n            position: absolute;\n            pointer-events: all;\n            box-shadow: inset 0px 0px 29px white;\n            top: ".concat(this.limit, "px;\n        "));
-    this.stick.addEventListener("touchstart", (e) => {
-      this._dragging = true;
-      this._touchStart = e.touches[0].screenY;
-      e.preventDefault();
-    });
-    this.stick.addEventListener("touchmove", (e) => {
-      if (this._dragging) {
-        let rel = Util.clamp(e.touches[0].screenY - this._touchStart, -this.limit, this.limit);
-        if (rel !== 0) {
-          this._state = rel * this.scale;
-          this.stick.style.transform = "translate(0,".concat(rel, "px)");
-        } else {
-          this._state = 0;
-          this.stick.style.transform = "translate(0,0)";
-        }
-      }
-      e.preventDefault();
-    });
-    this.stick.addEventListener("touchend", () => {
-      this._dragging = false;
-      this._state = 0;
-      this.stick.style.transform = "translate(0,0)";
-    });
-    this.ui.touchControls.appendChild(this.shell);
-    this.shell.appendChild(this.stick);
-  }
-  get value() {
-    return this._state;
-  }
-};
-var TouchLiniarAxisReader = class extends InputReader {
-  constructor(ui, alignment = "bottomLeft", offset = v2(0), limit = 20, scale2 = v2(1)) {
-    super();
-    this.ui = ui;
-    this.alignment = alignment;
-    this.offset = offset;
-    this.limit = limit;
-    this.scale = scale2;
-    this._state = v2(0);
-    this.shell = document.createElement("div");
-    this.shell.setAttribute("style", "\n        width: ".concat(70 + this.limit * 2, "px;\n        height: ").concat(70 + this.limit * 2, "px;\n            z-index: 99999999999999999999999;\n            position: absolute;\n            pointer-events: all;\n            opacity: 0.4;\n            ").concat(this.alignment.slice(-4) === "Left" ? "left" : "right", ":").concat(this.offset.x - this.limit, "px;\n            ").concat(this.alignment.slice(3) === "top" ? "top" : "bottom", ":").concat(this.offset.y - this.limit, "px;\n        "));
-    const l1 = document.createElement("div");
-    l1.setAttribute("style", "\n        width: ".concat(70 + this.limit * 2, "px;\n        height: 70px;\n            border-radius: 35px;\n            background: #000000;\n            z-index: 99999999999999999999999;\n            position: absolute;\n            pointer-events: all;\n            top: ").concat(this.limit, "px;\n            left: 0px;\n        "));
-    this.shell.appendChild(l1);
-    const l2 = document.createElement("div");
-    l2.setAttribute("style", "\n        height: ".concat(70 + this.limit * 2, "px;\n        width: 70px;\n            border-radius: 35px;\n            background: #000000;\n            z-index: 99999999999999999999999;\n            position: absolute;\n            pointer-events: all;\n            left: ").concat(this.limit, "px;\n            top: 0px;\n        "));
-    this.shell.appendChild(l2);
-    this.stick = document.createElement("div");
-    this.stick.setAttribute("style", "\n            width: 70px;\n            height: 70px;\n            border-radius: 100%;\n            z-index: 99999999999999999999999;\n            position: absolute;\n            pointer-events: all;\n            box-shadow: inset 0px 0px 29px white;\n            left: ".concat(this.limit, "px;\n            top: ").concat(this.limit, "px;\n        "));
-    this.stick.addEventListener("touchstart", (e) => {
-      this._dragging = true;
-      this._touchStart = v2(e.touches[0].screenX, e.touches[0].screenY);
-      e.preventDefault();
-    });
-    this.stick.addEventListener("touchmove", (e) => {
-      if (this._dragging) {
-        let direct = v2(e.touches[0].screenX, e.touches[0].screenY).subtract(this._touchStart).clampMagnitude(this.limit);
-        if (direct.magnitude() > this.limit / 4) {
-          let rel = Vector2.right.rotate(Math.round(direct.angle() / Math.PI * 2) * Math.PI / 2);
-          this.stick.style.transform = "translate(".concat(rel.x * this.limit, "px,").concat(rel.y * this.limit, "px)");
-          if (direct.magnitude() < this.limit / 2) {
-            this._state = v2(0);
-            this.stick.style.transform = "translate(".concat(rel.x * this.limit / 2, "px,").concat(rel.y * this.limit / 2, "px)");
-          } else {
-            this._state = rel.multiply(this.scale).toPrecision(1);
-            this.stick.style.transform = "translate(".concat(rel.x * this.limit, "px,").concat(rel.y * this.limit, "px)");
-          }
-        } else {
-          this._state = v2(0);
-          this.stick.style.transform = "translate(0,0)";
-        }
-      }
-      e.preventDefault();
-    });
-    this.stick.addEventListener("touchend", () => {
-      this._dragging = false;
-      this._state = v2(0);
-      this.stick.style.transform = "translate(0,0)";
-    });
-    this.ui.touchControls.appendChild(this.shell);
-    this.shell.appendChild(this.stick);
-  }
-  get value() {
-    return this._state;
-  }
-};
-
-// ts/classes/lights/light.ts
-var Light = class extends GLGroup {
-};
-
-// ts/classes/lights/ambient.ts
-var AmbientLight = class extends Light {
-  constructor(attr) {
-    super(attr);
-    this.lightType = "ambient";
-    this.color = attr.color;
-  }
-};
-
 // ts/classes/lights/spot.ts
 var SpotLight = class extends Light {
   constructor(attr) {
@@ -8630,17 +8632,23 @@ var fixedCamera = class extends GlController {
     this.camera.offset = v3(0, 0, 0);
     this.camera.rotation = v3(-0, 0, 0);
     this.camera.fov = 60;
-    this.camera.target = v3(0, 25, 0);
+    this.camera.target = v3(0, 28, 0);
   }
   tick(o) {
     super.tick(o);
     if (glob.device.locked) {
-      const r = this.axis("camera").scale(5e-3);
+      const z = Util.clamp(this.camera.fov + this.button("zoom") * 0.05, 5, 70);
+      this.camera.fov = z;
+      const r = this.axis("camera").scale(5e-3).scale(z / 60);
       this.camera.rotation = v3(
         Util.clamp(this.camera.rotation.x + r.y, -2, Math.PI / 2),
         this.camera.rotation.y + r.x,
         this.camera.rotation.z
       );
+      const t = this.axis("movement").scale(0.03);
+      const m = t.rotate(-this.camera.rotation.yaw);
+      this.camera.target.x = this.camera.target.x + m.x;
+      this.camera.target.z = this.camera.target.z + m.y;
     }
   }
 };
@@ -8661,6 +8669,7 @@ var GLobj = class _GLobj extends GLRendable {
     this.texturePositionIndeces = [];
     this.opacity = attr.opacity !== void 0 ? attr.opacity : 1;
     this.colorIntensity = attr.colorIntensity !== void 0 ? attr.colorIntensity : 1;
+    this.overrideTextureURL = attr.overrideTextureURL;
     this.path = attr.url.split("/").slice(0, -1).join("/") + "/";
     if (attr.url.includes("fbx")) {
       if (glob.storage.register(attr.url, this)) {
@@ -8708,7 +8717,6 @@ var GLobj = class _GLobj extends GLRendable {
           }));
         });
       });
-      console.log(this.matsData);
       return str2;
     } else {
       return str2;
@@ -8800,6 +8808,7 @@ var GLobj = class _GLobj extends GLRendable {
   }
   parsePBX(reader) {
     const fbx = reader.fbx;
+    console.log(fbx);
     const objs = _GLobj.byName(reader.fbxNode, "Objects");
     const globalSettings = Object.fromEntries(Object.values(_GLobj.byName(reader.fbxNode, "GlobalSettings").nodes[1].nodes).map((n) => [n.props[0], n.props[4]]));
     const linked = {};
@@ -8810,6 +8819,7 @@ var GLobj = class _GLobj extends GLRendable {
       if (a && b) {
         const aNode = _GLobj.byProp(objs, a);
         const bNode = _GLobj.byProp(objs, b);
+        console.log(aNode, bNode);
         if (bNode.name === "Model") {
           let obj = linked[bNode.props[0]];
           if (!obj) {
@@ -8831,7 +8841,7 @@ var GLobj = class _GLobj extends GLRendable {
     });
     Object.values(linked).forEach((obj) => {
       const props = _GLobj.byName(obj.material, "Properties70");
-      this.matsData[obj.material.props[1].split("::")[1]] = {
+      const out = {
         ka: ["1.000000", "1.000000", "1.000000"],
         Kd: _GLobj.byProp(props, "DiffuseColor").props.slice(4).map(String),
         Ke: ["0.000000", "0.000000", "0.000000"],
@@ -8839,9 +8849,12 @@ var GLobj = class _GLobj extends GLRendable {
         Ni: ["1.450000"],
         Ns: ["250.000000"],
         d: ["1.000000"],
-        illum: ["2"],
-        map_kd: _GLobj.byName(obj.texture, "RelativeFilename").props
+        illum: ["2"]
       };
+      if (obj.texture) {
+        out.map_kd = _GLobj.byName(obj.texture, "RelativeFilename").props;
+      }
+      this.matsData[obj.material.props[1].split("::")[1]] = out;
     });
     Object.values(linked).forEach(({ model, material, geometry, texture }) => {
       var _a, _b;
@@ -8854,13 +8867,18 @@ var GLobj = class _GLobj extends GLRendable {
       const normalBlob = _GLobj.byName(geometry, "LayerElementNormal");
       const normals = Util.chunk(_GLobj.byName(normalBlob, "Normals").props[0], 3);
       _GLobj.byName(normalBlob, "NormalsIndex").props[0].forEach((v) => {
-        this.normalIndeces.push(normals[v][0] * -1, normals[v][1], normals[v][2]);
+        this.normalIndeces.push(normals[v][0], normals[v][2], normals[v][1]);
       });
+      console.log(globalSettings);
       const modelTScale = ((_a = _GLobj.byProp(model.nodes[1], "Lcl Scaling")) == null ? void 0 : _a.props.slice(4)) || [1, 1, 1];
       let modelTranslation = ((_b = _GLobj.byProp(model.nodes[1], "Lcl Translation")) == null ? void 0 : _b.props.slice(4)) || [0, 0, 0];
-      modelTranslation = modelTranslation.map((v, i) => v / modelTScale[i]);
+      modelTranslation = modelTranslation.map((v, i) => v);
       let verts = Util.chunk(_GLobj.byName(geometry, "Vertices").props[0], 3);
-      verts = verts.map((v) => [v[0] + modelTranslation[0], v[1] + modelTranslation[1], v[2] + modelTranslation[2]]);
+      verts = verts.map((v) => [
+        (v[0] * modelTScale[0] + modelTranslation[0]) / 100,
+        (v[2] * modelTScale[2] + modelTranslation[2]) / 100,
+        (v[1] * modelTScale[1] * -1 + modelTranslation[1]) / 100
+      ]);
       _GLobj.byName(geometry, "PolygonVertexIndex").props[0].forEach((vi) => {
         this.positionIndeces.push(...verts[vi < 0 ? Math.abs(vi) - 1 : vi]);
         this.indexIndeces.push(this.indexIndeces.length);
@@ -8890,6 +8908,12 @@ var GLobj = class _GLobj extends GLRendable {
     if (Object.values(this.matsData).length) {
       const matArray = Object.values(this.matsData);
       const matImage = matArray.find((m) => m.map_kd);
+      if (this.overrideTextureURL) {
+        this.texture = new GLTexture(this.game, {
+          url: "obj/".concat(this.path).concat(this.overrideTextureURL)
+        });
+        return this.texturePositionIndeces;
+      }
       if (matImage) {
         this.texture = new GLTexture(this.game, {
           url: "obj/".concat(this.path).concat(matImage.map_kd.join(" ").trim())
@@ -8913,7 +8937,7 @@ var DeskLevel = class extends Level {
   constructor() {
     super();
     this.start = Vector2.zero;
-    this.background = [0.2, 0.2, 0.3, 1];
+    this.background = [0.8, 0.8, 0.9, 0.1];
     this.light = v3(0, 400, 500);
     this.inputMap = new InputMap(
       {
@@ -8952,7 +8976,7 @@ var DeskLevel = class extends Level {
     });
     this.addChild(this.player);
     this.addLight(new AmbientLight({
-      color: [1, 1, 1]
+      color: [0.5, 0.5, 0.5]
     }));
     this.addLight(new SpotLight({
       position: v3(0, 40, -150),
@@ -8962,12 +8986,7 @@ var DeskLevel = class extends Level {
       range: [1600, 2e3],
       direction: v3(0, 0, -1)
     }));
-    this.addChild(new GLCuboid({ size: v3(1e4, 1, 1e4), position: v3(-5e3, -6, -5e3), colors: [[103 / 350, 119 / 350, 107 / 350, 1]] }));
-    this.addChild(new GLobj({ url: "cube.obj", size: v3(10, 10, 10), position: v3(-140, 50, 100), rotation: v3(0, 0, 0) }));
-    this.addChild(new GLobj({ url: "cube.fbx", size: v3(10, 10, 10), position: v3(40, 30, 10), rotation: v3(0, 0, 0) }));
-  }
-  tick(obj) {
-    super.tick(obj);
+    this.addChild(new GLobj({ url: "poly.fbx", size: v3(25, 25, 25), position: v3(94, 0, 68), rotation: v3(0, 0, 0) }));
   }
 };
 

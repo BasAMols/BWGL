@@ -15,6 +15,7 @@ export type GLobjAttributes = GlElementAttributes & {
     url?: string;
     opacity?: number;
     colorIntensity?: number;
+    overrideTextureURL?: string;
 };
 export type textureCoords = [number, number];
 export type vertexCoords = [number, number, number];
@@ -42,6 +43,7 @@ export class GLobj extends GLRendable {
     private textureIndeces: number[] = [];
     private texturePositionIndeces: number[] = [];
     path: string;
+    overrideTextureURL: string;
 
     public getData(): GLObjTransferData {
         return {
@@ -72,6 +74,7 @@ export class GLobj extends GLRendable {
 
         this.opacity = attr.opacity !== undefined ? attr.opacity : 1;
         this.colorIntensity = attr.colorIntensity !== undefined ? attr.colorIntensity : 1;
+        this.overrideTextureURL = attr.overrideTextureURL;
 
         this.path = attr.url.split('/').slice(0, -1).join('/') + '/';
 
@@ -108,8 +111,6 @@ export class GLobj extends GLRendable {
 
                     });
                 });
-            console.log(this.matsData);
-
 
             return str;
 
@@ -227,6 +228,8 @@ export class GLobj extends GLRendable {
 
     private parsePBX(reader: FBXReader) {
         const fbx = reader.fbx;
+        console.log(fbx);
+
         const objs = GLobj.byName(reader.fbxNode, 'Objects');
 
         const globalSettings: Record<string, unknown> = Object.fromEntries(Object.values(GLobj.byName(reader.fbxNode, "GlobalSettings").nodes[1].nodes).map((n) => ([n.props[0], n.props[4]])));
@@ -246,6 +249,9 @@ export class GLobj extends GLRendable {
             if (a && b) {
                 const aNode = GLobj.byProp(objs, a);
                 const bNode = GLobj.byProp(objs, b);
+
+                console.log(aNode, bNode);
+
 
                 if (bNode.name === 'Model') {
                     let obj = linked[bNode.props[0] as number];
@@ -270,8 +276,7 @@ export class GLobj extends GLRendable {
 
         Object.values(linked).forEach((obj) => {
             const props = GLobj.byName(obj.material, 'Properties70');
-
-            this.matsData[(obj.material.props[1] as string).split('::')[1]] = {
+            const out: matData = {
                 ka: ['1.000000', '1.000000', '1.000000'],
                 Kd: GLobj.byProp(props, 'DiffuseColor').props.slice(4).map(String),
                 Ke: ['0.000000', '0.000000', '0.000000'],
@@ -280,8 +285,12 @@ export class GLobj extends GLRendable {
                 Ns: ['250.000000'],
                 d: ['1.000000'],
                 illum: ['2'],
-                map_kd: GLobj.byName(obj.texture, 'RelativeFilename').props as [string]
             };
+            if (obj.texture) {
+                out.map_kd = GLobj.byName(obj.texture, 'RelativeFilename').props as [string];
+            }
+
+            this.matsData[(obj.material.props[1] as string).split('::')[1]] = out;
         });
 
 
@@ -301,17 +310,23 @@ export class GLobj extends GLRendable {
             const normals = Util.chunk(GLobj.byName(normalBlob, 'Normals').props[0] as number[], 3) as [number, number, number][];
 
             (GLobj.byName(normalBlob, 'NormalsIndex').props[0] as number[]).forEach((v) => {
-                this.normalIndeces.push(normals[v][0]*-1,normals[v][1],normals[v][2],);
+                this.normalIndeces.push(normals[v][0], normals[v][2], normals[v][1],);
             });
 
             //Polygons
+            console.log(globalSettings);
+
             const modelTScale = (GLobj.byProp(model.nodes[1], 'Lcl Scaling')?.props.slice(4) || [1, 1, 1]) as [number, number, number];
 
             let modelTranslation = (GLobj.byProp(model.nodes[1], 'Lcl Translation')?.props.slice(4) || [0, 0, 0]) as [number, number, number];
-            modelTranslation = modelTranslation.map((v, i) => (v / modelTScale[i] as number)) as [number, number, number];
+            modelTranslation = modelTranslation.map((v, i) => (v as number)) as [number, number, number];
 
             let verts = Util.chunk(GLobj.byName(geometry, 'Vertices').props[0] as number[], 3) as [number, number, number][];
-            verts = verts.map((v) => ([v[0] + modelTranslation[0], v[1] + modelTranslation[1], v[2] + modelTranslation[2]] as [number, number, number]));
+            verts = verts.map((v) => ([
+                (((v[0] * modelTScale[0]) + modelTranslation[0]) / 100),
+                (((v[2] * modelTScale[2]) + modelTranslation[2]) / 100),
+                (((v[1] * modelTScale[1] * -1) + modelTranslation[1]) / 100),
+            ] as [number, number, number]));
 
             (GLobj.byName(geometry, 'PolygonVertexIndex').props[0] as number[]).forEach((vi) => {
                 this.positionIndeces.push(...verts[vi < 0 ? Math.abs(vi) - 1 : vi]);
@@ -351,10 +366,16 @@ export class GLobj extends GLRendable {
         if (Object.values(this.matsData).length) {
 
             const matArray = Object.values(this.matsData);
-            const matImage = matArray.find((m)=>m.map_kd);
-            
-            
-            
+            const matImage = matArray.find((m) => m.map_kd);
+
+
+
+            if (this.overrideTextureURL) {
+                this.texture = new GLTexture(this.game, {
+                    url: `obj/${this.path}${this.overrideTextureURL}`,
+                });
+                return this.texturePositionIndeces;
+            }
             if (matImage) {
                 this.texture = new GLTexture(this.game, {
                     url: `obj/${this.path}${matImage.map_kd.join(' ').trim()}`,

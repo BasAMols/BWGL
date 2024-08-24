@@ -36,10 +36,14 @@ void main() {
   float light = clamp(combinedLight*dot(normal, surfaceToLightDirection),0.0,1.0);
   float specular = clamp(pow(dot(normal, halfVector), o_u_shininess),0.0,1.0)*combinedLight;
   gl_FragColor = texelColor;
+  if (o_u_ignoreLighting == 0.0){
   vec3 totalLight = light * o_u_lightColor;
   totalLight += o_u_ambientLight;
   totalLight += specular * o_u_specularColor;
   totalLight *= 1.0 - o_u_ignoreLighting;
   gl_FragColor.rgb *= totalLight;
+}
+
+ 
 }
 `;
