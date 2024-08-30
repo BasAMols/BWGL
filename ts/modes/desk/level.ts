@@ -15,7 +15,7 @@ import { TouchAxisReader, TouchLiniarAxisReader, TouchVerticalReader } from '../
 import { AmbientLight } from '../../classes/lights/ambient';
 import { SpotLight } from '../../classes/lights/spot';
 import { fixedCamera } from './level_camera';
-import { GLobj } from '../../classes/objects/obj';
+import { FBXScene } from '../../classes/objects/fbxScene';
 
 export class DeskLevel extends Level {
     public start = Vector2.zero;
@@ -84,7 +84,8 @@ export class DeskLevel extends Level {
             direction: v3(0, 0, -1),
         }));
 
-        this.addChild(new GLobj({ url: 'poly.fbx', size: v3(25, 25, 25), position: v3(94,0,68), rotation: v3(0, 0, 0) }));
+        // this.addChild(new GLobj({ url: 'cube.fbx', size: v3(10), position: v3(0,0,0), rotation: v3(0, 0, 0) }));
+        this.addChild(new FBXScene({ url: 'cube.fbx', size: v3(10), position: v3(0,0,0), rotation: v3(0, 0, 0) }));
     }
 
 

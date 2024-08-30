@@ -314,8 +314,6 @@ export class GLobj extends GLRendable {
             });
 
             //Polygons
-            console.log(globalSettings);
-
             const modelTScale = (GLobj.byProp(model.nodes[1], 'Lcl Scaling')?.props.slice(4) || [1, 1, 1]) as [number, number, number];
 
             let modelTranslation = (GLobj.byProp(model.nodes[1], 'Lcl Translation')?.props.slice(4) || [0, 0, 0]) as [number, number, number];

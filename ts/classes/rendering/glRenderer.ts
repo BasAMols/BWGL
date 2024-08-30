@@ -126,6 +126,8 @@ export class GLRenderer {
     }
 
     renderMesh(mesh: GLRendable, currentModelview: Matrix4) {
+        // console.log(mesh.buffer.normalBuffer);
+        
         this.glt.sendBuffer(mesh.buffer.indices, 'element');
         this.glt.sendAttribute('aVertexNormal', mesh.buffer.normalBuffer);
 
