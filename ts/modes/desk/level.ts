@@ -6,7 +6,7 @@ import { MouseMoveReader, MouseScrollReader } from '../../classes/input/mouseRea
 import { KeyboardJoyStickReader, KeyboardReader } from '../../classes/input/keyboardReader';
 import { Level } from '../../classes/level';
 import { Vector2, v2 } from '../../classes/math/vector2';
-import { Vector3, v3 } from '../../classes/math/vector3';
+import { v3 } from '../../classes/math/vector3';
 import { ObjStorage } from '../../classes/objStorage';
 import { Color } from '../../classes/util/colors';
 import { Driver } from './car/car_actor';
@@ -19,14 +19,13 @@ import { FBXScene } from '../../classes/objects/fbxScene';
 
 export class DeskLevel extends Level {
     public start = Vector2.zero;
-    public background: Color = [0.8,0.8,0.9,0.1];
+    public background: Color = [0.6,0.6,0.7,1];
     public character: Player;
     public mo: DomText;
     public st: ObjStorage;
     public driving: boolean;
     public car: Driver;
     public test: TestObj;
-    public light: Vector3 = v3(0, 400, 500);
     public test2d: DomText;
     public inputMap = new InputMap(
         {
@@ -73,7 +72,7 @@ export class DeskLevel extends Level {
         this.addChild(this.player);
 
         this.addLight(new AmbientLight({
-            color: [0.5, 0.5, 0.5],
+            color: [0.8, 0.8, 0.8],
         }));
         this.addLight(new SpotLight({
             position: v3(0, 40,-150),
@@ -85,7 +84,7 @@ export class DeskLevel extends Level {
         }));
 
         // this.addChild(new GLobj({ url: 'cube.fbx', size: v3(10), position: v3(0,0,0), rotation: v3(0, 0, 0) }));
-        this.addChild(new FBXScene({ url: 'cube.fbx', size: v3(10), position: v3(0,0,0), rotation: v3(0, 0, 0) }));
+        this.addChild(new FBXScene({ url: 'poly3.fbx', size: v3(20), position: v3(75,5,55), rotation: v3(0, 0, 0) }));
     }
 
 

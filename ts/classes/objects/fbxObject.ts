@@ -16,6 +16,7 @@ export type FBXObjectAttributes = {
     texture: FBXNode,
     globalSettings: Record<string, unknown>,
     path: string,
+    size: Vector3
 };
 export type textureCoords = [number, number];
 export type vertexCoords = [number, number, number];
@@ -46,7 +47,7 @@ export class FBXObject extends GLRendable {
 
     constructor(attr: FBXObjectAttributes) {
         super({ ...attr, ...{ autoReady: false } });
-
+        this.size = attr.size;
         this.path = attr.path;
         this.parsePBX(
             attr.model,
@@ -55,6 +56,7 @@ export class FBXObject extends GLRendable {
             attr.texture,
             attr.globalSettings
         ) 
+        attr.texture
     }
 
 
@@ -83,6 +85,8 @@ export class FBXObject extends GLRendable {
         }
 
         this.matsData[(material.props[1] as string).split('::')[1]] = out;
+
+
         const matIndex = 0;
 
 
@@ -115,7 +119,6 @@ export class FBXObject extends GLRendable {
             (((v[1] * modelTScale[1] * -1) + modelTranslation[1]) / 100),
         ] as [number, number, number]));
 
-
         (FBXObject.byName(geometry, 'PolygonVertexIndex').props[0] as number[]).forEach((vi) => {
             this.positionIndeces.push(...verts[vi < 0 ? Math.abs(vi) - 1 : vi]);
             this.indexIndeces.push(this.indexIndeces.length);
@@ -142,6 +145,7 @@ export class FBXObject extends GLRendable {
     }
 
     protected textureBuffer(size: Vector3) {
+
         this.texture = new GLTexture(this.game, {});
 
         if (Object.values(this.matsData).length) {
@@ -150,8 +154,10 @@ export class FBXObject extends GLRendable {
             const matImage = matArray.find((m) => m.map_kd);
 
             if (matImage) {
+                console.log(`obj${this.path}${matImage.map_kd.join(' ').trim()}`);
+                
                 this.texture = new GLTexture(this.game, {
-                    url: `obj/${this.path}${matImage.map_kd.join(' ').trim()}`,
+                    url: `obj${this.path}${matImage.map_kd.join(' ').trim()}`,
                 });
                 return this.texturePositionIndeces;
             } else {
@@ -165,5 +171,7 @@ export class FBXObject extends GLRendable {
             }
 
         }
+
+        // return this.texturePositionIndeces;
     }
 }

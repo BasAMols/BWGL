@@ -116,7 +116,8 @@ export class FBXScene extends GLGroup {
                             texture: undefined,
                             material: undefined,
                             geometry: undefined,
-                            path: this.path
+                            path: this.path,
+                            size: this.size,
                         };
                         linked[bNode.props[0] as number] = obj;
                     }
@@ -133,9 +134,7 @@ export class FBXScene extends GLGroup {
         this.fbxChildren = [];
         
         Object.values(linked).forEach((obj) => {
-            
             const fb = new FBXObject(obj);
-            console.log(obj);
             this.fbxChildren.push(fb);
             this.addChild(fb); 
         });

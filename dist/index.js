@@ -8630,7 +8630,7 @@ var fixedCamera = class extends GlController {
   }
   build() {
     this.camera.offset = v3(0, 0, 0);
-    this.camera.rotation = v3(-0, 0, 0);
+    this.camera.rotation = v3(0.2, -2.4, 0);
     this.camera.fov = 60;
     this.camera.target = v3(0, 28, 0);
   }
@@ -8645,7 +8645,7 @@ var fixedCamera = class extends GlController {
         this.camera.rotation.y + r.x,
         this.camera.rotation.z
       );
-      const t = this.axis("movement").scale(0.5);
+      const t = this.axis("movement").scale(0.1);
       const m = t.rotate(-this.camera.rotation.yaw);
       this.camera.target.x = this.camera.target.x + m.x;
       this.camera.target.z = this.camera.target.z + m.y;
@@ -8669,6 +8669,7 @@ var FBXObject = class _FBXObject extends GLRendable {
     this.normalIndeces = [];
     this.textureIndeces = [];
     this.texturePositionIndeces = [];
+    this.size = attr.size;
     this.path = attr.path;
     this.parsePBX(
       attr.model,
@@ -8677,6 +8678,7 @@ var FBXObject = class _FBXObject extends GLRendable {
       attr.texture,
       attr.globalSettings
     );
+    attr.texture;
   }
   static byName(node, name) {
     return node.nodes.find((o) => o.name === name);
@@ -8746,8 +8748,9 @@ var FBXObject = class _FBXObject extends GLRendable {
       const matArray = Object.values(this.matsData);
       const matImage = matArray.find((m) => m.map_kd);
       if (matImage) {
+        console.log("obj".concat(this.path).concat(matImage.map_kd.join(" ").trim()));
         this.texture = new GLTexture(this.game, {
-          url: "obj/".concat(this.path).concat(matImage.map_kd.join(" ").trim())
+          url: "obj".concat(this.path).concat(matImage.map_kd.join(" ").trim())
         });
         return this.texturePositionIndeces;
       } else {
@@ -8835,7 +8838,8 @@ var FBXScene = class _FBXScene extends GLGroup {
               texture: void 0,
               material: void 0,
               geometry: void 0,
-              path: this.path
+              path: this.path,
+              size: this.size
             };
             linked[bNode.props[0]] = obj;
           }
@@ -8853,7 +8857,6 @@ var FBXScene = class _FBXScene extends GLGroup {
     this.fbxChildren = [];
     Object.values(linked).forEach((obj) => {
       const fb = new FBXObject(obj);
-      console.log(obj);
       this.fbxChildren.push(fb);
       this.addChild(fb);
     });
@@ -8865,8 +8868,7 @@ var DeskLevel = class extends Level {
   constructor() {
     super();
     this.start = Vector2.zero;
-    this.background = [0.8, 0.8, 0.9, 0.1];
-    this.light = v3(0, 400, 500);
+    this.background = [0.6, 0.6, 0.7, 1];
     this.inputMap = new InputMap(
       {
         "camera": [new MouseMoveReader(), new TouchAxisReader(this.interface, "bottomRight", v2(60, 60), 40, v2(4))],
@@ -8904,7 +8906,7 @@ var DeskLevel = class extends Level {
     });
     this.addChild(this.player);
     this.addLight(new AmbientLight({
-      color: [0.5, 0.5, 0.5]
+      color: [0.8, 0.8, 0.8]
     }));
     this.addLight(new SpotLight({
       position: v3(0, 40, -150),
@@ -8914,7 +8916,7 @@ var DeskLevel = class extends Level {
       range: [1600, 2e3],
       direction: v3(0, 0, -1)
     }));
-    this.addChild(new FBXScene({ url: "cube.fbx", size: v3(10), position: v3(0, 0, 0), rotation: v3(0, 0, 0) }));
+    this.addChild(new FBXScene({ url: "poly3.fbx", size: v3(20), position: v3(75, 5, 55), rotation: v3(0, 0, 0) }));
   }
 };
 

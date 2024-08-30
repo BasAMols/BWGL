@@ -23,7 +23,7 @@ export class fixedCamera extends GlController {
 
     public build(): void {
         this.camera.offset = v3(0, 0, 0);
-        this.camera.rotation = v3(-0, 0, 0);
+        this.camera.rotation = v3(0.2, -2.4, 0);
         this.camera.fov = 60;
         this.camera.target = v3(0, 28, 0);
     }
@@ -43,7 +43,7 @@ export class fixedCamera extends GlController {
                 this.camera.rotation.z
             );
 
-            const t = this.axis('movement').scale(0.5);
+            const t = this.axis('movement').scale(0.1);
             const m = t.rotate(-this.camera.rotation.yaw);
             this.camera.target.x = this.camera.target.x + m.x;
             this.camera.target.z = this.camera.target.z + m.y;
