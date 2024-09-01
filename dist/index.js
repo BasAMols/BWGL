@@ -8909,7 +8909,7 @@ var DeskLevel = class extends Level {
     });
     this.addChild(this.player);
     this.addLight(new AmbientLight({
-      color: [0.8, 0.8, 0.9]
+      color: [1, 1, 1]
     }));
     this.addLight(new SpotLight({
       position: v3(0, -1e3, -150),
