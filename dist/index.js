@@ -4870,6 +4870,8 @@ var Vector2 = class _Vector2 {
     return this.x * this.x + this.y * this.y;
   }
   clampMagnitude(max = 1) {
+    if (this.magnitude() === 0)
+      return v2(0);
     return this.scale(1 / this.magnitude() || 1).scale(Math.min(max, this.magnitude()));
   }
   distance(vector) {
@@ -8649,6 +8651,7 @@ var fixedCamera = class extends GlController {
       const m = t.rotate(-this.camera.rotation.yaw);
       this.camera.target.x = this.camera.target.x + m.x;
       this.camera.target.z = this.camera.target.z + m.y;
+    } else {
     }
   }
 };

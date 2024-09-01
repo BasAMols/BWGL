@@ -64,6 +64,7 @@ export class Vector2 {
 	}
 
 	clampMagnitude( max:number = 1 ) {
+		if (this.magnitude() === 0) return v2(0);
 		return this.scale( 1/ this.magnitude() || 1 ).scale( Math.min( max, this.magnitude() ) );
 	}
 

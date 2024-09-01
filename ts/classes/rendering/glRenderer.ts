@@ -86,6 +86,7 @@ export class GLRenderer {
     draw() {
         this.clear();
         this.gl.useProgram(this.glt.program);
+        
         const camera = m4()
             .translate(this.game.mode.camera.offset.multiply(1, 1, -1))
             .rotate(this.game.mode.camera.rotation)

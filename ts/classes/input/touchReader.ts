@@ -161,6 +161,7 @@ export class TouchVerticalReader extends InputReader<number> {
     }
     private _state: number = 0;
     get value(): number {
+        
         return this._state;
     }
 }
