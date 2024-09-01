@@ -8687,7 +8687,7 @@ var FBXObject = class _FBXObject extends GLRendable {
     return node.nodes.find((o) => o.props[index] === name);
   }
   parsePBX(model, material, geometry, texture, globalSettings) {
-    var _a, _b;
+    var _a, _b, _c, _d, _e;
     const props = _FBXObject.byName(material, "Properties70");
     const out = {
       ka: ["1.000000", "1.000000", "1.000000"],
@@ -8714,14 +8714,18 @@ var FBXObject = class _FBXObject extends GLRendable {
     _FBXObject.byName(normalBlob, "NormalsIndex").props[0].forEach((v) => {
       this.normalIndeces.push(normals[v][0], normals[v][2], normals[v][1]);
     });
-    const modelTScale = ((_a = _FBXObject.byProp(model.nodes[1], "Lcl Scaling")) == null ? void 0 : _a.props.slice(4)) || [1, 1, 1];
-    let modelTranslation = ((_b = _FBXObject.byProp(model.nodes[1], "Lcl Translation")) == null ? void 0 : _b.props.slice(4)) || [0, 0, 0];
-    modelTranslation = modelTranslation.map((v, i) => v);
+    this.position = v3(((_a = _FBXObject.byProp(model.nodes[1], "Lcl Translation")) == null ? void 0 : _a.props.slice(4)) || [0, 0, 0]);
+    this.size = this.size.multiply(v3(((_b = _FBXObject.byProp(model.nodes[1], "Lcl Scaling")) == null ? void 0 : _b.props.slice(4)) || [1, 1, 1]));
+    this.rotation = v3(
+      +((_c = _FBXObject.byProp(model.nodes[1], "Lcl Rotation")) == null ? void 0 : _c.props[5]),
+      +((_d = _FBXObject.byProp(model.nodes[1], "Lcl Rotation")) == null ? void 0 : _d.props[4]),
+      +((_e = _FBXObject.byProp(model.nodes[1], "Lcl Rotation")) == null ? void 0 : _e.props[6])
+    ).scale(1 / 360);
     let verts = Util.chunk(_FBXObject.byName(geometry, "Vertices").props[0], 3);
     verts = verts.map((v) => [
-      (v[0] * modelTScale[0] + modelTranslation[0]) / 100,
-      (v[2] * modelTScale[2] + modelTranslation[2]) / 100,
-      (v[1] * modelTScale[1] * -1 + modelTranslation[1]) / 100
+      v[0] / 100,
+      v[2] / 100,
+      v[1] * -1 / 100
     ]);
     _FBXObject.byName(geometry, "PolygonVertexIndex").props[0].forEach((vi) => {
       this.positionIndeces.push(...verts[vi < 0 ? Math.abs(vi) - 1 : vi]);
@@ -8748,7 +8752,6 @@ var FBXObject = class _FBXObject extends GLRendable {
       const matArray = Object.values(this.matsData);
       const matImage = matArray.find((m) => m.map_kd);
       if (matImage) {
-        console.log("obj".concat(this.path).concat(matImage.map_kd.join(" ").trim()));
         this.texture = new GLTexture(this.game, {
           url: "obj".concat(this.path).concat(matImage.map_kd.join(" ").trim())
         });
@@ -8868,7 +8871,7 @@ var DeskLevel = class extends Level {
   constructor() {
     super();
     this.start = Vector2.zero;
-    this.background = [0.6, 0.6, 0.7, 1];
+    this.background = [0.1, 0.1, 0.2, 1];
     this.inputMap = new InputMap(
       {
         "camera": [new MouseMoveReader(), new TouchAxisReader(this.interface, "bottomRight", v2(60, 60), 40, v2(4))],
@@ -8906,17 +8909,17 @@ var DeskLevel = class extends Level {
     });
     this.addChild(this.player);
     this.addLight(new AmbientLight({
-      color: [0.8, 0.8, 0.8]
+      color: [0.8, 0.8, 0.9]
     }));
     this.addLight(new SpotLight({
-      position: v3(0, 40, -150),
+      position: v3(0, -1e3, -150),
       color: [0, 0, 0, 1],
       specular: [0, 0, 0, 1],
       limit: [6, 13],
       range: [1600, 2e3],
       direction: v3(0, 0, -1)
     }));
-    this.addChild(new FBXScene({ url: "poly3.fbx", size: v3(20), position: v3(75, 5, 55), rotation: v3(0, 0, 0) }));
+    this.addChild(new FBXScene({ url: "/shack/shack1.fbx", size: v3(20), position: v3(-50, 5, -20), rotation: v3(0, 0, 0) }));
   }
 };
 

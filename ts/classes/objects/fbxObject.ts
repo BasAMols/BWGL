@@ -1,6 +1,6 @@
 import { Color } from '../util/colors';
 import { GlElementType } from '../rendering/glRenderer';
-import { Vector3 } from '../math/vector3';
+import { Vector3, v3 } from '../math/vector3';
 import { GLRendable } from '../rendable';
 import { GLTexture } from '../texture';
 import * as FBXParser from 'fbx-parser';
@@ -105,18 +105,20 @@ export class FBXObject extends GLRendable {
         (FBXObject.byName(normalBlob, 'NormalsIndex').props[0] as number[]).forEach((v) => {
             this.normalIndeces.push(normals[v][0], normals[v][2], normals[v][1],);
         });
-
+        
         //Polygons
-        const modelTScale = (FBXObject.byProp(model.nodes[1], 'Lcl Scaling')?.props.slice(4) || [1, 1, 1]) as [number, number, number];
-
-        let modelTranslation = (FBXObject.byProp(model.nodes[1], 'Lcl Translation')?.props.slice(4) || [0, 0, 0]) as [number, number, number];
-        modelTranslation = modelTranslation.map((v, i) => (v as number)) as [number, number, number];
-
+        this.position = v3((FBXObject.byProp(model.nodes[1], 'Lcl Translation')?.props.slice(4) || [0, 0, 0]) as [number, number, number])
+        this.size = this.size.multiply(v3((FBXObject.byProp(model.nodes[1], 'Lcl Scaling')?.props.slice(4) || [1, 1, 1]) as [number, number, number]))
+        this.rotation = v3(
+            +FBXObject.byProp(model.nodes[1], 'Lcl Rotation')?.props[5],
+            +FBXObject.byProp(model.nodes[1], 'Lcl Rotation')?.props[4],
+            +FBXObject.byProp(model.nodes[1], 'Lcl Rotation')?.props[6],
+        ).scale(1/360)
         let verts = Util.chunk(FBXObject.byName(geometry, 'Vertices').props[0] as number[], 3) as [number, number, number][];
         verts = verts.map((v) => ([
-            (((v[0] * modelTScale[0]) + modelTranslation[0]) / 100),
-            (((v[2] * modelTScale[2]) + modelTranslation[2]) / 100),
-            (((v[1] * modelTScale[1] * -1) + modelTranslation[1]) / 100),
+            (v[0] / 100),
+            (v[2] / 100),
+            (v[1] * -1 / 100),
         ] as [number, number, number]));
 
         (FBXObject.byName(geometry, 'PolygonVertexIndex').props[0] as number[]).forEach((vi) => {
@@ -154,8 +156,6 @@ export class FBXObject extends GLRendable {
             const matImage = matArray.find((m) => m.map_kd);
 
             if (matImage) {
-                console.log(`obj${this.path}${matImage.map_kd.join(' ').trim()}`);
-                
                 this.texture = new GLTexture(this.game, {
                     url: `obj${this.path}${matImage.map_kd.join(' ').trim()}`,
                 });
