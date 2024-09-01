@@ -1,2 +1,2 @@
 [live](https://basamols.github.io/BWGL/dist/)
-[live](https://basamols.github.io/BWGL/dist/versions.html)
+[versions](https://basamols.github.io/BWGL/dist/versions.html)
