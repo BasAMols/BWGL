@@ -19,7 +19,7 @@ import { FBXScene } from '../../classes/objects/fbxScene';
 
 export class DeskLevel extends Level {
     public start = Vector2.zero;
-    public background: Color = [0.1,0.1,0.2,1];
+    public background: Color = [0.6,0.6,0.4,1];
     public character: Player;
     public mo: DomText;
     public st: ObjStorage;
@@ -50,15 +50,6 @@ export class DeskLevel extends Level {
             }),
             new fixedCamera()
         ]);
-
-        this.test2d = new DomText({
-            position: v2(100, 100),
-            fontSize: 40,
-            fontFamily: 'monospace',
-            color: 'white',
-            text: '0'
-        });
-        this.addUi(this.test2d);
     }
 
     build() {

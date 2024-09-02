@@ -8874,7 +8874,7 @@ var DeskLevel = class extends Level {
   constructor() {
     super();
     this.start = Vector2.zero;
-    this.background = [0.1, 0.1, 0.2, 1];
+    this.background = [0.6, 0.6, 0.4, 1];
     this.inputMap = new InputMap(
       {
         "camera": [new MouseMoveReader(), new TouchAxisReader(this.interface, "bottomRight", v2(60, 60), 40, v2(4))],
@@ -8894,14 +8894,6 @@ var DeskLevel = class extends Level {
       }),
       new fixedCamera()
     ]);
-    this.test2d = new DomText({
-      position: v2(100, 100),
-      fontSize: 40,
-      fontFamily: "monospace",
-      color: "white",
-      text: "0"
-    });
-    this.addUi(this.test2d);
   }
   build() {
     super.build();
