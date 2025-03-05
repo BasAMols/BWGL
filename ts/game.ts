@@ -7,7 +7,7 @@ import { Level } from './classes/level';
 import { Mode } from './classes/mode';
 import { GLRenderer } from './classes/rendering/glRenderer';
 import { Ticker, TickerReturnData } from './classes/ticker';
-import { DeskWorld } from './modes/desk/mode';
+import { TopMode } from './modes/top/mode';
 
 export var glob = new class {
     public game: Game;
@@ -102,8 +102,8 @@ export class Game {
     }
 
     private setupModes() {
-        this.addMode('desk', new DeskWorld());
-        this.switchMode('desk');
+        this.addMode('top', new TopMode());
+        this.switchMode('top');
     }
 
     private debug() {

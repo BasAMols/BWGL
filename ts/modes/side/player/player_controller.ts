@@ -113,6 +113,7 @@ export class PlayerController extends GlController {
 
     public collide(obj: TickerReturnData) {
         this.parent.stat.ground = false;
+        
         const collisions = (this.parent.zones[0] as Collider).calculateCollision();
         collisions.forEach((v: Vector3)=>{
             if (v.y >= 0){

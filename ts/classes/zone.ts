@@ -7,6 +7,7 @@ import { Vector3, v3 } from './math/vector3';
 export type ZoneAttributes = GlElementAttributes & {
     fixed?: boolean;
     absoluteOffset?: Vector3
+    mesh?: boolean
 };
 
 export type ZoneType = 'collider' | 'trigger' | 'interact';
@@ -32,6 +33,7 @@ export abstract class Zone extends GlController {
     }
 
     public overlap(othr: Zone): boolean {
+        
         //myself
         if (this === othr) return false;
         
