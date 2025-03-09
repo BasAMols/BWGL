@@ -3,7 +3,6 @@ import { GlController, GlControllerOrder } from '../../../classes/controller';
 import { Vector3, v3 } from '../../../classes/math/vector3';
 import { GlElementType } from '../../../classes/rendering/glRenderer';
 import { TickerReturnData } from '../../../classes/ticker';
-import { Util } from '../../../classes/util/utils';
 
 export class ISOCamera extends GlController {
     public type: GlElementType = 'controller';
@@ -24,10 +23,6 @@ export class ISOCamera extends GlController {
 
     constructor(public target: Character){
         super({autoReady: false});
-    }
-
-    scroll(e: WheelEvent): void {
-        this.camera.offset.z = Util.clamp(this.camera.offset.z + e.deltaY * 0.5, 1000, 5000);
     }
 
     public build(): void {

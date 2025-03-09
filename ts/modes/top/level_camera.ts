@@ -4,6 +4,7 @@ import { GlElementType } from '../../classes/rendering/glRenderer';
 import { TickerReturnData } from '../../classes/ticker';
 import { Util } from '../../classes/util/utils';
 import { glob } from '../../game';
+import { TopLevel } from './level';
 
 
 export class fixedCamera extends GlController {
@@ -42,14 +43,9 @@ export class fixedCamera extends GlController {
                 this.camera.rotation.y + r.x,
                 this.camera.rotation.z
             );
-
+            this.camera.target = (this.level as TopLevel).character.position.add(v3(0, 0, 10));
             const t = this.axis('movement').scale(0.1);
             const m = t.rotate(-this.camera.rotation.yaw);
-
-            
-            this.camera.target.x = this.camera.target.x + m.x;
-            this.camera.target.z = this.camera.target.z + m.y;
-
 
         } else {
 

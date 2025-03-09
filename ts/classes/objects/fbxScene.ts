@@ -6,6 +6,7 @@ import * as FBXParser from 'fbx-parser';
 import { FBXReader } from 'fbx-parser';
 import { GLGroup } from '../group';
 import { FBXObject, FBXObjectAttributes } from './fbxObject';
+import { v3 } from '../math/vector3';
 
 export type matData = Record<string, string[]>;
 
@@ -66,10 +67,8 @@ export class FBXScene extends GLGroup {
 
 
     constructor(attr: FBXSceneAttributes = {}) {
-        super({ ...attr, ...{ autoReady: true } });
-
+        super({...{size: v3(1)}, ...attr, ...{ autoReady: true } });
         this.path = attr.url.split('/').slice(0, -1).join('/') + '/';
-
         this.loadFBX(`${window.location.href}/obj/${attr.url}`);
     }
 
@@ -97,7 +96,6 @@ export class FBXScene extends GLGroup {
         const objs = FBXScene.byName(reader.fbxNode, 'Objects');
         const globalSettings: Record<string, unknown> = Object.fromEntries(Object.values(FBXScene.byName(reader.fbxNode, "GlobalSettings").nodes[1].nodes).map((n) => ([n.props[0], n.props[4]])));
         const linked: Record<number, FBXObjectAttributes> = {};
-
 
         FBXScene.byName(reader.fbxNode, "Connections").nodes.forEach((c) => {
             const a = c.props[1];

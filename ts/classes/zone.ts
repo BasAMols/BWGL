@@ -36,7 +36,10 @@ export abstract class Zone extends GlController {
         
         //myself
         if (this === othr) return false;
-        
+
+        //inactive objects dont react
+        if (!othr.active) return false;
+
         //fixed objects dont react
         if (this.fixed) return false;
 

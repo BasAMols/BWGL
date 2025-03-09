@@ -4,7 +4,7 @@ import { GlElement } from '../../../classes/elementBase';
 import { Vector3, v3 } from '../../../classes/math/vector3';
 import { GLCuboid } from '../../../classes/objects/cuboid';
 import { TickerReturnData } from '../../../classes/ticker';
-import { ISOCamera } from '../entities/iso_camera';
+import { NormalCamera } from '../entities/camera';
 import { PlayerController } from './player_controller';
 import { PlayerSkel } from './player_skeleton';
 
@@ -43,7 +43,8 @@ export class Player extends Character {
                 absoluteOffset: v3(-3,0,-3)
             }),
             new PlayerController(this),
-            new ISOCamera(this),
+            // new ISOCamera(this),
+            new NormalCamera(this),
         ]);
         GlElement.registerControllers(this);
 

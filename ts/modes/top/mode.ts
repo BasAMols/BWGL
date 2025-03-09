@@ -1,10 +1,10 @@
 import { Mode } from '../../classes/mode';
-import { DeskLevel } from './level';
+import { TopLevel } from './level';
 
 export class TopMode extends Mode{
     build(){
         super.build();
-        this.addLevel('level', new DeskLevel());
+        this.addLevel('level', new TopLevel());
         this.switchLevel('level');
     }
 }

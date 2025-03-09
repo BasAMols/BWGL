@@ -4,12 +4,13 @@ import { v2 } from '../../../classes/math/vector2';
 import { Vector3, v3 } from '../../../classes/math/vector3';
 import { TickerReturnData } from '../../../classes/ticker';
 import { Util } from '../../../classes/util/utils';
+import { TopLevel } from '../level';
 import { Player } from './player_actor';
 
 
 export class PlayerController extends GlController {
     private intr: Record<string, number> = {};
-    private stat: Record<string, boolean> = { running: false };
+    private stat: Record<string, boolean> = { running: false, holding: false };
     private cnst = { runTime: 250, runSlowDownFactor: 0.6, runSpeed: 0.2 } as const;
     private velocity: Vector3 = Vector3.f(0);
     private newPosition: Vector3;
@@ -73,5 +74,15 @@ export class PlayerController extends GlController {
         this.setVelocity(obj);
         this.collide(obj);
         this.parent.position = this.newPosition.clone();
+        if (this.button('interact')) {
+            (this.parent.level as TopLevel).box.carrier = this.parent;
+            this.parent.stat.holding = true;
+        } else {
+            (this.parent.level as TopLevel).box.carrier = undefined;
+            this.parent.stat.holding = false;
+        }
+        // console.log(this.parent.position.x, this.parent.position.z);
+        
+
     }
 }

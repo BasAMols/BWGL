@@ -124,11 +124,11 @@ export class Vector3 {
 		);
 	}
 
-	add(vector: Vector3) {
+	add(...vectors: Vector3[]) {
 		return new Vector3(
-			this.x + vector.x,
-			this.y + vector.y,
-			this.z + vector.z,
+			this.x + vectors.reduce((a, b) => a + b.x, 0),
+			this.y + vectors.reduce((a, b) => a + b.y, 0),
+			this.z + vectors.reduce((a, b) => a + b.z, 0),
 		);
 	}
 
@@ -143,27 +143,27 @@ export class Vector3 {
 		);
 	}
 
-	subtract(vector: Vector3) {
+	subtract(...vectors: Vector3[]) {
 		return new Vector3(
-			this.x - vector.x,
-			this.y - vector.y,
-			this.z - vector.z,
+			this.x - vectors.reduce((a, b) => a + b.x, 0),
+			this.y - vectors.reduce((a, b) => a + b.y, 0),
+			this.z - vectors.reduce((a, b) => a + b.z, 0),
 		);
 	}
 
-	scale(scalar: number) {
+	scale(...scalars: number[]) {
 		return new Vector3(
-			this.x * scalar,
-			this.y * scalar,
-			this.z * scalar,
+			this.x * scalars.reduce((a, b) => a * b, 1),
+			this.y * scalars.reduce((a, b) => a * b, 1),
+			this.z * scalars.reduce((a, b) => a * b, 1),
 		);
 	}
 
-	divide(vector: Vector3) {
+	divide(...vectors: Vector3[]) {
 		return new Vector3(
-			this.x / vector.x,
-			this.y / vector.y,
-			this.z / vector.z,
+			this.x / vectors.reduce((a, b) => a * b.x, 1),
+			this.y / vectors.reduce((a, b) => a * b.y, 1),
+			this.z / vectors.reduce((a, b) => a * b.z, 1),
 		);
 	}
 

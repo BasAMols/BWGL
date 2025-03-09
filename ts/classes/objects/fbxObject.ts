@@ -113,12 +113,12 @@ export class FBXObject extends GLRendable {
             +FBXObject.byProp(model.nodes[1], 'Lcl Rotation')?.props[5],
             +FBXObject.byProp(model.nodes[1], 'Lcl Rotation')?.props[4],
             +FBXObject.byProp(model.nodes[1], 'Lcl Rotation')?.props[6],
-        ).scale(1/360)
+        ).scale(1*Math.PI/180).add(v3(0, Math.PI/2, 0))
         let verts = Util.chunk(FBXObject.byName(geometry, 'Vertices').props[0] as number[], 3) as [number, number, number][];
         verts = verts.map((v) => ([
-            (v[0] / 100),
-            (v[2] / 100),
-            (v[1] * -1 / 100),
+            (v[0] / 10),
+            (v[2] / 10),
+            (v[1] * -1 / 10),
         ] as [number, number, number]));
 
         (FBXObject.byName(geometry, 'PolygonVertexIndex').props[0] as number[]).forEach((vi) => {

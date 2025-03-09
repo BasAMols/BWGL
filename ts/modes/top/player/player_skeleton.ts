@@ -23,10 +23,10 @@ export class PlayerSkel extends BlobSkeleton {
         this.bones['torso'].addChild(new GLCuboid({ size: this.bones['torso'].size, colors: [[0.55, 0.56, 0.71, 1]] }));
         this.bones['head'].addChild(new GLCuboid({ size: v3(4, 4, 1), position: v3(0, 3, 3), colors: [skin] }));
         this.bones['head'].addChild(new GLCuboid({ size: v3(4, 4, 3), position: v3(0, 3, 0), colors: [hair, [0.44, 0.34, 0.31, 1]] }));
-        this.bones['lArm'].addChild(new GLCuboid({ size: this.bones['lArm'].size, colors: [[0.49, 0.43, 0.51, 1]] }));
-        this.bones['rArm'].addChild(new GLCuboid({ size: this.bones['rArm'].size, colors: [[0.49, 0.43, 0.51, 1]] }));
-        this.bones['lArm'].addChild(new GLCuboid({ size: v3(1.5, 1, 2), position: v3(0, -1, 0), colors: [skin] }));
-        this.bones['rArm'].addChild(new GLCuboid({ size: v3(1.5, 1, 2), position: v3(0, -1, 0), colors: [skin] }));
+        // this.bones['lArm'].addChild(new GLCuboid({ size: this.bones['lArm'].size, colors: [[0.49, 0.43, 0.51, 1]] }));
+        // this.bones['rArm'].addChild(new GLCuboid({ size: this.bones['rArm'].size, colors: [[0.49, 0.43, 0.51, 1]] }));
+        // this.bones['lArm'].addChild(new GLCuboid({ size: v3(1.5, 1, 2), position: v3(0, -1, 0), colors: [skin] }));
+        // this.bones['rArm'].addChild(new GLCuboid({ size: v3(1.5, 1, 2), position: v3(0, -1, 0), colors: [skin] }));
 
         this.animator.add('running', 1000, {
             torso: [[0, [-0.2, -0.3]], [1, [-0.2, 0.3]]],
@@ -41,13 +41,20 @@ export class PlayerSkel extends BlobSkeleton {
             lArm: [[0], [1, [1.5, , -0.1]]],
             rArm: [[0], [1, [1.4, , 0.1]]],
         }, { once: true, ease: 'easeInOutSine', dynamic: true, });
-        
+
         this.animator.add('carry', 1000, {
             torso: [],
             head: [],
             lArm: [[0, [1.5, , -0.1]]],
             rArm: [[0, [1.4, , 0.1]]],
         }, { loop: true, ease: 'easeInOutSine', dynamic: true, });
+
+        this.animator.add('runningCarry', 1000, {
+            torso: [[0, [-0.2, -0.3]], [1, [-0.2, 0.3]]],
+            head: [[0, [0.1, 0.1, 0]], [1, [0.1, -0.1, 0]]],
+            lArm: [[0, [1.5, , -0.2]], [1, [1.5, , 0.2]]],
+            rArm: [[0, [1.4, , -0.2]], [1, [1.4, , 0.2]]],
+        }, { loop: true, ease: 'easeInOutSine', bounce: true, dynamic: true });
 
         this.animator.add('idle', 15000, {
             torso: [],
@@ -64,9 +71,17 @@ export class PlayerSkel extends BlobSkeleton {
         super.tick(obj);
 
         if (this.parent.stat.running) {
-            this.animator.play('running');
+            if (this.parent.stat.holding) {
+                this.animator.play('runningCarry');
+            } else {
+                this.animator.play('running');
+            }
         } else {
-            this.animator.play('idle');
+            if (this.parent.stat.holding) {
+                this.animator.play('carry');
+            } else {
+                this.animator.play('idle');
+            }
         }
     }
 }
