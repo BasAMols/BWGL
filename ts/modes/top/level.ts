@@ -160,7 +160,7 @@ export class TopLevel extends Level {
         });
         this.addChild(this.forklift);
 
-        this.addChild(new FBXScene({ url: '/warehouse/warehouse_static.fbx', size: v3(1), anchorPoint: v3(0, 0, 0), position: v3(0, 0, 0) }));
+        this.addChild(new FBXScene({ url: '/warehouse/warehouse/warehouse.fbx' }));
 
         this.forklift.setDriving(true);
         this.player.setDriving(true);

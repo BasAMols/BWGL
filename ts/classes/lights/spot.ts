@@ -9,12 +9,13 @@ export type SpotAttributes = LightAttributes & {
     specular?: Color,
     direction?: Vector3
     color?: Color,
-
+    ignoreLighting?: boolean
 };
 
 export class SpotLight extends Light{
     public lightType: LightTypes = 'spot';
     public color: Color;
+    public ignoreLighting: boolean = false;
     private _range: [number, number];
     public get range(): [number, number] {
         return this._range;

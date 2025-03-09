@@ -1,5 +1,5 @@
 import { GlController, GlControllerOrder } from '../../../classes/controller';
-import { Vector3, v3 } from '../../../classes/math/vector3';
+import { v3 } from '../../../classes/math/vector3';
 import { GlElementType } from '../../../classes/rendering/glRenderer';
 import { TickerReturnData } from '../../../classes/ticker';
 import { Util } from '../../../classes/util/utils';
@@ -10,8 +10,6 @@ import { Forklift } from './forklift_actor';
 export class ForkliftCamera extends GlController {
     public type: GlElementType = 'controller';
     public order: GlControllerOrder = 'after';
-    private lagList: Vector3[] = [];
-    private lagCount: number = 8;
     public get active(): boolean {
         return super.active;
     }

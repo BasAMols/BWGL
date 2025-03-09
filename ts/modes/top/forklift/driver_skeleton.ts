@@ -17,7 +17,7 @@ export class DriverSkel extends BlobSkeleton {
 
         this.rotation.y = -Math.PI/2;
         this.position.x = 13.5;
-        this.position.z = 3;
+        this.position.z = 3.5;
 
         this.animator.add('driving', 1000, {
             torso: [[0, [0.2, 0, 0]]],
@@ -41,8 +41,6 @@ export class DriverSkel extends BlobSkeleton {
             rForeleg: [[0, [-0.8, 0, 0]]],
             lFoot: [],
             rFoot: [],
-
-            
         }, { loop: true, dynamic: true, ease: 'easeInOutSine' });
 
         this.animator.play('driving');

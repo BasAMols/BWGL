@@ -30,12 +30,6 @@ export class ForkliftController extends GlController {
     private newPosition: Vector3;
     public parent: Forklift;
 
-    build() {
-        super.build();
-
-    }
-
-
     public setter(key: string, cond: boolean, interval: number) {
         this.intr[key] = Util.clamp((this.intr[key] || 0) + (cond ? interval : -(interval * this.cnst.runSlowDownFactor)), 0, this.cnst.runTime);
     }
@@ -60,13 +54,9 @@ export class ForkliftController extends GlController {
 
     public setVelocity(obj: TickerReturnData) {
         this.setMovementVelocity(obj.intervalS10);
-
         this.parent.rotation.y = this.parent.rotation.y + (this.intr.speed) * this.intr.turn *  0.004*(obj.intervalS10 / 6);
-
         const sc = this.velocity.scale(obj.intervalS10 / 6);
         this.newPosition = this.parent.position.add(sc.xz.magnitude() > 0 ? sc : v3(0, 0, 0));
-
-
     }
 
 
@@ -120,10 +110,5 @@ export class ForkliftController extends GlController {
 
         this.lift(this.button('lift') as 1 | 0| -1);
         this.angle(this.button('liftAngle') as 1 | 0|  -1);
-        
-        
-        // if (this.stat.driving) {
-        //     // this.position.x += this.intr.speed * -this.cnst.maxSpeed * obj.intervalS10;
-        // }
     }
 }
