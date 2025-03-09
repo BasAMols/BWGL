@@ -11,7 +11,7 @@ import { Player } from './player_actor';
 export class PlayerController extends GlController {
     private intr: Record<string, number> = {};
     private stat: Record<string, boolean> = { running: false, holding: false };
-    private cnst = { runTime: 250, runSlowDownFactor: 0.6, runSpeed: 0.2 } as const;
+    private cnst = { runTime: 50, runSlowDownFactor: 0.6, runSpeed: 0.15 } as const;
     private velocity: Vector3 = Vector3.f(0);
     private newPosition: Vector3;
     public parent: Player;
@@ -81,7 +81,6 @@ export class PlayerController extends GlController {
             (this.parent.level as TopLevel).box.carrier = undefined;
             this.parent.stat.holding = false;
         }
-        // console.log(this.parent.position.x, this.parent.position.z);
         
 
     }

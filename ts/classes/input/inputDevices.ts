@@ -3,14 +3,14 @@ import { DomText } from '../dom/domText';
 
 export class Keyboard {
 
-    private keyDown: Record<string, [() => void]> = {};
+    private keyDown: Record<string, [(frame: number) => void]> = {};
     private keyUp: Record<string, [() => void]> = {};
 
     ready() {
         glob.renderer.dom.addEventListener('keydown', (e) => {
             const k = e.key.toLowerCase();
             this.keyDown[k]?.forEach((c) => {
-                c();
+                c(glob.frame);
             });
         });
         glob.renderer.dom.addEventListener('keyup', (e) => {
@@ -21,7 +21,7 @@ export class Keyboard {
         });
     }
 
-    register(key: string, down: () => void, up: () => void) {
+    register(key: string, down: (frame: number) => void, up: () => void) {
         const k = key.toLowerCase();
 
         if (this.keyDown[k]) this.keyDown[k].push(down);

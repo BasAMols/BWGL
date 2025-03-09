@@ -53,6 +53,34 @@ export class Vector3 {
 	public set zy(v: Vector2) { this.z = v.x; this.y = v.y}
 
 
+
+	public get xzy() { return v3(this.x, this.z, this.y); }
+	public set xzy(v: Vector3) { this.x = v.x; this.z = v.y; this.y = v.z}
+
+	public get xyz() { return v3(this.x, this.y, this.z); }
+	public set xyz(v: Vector3) { this.x = v.x; this.y = v.y; this.z = v.z}
+
+	public get yxz() { return v3(this.y, this.x, this.z); }
+	public set yxz(v: Vector3) { this.y = v.x; this.x = v.y; this.z = v.z}
+
+	public get yzx() { return v3(this.y, this.z, this.x); }
+	public set yzx(v: Vector3) { this.y = v.x; this.z = v.y; this.x = v.z}
+
+	public get zxy() { return v3(this.z, this.x, this.y); }
+	public set zxy(v: Vector3) { this.z = v.x; this.x = v.y; this.y = v.z}
+
+	public get zyx() { return v3(this.z, this.y, this.x); }
+	public set zyx(v: Vector3) { this.z = v.x; this.y = v.y; this.x = v.z}
+
+	public get str() {
+		return this.vec.toString();
+	}
+
+	public get log() {
+		console.log(this.str);
+		return this.str;
+	}
+
 	public vec: vec3;
 
 	constructor(x: number = 0, y: number = 0, z: number = 0) {

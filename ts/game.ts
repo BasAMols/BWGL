@@ -27,6 +27,7 @@ export var glob = new class {
     public get mobile(): boolean {
         return this.device.mobile;
     }
+    public frame: number = 0;
 };
 
 export class Game {

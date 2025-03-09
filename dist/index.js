@@ -5275,7 +5275,7 @@ var Keyboard = class {
       var _a;
       const k = e.key.toLowerCase();
       (_a = this.keyDown[k]) == null ? void 0 : _a.forEach((c) => {
-        c();
+        c(glob.frame);
       });
     });
     glob.renderer.dom.addEventListener("keyup", (e) => {
@@ -6994,6 +6994,61 @@ var Vector3 = class _Vector3 {
     this.z = v.x;
     this.y = v.y;
   }
+  get xzy() {
+    return v3(this.x, this.z, this.y);
+  }
+  set xzy(v) {
+    this.x = v.x;
+    this.z = v.y;
+    this.y = v.z;
+  }
+  get xyz() {
+    return v3(this.x, this.y, this.z);
+  }
+  set xyz(v) {
+    this.x = v.x;
+    this.y = v.y;
+    this.z = v.z;
+  }
+  get yxz() {
+    return v3(this.y, this.x, this.z);
+  }
+  set yxz(v) {
+    this.y = v.x;
+    this.x = v.y;
+    this.z = v.z;
+  }
+  get yzx() {
+    return v3(this.y, this.z, this.x);
+  }
+  set yzx(v) {
+    this.y = v.x;
+    this.z = v.y;
+    this.x = v.z;
+  }
+  get zxy() {
+    return v3(this.z, this.x, this.y);
+  }
+  set zxy(v) {
+    this.z = v.x;
+    this.x = v.y;
+    this.y = v.z;
+  }
+  get zyx() {
+    return v3(this.z, this.y, this.x);
+  }
+  set zyx(v) {
+    this.z = v.x;
+    this.y = v.y;
+    this.x = v.z;
+  }
+  get str() {
+    return this.vec.toString();
+  }
+  get log() {
+    console.log(this.str);
+    return this.str;
+  }
   constructor(x = 0, y = 0, z = 0) {
     this.vec = [x, y, z];
   }
@@ -7393,6 +7448,7 @@ var Ticker = class {
       }
       this.pTime = timeStamp;
       this.frameN++;
+      glob.frame = this.frameN;
       const o = {
         interval,
         total: this.eTime,
@@ -7702,9 +7758,13 @@ var KeyboardReader = class extends InputReader {
   constructor(key) {
     super();
     this._state = false;
+    this._frameFired = 0;
     glob.device.keyboard.register(
       key,
-      () => {
+      (frame) => {
+        if (!this._state) {
+          this._frameFired = frame;
+        }
         this._state = true;
       },
       () => {
@@ -7715,21 +7775,29 @@ var KeyboardReader = class extends InputReader {
   get value() {
     return Number(this._state);
   }
+  get first() {
+    return this._frameFired === glob.frame;
+  }
 };
 var KeyboardJoyStickReader = class extends InputReader {
   constructor(keys) {
     super();
     this._state = [[false, false], [false, false]];
     this._vector = v2(0);
+    this._frameFired = [0, 0];
     keys.forEach((k, i) => {
       glob.device.keyboard.register(
         k,
         () => {
+          if (!this._state[Math.floor(i / 2)][i % 2]) {
+            this._frameFired[i] = glob.frame;
+          }
           this._state[Math.floor(i / 2)][i % 2] = true;
           this.setVector();
         },
         () => {
           this._state[Math.floor(i / 2)][i % 2] = false;
+          this._frameFired[i] = void 0;
           this.setVector();
         }
       );
@@ -7743,6 +7811,43 @@ var KeyboardJoyStickReader = class extends InputReader {
   }
   get value() {
     return this._vector;
+  }
+  get first() {
+    return this._frameFired[0] === glob.frame || this._frameFired[1] === glob.frame;
+  }
+};
+var KeyboardAxisReader = class extends InputReader {
+  constructor(keys) {
+    super();
+    this._state = [false, false];
+    this._value = 0;
+    this._frameFired = [0, 0];
+    keys.forEach((k, i) => {
+      glob.device.keyboard.register(
+        k,
+        (frame) => {
+          if (!this._state[i]) {
+            this._frameFired[i] = frame;
+          }
+          this._state[i] = true;
+          this.setValue();
+        },
+        () => {
+          this._state[i] = false;
+          this._frameFired[i] = void 0;
+          this.setValue();
+        }
+      );
+    });
+  }
+  setValue() {
+    this._value = -this._state[0] + +this._state[1];
+  }
+  get value() {
+    return this._value;
+  }
+  get first() {
+    return this._frameFired[0] === glob.frame || this._frameFired[1] === glob.frame;
   }
 };
 
@@ -7955,7 +8060,7 @@ var PlayerController = class extends GlController {
     super(...arguments);
     this.intr = {};
     this.stat = { running: false, holding: false };
-    this.cnst = { runTime: 250, runSlowDownFactor: 0.6, runSpeed: 0.2 };
+    this.cnst = { runTime: 50, runSlowDownFactor: 0.6, runSpeed: 0.15 };
     this.velocity = Vector3.f(0);
   }
   setter(key, cond, interval) {
@@ -8821,15 +8926,72 @@ var Skeleton = class extends GLGroup {
 
 // ts/modes/top/player/skeleton_blob.ts
 var BlobSkeleton = class extends Skeleton {
-  constructor() {
+  constructor(sizes = {
+    torso: v3(4, 6, 2),
+    head: v3(2, 3, 2.5),
+    arm: v3(1, 3, 1.2),
+    forearm: v3(0.7, 2.5, 0.7),
+    hand: v3(1, 0.8, 0.2),
+    fingers: v3(1, 0.7, 0.2),
+    leg: v3(1.8, 3.5, 2),
+    foreleg: v3(1.5, 4, 1.5),
+    foot: v3(1.5, 0.5, 2.5)
+  }) {
     super({
       bones: [
-        ["torso", new Bone({ mesh: false, anchorPoint: v3(2.5, 4, 2), baseRotation: v3(0, 0, 0), profile: v2(5, 4), length: 6, position: v3(0.5, 5, 1) }), ""],
-        ["head", new Bone({ mesh: false, profile: v2(4, 4), length: 4, anchorPoint: v3(2, 0, 2), position: v3(0.5, 3, 1) }), "torso"],
-        ["lArm", new Bone({ mesh: true, profile: v2(1.5, 2), length: 5, position: v3(-1.5, 0, 0.7) }), "torso"],
-        ["rArm", new Bone({ mesh: true, profile: v2(1.5, 2), length: 5, position: v3(5, 0, 0.7) }), "torso"]
+        ["torso", new Bone({ anchorPoint: sizes.torso.scale(0.5), baseRotation: v3(0, 0, 0), profile: sizes.torso.xz, length: sizes.torso.y, position: v3(0, 8, 0) }), ""],
+        ["head", new Bone({ profile: sizes.head.xz, length: sizes.head.y, anchorPoint: v3(1, 0, 1), position: v3(1, 6, 0) }), "torso"],
+        ["lEyebrow", new Bone({ profile: v2(0.8, 0.2), length: 0.2, position: v3(0.1, 1.9, 2.5) }), "head"],
+        ["rEyebrow", new Bone({ profile: v2(0.8, 0.2), length: 0.2, position: v3(2 - 0.1 - 0.8, 1.9, 2.5) }), "head"],
+        ["lEye", new Bone({ profile: v2(0.3, 0.1), length: 0.3, position: v3(0.4, 1.5, 2.5) }), "head"],
+        ["rEye", new Bone({ profile: v2(0.3, 0.1), length: 0.3, position: v3(2 - 0.4 - 0.3, 1.5, 2.5) }), "head"],
+        ["hair", new Bone({ profile: v2(2.2, 2.7), length: 0.5, position: v3(-0.1, 3, -0.1) }), "head"],
+        ["lArm", new Bone({ profile: sizes.arm.xz, length: sizes.arm.y, position: v3(-1, 2.5, 0.3) }), "torso"],
+        ["rArm", new Bone({ profile: sizes.arm.xz, length: sizes.arm.y, position: v3(4, 2.5, 0.3) }), "torso"],
+        ["lForearm", new Bone({ profile: sizes.forearm.xz, length: sizes.forearm.y, position: v3(0, -2.5, 0.3) }), "lArm"],
+        ["rForearm", new Bone({ profile: sizes.forearm.xz, length: sizes.forearm.y, position: v3(0.3, -2.5, 0.3) }), "rArm"],
+        ["lHand", new Bone({ profile: sizes.hand.xz, length: sizes.hand.y, position: v3(-0.15, -0.8, 0.25), baseRotation: v3(0, Math.PI / 2, 0) }), "lForearm"],
+        ["rHand", new Bone({ profile: sizes.hand.xz, length: sizes.hand.y, position: v3(-0.15, -0.8, 0.25), baseRotation: v3(0, -Math.PI / 2, 0) }), "rForearm"],
+        ["lFingers", new Bone({ profile: sizes.fingers.xz, length: sizes.fingers.y, position: v3(0, -0.7, 0) }), "lHand"],
+        ["rFingers", new Bone({ profile: sizes.fingers.xz, length: sizes.fingers.y, position: v3(0, -0.7, 0) }), "rHand"],
+        ["lLeg", new Bone({ profile: sizes.leg.xz, length: sizes.leg.y, position: v3(0, -3.5, 0) }), "torso"],
+        ["rLeg", new Bone({ profile: sizes.leg.xz, length: sizes.leg.y, position: v3(2.2, -3.5, 0) }), "torso"],
+        ["lForeleg", new Bone({ profile: sizes.foreleg.xz, length: sizes.foreleg.y, position: v3(0.15, -4, 0.25) }), "lLeg"],
+        ["rForeleg", new Bone({ profile: sizes.foreleg.xz, length: sizes.foreleg.y, position: v3(0.15, -4, 0.25) }), "rLeg"],
+        ["lFoot", new Bone({ profile: sizes.foot.xz, length: sizes.foot.y, position: v3(0, -0.5, 0) }), "lForeleg"],
+        ["rFoot", new Bone({ profile: sizes.foot.xz, length: sizes.foot.y, position: v3(0, -0.5, 0) }), "rForeleg"]
       ]
     });
+    const skin = [0.67, 0.54, 0.51, 1];
+    const hair = [0.24, 0.15, 0.13, 1];
+    const pants = [0.16, 0.16, 0.16, 1];
+    const shoes = [0.02, 0.02, 0.03, 1];
+    const shirt = [0.37, 0.43, 0.72, 1];
+    const sleeve = [0.18, 0.22, 0.47, 1];
+    const eyeColor = [0.18, 0.22, 0.47, 1];
+    this.bones["torso"].addChild(new GLCuboid({ size: this.bones["torso"].size, colors: [shirt] }));
+    this.bones["head"].addChild(new GLCuboid({ size: this.bones["head"].size, colors: [skin, skin, hair, skin, skin, skin] }));
+    this.bones["lEye"].addChild(new GLCuboid({ size: v3(0.3, 0.28, 0.05), position: v3(0, 0.01, 0.05), colors: [eyeColor] }));
+    this.bones["rEye"].addChild(new GLCuboid({ size: v3(0.3, 0.28, 0.05), position: v3(0, 0.01, 0.05), colors: [eyeColor] }));
+    this.bones["lEyebrow"].addChild(new GLCuboid({ size: this.bones["lEyebrow"].size, colors: [hair] }));
+    this.bones["rEyebrow"].addChild(new GLCuboid({ size: this.bones["rEyebrow"].size, colors: [hair] }));
+    this.bones["head"].addChild(new GLCuboid({ size: v3(0.8, 0.3, 0.05), colors: [Colors.w], position: v3(0.1, 1.5, 2.5) }));
+    this.bones["head"].addChild(new GLCuboid({ size: v3(0.8, 0.3, 0.05), colors: [Colors.w], position: v3(2 - 0.1 - 0.8, 1.5, 2.5) }));
+    this.bones["hair"].addChild(new GLCuboid({ size: this.bones["hair"].size, colors: [hair] }));
+    this.bones["lArm"].addChild(new GLCuboid({ size: this.bones["lArm"].size, colors: [sleeve] }));
+    this.bones["rArm"].addChild(new GLCuboid({ size: this.bones["rArm"].size, colors: [sleeve] }));
+    this.bones["lForearm"].addChild(new GLCuboid({ size: this.bones["lForearm"].size, colors: [sleeve] }));
+    this.bones["rForearm"].addChild(new GLCuboid({ size: this.bones["rForearm"].size, colors: [sleeve] }));
+    this.bones["lHand"].addChild(new GLCuboid({ size: this.bones["lHand"].size, colors: [skin] }));
+    this.bones["rHand"].addChild(new GLCuboid({ size: this.bones["rHand"].size, colors: [skin] }));
+    this.bones["lFingers"].addChild(new GLCuboid({ size: this.bones["lFingers"].size, colors: [skin] }));
+    this.bones["rFingers"].addChild(new GLCuboid({ size: this.bones["rFingers"].size, colors: [skin] }));
+    this.bones["lLeg"].addChild(new GLCuboid({ size: this.bones["lLeg"].size, colors: [pants] }));
+    this.bones["rLeg"].addChild(new GLCuboid({ size: this.bones["rLeg"].size, colors: [pants] }));
+    this.bones["lForeleg"].addChild(new GLCuboid({ size: this.bones["lForeleg"].size, colors: [pants] }));
+    this.bones["rForeleg"].addChild(new GLCuboid({ size: this.bones["rForeleg"].size, colors: [pants] }));
+    this.bones["lFoot"].addChild(new GLCuboid({ size: this.bones["lFoot"].size, colors: [shoes] }));
+    this.bones["rFoot"].addChild(new GLCuboid({ size: this.bones["rFoot"].size, colors: [shoes] }));
   }
 };
 
@@ -8840,40 +9002,113 @@ var PlayerSkel = class extends BlobSkeleton {
   }
   build() {
     super.build();
-    const skin = [0.84, 0.84, 0.82, 1];
-    const hair = [0.39, 0.23, 0.11, 1];
-    this.bones["torso"].addChild(new GLCuboid({ size: this.bones["torso"].size, colors: [[0.55, 0.56, 0.71, 1]] }));
-    this.bones["head"].addChild(new GLCuboid({ size: v3(4, 4, 1), position: v3(0, 3, 3), colors: [skin] }));
-    this.bones["head"].addChild(new GLCuboid({ size: v3(4, 4, 3), position: v3(0, 3, 0), colors: [hair, [0.44, 0.34, 0.31, 1]] }));
     this.animator.add("running", 1e3, {
-      torso: [[0, [-0.2, -0.3]], [1, [-0.2, 0.3]]],
+      torso: [[0, [-0.3, -0.3, 0]], [1, [-0.3, 0.3, 0]]],
+      head: [[0, [0.2, 0.2, 0]], [1, [0.2, -0.2, 0]]],
+      lEye: [],
+      rEye: [],
+      lArm: [[0, [-0.8, 0, 0.1]], [1, [1.2, 0, 0.1]]],
+      rArm: [[0, [1.2, 0, -0.1]], [1, [-0.8, 0, -0.1]]],
+      lForearm: [[0, [0.3, 0, 0]], [1, [1.2, 0, -1.2]]],
+      rForearm: [[0, [1.2, 0, 1.2]], [1, [0.3, 0, 0]]],
+      lHand: [],
+      rHand: [],
+      lLeg: [[0, [1.2, 0, 0]], [1, [-0.6, 0, 0]]],
+      rLeg: [[0, [-0.6, 0, 0]], [1, [1.2, 0, 0]]],
+      lForeleg: [[0, [-0.3, 0, 0]], [1, [-2, 0, 0]]],
+      rForeleg: [[0, [-2, 0, 0]], [1, [-0.3, 0, 0]]],
+      lFoot: [[0, [-0.2, 0, 0]]],
+      rFoot: [[0, [-0.2, 0, 0]]]
+    }, { loop: true, ease: "easeInOutSine", bounce: true, dynamic: true });
+    this.animator.add("walking", 700, {
+      torso: [[0, [-0.1, -0.1, 0, 0, -0.6, 0]], [0.5, [0, 0, 0, 0, 0.1, 0]], [1, [-0.1, 0.1, 0, 0, -0.6, 0]]],
       head: [[0, [0.1, 0.1, 0]], [1, [0.1, -0.1, 0]]],
-      lArm: [[0, [-0.4]], [1, [0.6]]],
-      rArm: [[0, [0.5]], [1, [-0.4]]]
+      lEye: [],
+      rEye: [],
+      lArm: [[0, [-0.4, 0, 0.1]], [1, [0.6, 0, 0.1]]],
+      rArm: [[0, [0.6, 0, -0.1]], [1, [-0.4, 0, -0.1]]],
+      lForearm: [[0, [0.3, 0, 0]], [1, [0.6, 0, -0.6]]],
+      rForearm: [[0, [0.6, 0, 0.6]], [1, [0.3, 0, 0]]],
+      lHand: [],
+      rHand: [],
+      lLeg: [[0, [0.5, 0.05, 0]], [1, [-0.3, -0.05, 0]]],
+      rLeg: [[0, [-0.3, 0.05, 0]], [1, [0.5, -0.05, 0]]],
+      lForeleg: [[0, [-0.3, 0, 0]], [1, [-0.4, 0, 0]]],
+      rForeleg: [[0, [-0.4, 0, 0]], [1, [-0.3, 0, 0]]],
+      lFoot: [[0, [0, 0, 0]], [0.5, [-0.4, 0, 0]], [1, [-0.4, 0, 0]]],
+      rFoot: [[0, [-0.4, 0, 0]], [0.5, [-0.4, 0, 0]], [1, [0, 0, 0]]]
     }, { loop: true, ease: "easeInOutSine", bounce: true, dynamic: true });
     this.animator.add("grab", 1e3, {
       torso: [],
       head: [],
+      lEye: [],
+      rEye: [],
       lArm: [[0], [1, [1.5, , -0.1]]],
-      rArm: [[0], [1, [1.4, , 0.1]]]
+      rArm: [[0], [1, [1.4, , 0.1]]],
+      lForearm: [],
+      rForearm: [],
+      lHand: [],
+      rHand: [],
+      lLeg: [],
+      rLeg: [],
+      lForeleg: [],
+      rForeleg: [],
+      lFoot: [],
+      rFoot: []
     }, { once: true, ease: "easeInOutSine", dynamic: true });
     this.animator.add("carry", 1e3, {
       torso: [],
       head: [],
+      lEye: [],
+      rEye: [],
       lArm: [[0, [1.5, , -0.1]]],
-      rArm: [[0, [1.4, , 0.1]]]
+      rArm: [[0, [1.4, , 0.1]]],
+      lForearm: [],
+      rForearm: [],
+      lHand: [],
+      rHand: [],
+      lLeg: [],
+      rLeg: [],
+      lForeleg: [],
+      rForeleg: [],
+      lFoot: [],
+      rFoot: []
     }, { loop: true, ease: "easeInOutSine", dynamic: true });
     this.animator.add("runningCarry", 1e3, {
       torso: [[0, [-0.2, -0.3]], [1, [-0.2, 0.3]]],
       head: [[0, [0.1, 0.1, 0]], [1, [0.1, -0.1, 0]]],
+      lEye: [],
+      rEye: [],
       lArm: [[0, [1.5, , -0.2]], [1, [1.5, , 0.2]]],
-      rArm: [[0, [1.4, , -0.2]], [1, [1.4, , 0.2]]]
+      rArm: [[0, [1.4, , -0.2]], [1, [1.4, , 0.2]]],
+      lForearm: [],
+      rForearm: [],
+      lHand: [],
+      rHand: [],
+      lLeg: [],
+      rLeg: [],
+      lForeleg: [],
+      rForeleg: [],
+      lFoot: [],
+      rFoot: []
     }, { loop: true, ease: "easeInOutSine", bounce: true, dynamic: true });
     this.animator.add("idle", 15e3, {
       torso: [],
       head: [[0.4, [, 0.5]], [0.5, [, -0.5]], [0.9, [, -0.5]], [1, [, 0.5]]],
+      lEye: [[0.4, [0, 0, 0, 0.1]], [0.5, [0, 0, 0, -0.15]], [0.9, [0, 0, 0, -0.15]], [1, [0, 0, 0, 0.1]]],
+      rEye: [[0.4, [0, 0, 0, 0.15]], [0.5, [0, 0, 0, -0.1]], [0.9, [0, 0, 0, -0.1]], [1, [0, 0, 0, 0.15]]],
       lArm: [],
-      rArm: []
+      rArm: [],
+      lLeg: [],
+      rLeg: [],
+      lForeleg: [],
+      rForeleg: [],
+      lFoot: [],
+      rFoot: [],
+      lHand: [],
+      rHand: [],
+      lForearm: [],
+      rForearm: []
     }, { loop: true, dynamic: true, ease: "easeInOutSine" });
     this.animator.play("idle");
   }
@@ -8883,7 +9118,7 @@ var PlayerSkel = class extends BlobSkeleton {
       if (this.parent.stat.holding) {
         this.animator.play("runningCarry");
       } else {
-        this.animator.play("running");
+        this.animator.play("walking");
       }
     } else {
       if (this.parent.stat.holding) {
@@ -8904,10 +9139,9 @@ var Player = class extends Character {
     super({
       position,
       rotation,
-      size: v3(6, 3, 6),
-      anchorPoint: v3(3, 0, 3)
+      size: v3(4, 17, 3),
+      anchorPoint: v3(2, 0, 1.5)
     });
-    this.addControllers([]);
   }
   build() {
     super.build();
@@ -8920,14 +9154,19 @@ var Player = class extends Character {
       }),
       new PlayerController(this),
       // new ISOCamera(this),
-      new NormalCamera(this)
+      this.cameraController = new NormalCamera(this)
     ]);
     GlElement.registerControllers(this);
     this.skeleton = new PlayerSkel();
     this.addChild(this.skeleton);
+    this.setDriving(false);
   }
-  tick(obj) {
-    super.tick(obj);
+  setDriving(v) {
+    this.stat.driving = v;
+    this.visible = !v;
+    this.active = !v;
+    this.cameraController.active = !v;
+    this.controllers[0].active = !v;
   }
 };
 
@@ -9410,85 +9649,277 @@ var FBXScene = class _FBXScene extends GLGroup {
   }
 };
 
-// ts/modes/top/player/forklift.ts
+// ts/modes/top/forklift/forkliftCamera.ts
+var ForkliftCamera = class extends GlController {
+  constructor(target) {
+    super({ autoReady: false });
+    this.target = target;
+    this.type = "controller";
+    this.order = "after";
+    this.lagList = [];
+    this.lagCount = 8;
+  }
+  get active() {
+    return super.active;
+  }
+  set active(value) {
+    super.active = value;
+    if (value) {
+      this.camera.offset = v3(0, 0, 20);
+      this.camera.rotation = v3(0.5, 0, 0);
+      this.camera.fov = 80;
+      const z = Util.clamp(this.camera.fov + this.button("zoom") * 0.05, 30, 120);
+      this.camera.fov = z;
+      const r = this.axis("camera").scale(5e-3).scale(1);
+      this.camera.rotation = v3(
+        Util.clamp(this.camera.rotation.x + r.y, -1, Math.PI / 2),
+        this.camera.rotation.y + r.x,
+        this.camera.rotation.z
+      );
+      const p = this.level.player;
+      this.camera.target = p.position.add(v3(p.anchorPoint.x, 10, p.anchorPoint.z), v3(0, 10, 0));
+    }
+  }
+  build() {
+    super.build();
+    this.active = true;
+  }
+  tick(o) {
+    super.tick(o);
+    if (glob.device.locked) {
+      const z = Util.clamp(this.camera.offset.z + this.button("zoom") * 0.05, 10, 120);
+      this.camera.offset.z = z;
+      const r = this.axis("camera").scale(5e-3).scale(1);
+      this.camera.rotation = v3(
+        Util.clamp(this.camera.rotation.x + r.y, -1, Math.PI / 2),
+        this.camera.rotation.y + r.x,
+        this.camera.rotation.z
+      );
+    }
+    const p = this.level.forklift;
+    this.camera.target = p.position.add(v3(p.anchorPoint.x, 10, p.anchorPoint.z), v3(0, 10, 0));
+  }
+};
+
+// ts/modes/top/forklift/driver_skeleton.ts
+var DriverSkel = class extends BlobSkeleton {
+  constructor() {
+    super();
+  }
+  build() {
+    super.build();
+    this.rotation.y = -Math.PI / 2;
+    this.position.x = 13.5;
+    this.position.z = 3;
+    this.animator.add("driving", 1e3, {
+      torso: [[0, [0.2, 0, 0]]],
+      head: [[0, [-0.2, 0, 0]]],
+      lEye: [],
+      rEye: [],
+      lArm: [[0, [0.8, 0, 0, 0, -0.5, 0.2]]],
+      rArm: [[0, [0.8, 0, 0, 0, -0.5, 0.2]]],
+      lForearm: [[0, [0.3, 0, -0.3]]],
+      rForearm: [[0, [0.3, 0, 0.3]]],
+      lHand: [[0, [0, 0.3, 0]]],
+      rHand: [[0, [0, -0.3, 0]]],
+      lFingers: [[0, [0.6, 0, 0]]],
+      rFingers: [[0, [0.6, 0, 0]]],
+      lLeg: [[0, [1.4, -0.1, 0.1, 0, 0, 1]]],
+      rLeg: [[0, [1.4, 0.1, -0.1, 0, 0, 1]]],
+      lForeleg: [[0, [-0.8, 0, 0]]],
+      rForeleg: [[0, [-0.8, 0, 0]]],
+      lFoot: [],
+      rFoot: []
+    }, { loop: true, dynamic: true, ease: "easeInOutSine" });
+    this.animator.play("driving");
+  }
+  tick(obj) {
+    super.tick(obj);
+  }
+};
+
+// ts/modes/top/forklift/forklift_controller.ts
+var ForkliftController = class extends GlController {
+  constructor() {
+    super(...arguments);
+    this.intr = {
+      turn: 0,
+      angle: 0,
+      lift: 0,
+      speed: 0
+    };
+    this.cnst = {
+      maxTurn: 0.5,
+      maxAngle: 0.28,
+      maxLift: 15,
+      maxSpeed: 0.01,
+      liftSpeed: 6e-4,
+      turnSpeed: 0.01,
+      angleSpeed: 2e-3,
+      runTime: 2500,
+      runSlowDownFactor: 0.6,
+      runSpeed: 0.15
+    };
+    this.stat = { driving: false };
+    this.velocity = Vector3.f(0);
+  }
+  build() {
+    super.build();
+  }
+  setter(key, cond, interval) {
+    this.intr[key] = Util.clamp((this.intr[key] || 0) + (cond ? interval : -(interval * this.cnst.runSlowDownFactor)), 0, this.cnst.runTime);
+  }
+  setMovementVelocity(interval) {
+    const input = this.axis("movement");
+    this.turn(input.x);
+    this.setter("up", input.y === 1, interval);
+    this.setter("down", input.y === -1, interval);
+    this.intr.speed = Util.clamp((this.intr.up - this.intr.down) / this.cnst.runTime, -1, 1);
+    this.velocity = v3(
+      -this.intr.speed * this.cnst.runSpeed,
+      0,
+      0
+    ).rotateXY(-this.parent.rotation.y);
+  }
+  setVelocity(obj) {
+    this.setMovementVelocity(obj.intervalS10);
+    this.parent.rotation.y = this.parent.rotation.y + this.intr.speed * this.intr.turn * 4e-3 * (obj.intervalS10 / 6);
+    const sc = this.velocity.scale(obj.intervalS10 / 6);
+    this.newPosition = this.parent.position.add(sc.xz.magnitude() > 0 ? sc : v3(0, 0, 0));
+  }
+  collide(obj) {
+    var _a;
+    const collisions = (_a = this.parent.zones[0]) == null ? void 0 : _a.calculateCollision();
+    collisions.forEach((v) => {
+      this.velocity.subtract(v);
+      this.parent.position = this.newPosition.clone();
+      this.newPosition = this.newPosition.add(v);
+    });
+  }
+  angle(v) {
+    if (v !== 0) {
+      this.setAngle(this.intr.angle + v * this.cnst.angleSpeed);
+    }
+  }
+  setAngle(v) {
+    this.intr.angle = Util.clamp(v, 0, 1);
+    this.parent.pillar.rotation = v3(0, 0, this.intr.angle * this.cnst.maxAngle);
+  }
+  lift(v) {
+    if (v !== 0) {
+      this.setLift(this.intr.lift + v * this.cnst.liftSpeed);
+    }
+  }
+  setLift(v) {
+    this.intr.lift = Util.clamp(v, 0, 1);
+    this.parent.fork.position.y = Util.clamp(this.intr.lift * 2, 0, 1) * this.cnst.maxLift;
+    this.parent.pillar2.position.y = Util.clamp(this.intr.lift * 2 - 1, 0, 1) * this.cnst.maxLift;
+  }
+  turn(v) {
+    this.setTurn(v === 0 ? this.intr.turn * 0.99 : this.intr.turn + v * this.cnst.turnSpeed);
+  }
+  setTurn(v) {
+    this.intr.turn = Util.clamp(v, -1, 1);
+    this.parent.rearrightwheel.rotation.y = this.intr.turn * -this.cnst.maxTurn;
+    this.parent.rearleftwheel.rotation.y = this.intr.turn * -this.cnst.maxTurn;
+  }
+  tick(obj) {
+    super.tick(obj);
+    this.setVelocity(obj);
+    this.collide(obj);
+    this.parent.position = this.newPosition.clone();
+    this.parent.frontwheels.rotation.z = this.parent.frontwheels.rotation.z - this.intr.speed * this.cnst.maxSpeed;
+    this.parent.rearrightwheel.rotation.z = this.parent.rearrightwheel.rotation.z - this.intr.speed * this.cnst.maxSpeed * 1.33;
+    this.parent.rearleftwheel.rotation.z = this.parent.rearleftwheel.rotation.z - this.intr.speed * this.cnst.maxSpeed * 1.33;
+    this.lift(this.button("lift"));
+    this.angle(this.button("liftAngle"));
+  }
+};
+
+// ts/modes/top/forklift/forklift_actor.ts
 var Forklift = class extends Character {
   constructor({
     position = Vector3.f(0)
   } = {}) {
     super({
       position,
-      size: v3(20, 19, 11)
+      size: v3(20, 19, 11),
+      anchorPoint: v3(5, 0, 5.5)
     });
-    this.intr = {
-      turn: 0,
-      angle: 0,
-      lift: 0,
-      speed: 1
-    };
-    this.cnst = {
-      maxTurn: 0.5,
-      maxAngle: 0.25,
-      maxLift: 14,
-      maxSpeed: 0.01,
-      liftSpeed: 0.1,
-      turnSpeed: 0.1,
-      angleSpeed: 0.1
-    };
-  }
-  build() {
-    super.build();
+    this.stat = { driving: false };
     this.addControllers([
       new Collider({
         size: this.size,
         position: v3(0, 0, 0),
         fixed: false
-      })
+      }),
+      new ForkliftController(this),
+      this.cameraController = new ForkliftCamera(this)
     ]);
     GlElement.registerControllers(this);
-    const x = -0.906661 * 10, y = -0.526077 * 10, z = 0.258706 * 10;
-    this.body = new FBXScene({ url: "/warehouse/Forklift.fbx", size: v3(1), position: v3(8, 0, 4.5) });
+    this.cuboid = new GLCuboid({
+      size: this.size,
+      position: v3(0, 0, 0)
+    });
+    this.addChild(this.cuboid);
+    this.driver = new DriverSkel();
+    this.addChild(this.driver);
+    this.setDriving(false);
+  }
+  build() {
+    super.build();
+    this.body = new FBXScene({ url: "/warehouse/forklift/Forklift.fbx", position: v3(8, 0, 4.5) });
     this.addChild(this.body);
-    this.pillar = new FBXScene({ url: "/warehouse/lift.fbx", size: v3(1), anchorPoint: v3(-0.558895 * 10, 0.745322 * 10, 0.052947 * 10), position: v3(0, 0, 0) });
+    this.pillar = new FBXScene({ url: "/warehouse/forklift/lift1.fbx", anchorPoint: v3(-0.558895 * 10, 0.745322 * 10, 0.052947 * 10), position: v3(0, 0, 0) });
     this.body.addChild(this.pillar);
-    this.fork = new FBXScene({ url: "/warehouse/fork.001.fbx", size: v3(1), position: v3(0, 0, 0) });
-    this.pillar.addChild(this.fork);
-    this.frontwheels = new FBXScene({ url: "/warehouse/frontWheels.fbx", size: v3(1), anchorPoint: v3(-0.357886 * 10, 0.334791 * 10, -0.050639 * 10), position: v3(0, 0, 0) });
+    this.pillar2 = new FBXScene({ url: "/warehouse/forklift/lift2.fbx", anchorPoint: v3(-0.558895 * 10, 0.745322 * 10, 0.052947 * 10), position: v3(0, 0, 0) });
+    this.pillar.addChild(this.pillar2);
+    this.fork = new FBXScene({ url: "/warehouse/forklift/fork.fbx", position: v3(0, 0, 0) });
+    this.pillar2.addChild(this.fork);
+    this.frontwheels = new FBXScene({ url: "/warehouse/forklift/frontWheels.fbx", anchorPoint: v3(-0.357886 * 10, 0.334791 * 10, -0.050639 * 10), position: v3(0, 0, 0) });
     this.body.addChild(this.frontwheels);
-    this.rearrightwheel = new FBXScene({ url: "/warehouse/rearRightWheel.fbx", size: v3(1), anchorPoint: v3(0.906661 * 10, 0.258706 * 10, 0.526077 * 10) });
+    this.rearrightwheel = new FBXScene({ url: "/warehouse/forklift/rearRightWheel.fbx", anchorPoint: v3(0.906661 * 10, 0.258706 * 10, 0.526077 * 10) });
     this.body.addChild(this.rearrightwheel);
-    this.rearleftwheel = new FBXScene({ url: "/warehouse/rearLeftWheel.fbx", size: v3(1), anchorPoint: v3(0.906661 * 10, 0.258706 * 10, -0.41921 * 10) });
+    this.rearleftwheel = new FBXScene({ url: "/warehouse/forklift/rearLeftWheel.fbx", anchorPoint: v3(0.906661 * 10, 0.258706 * 10, -0.41921 * 10) });
     this.body.addChild(this.rearleftwheel);
-    this.setAngle(0);
-    this.setLift(0);
-    this.setTurn(0);
   }
-  angle(v) {
-    this.setAngle(this.intr.angle + v * this.cnst.angleSpeed);
+  setDriving(v) {
+    this.stat.driving = v;
+    this.driver.visible = v;
+    this.cameraController.active = v;
   }
-  setAngle(v) {
-    this.intr.angle = Util.clamp(v, 0, 1);
-    this.pillar.rotation = v3(0, 0, this.intr.angle * this.cnst.maxAngle);
-  }
-  lift(v) {
-    this.setLift(this.intr.lift + v * this.cnst.liftSpeed);
-  }
-  setLift(v) {
-    this.intr.lift = Util.clamp(v, 0, 1);
-    this.fork.position.y = this.intr.lift * 14;
-  }
-  turn(v) {
-    this.setTurn(this.intr.turn + v * this.cnst.turnSpeed);
-  }
-  setTurn(v) {
-    this.intr.turn = Util.clamp(v, -1, 1);
-    this.rearrightwheel.rotation.y = v * -0.5;
-    this.rearleftwheel.rotation.y = v * -0.5;
-  }
-  tick(obj) {
-    super.tick(obj);
-    this.frontwheels.rotation.z = this.frontwheels.rotation.z - this.intr.speed * this.cnst.maxSpeed;
-    this.rearrightwheel.rotation.z = this.rearrightwheel.rotation.z - this.intr.speed * this.cnst.maxSpeed;
-    this.rearleftwheel.rotation.z = this.rearleftwheel.rotation.z - this.intr.speed * this.cnst.maxSpeed;
+};
+
+// ts/modes/top/garage.ts
+var Garage = class _Garage extends GLGroup {
+  constructor(attr) {
+    super({
+      position: attr.position,
+      controllers: [
+        new Collider({
+          size: v3(32, 28, 1),
+          position: v3(0, 0, 0),
+          fixed: true
+        }),
+        new Collider({
+          size: v3(5, 28, 143),
+          position: v3(-2, 0, 2),
+          fixed: true
+        }),
+        new Collider({
+          size: v3(5, 28, 143),
+          position: v3(32, 0, 2),
+          fixed: true
+        }),
+        new Collider({
+          size: v3(39, 28, 5),
+          position: v3(-2, 0, 143),
+          fixed: true
+        })
+      ]
+    });
+    _Garage.registerControllers(this);
+    this.controllers[0].position = v3(0, (attr.open || 0) * 24 + 1, 0);
   }
 };
 
@@ -9498,19 +9929,70 @@ var TopLevel = class extends Level {
     super();
     this.start = Vector2.zero;
     this.background = [0.16, 0.16, 0.16, 1];
-    this.playArea = v2(100, 100);
+    this.playArea = v2(371, 200);
     this.inputMap = new InputMap(
       {
         "camera": [new MouseMoveReader(), new TouchAxisReader(this.interface, "bottomRight", v2(60, 60), 40, v2(4))],
         "movement": [new KeyboardJoyStickReader(["a", "d", "s", "w"]), new TouchLiniarAxisReader(this.interface, "bottomLeft", v2(60, 60), 40, v2(1, -1))]
       },
       {
-        // 'jump': [new KeyboardReader(' '),],
         "interact": [new KeyboardReader("e")],
-        "zoom": [new MouseScrollReader(), new TouchVerticalReader(this.interface, "topRight", v2(60, 60), 30, 1)]
+        "zoom": [new MouseScrollReader(), new TouchVerticalReader(this.interface, "topRight", v2(60, 60), 30, 1)],
+        "lift": [new KeyboardAxisReader(["f", "r"])],
+        "liftAngle": [new KeyboardAxisReader(["g", "t"])]
       }
     );
     const thickness = 10;
+    this.addZone(new Collider({
+      position: v3(-215, -10, -160),
+      size: v3(371, 40, 2),
+      fixed: true
+    }));
+    this.addZone(new Collider({
+      position: v3(-215, -10, 43),
+      size: v3(41, 40, 6),
+      fixed: true
+    }));
+    this.addZone(new Collider({
+      position: v3(-158, -10, 43),
+      size: v3(99, 40, 6),
+      fixed: true
+    }));
+    this.addZone(new Collider({
+      position: v3(-28, -10, 43),
+      size: v3(18, 40, 6),
+      fixed: true
+    }));
+    this.addZone(new Collider({
+      position: v3(22, -10, 43),
+      size: v3(18, 40, 6),
+      fixed: true
+    }));
+    this.addZone(new Collider({
+      position: v3(72, -10, 43),
+      size: v3(18, 40, 6),
+      fixed: true
+    }));
+    this.addZone(new Collider({
+      position: v3(122, -10, 43),
+      size: v3(34, 40, 6),
+      fixed: true
+    }));
+    this.addZone(new Collider({
+      position: v3(-215, -10, 145),
+      size: v3(103, 40, 2),
+      fixed: true
+    }));
+    this.addZone(new Collider({
+      position: v3(-215, -10, -168),
+      size: v3(2, 40, 312),
+      fixed: true
+    }));
+    this.addZone(new Collider({
+      position: v3(156, -10, -168),
+      size: v3(2, 40, 215),
+      fixed: true
+    }));
   }
   build() {
     super.build();
@@ -9519,6 +10001,24 @@ var TopLevel = class extends Level {
       rotation: v3(0, 0, 0)
     });
     this.addChild(this.player);
+    this.garage1 = new Garage({
+      position: v3(-61, 0, 42),
+      open: 1
+    });
+    this.addChild(this.garage1);
+    this.garage2 = new Garage({
+      position: v3(-61 + 50, 0, 42),
+      open: 1
+    });
+    this.addChild(this.garage2);
+    this.garage3 = new Garage({
+      position: v3(-61 + 50 * 2, 0, 42)
+    });
+    this.addChild(this.garage3);
+    this.garage4 = new Garage({
+      position: v3(-61 + 50 * 3, 0, 42)
+    });
+    this.addChild(this.garage4);
     Level.registerControllers(this);
     this.addLight(new AmbientLight({
       color: [1, 1, 1]
@@ -9538,6 +10038,9 @@ var TopLevel = class extends Level {
       position: v3(0, 0, 20)
     });
     this.addChild(this.forklift);
+    this.addChild(new FBXScene({ url: "/warehouse/warehouse_static.fbx", size: v3(1), anchorPoint: v3(0, 0, 0), position: v3(0, 0, 0) }));
+    this.forklift.setDriving(true);
+    this.player.setDriving(true);
   }
 };
 
@@ -9554,6 +10057,7 @@ var TopMode = class extends Mode {
 var glob = new class {
   constructor() {
     this.device = new InputDevices();
+    this.frame = 0;
   }
   get renderer() {
     return this.game.renderer;

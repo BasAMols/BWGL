@@ -8,13 +8,24 @@ export class KeyboardReader extends InputReader<number> {
         super();
         glob.device.keyboard.register(
             key,
-            () => { this._state = true; },
-            () => { this._state = false; }
+            (frame) => {
+                if (!this._state) {
+                    this._frameFired = frame;
+                }
+                this._state = true;
+            },
+            () => {
+                this._state = false;
+            }
         );
     }
     private _state: boolean = false;
+    private _frameFired: number = 0;
     get value(): number {
         return Number(this._state);
+    }
+    get first(): boolean {
+        return this._frameFired === glob.frame;
     }
 }
 
@@ -24,8 +35,18 @@ export class KeyboardJoyStickReader extends InputReader<Vector2> {
         keys.forEach((k, i) => {
             glob.device.keyboard.register(
                 k,
-                () => { this._state[Math.floor(i / 2)][i % 2] = true; this.setVector(); },
-                () => { this._state[Math.floor(i / 2)][i % 2] = false; this.setVector(); }
+                () => { 
+                    if (!this._state[Math.floor(i / 2)][i % 2]) {
+                        this._frameFired[i] = glob.frame;
+                    }
+                    this._state[Math.floor(i / 2)][i % 2] = true; 
+                    this.setVector(); 
+                },
+                () => { 
+                    this._state[Math.floor(i / 2)][i % 2] = false; 
+                    this._frameFired[i] = undefined;
+                    this.setVector(); 
+                }
             );
         });
     }
@@ -41,5 +62,46 @@ export class KeyboardJoyStickReader extends InputReader<Vector2> {
     private _vector: Vector2 = v2(0);
     get value(): Vector2 {
         return this._vector;
+    }
+    private _frameFired: [number, number] = [0, 0];
+    get first(): boolean {
+        return this._frameFired[0] === glob.frame || this._frameFired[1] === glob.frame;
+    }
+}
+
+export class KeyboardAxisReader extends InputReader<number> {
+    constructor(keys: [string, string]) {
+        super();
+        keys.forEach((k, i) => {
+            glob.device.keyboard.register(
+                k,
+                (frame) => { 
+                    if (!this._state[i]) {
+                        this._frameFired[i] = frame;
+                    }
+                    this._state[i] = true; 
+                    this.setValue(); 
+                },
+                () => { 
+                    this._state[i] = false; 
+                    this._frameFired[i] = undefined;
+                    this.setValue(); 
+                }
+            );
+        });
+    }
+
+    private setValue() {
+        this._value = -this._state[0] + +this._state[1];
+    }
+
+    private _state: [boolean, boolean] = [false, false];
+    private _value: number = 0;
+    get value(): number {
+        return this._value;
+    }
+    private _frameFired: [number, number] = [0, 0];
+    get first(): boolean {
+        return this._frameFired[0] === glob.frame || this._frameFired[1] === glob.frame;
     }
 }
