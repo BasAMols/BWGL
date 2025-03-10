@@ -52,7 +52,6 @@ export class TopLevel extends Level {
         super();
 
         const thickness = 10;
-
      
         this.addZone(new Collider({
             position: v3(-215, -10, -160),
