@@ -6,7 +6,6 @@ export abstract class InputReader<T extends number | Vector2> {
         //void
     }
     abstract get value(): T;
-    abstract get first(): boolean;
 }
 
 // export class TouchReader<T extends number|Vector2> extends InputReader<T>{
