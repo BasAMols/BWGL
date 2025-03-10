@@ -62,6 +62,7 @@ export class NormalCamera extends GlController {
                 this.camera.rotation.z
             );
 
+
             const p = (this.level as TopLevel).player
             this.camera.target = p.position.add(v3(p.anchorPoint.x, 10, p.anchorPoint.z), v3(0, 10, 0));
 

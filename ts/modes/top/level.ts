@@ -116,24 +116,24 @@ export class TopLevel extends Level {
         });
         this.addChild(this.player);
 
-        this.garage1 = new Garage({
-            position: v3(-61, 0, 42),
-            open: 1,
-        });
-        this.addChild(this.garage1);
-        this.garage2 = new Garage({
-            position: v3(-61+50, 0, 42),
-            open: 1,
-        });
-        this.addChild(this.garage2);
-        this.garage3 = new Garage({
-            position: v3(-61+50*2, 0, 42),
-        });
-        this.addChild(this.garage3);
-        this.garage4= new Garage({
-            position: v3(-61+50*3, 0, 42),
-        });
-        this.addChild(this.garage4);
+        // this.garage1 = new Garage({
+        //     position: v3(-61, 0, 42),
+        //     open: 1,
+        // });
+        // this.addChild(this.garage1);
+        // this.garage2 = new Garage({
+        //     position: v3(-61+50, 0, 42),
+        //     open: 1,
+        // });
+        // this.addChild(this.garage2);
+        // this.garage3 = new Garage({
+        //     position: v3(-61+50*2, 0, 42),
+        // });
+        // this.addChild(this.garage3);
+        // this.garage4= new Garage({
+        //     position: v3(-61+50*3, 0, 42),
+        // });
+        // this.addChild(this.garage4);
 
         Level.registerControllers(this);
 
@@ -162,7 +162,7 @@ export class TopLevel extends Level {
 
         this.addChild(new FBXScene({ url: '/warehouse/warehouse/warehouse.fbx' }));
 
-        this.forklift.setDriving(true);
-        this.player.setDriving(true);
+        this.forklift.setDriving(false);
+        this.player.setDriving(false);
     }
 }

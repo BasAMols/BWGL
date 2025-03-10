@@ -65,5 +65,6 @@ export class Forklift extends Character {
         this.stat.driving = v;
         this.driver.visible = v;
         this.cameraController.active = v;
+        this.controllers[1].active = v;
     }
 }
