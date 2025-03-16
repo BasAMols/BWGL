@@ -79,6 +79,7 @@ export class FBXScene extends GLGroup {
         reader.readAsArrayBuffer(await response.blob());
         reader.addEventListener('load', () => {
             let fbx = new FBXParser.FBXReader(FBXParser.parseBinary(new Uint8Array(reader.result as ArrayBuffer)));
+            
             this.parsePBX(fbx);
             this.ready();
         });
@@ -104,7 +105,6 @@ export class FBXScene extends GLGroup {
             if (a && b) {
                 const aNode = FBXScene.byProp(objs, a);
                 const bNode = FBXScene.byProp(objs, b);
-
                 if (bNode.name === 'Model') {
                     let obj = linked[bNode.props[0] as number];
                     if (!obj) {
@@ -121,10 +121,13 @@ export class FBXScene extends GLGroup {
                     }
                     if (aNode.name === 'Geometry') obj.geometry = aNode;
                     if (aNode.name === 'Material') {
+                        
                         obj.material = aNode;
                         obj.texture = FBXScene.byProp(objs, FBXScene.byProp(FBXScene.byName(reader.fbxNode, "Connections"), a, 2)?.props[1] || 0);
                     }
-                    if (aNode.name === 'Texture') obj.texture = aNode;
+                    if (aNode.name === 'Texture') {
+                        obj.texture = aNode;
+                    }
                 }
             }
         });

@@ -14,9 +14,9 @@ import { SpotLight } from '../../classes/lights/spot';
 import { Box } from './box';
 import { MouseMoveReader, MouseScrollReader } from '../../classes/input/mouseReader';
 import { Forklift } from './forklift/forklift_actor';
-import { FBXScene } from '../../classes/objects/fbxScene';
 import { Collider } from '../../classes/collider';
 import { Garage } from './garage';
+import { FBXScene } from '../../classes/objects/fbxScene';
 
 export class TopLevel extends Level {
     public start = Vector2.zero;

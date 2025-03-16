@@ -80,7 +80,9 @@ export class FBXObject extends GLRendable {
             d: ['1.000000'],
             illum: ['2'],
         };
+
         if (texture) {
+            
             out.map_kd = FBXObject.byName(texture, 'RelativeFilename').props as [string];
         }
 
@@ -129,6 +131,8 @@ export class FBXObject extends GLRendable {
             ...GLTexture.textureOffset(matIndex, Object.keys(this.matsData).length)
         );
 
+        
+
         this.verticesCount = this.indexIndeces.length;
 
         this.ready();
@@ -154,7 +158,6 @@ export class FBXObject extends GLRendable {
 
             const matArray = Object.values(this.matsData);
             const matImage = matArray.find((m) => m.map_kd);
-
             if (matImage) {
                 this.texture = new GLTexture(this.game, {
                     url: `obj${this.path}${matImage.map_kd.join(' ').trim()}`,

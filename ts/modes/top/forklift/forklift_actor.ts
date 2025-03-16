@@ -11,8 +11,8 @@ import { ForkliftController } from './forklift_controller';
 export class Forklift extends Character {
     public mesh: GLCuboid;
     public body: FBXScene;
-    public pillar: FBXScene;
-    public pillar2: FBXScene;
+    public pillarOut: FBXScene;
+    public pillarMid: FBXScene;
     public fork: FBXScene;
     public frontwheels: FBXScene;
     public rearrightwheel: FBXScene;
@@ -21,6 +21,9 @@ export class Forklift extends Character {
     public stat: Record<string, boolean> = { driving: false };
     public driver: DriverSkel;
     public cameraController: ForkliftCamera;
+    pillarIn: FBXScene;
+    pillarCylinder: FBXScene;
+    pillarCarriage: FBXScene;
 
     public constructor({
         position = Vector3.f(0),
@@ -30,8 +33,8 @@ export class Forklift extends Character {
     } = {}) {
         super({
             position: position,
-            size: v3(20, 19, 11),
-            anchorPoint: v3(5, 0, 5.5),
+            size: v3(25.5, 21, 12),
+            anchorPoint: v3(18, 0, 6),
         });
 
         this.addControllers([
@@ -52,13 +55,18 @@ export class Forklift extends Character {
     build() {
         super.build();
 
-        this.addChild((this.body = new FBXScene({ url: '/warehouse/forklift/Forklift.fbx', position: v3(8, 0, 5) })));
-        this.body.addChild((this.pillar = new FBXScene({ url: '/warehouse/forklift/lift1.fbx', anchorPoint: v3(-0.558895 * 10, 0.745322 * 10, 0.052947 * 10), position: v3(0, 0, 0) })));
-        this.pillar.addChild((this.pillar2 = new FBXScene({ url: '/warehouse/forklift/lift2.fbx', anchorPoint: v3(-0.558895 * 10, 0.745322 * 10, 0.052947 * 10), position: v3(0, 0, 0) })));
-        this.pillar2.addChild((this.fork = new FBXScene({ url: '/warehouse/forklift/fork.fbx', position: v3(0, 0, 0) })));
-        this.body.addChild((this.frontwheels = new FBXScene({ url: '/warehouse/forklift/frontWheels.fbx', anchorPoint: v3(-0.357886 * 10, 0.334791 * 10, -0.050639 * 10), position: v3(0, 0, 0) })));
-        this.body.addChild((this.rearrightwheel = new FBXScene({ url: '/warehouse/forklift/rearRightWheel.fbx', anchorPoint: v3(0.906661 * 10, 0.258706 * 10, 0.526077 * 10) })));
-        this.body.addChild((this.rearleftwheel = new FBXScene({ url: '/warehouse/forklift/rearLeftWheel.fbx', anchorPoint: v3(0.906661 * 10, 0.258706 * 10, -0.41921 * 10) })));
+        // this.addChild((new FBXScene({ url: '/warehouse/Forklift/forklift.fbx', position: v3(4.5, 0, 6) })));
+        this.addChild((this.body = new FBXScene({ url: '/warehouse/Forklift/rearBumper/rearBumper.fbx', position: v3(4.5, 0, 6) })));
+        this.body.addChild((this.pillarOut = new FBXScene({ url: '/warehouse/Forklift/PillarOut/PillarOut.fbx', anchorPoint: v3(1.72114 * 10, 0.802073 * 10, 0 * 10), position: v3(0, 0, 0) })));
+        this.pillarOut.addChild((this.pillarMid = new FBXScene({ url: '/warehouse/Forklift/PillarMid/PillarMid.fbx', position: v3(0, 0, 0) })));
+        this.pillarMid.addChild((this.pillarIn = new FBXScene({ url: '/warehouse/Forklift/PillarIn/PillarIn.fbx', position: v3(0, 0, 0) })));
+        this.pillarIn.addChild((this.pillarCylinder = new FBXScene({ url: '/warehouse/Forklift/PillarCylinder/PillarCylinder.fbx', position: v3(0, 0, 0) })));
+        this.pillarCylinder.addChild((this.pillarCarriage = new FBXScene({ url: '/warehouse/Forklift/Carriage/Carriage.fbx', position: v3(0, 0, 0) })));
+        this.pillarCarriage.addChild((this.fork = new FBXScene({ url: '/warehouse/Forklift/Fork/Fork.fbx', position: v3(0, 0, 0) })));
+
+        this.body.addChild((this.frontwheels = new FBXScene({ url: '/warehouse/Forklift/FrontWheel.001/FrontWheel.001.fbx', anchorPoint: v3(1.65142*10, 0.335522*10,0.006496*10,  ), position: v3(0, 0, 0) })));
+        this.body.addChild((this.rearrightwheel = new FBXScene({ url: '/warehouse/Forklift/RearWheel.003/RearWheel.003.fbx', anchorPoint: v3(0.007179 * 10, 0.272209* 10, -0.482427 * 10) })));
+        this.body.addChild((this.rearleftwheel = new FBXScene({ url: '/warehouse/Forklift/RearWheel.002/RearWheel.002.fbx', anchorPoint: v3(0.007179 * 10, 0.272209* 10, 0.482427 * 10) })));
     }
 
     setDriving(v: boolean) {

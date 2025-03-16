@@ -15,9 +15,9 @@ export class DriverSkel extends BlobSkeleton {
     public build(): void {
         super.build();
 
-        this.rotation.y = -Math.PI/2;
+        this.rotation.y = Math.PI/2;
         this.position.x = 13.5;
-        this.position.z = 3.5;
+        this.position.z = -3.5;
 
         this.animator.add('driving', 1000, {
             torso: [[0, [0.2, 0, 0]]],
