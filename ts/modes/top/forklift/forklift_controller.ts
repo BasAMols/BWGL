@@ -21,7 +21,6 @@ export class ForkliftController extends GlController {
         liftSpeed: 0.0006,
         turnSpeed: 0.004,
         angleSpeed: 0.002,
-
         runTime: 2500,
         runSlowDownFactor: 0.6,
         runSpeed: 0.15
@@ -60,9 +59,6 @@ export class ForkliftController extends GlController {
         this.newPosition = this.parent.position.add(sc);
     }
 
-
-
-
     public collide(obj: TickerReturnData) {
         const collisions = (this.parent.zones[0] as Collider)?.calculateCollision();
 
@@ -79,7 +75,7 @@ export class ForkliftController extends GlController {
         }
     }
     private setAngle(v: number) {
-        this.intr.angle = Util.clamp(v, 0, 1);
+        this.intr.angle = Util.clamp(v, -0.13, 1);
         this.parent.pillarOut.rotation = v3(0, 0, -this.intr.angle * this.cnst.maxAngle);
     }
     public lift(v: 1 |0| -1) {

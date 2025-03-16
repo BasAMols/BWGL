@@ -10255,7 +10255,7 @@ var ForkliftController = class extends GlController {
     }
   }
   setAngle(v) {
-    this.intr.angle = Util.clamp(v, 0, 1);
+    this.intr.angle = Util.clamp(v, -0.13, 1);
     this.parent.pillarOut.rotation = v3(0, 0, -this.intr.angle * this.cnst.maxAngle);
   }
   lift(v) {
