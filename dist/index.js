@@ -10163,8 +10163,9 @@ var DriverSkel = class extends BlobSkeleton {
   build() {
     super.build();
     this.rotation.y = Math.PI / 2;
-    this.position.x = 13.5;
-    this.position.z = -3.5;
+    this.position.x = 9.2;
+    this.position.z = 8.7;
+    this.position.y = 2;
     this.animator.add("driving", 1e3, {
       torso: [[0, [0.2, 0, 0]]],
       head: [[0, [-0.2, 0, 0]]],
@@ -10235,9 +10236,9 @@ var ForkliftController = class extends GlController {
   }
   setVelocity(obj) {
     this.setMovementVelocity(obj.intervalS10);
-    this.parent.rotation.y = this.parent.rotation.y + this.intr.speed * this.intr.turn * 0.01 * (obj.intervalS10 / 6);
+    this.parent.rotation.y = this.parent.rotation.y + this.intr.speed * this.intr.turn * 8e-3 * (obj.intervalS10 / 6);
     const sc = this.velocity.scale(obj.intervalS10 / 6);
-    this.newPosition = this.parent.position.add(sc.xz.magnitude() > 0 ? sc : v3(0, 0, 0));
+    this.newPosition = this.parent.position.add(sc);
   }
   collide(obj) {
     var _a;
@@ -10264,7 +10265,6 @@ var ForkliftController = class extends GlController {
   }
   setLift(v) {
     this.intr.lift = Util.clamp(v, 0, 1);
-    console.log(this.intr.lift * this.cnst.maxLift);
     this.parent.pillarCylinder.position.y = Util.clamp(this.intr.lift, 0, this.cnst.liftPhase) * this.cnst.maxLift;
     this.parent.pillarCarriage.position.y = Util.clamp(this.intr.lift, 0, this.cnst.liftPhase) * this.cnst.maxLift;
     this.parent.pillarMid.position.y = (Util.clamp(this.intr.lift, this.cnst.liftPhase, 1) - this.cnst.liftPhase) * this.cnst.maxLift;
@@ -10317,13 +10317,14 @@ var Forklift = class extends Character {
   }
   build() {
     super.build();
-    this.addChild(this.body = new FBXScene({ url: "/warehouse/Forklift/rearBumper/rearBumper.fbx", position: v3(4.5, 0, 6) }));
+    this.addChild(this.body = new FBXScene({ url: "/warehouse/Forklift/RearBumper/RearBumper.fbx", position: v3(4.5, 0, 6) }));
     this.body.addChild(this.pillarOut = new FBXScene({ url: "/warehouse/Forklift/PillarOut/PillarOut.fbx", anchorPoint: v3(1.72114 * 10, 0.802073 * 10, 0 * 10), position: v3(0, 0, 0) }));
     this.pillarOut.addChild(this.pillarMid = new FBXScene({ url: "/warehouse/Forklift/PillarMid/PillarMid.fbx", position: v3(0, 0, 0) }));
     this.pillarMid.addChild(this.pillarIn = new FBXScene({ url: "/warehouse/Forklift/PillarIn/PillarIn.fbx", position: v3(0, 0, 0) }));
     this.pillarIn.addChild(this.pillarCylinder = new FBXScene({ url: "/warehouse/Forklift/PillarCylinder/PillarCylinder.fbx", position: v3(0, 0, 0) }));
     this.pillarCylinder.addChild(this.pillarCarriage = new FBXScene({ url: "/warehouse/Forklift/Carriage/Carriage.fbx", position: v3(0, 0, 0) }));
     this.pillarCarriage.addChild(this.fork = new FBXScene({ url: "/warehouse/Forklift/Fork/Fork.fbx", position: v3(0, 0, 0) }));
+    this.body.addChild(this.steering = new FBXScene({ url: "/warehouse/Forklift/Steering.002/Steering.002.fbx", anchorPoint: v3(1.197459 * 10, 1.35123 * 10, 0.111042 * 10), position: v3(0, 0, 0) }));
     this.body.addChild(this.frontwheels = new FBXScene({ url: "/warehouse/Forklift/FrontWheel.001/FrontWheel.001.fbx", anchorPoint: v3(1.65142 * 10, 0.335522 * 10, 6496e-6 * 10), position: v3(0, 0, 0) }));
     this.body.addChild(this.rearrightwheel = new FBXScene({ url: "/warehouse/Forklift/RearWheel.003/RearWheel.003.fbx", anchorPoint: v3(7179e-6 * 10, 0.272209 * 10, -0.482427 * 10) }));
     this.body.addChild(this.rearleftwheel = new FBXScene({ url: "/warehouse/Forklift/RearWheel.002/RearWheel.002.fbx", anchorPoint: v3(7179e-6 * 10, 0.272209 * 10, 0.482427 * 10) }));

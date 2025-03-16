@@ -24,6 +24,7 @@ export class Forklift extends Character {
     pillarIn: FBXScene;
     pillarCylinder: FBXScene;
     pillarCarriage: FBXScene;
+    steering: FBXScene;
 
     public constructor({
         position = Vector3.f(0),
@@ -56,14 +57,14 @@ export class Forklift extends Character {
         super.build();
 
         // this.addChild((new FBXScene({ url: '/warehouse/Forklift/forklift.fbx', position: v3(4.5, 0, 6) })));
-        this.addChild((this.body = new FBXScene({ url: '/warehouse/Forklift/rearBumper/rearBumper.fbx', position: v3(4.5, 0, 6) })));
+        this.addChild((this.body = new FBXScene({ url: '/warehouse/Forklift/RearBumper/RearBumper.fbx', position: v3(4.5, 0, 6) })));
         this.body.addChild((this.pillarOut = new FBXScene({ url: '/warehouse/Forklift/PillarOut/PillarOut.fbx', anchorPoint: v3(1.72114 * 10, 0.802073 * 10, 0 * 10), position: v3(0, 0, 0) })));
         this.pillarOut.addChild((this.pillarMid = new FBXScene({ url: '/warehouse/Forklift/PillarMid/PillarMid.fbx', position: v3(0, 0, 0) })));
         this.pillarMid.addChild((this.pillarIn = new FBXScene({ url: '/warehouse/Forklift/PillarIn/PillarIn.fbx', position: v3(0, 0, 0) })));
         this.pillarIn.addChild((this.pillarCylinder = new FBXScene({ url: '/warehouse/Forklift/PillarCylinder/PillarCylinder.fbx', position: v3(0, 0, 0) })));
         this.pillarCylinder.addChild((this.pillarCarriage = new FBXScene({ url: '/warehouse/Forklift/Carriage/Carriage.fbx', position: v3(0, 0, 0) })));
         this.pillarCarriage.addChild((this.fork = new FBXScene({ url: '/warehouse/Forklift/Fork/Fork.fbx', position: v3(0, 0, 0) })));
-
+        this.body.addChild((this.steering = new FBXScene({ url: '/warehouse/Forklift/Steering.002/Steering.002.fbx', anchorPoint: v3(1.197459*10, 1.35123*10, 0.111042*10), position: v3(0, 0, 0) })));
         this.body.addChild((this.frontwheels = new FBXScene({ url: '/warehouse/Forklift/FrontWheel.001/FrontWheel.001.fbx', anchorPoint: v3(1.65142*10, 0.335522*10,0.006496*10,  ), position: v3(0, 0, 0) })));
         this.body.addChild((this.rearrightwheel = new FBXScene({ url: '/warehouse/Forklift/RearWheel.003/RearWheel.003.fbx', anchorPoint: v3(0.007179 * 10, 0.272209* 10, -0.482427 * 10) })));
         this.body.addChild((this.rearleftwheel = new FBXScene({ url: '/warehouse/Forklift/RearWheel.002/RearWheel.002.fbx', anchorPoint: v3(0.007179 * 10, 0.272209* 10, 0.482427 * 10) })));

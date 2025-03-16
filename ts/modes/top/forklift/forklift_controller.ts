@@ -55,10 +55,12 @@ export class ForkliftController extends GlController {
 
     public setVelocity(obj: TickerReturnData) {
         this.setMovementVelocity(obj.intervalS10);
-        this.parent.rotation.y = this.parent.rotation.y + (this.intr.speed) * this.intr.turn *  0.01*(obj.intervalS10 / 6);
+        this.parent.rotation.y = this.parent.rotation.y + (this.intr.speed) * this.intr.turn *  0.008*(obj.intervalS10 / 6);
         const sc = this.velocity.scale(obj.intervalS10 / 6);
-        this.newPosition = this.parent.position.add(sc.xz.magnitude() > 0 ? sc : v3(0, 0, 0));
+        this.newPosition = this.parent.position.add(sc);
     }
+
+
 
 
     public collide(obj: TickerReturnData) {
@@ -87,10 +89,6 @@ export class ForkliftController extends GlController {
     }
     private setLift(v: number) {
         this.intr.lift = Util.clamp(v, 0, 1);
-        // this.parent.fork.position.y = Util.clamp(this.intr.lift*2, 0, 1) * this.cnst.maxLift;
-        // this.parent.pillarMid.position.y =  Util.clamp(this.intr.lift*2-1, 0, 1) * this.cnst.maxLift;
-        console.log(this.intr.lift*this.cnst.maxLift);
-
         this.parent.pillarCylinder.position.y = Util.clamp(this.intr.lift, 0, this.cnst.liftPhase) * this.cnst.maxLift;
         this.parent.pillarCarriage.position.y = Util.clamp(this.intr.lift, 0, this.cnst.liftPhase) * this.cnst.maxLift;
         this.parent.pillarMid.position.y = (Util.clamp(this.intr.lift, this.cnst.liftPhase, 1) - this.cnst.liftPhase) * this.cnst.maxLift;
