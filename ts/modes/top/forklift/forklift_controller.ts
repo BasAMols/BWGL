@@ -13,14 +13,14 @@ export class ForkliftController extends GlController {
         speed: 0,
     };
     private cnst: Record<string, number> = {
-        maxTurn: 0.5,
+        maxTurn: 1.2,
         maxAngle: 0.28,
-        maxLift: 15,
+        maxLift: 25,
         maxSpeed: 0.01,
+        liftPhase: 0.25,
         liftSpeed: 0.0006,
-        turnSpeed: 0.01,
+        turnSpeed: 0.004,
         angleSpeed: 0.002,
-
         runTime: 2500,
         runSlowDownFactor: 0.6,
         runSpeed: 0.15
@@ -44,7 +44,7 @@ export class ForkliftController extends GlController {
         this.intr.speed = Util.clamp((this.intr.up - this.intr.down) / this.cnst.runTime, -1, 1);
 
         this.velocity = v3(
-            -this.intr.speed * (this.cnst.runSpeed),
+            this.intr.speed * (this.cnst.runSpeed),
             0,
             0
         ).rotateXY(-this.parent.rotation.y);
@@ -54,11 +54,10 @@ export class ForkliftController extends GlController {
 
     public setVelocity(obj: TickerReturnData) {
         this.setMovementVelocity(obj.intervalS10);
-        this.parent.rotation.y = this.parent.rotation.y + (this.intr.speed) * this.intr.turn *  0.004*(obj.intervalS10 / 6);
+        this.parent.rotation.y = this.parent.rotation.y + (this.intr.speed) * this.intr.turn *  0.008*(obj.intervalS10 / 6);
         const sc = this.velocity.scale(obj.intervalS10 / 6);
-        this.newPosition = this.parent.position.add(sc.xz.magnitude() > 0 ? sc : v3(0, 0, 0));
+        this.newPosition = this.parent.position.add(sc);
     }
-
 
     public collide(obj: TickerReturnData) {
         const collisions = (this.parent.zones[0] as Collider)?.calculateCollision();
@@ -76,8 +75,8 @@ export class ForkliftController extends GlController {
         }
     }
     private setAngle(v: number) {
-        this.intr.angle = Util.clamp(v, 0, 1);
-        this.parent.pillar.rotation = v3(0, 0, this.intr.angle * this.cnst.maxAngle);
+        this.intr.angle = Util.clamp(v, -0.13, 1);
+        this.parent.pillarOut.rotation = v3(0, 0, -this.intr.angle * this.cnst.maxAngle);
     }
     public lift(v: 1 |0| -1) {
         if (v !== 0) {
@@ -86,8 +85,12 @@ export class ForkliftController extends GlController {
     }
     private setLift(v: number) {
         this.intr.lift = Util.clamp(v, 0, 1);
-        this.parent.fork.position.y = Util.clamp(this.intr.lift*2, 0, 1) * this.cnst.maxLift;
-        this.parent.pillar2.position.y =  Util.clamp(this.intr.lift*2-1, 0, 1) * this.cnst.maxLift;
+        this.parent.pillarCylinder.position.y = Util.clamp(this.intr.lift, 0, this.cnst.liftPhase) * this.cnst.maxLift;
+        this.parent.pillarCarriage.position.y = Util.clamp(this.intr.lift, 0, this.cnst.liftPhase) * this.cnst.maxLift;
+        this.parent.pillarMid.position.y = (Util.clamp(this.intr.lift, this.cnst.liftPhase, 1) - this.cnst.liftPhase) * this.cnst.maxLift;
+        this.parent.pillarIn.position.y = (Util.clamp(this.intr.lift, this.cnst.liftPhase, 1) - this.cnst.liftPhase) * this.cnst.maxLift;
+
+
     }
     public turn(v: number) {
         this.setTurn(v===0?this.intr.turn*0.99:this.intr.turn + v * this.cnst.turnSpeed);
@@ -104,9 +107,9 @@ export class ForkliftController extends GlController {
         this.collide(obj);
         this.parent.position = this.newPosition.clone();
 
-        this.parent.frontwheels.rotation.z = (this.parent.frontwheels.rotation.z - (this.intr.speed * this.cnst.maxSpeed));
-        this.parent.rearrightwheel.rotation.z = (this.parent.rearrightwheel.rotation.z - (this.intr.speed * this.cnst.maxSpeed * 1.33)); // 1/0.75 = 1.33x faster rotation for smaller wheels
-        this.parent.rearleftwheel.rotation.z = (this.parent.rearleftwheel.rotation.z - (this.intr.speed * this.cnst.maxSpeed * 1.33)); // 1/0.75 = 1.33x faster rotation for smaller wheels
+        this.parent.frontwheels.rotation.z = (this.parent.frontwheels.rotation.z + (this.intr.speed * this.cnst.maxSpeed));
+        this.parent.rearrightwheel.rotation.z = (this.parent.rearrightwheel.rotation.z + (this.intr.speed * this.cnst.maxSpeed * 1.33)); // 1/0.75 = 1.33x faster rotation for smaller wheels
+        this.parent.rearleftwheel.rotation.z = (this.parent.rearleftwheel.rotation.z + (this.intr.speed * this.cnst.maxSpeed * 1.33)); // 1/0.75 = 1.33x faster rotation for smaller wheels
 
         this.lift(this.button('lift') as 1 | 0| -1);
         this.angle(this.button('liftAngle') as 1 | 0|  -1);
