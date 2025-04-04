@@ -7629,6 +7629,16 @@ var Vector3 = class _Vector3 {
       this.z * len2
     );
   }
+  dot(vector) {
+    return this.x * vector.x + this.y * vector.y + this.z * vector.z;
+  }
+  cross(vector) {
+    return new _Vector3(
+      this.y * vector.z - this.z * vector.y,
+      this.z * vector.x - this.x * vector.z,
+      this.x * vector.y - this.y * vector.x
+    );
+  }
 };
 
 // ts/classes/math/matrix4.ts
@@ -8411,19 +8421,162 @@ var Zone = class extends GlController {
       return false;
     if (this.fixed)
       return false;
-    if (this.globalPosition.x + this.size.x < othr.globalPosition.x)
-      return false;
-    if (this.globalPosition.x > othr.globalPosition.x + othr.size.x)
-      return false;
-    if (this.globalPosition.y + this.size.y < othr.globalPosition.y)
-      return false;
-    if (this.globalPosition.y > othr.globalPosition.y + othr.size.y)
-      return false;
-    if (this.globalPosition.z + this.size.z < othr.globalPosition.z)
-      return false;
-    if (this.globalPosition.z > othr.globalPosition.z + othr.size.z)
-      return false;
+    if (this.worldRotation.equals(v3()) && othr.worldRotation.equals(v3())) {
+      if (this.globalPosition.x + this.size.x < othr.globalPosition.x)
+        return false;
+      if (this.globalPosition.x > othr.globalPosition.x + othr.size.x)
+        return false;
+      if (this.globalPosition.y + this.size.y < othr.globalPosition.y)
+        return false;
+      if (this.globalPosition.y > othr.globalPosition.y + othr.size.y)
+        return false;
+      if (this.globalPosition.z + this.size.z < othr.globalPosition.z)
+        return false;
+      if (this.globalPosition.z > othr.globalPosition.z + othr.size.z)
+        return false;
+      return true;
+    }
+    return this.satOverlap(othr);
+  }
+  satOverlap(othr) {
+    const myVertices = this.getVertices();
+    const othrVertices = othr.getVertices();
+    const axes = this.getSatAxes(othr);
+    let minPenetration = Number.MAX_VALUE;
+    let minAxis = null;
+    for (const axis of axes) {
+      const myProjection = this.projectOntoAxis(myVertices, axis);
+      const othrProjection = this.projectOntoAxis(othrVertices, axis);
+      const penetration = Math.min(
+        myProjection.max - othrProjection.min,
+        othrProjection.max - myProjection.min
+      );
+      if (myProjection.max < othrProjection.min || othrProjection.max < myProjection.min) {
+        return false;
+      }
+      if (penetration < minPenetration) {
+        minPenetration = penetration;
+        minAxis = axis;
+      }
+    }
+    if (minPenetration > 0 && minPenetration < 1e-3) {
+      return true;
+    }
     return true;
+  }
+  /**
+   * Get vertices of the cuboid in world space, considering rotation
+   */
+  getVertices() {
+    const halfSize = this.size.scale(0.5);
+    const parentPosition = super.globalPosition;
+    const offsetPosition = parentPosition.add(this.absoluteOffset);
+    const vertices = [
+      v3(-halfSize.x, -halfSize.y, -halfSize.z),
+      v3(halfSize.x, -halfSize.y, -halfSize.z),
+      v3(halfSize.x, halfSize.y, -halfSize.z),
+      v3(-halfSize.x, halfSize.y, -halfSize.z),
+      v3(-halfSize.x, -halfSize.y, halfSize.z),
+      v3(halfSize.x, -halfSize.y, halfSize.z),
+      v3(halfSize.x, halfSize.y, halfSize.z),
+      v3(-halfSize.x, halfSize.y, halfSize.z)
+    ];
+    if (!this.worldRotation.equals(v3())) {
+      return vertices.map((vertex) => {
+        const adjustedVertex = vertex.add(this.anchorPoint.scale(-1));
+        const vertexMatrix = new Matrix4().translate(adjustedVertex);
+        const rotationMatrix = new Matrix4().rotate(this.worldRotation);
+        const rotatedVertex = rotationMatrix.multiply(vertexMatrix).position;
+        return rotatedVertex.add(offsetPosition.add(halfSize));
+      });
+    } else {
+      const position = offsetPosition;
+      return vertices.map((vertex) => vertex.add(position.add(halfSize)));
+    }
+  }
+  /**
+   * Get all axes to test for SAT
+   */
+  getSatAxes(othr) {
+    const axes = [];
+    const thisNormals = [
+      this.getRotatedAxis(v3(1, 0, 0)),
+      this.getRotatedAxis(v3(0, 1, 0)),
+      this.getRotatedAxis(v3(0, 0, 1))
+    ];
+    axes.push(...thisNormals);
+    const othrNormals = [
+      othr.getRotatedAxis(v3(1, 0, 0)),
+      othr.getRotatedAxis(v3(0, 1, 0)),
+      othr.getRotatedAxis(v3(0, 0, 1))
+    ];
+    axes.push(...othrNormals);
+    for (const a of thisNormals) {
+      for (const b of othrNormals) {
+        const cross2 = this.crossProduct(a, b);
+        if (cross2.magnitude() > 1e-4) {
+          axes.push(cross2.normalize());
+        } else {
+        }
+      }
+    }
+    return axes.map((axis) => axis.magnitude() > 0 ? axis.normalize() : axis);
+  }
+  /**
+   * Get rotated axis
+   */
+  getRotatedAxis(axis) {
+    const axisMatrix = new Matrix4().translate(axis);
+    const rotationMatrix = new Matrix4().rotate(this.worldRotation);
+    const transformedMatrix = rotationMatrix.multiply(axisMatrix);
+    return transformedMatrix.position.normalize();
+  }
+  /**
+   * Calculate cross product of two vectors
+   */
+  crossProduct(a, b) {
+    return v3(
+      a.y * b.z - a.z * b.y,
+      a.z * b.x - a.x * b.z,
+      a.x * b.y - a.y * b.x
+    );
+  }
+  /**
+   * Project vertices onto an axis and return min/max values
+   * This is critical for face-to-face collisions to work correctly
+   */
+  projectOntoAxis(vertices, axis) {
+    let min2 = Number.MAX_VALUE;
+    let max2 = -Number.MAX_VALUE;
+    const normalizedAxis = axis.magnitude() > 0 ? axis.normalize() : axis;
+    for (const vertex of vertices) {
+      const projection = this.dotProduct(vertex, normalizedAxis);
+      min2 = Math.min(min2, projection);
+      max2 = Math.max(max2, projection);
+    }
+    return { min: min2, max: max2 };
+  }
+  /**
+   * Calculate dot product of two vectors
+   */
+  dotProduct(a, b) {
+    return a.x * b.x + a.y * b.y + a.z * b.z;
+  }
+  // Public interface methods to access protected functionality
+  getCollisionVertices() {
+    return this.getVertices();
+  }
+  getCollisionAxes(othr) {
+    return this.getSatAxes(othr);
+  }
+  projectVerticesOntoAxis(vertices, axis) {
+    return this.projectOntoAxis(vertices, axis);
+  }
+  calculateDotProduct(a, b) {
+    return this.dotProduct(a, b);
+  }
+  getRotatedNormal(direction) {
+    return this.getRotatedAxis(direction);
   }
 };
 
@@ -8433,25 +8586,304 @@ var Collider = class extends Zone {
     super(...arguments);
     this.zoneType = "collider";
   }
-  calculateCollision() {
+  calculateCollision(velocity) {
     this.calculateOverlaps();
-    return this.overlaps.filter((o) => o.zoneType === "collider").map(this.calculateExitVelocity.bind(this)) || [];
+    const colliders = this.overlaps.filter((o) => o.zoneType === "collider");
+    if (colliders.length === 0) {
+      return [];
+    }
+    const exitVelocities = colliders.map((collider) => {
+      const exitV = this.calculateExitVelocity(collider, velocity);
+      if (collider.size.x <= 5 || collider.size.y <= 5 || collider.size.z <= 5) {
+        if (exitV.magnitude() < 0.01) {
+          const myCenter = this.globalPosition.add(this.size.scale(0.5));
+          const othrCenter = collider.globalPosition.add(collider.size.scale(0.5));
+          const direction = myCenter.subtract(othrCenter).normalize();
+          return direction.scale(0.05);
+        }
+      }
+      return exitV;
+    }).filter((v) => v.magnitude() > 0);
+    if (exitVelocities.length === 0) {
+      return [];
+    }
+    if (exitVelocities.length > 1) {
+      const thinWallExists = this.overlaps.some((o) => o.zoneType === "collider" && (o.size.x <= 5 || o.size.y <= 5 || o.size.z <= 5));
+      if (thinWallExists) {
+        const xExits = exitVelocities.filter((v) => Math.abs(v.x) > 0.01 && Math.abs(v.y) < 0.01 && Math.abs(v.z) < 0.01);
+        if (xExits.length > 0) {
+          return [xExits[0].scale(1.2)];
+        }
+        const zExits = exitVelocities.filter((v) => Math.abs(v.z) > 0.01 && Math.abs(v.x) < 0.01 && Math.abs(v.y) < 0.01);
+        if (zExits.length > 0) {
+          return [zExits[0].scale(1.2)];
+        }
+      }
+    }
+    exitVelocities.sort((a, b) => a.magnitude() - b.magnitude());
+    return exitVelocities;
   }
-  calculateExitVelocity(othr) {
-    return Util.closestVectorMagniture([
-      v3(-(this.globalPosition.x + this.size.x - othr.globalPosition.x), 0, 0),
-      // to the x- of other
-      v3(othr.globalPosition.x + othr.size.x - this.globalPosition.x, 0, 0),
-      // to the x+ of other
-      v3(0, -(this.globalPosition.y + this.size.y - othr.globalPosition.y), 0),
-      // to the y- of other
-      v3(0, othr.globalPosition.y + othr.size.y - this.globalPosition.y, 0),
-      // to the y+ of other
-      v3(0, 0, -(this.globalPosition.z + this.size.z - othr.globalPosition.z)),
-      // to the z- of other
-      v3(0, 0, othr.globalPosition.z + othr.size.z - this.globalPosition.z)
-      // to the z+ of other
-    ], 0);
+  calculateExitVelocity(othr, velocity) {
+    if (this.worldRotation.equals(v3()) && othr.worldRotation.equals(v3())) {
+      const myPos = super.globalPosition.add(this.absoluteOffset);
+      const othrPos = othr.globalPosition;
+      const myCenter = myPos.add(this.size.scale(0.5));
+      const othrCenter = othrPos.add(othr.size.scale(0.5));
+      const safetyMargin = 0.1;
+      const xOverlapNeg = myPos.x + this.size.x - othrPos.x + safetyMargin;
+      const xOverlapPos = othrPos.x + othr.size.x - myPos.x + safetyMargin;
+      const yOverlapNeg = myPos.y + this.size.y - othrPos.y + safetyMargin;
+      const yOverlapPos = othrPos.y + othr.size.y - myPos.y + safetyMargin;
+      const zOverlapNeg = myPos.z + this.size.z - othrPos.z + safetyMargin;
+      const zOverlapPos = othrPos.z + othr.size.z - myPos.z + safetyMargin;
+      if (othr.size.x <= 5) {
+        const onRightSide = myCenter.x > othrCenter.x;
+        const pushMultiplier = 1.5;
+        if (velocity && velocity.magnitude() > 0.01) {
+          const vNorm = velocity.clone().normalize();
+          const wallNormal = v3(1, 0, 0);
+          const dotProduct = Math.abs(vNorm.x);
+          if (dotProduct < 0.3) {
+            if (onRightSide) {
+              return v3(Math.max(xOverlapPos * 3, 0.2), 0, 0);
+            } else {
+              return v3(-Math.max(xOverlapNeg * 3, 0.2), 0, 0);
+            }
+          }
+        }
+        if (onRightSide) {
+          const exitV = v3(xOverlapPos * pushMultiplier, 0, 0);
+          if (velocity && velocity.magnitude() > 0) {
+            if (velocity.x < -0.01) {
+              return exitV.scale(2.5);
+            }
+          }
+          return exitV;
+        } else {
+          const exitV = v3(-xOverlapNeg * pushMultiplier, 0, 0);
+          if (velocity && velocity.magnitude() > 0) {
+            if (velocity.x > 0.01) {
+              return exitV.scale(2.5);
+            }
+          }
+          return exitV;
+        }
+      }
+      if (othr.size.y <= 5) {
+        const onTopSide = myCenter.y > othrCenter.y;
+        const pushMultiplier = 1.5;
+        if (velocity && velocity.magnitude() > 0.01) {
+          const vNorm = velocity.clone().normalize();
+          const dotProduct = Math.abs(vNorm.y);
+          if (dotProduct < 0.3) {
+            if (onTopSide) {
+              return v3(0, Math.max(yOverlapPos * 3, 0.2), 0);
+            } else {
+              return v3(0, -Math.max(yOverlapNeg * 3, 0.2), 0);
+            }
+          }
+        }
+        if (onTopSide) {
+          const exitV = v3(0, yOverlapPos * pushMultiplier, 0);
+          if (velocity && velocity.magnitude() > 0 && velocity.y < -0.01) {
+            return exitV.scale(2.5);
+          }
+          return exitV;
+        } else {
+          const exitV = v3(0, -yOverlapNeg * pushMultiplier, 0);
+          if (velocity && velocity.magnitude() > 0 && velocity.y > 0.01) {
+            return exitV.scale(2.5);
+          }
+          return exitV;
+        }
+      }
+      if (othr.size.z <= 5) {
+        const onFrontSide = myCenter.z > othrCenter.z;
+        const pushMultiplier = 1.5;
+        if (velocity && velocity.magnitude() > 0.01) {
+          const vNorm = velocity.clone().normalize();
+          const dotProduct = Math.abs(vNorm.z);
+          if (dotProduct < 0.3) {
+            if (onFrontSide) {
+              return v3(0, 0, Math.max(zOverlapPos * 3, 0.2));
+            } else {
+              return v3(0, 0, -Math.max(zOverlapNeg * 3, 0.2));
+            }
+          }
+        }
+        if (onFrontSide) {
+          const exitV = v3(0, 0, zOverlapPos * pushMultiplier);
+          if (velocity && velocity.magnitude() > 0 && velocity.z < -0.01) {
+            return exitV.scale(2.5);
+          }
+          return exitV;
+        } else {
+          const exitV = v3(0, 0, -zOverlapNeg * pushMultiplier);
+          if (velocity && velocity.magnitude() > 0 && velocity.z > 0.01) {
+            return exitV.scale(2.5);
+          }
+          return exitV;
+        }
+      }
+      const exitVectors = [
+        v3(-xOverlapNeg, 0, 0),
+        // move left
+        v3(xOverlapPos, 0, 0),
+        // move right
+        v3(0, -yOverlapNeg, 0),
+        // move down
+        v3(0, yOverlapPos, 0),
+        // move up
+        v3(0, 0, -zOverlapNeg),
+        // move back
+        v3(0, 0, zOverlapPos)
+        // move forward
+      ];
+      let minVector = Util.closestVectorMagniture(exitVectors, 0);
+      if (velocity && velocity.magnitude() > 0) {
+        if (minVector.x < 0 && velocity.x < 0 || minVector.x > 0 && velocity.x > 0) {
+          const nonXVectors = exitVectors.filter((v) => Math.abs(v.x) < 1e-3);
+          if (nonXVectors.length > 0) {
+            minVector = Util.closestVectorMagniture(nonXVectors, 0);
+          }
+        }
+        if (minVector.z < 0 && velocity.z < 0 || minVector.z > 0 && velocity.z > 0) {
+          const nonZVectors = exitVectors.filter((v) => Math.abs(v.z) < 1e-3);
+          if (nonZVectors.length > 0) {
+            minVector = Util.closestVectorMagniture(nonZVectors, 0);
+          }
+        }
+      }
+      return minVector;
+    }
+    return this.calculateMTV(othr, velocity);
+  }
+  /**
+   * Check if an object has potentially passed through a thin wall
+   */
+  isPossiblePassThrough(myPos, myCenter, othrPos, othrCenter, othrSize, velocity) {
+    const isThinX = othrSize.x < 5;
+    const isThinY = othrSize.y < 5;
+    const isThinZ = othrSize.z < 5;
+    if (isThinX && Math.abs(velocity.x) > 0.2) {
+      const expectedSide = velocity.x > 0 ? myCenter.x <= othrCenter.x : (
+        // Moving right, should be on left
+        myCenter.x >= othrCenter.x
+      );
+      const actualSide = myCenter.x < othrCenter.x;
+      if (expectedSide !== actualSide) {
+        return true;
+      }
+    }
+    if (isThinY && Math.abs(velocity.y) > 0.2) {
+      const expectedSide = velocity.y > 0 ? myCenter.y <= othrCenter.y : myCenter.y >= othrCenter.y;
+      const actualSide = myCenter.y < othrCenter.y;
+      if (expectedSide !== actualSide) {
+        return true;
+      }
+    }
+    if (isThinZ && Math.abs(velocity.z) > 0.2) {
+      const expectedSide = velocity.z > 0 ? myCenter.z <= othrCenter.z : myCenter.z >= othrCenter.z;
+      const actualSide = myCenter.z < othrCenter.z;
+      if (expectedSide !== actualSide) {
+        return true;
+      }
+    }
+    return false;
+  }
+  /**
+   * Calculate the Minimum Translation Vector (MTV) for rotated colliders
+   * This is the shortest distance to move to resolve the collision
+   */
+  calculateMTV(othr, velocity) {
+    const myVertices = this.getCollisionVertices();
+    const othrVertices = othr.getCollisionVertices();
+    const axes = this.getCollisionAxes(othr);
+    let minPenetration = Number.MAX_VALUE;
+    let minAxis = v3(0);
+    for (const axis of axes) {
+      const normalizedAxis = axis.magnitude() > 0 ? axis.normalize() : axis;
+      const myProjection = this.projectVerticesOntoAxis(myVertices, normalizedAxis);
+      const othrProjection = othr.projectVerticesOntoAxis(othrVertices, normalizedAxis);
+      const overlap = Math.min(
+        myProjection.max - othrProjection.min,
+        othrProjection.max - myProjection.min
+      );
+      if (myProjection.max < othrProjection.min || othrProjection.max < myProjection.min) {
+        return v3(0);
+      }
+      if (overlap < minPenetration) {
+        minPenetration = overlap;
+        minAxis = normalizedAxis;
+      }
+    }
+    if (minPenetration < 1e-3 && minPenetration > 0) {
+      const myPos2 = super.globalPosition.add(this.absoluteOffset);
+      const othrPos2 = othr.globalPosition;
+      const thisCenter2 = myPos2.add(this.size.scale(0.5));
+      const othrCenter2 = othrPos2.add(othr.size.scale(0.5));
+      let direction = thisCenter2.subtract(othrCenter2).normalize();
+      if (velocity && othr.size.x < 5) {
+        if (Math.abs(velocity.x) > 0.01) {
+          direction = v3(-Math.sign(velocity.x), 0, 0);
+        }
+      }
+      const faceNormals = [
+        this.getRotatedNormal(v3(1, 0, 0)),
+        this.getRotatedNormal(v3(-1, 0, 0)),
+        this.getRotatedNormal(v3(0, 1, 0)),
+        this.getRotatedNormal(v3(0, -1, 0)),
+        this.getRotatedNormal(v3(0, 0, 1)),
+        this.getRotatedNormal(v3(0, 0, -1)),
+        othr.getRotatedNormal(v3(1, 0, 0)),
+        othr.getRotatedNormal(v3(-1, 0, 0)),
+        othr.getRotatedNormal(v3(0, 1, 0)),
+        othr.getRotatedNormal(v3(0, -1, 0)),
+        othr.getRotatedNormal(v3(0, 0, 1)),
+        othr.getRotatedNormal(v3(0, 0, -1))
+      ];
+      let bestAlignment = -1;
+      let bestNormal = minAxis;
+      for (const normal of faceNormals) {
+        const alignment = Math.abs(this.calculateDotProduct(normal, direction));
+        if (alignment > bestAlignment) {
+          bestAlignment = alignment;
+          bestNormal = normal;
+        }
+      }
+      if (bestAlignment > 0.7) {
+        minAxis = bestNormal;
+        minPenetration = Math.max(minPenetration, 0.01);
+      }
+    }
+    minPenetration = Math.min(minPenetration, Math.min(this.size.x, Math.min(this.size.y, this.size.z)) * 0.5);
+    const myPos = super.globalPosition.add(this.absoluteOffset);
+    const othrPos = othr.globalPosition;
+    const thisCenter = myPos.add(this.size.scale(0.5));
+    const othrCenter = othrPos.add(othr.size.scale(0.5));
+    if (velocity && (othr.size.x < 5 || othr.size.y < 5 || othr.size.z < 5)) {
+      if (Math.abs(velocity.x) > 0.1 && othr.size.x < 5) {
+        minAxis = v3(-Math.sign(velocity.x), 0, 0);
+        minPenetration = Math.max(minPenetration, 0.1);
+      } else if (Math.abs(velocity.y) > 0.1 && othr.size.y < 5) {
+        minAxis = v3(0, -Math.sign(velocity.y), 0);
+        minPenetration = Math.max(minPenetration, 0.1);
+      } else if (Math.abs(velocity.z) > 0.1 && othr.size.z < 5) {
+        minAxis = v3(0, 0, -Math.sign(velocity.z));
+        minPenetration = Math.max(minPenetration, 0.1);
+      } else {
+        const directionAwayFromOther = thisCenter.subtract(othrCenter);
+        if (this.calculateDotProduct(directionAwayFromOther, minAxis) < 0) {
+          minAxis = minAxis.scale(-1);
+        }
+      }
+    } else {
+      const directionAwayFromOther = thisCenter.subtract(othrCenter);
+      if (this.calculateDotProduct(directionAwayFromOther, minAxis) < 0) {
+        minAxis = minAxis.scale(-1);
+      }
+    }
+    return minAxis.scale(minPenetration);
   }
 };
 
@@ -8516,6 +8948,8 @@ var PlayerController = class extends GlController {
     this.stat = { running: false, holding: false };
     this.cnst = { runTime: 50, runSlowDownFactor: 0.6, runSpeed: 0.15 };
     this.velocity = Vector3.f(0);
+    this.cameraRotatedVelocity = null;
+    this.lastAppliedVelocity = null;
   }
   setter(key, cond, interval) {
     this.intr[key] = Util.clamp((this.intr[key] || 0) + (cond ? interval : -(interval * this.cnst.runSlowDownFactor)), 0, this.cnst.runTime);
@@ -8539,27 +8973,69 @@ var PlayerController = class extends GlController {
   setVelocity(obj) {
     this.setMovementVelocity(obj.intervalS10);
     const sc = this.velocity.scale(obj.intervalS10 / 6);
+    this.lastAppliedVelocity = sc.clone();
     if (sc.xz.magnitude() > 0) {
       const [x, z] = sc.xz.rotate(-this.camera.rotation.y).array;
+      this.cameraRotatedVelocity = v3(x, sc.y, z);
       this.newPosition = this.parent.position.add(v3(x, sc.y, z));
       if (!this.axis("movement").isZero()) {
         this.parent.rotation = this.camera.rotation.multiply(0, 1, 0).add(v3(0, Math.PI / 2, 0)).add(v3(0, -sc.xz.angle(), 0));
       }
       this.parent.stat.running = true;
     } else {
+      this.cameraRotatedVelocity = v3(0, sc.y, 0);
       this.newPosition = this.parent.position.add(v3(0, sc.y, 0));
       this.parent.stat.running = false;
     }
   }
   collide(obj) {
-    var _a;
     this.parent.stat.ground = false;
-    const collisions = (_a = this.parent.zones[0]) == null ? void 0 : _a.calculateCollision();
+    const anchorAdjustedPos = this.parent.position.add(this.parent.anchorPoint.multiply(-1, -1, -1));
+    let collisions = [];
+    if (this.parent.zones[0] instanceof Collider) {
+      const collider = this.parent.zones[0];
+      const effectiveVelocity = this.lastAppliedVelocity && this.lastAppliedVelocity.magnitude() > 1e-3 ? this.cameraRotatedVelocity : v3(0, 0, 0);
+      collisions = collider.calculateCollision(effectiveVelocity) || [];
+    }
+    if (collisions.length === 0) {
+      return;
+    }
     collisions.forEach((v) => {
-      this.velocity.subtract(v);
-      this.parent.position = this.newPosition.clone();
+      if (Math.abs(v.x) > 0.01) {
+        if (this.cameraRotatedVelocity) {
+          this.cameraRotatedVelocity.x = 0;
+        }
+        if (Math.abs(this.camera.rotation.y) > 0.01) {
+          const cosY = Math.cos(this.camera.rotation.y);
+          const sinY = Math.sin(this.camera.rotation.y);
+          this.velocity.x -= this.velocity.x * Math.abs(cosY);
+          this.velocity.z -= this.velocity.z * Math.abs(sinY);
+        } else {
+          this.velocity.x = 0;
+        }
+      }
+      if (Math.abs(v.y) > 0.01) {
+        if (this.cameraRotatedVelocity) {
+          this.cameraRotatedVelocity.y = 0;
+        }
+        this.velocity.y = 0;
+      }
+      if (Math.abs(v.z) > 0.01) {
+        if (this.cameraRotatedVelocity) {
+          this.cameraRotatedVelocity.z = 0;
+        }
+        if (Math.abs(this.camera.rotation.y) > 0.01) {
+          const cosY = Math.cos(this.camera.rotation.y);
+          const sinY = Math.sin(this.camera.rotation.y);
+          this.velocity.x -= this.velocity.x * Math.abs(sinY);
+          this.velocity.z -= this.velocity.z * Math.abs(cosY);
+        } else {
+          this.velocity.z = 0;
+        }
+      }
       this.newPosition = this.newPosition.add(v);
     });
+    this.parent.position = this.newPosition.clone();
   }
   tick(obj) {
     super.tick(obj);
@@ -10333,39 +10809,7 @@ var Forklift = class extends Character {
     this.stat.driving = v;
     this.driver.visible = v;
     this.cameraController.active = v;
-  }
-};
-
-// ts/modes/top/garage.ts
-var Garage = class _Garage extends GLGroup {
-  constructor(attr) {
-    super({
-      position: attr.position,
-      controllers: [
-        new Collider({
-          size: v3(32, 28, 1),
-          position: v3(0, 0, 0),
-          fixed: true
-        }),
-        new Collider({
-          size: v3(5, 28, 143),
-          position: v3(-2, 0, 2),
-          fixed: true
-        }),
-        new Collider({
-          size: v3(5, 28, 143),
-          position: v3(32, 0, 2),
-          fixed: true
-        }),
-        new Collider({
-          size: v3(39, 28, 5),
-          position: v3(-2, 0, 143),
-          fixed: true
-        })
-      ]
-    });
-    _Garage.registerControllers(this);
-    this.controllers[0].position = v3(0, (attr.open || 0) * 24 + 1, 0);
+    this.controllers[1].active = v;
   }
 };
 
@@ -10447,24 +10891,6 @@ var TopLevel = class extends Level {
       rotation: v3(0, 0, 0)
     });
     this.addChild(this.player);
-    this.garage1 = new Garage({
-      position: v3(-61, 0, 42),
-      open: 1
-    });
-    this.addChild(this.garage1);
-    this.garage2 = new Garage({
-      position: v3(-61 + 50, 0, 42),
-      open: 1
-    });
-    this.addChild(this.garage2);
-    this.garage3 = new Garage({
-      position: v3(-61 + 50 * 2, 0, 42)
-    });
-    this.addChild(this.garage3);
-    this.garage4 = new Garage({
-      position: v3(-61 + 50 * 3, 0, 42)
-    });
-    this.addChild(this.garage4);
     Level.registerControllers(this);
     this.addLight(new AmbientLight({
       color: [1, 1, 1]
@@ -10485,8 +10911,8 @@ var TopLevel = class extends Level {
     });
     this.addChild(this.forklift);
     this.addChild(new FBXScene({ url: "/warehouse/warehouse/warehouse.fbx" }));
-    this.forklift.setDriving(true);
-    this.player.setDriving(true);
+    this.forklift.setDriving(false);
+    this.player.setDriving(false);
   }
 };
 

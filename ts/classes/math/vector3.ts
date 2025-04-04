@@ -256,4 +256,14 @@ export class Vector3 {
 			this.z * len
 		);
 	}
+	dot(vector: Vector3) {
+		return this.x * vector.x + this.y * vector.y + this.z * vector.z;
+	}
+	cross(vector: Vector3) {
+		return new Vector3(
+			this.y * vector.z - this.z * vector.y,
+			this.z * vector.x - this.x * vector.z,
+			this.x * vector.y - this.y * vector.x,
+		);
+	}
 }
