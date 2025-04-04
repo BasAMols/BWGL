@@ -1,7 +1,8 @@
 import vs from '../shaders/vertexShaderDir';
 import fs from '../shaders/fragmentShaderDir';
+import { mat4, vec3 } from 'gl-matrix';
 
-function loadShader(gl: WebGLRenderingContext, type: number, source: string) {
+function loadShader(gl: WebGL2RenderingContext, type: number, source: string) {
     const shader = gl.createShader(type);
     
     gl.shaderSource(shader, source);
@@ -25,7 +26,31 @@ export type attributes = Record<string, {
     count: number;
 }>
 
-export function initShaderProgram(gl: WebGLRenderingContext): [WebGLProgram, uniforms, attributes] {
+export interface TransformUniforms {
+    uModelViewMatrix: mat4;
+    uProjectionMatrix: mat4;
+    uNormalMatrix: mat4;
+    o_u_lightWorldPosition: vec3;
+    o_u_viewWorldPosition: vec3;
+    o_u_world: mat4;
+    o_u_worldViewProjection: mat4;
+    o_u_worldInverseTranspose: mat4;
+}
+
+export interface LightUniforms {
+    o_u_shininess: number;
+    o_u_lightColor: vec3;
+    o_u_specularColor: vec3;
+    o_u_lightDirection: vec3;
+    o_u_innerLimit: number;
+    o_u_outerLimit: number;
+    o_u_innerRange: number;
+    o_u_outerRange: number;
+    o_u_ignoreLighting: number;
+    o_u_ambientLight: vec3;
+}
+
+export function initShaderProgram(gl: WebGL2RenderingContext): [WebGLProgram, uniforms, attributes] {
 
     const vertexShader = loadShader(gl, gl.VERTEX_SHADER, vs);
     const fragmentShader = loadShader(gl, gl.FRAGMENT_SHADER, fs);
@@ -44,21 +69,25 @@ export function initShaderProgram(gl: WebGLRenderingContext): [WebGLProgram, uni
         return;
     }
 
+    // Create and bind uniform buffer objects
+    const transformUBO = gl.createBuffer();
+    const lightUBO = gl.createBuffer();
+
+    // Bind UBOs to binding points
+    gl.bindBufferBase(gl.UNIFORM_BUFFER, 0, transformUBO);
+    gl.bindBufferBase(gl.UNIFORM_BUFFER, 1, lightUBO);
+
+    // Get UBO indices
+    const transformBlockIndex = gl.getUniformBlockIndex(shaderProgram, 'TransformUniforms');
+    const lightBlockIndex = gl.getUniformBlockIndex(shaderProgram, 'LightUniforms');
+
+    // Bind UBO indices to binding points
+    gl.uniformBlockBinding(shaderProgram, transformBlockIndex, 0);
+    gl.uniformBlockBinding(shaderProgram, lightBlockIndex, 1);
+
     return [
         shaderProgram, 
         {
-            'uProjectionMatrix':{
-                pointer: gl.getUniformLocation(shaderProgram, "uProjectionMatrix"),
-                type: 'matrix4'
-            },
-            'uModelViewMatrix':{
-                pointer: gl.getUniformLocation(shaderProgram, "uModelViewMatrix"),
-                type: 'matrix4'
-            },
-            'uNormalMatrix':{
-                pointer: gl.getUniformLocation(shaderProgram, "uNormalMatrix"),
-                type: 'matrix4'
-            },
             'uOpacity':{
                 pointer: gl.getUniformLocation(shaderProgram, "uOpacity"),
                 type: 'float'
@@ -66,10 +95,6 @@ export function initShaderProgram(gl: WebGLRenderingContext): [WebGLProgram, uni
             'uIntensity':{
                 pointer: gl.getUniformLocation(shaderProgram, "uIntensity"),
                 type: 'float'
-            },
-            'uSampler':{
-                pointer: gl.getUniformLocation(shaderProgram, "uSampler"),
-                type: 'int'
             },
             'o_u_worldViewProjection':{
                 pointer: gl.getUniformLocation(shaderProgram, "o_u_worldViewProjection"),

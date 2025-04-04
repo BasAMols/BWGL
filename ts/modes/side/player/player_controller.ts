@@ -113,24 +113,69 @@ export class PlayerController extends GlController {
 
     public collide(obj: TickerReturnData) {
         this.parent.stat.ground = false;
+        
         const collisions = (this.parent.zones[0] as Collider).calculateCollision();
-        collisions.forEach((v: Vector3)=>{
-            if (v.y >= 0){
-                this.intr.fall = 0;
-                this.intr.jump = 0;
-                this.parent.stat.falling = false;
-                this.parent.stat.ground = true;
-            } else {
-                this.parent.stat.falling = true;
-                this.parent.stat.ground = false;
-            } 
-            this.velocity.subtract(v);
+        
+        // If we have collisions, handle them properly
+        if (collisions.length > 0) {
+            // For debugging
+            // console.log(`Collision count: ${collisions.length}`);
+            
+            // First, process vertical collisions (ground detection)
+            collisions.forEach((v: Vector3) => {
+                // Record original position before applying collision
+                const originalPosition = this.newPosition.clone();
+                
+                if (v.y > 0) {
+                    // Ground collision
+                    this.intr.fall = 0;
+                    this.intr.jump = 0;
+                    this.parent.stat.falling = false;
+                    this.parent.stat.ground = true;
+                } else if (v.y < 0) {
+                    // Ceiling collision
+                    this.parent.stat.falling = true;
+                    this.parent.stat.ground = false;
+                    // Hit ceiling, cancel jump
+                    if (this.intr.jump > 0) this.intr.jump = 0;
+                }
+                
+                // Horizontal collision handling with special care for thin walls
+                if (Math.abs(v.x) > 0) {
+                    // If we hit a wall, zero out horizontal velocity in that direction
+                    // For -X direction collisions (player moving left into a wall)
+                    if (v.x > 0 && this.velocity.x < 0) {
+                        this.velocity.x = 0;
+                        // Add a slight push away from thin walls
+                        if (Math.abs(v.x) < 0.1) {
+                            v = v.multiply(v3(1.5, 1, 1));
+                        }
+                    } 
+                    // For +X direction collisions (player moving right into a wall)
+                    else if (v.x < 0 && this.velocity.x > 0) {
+                        this.velocity.x = 0;
+                        // Add a slight push away from thin walls
+                        if (Math.abs(v.x) < 0.1) {
+                            v = v.multiply(v3(1.5, 1, 1));
+                        }
+                    }
+                }
+                
+                // Apply collision resolution by moving away from collision
+                this.newPosition = this.newPosition.add(v);
+                
+                // For debug, if position changes drastically
+                /* 
+                const posDelta = this.newPosition.subtract(originalPosition).magnitude();
+                if (posDelta > 2) {
+                    console.log(`Large position change detected: ${posDelta}`);
+                    console.log(`Exit vector: ${v.str}`);
+                }
+                */
+            });
+            
+            // Apply the new position after all collisions have been resolved
             this.parent.position = this.newPosition.clone();
-            this.newPosition = this.newPosition.add(v);
-        })
-
-        if (!this.parent.stat.jumping) {
-            this.parent.stat.falling = !this.parent.stat.ground;
         }
     }
 

@@ -1,6 +1,5 @@
-import { Vector3, v3 } from '../math/vector3';
+import { Vector3 } from '../math/vector3';
 import { Color, Colors } from '../util/colors';
-import { GLCuboid } from '../objects/cuboid';
 import { Light, LightAttributes, LightTypes } from './light';
 
 
@@ -10,12 +9,13 @@ export type SpotAttributes = LightAttributes & {
     specular?: Color,
     direction?: Vector3
     color?: Color,
-
+    ignoreLighting?: boolean
 };
 
 export class SpotLight extends Light{
     public lightType: LightTypes = 'spot';
     public color: Color;
+    public ignoreLighting: boolean = false;
     private _range: [number, number];
     public get range(): [number, number] {
         return this._range;
@@ -50,13 +50,13 @@ export class SpotLight extends Light{
 
     public build(): void {
         super.build();
-        this.addChild(new GLCuboid({
-            anchorPoint: v3(2.5,2.5,1),
-            position: v3(-2.5,-2.5,0),
-            colors: [this.color, Colors.k,Colors.k,Colors.k,Colors.k,Colors.k],
-            size: v3(5,5,1),
-            rotation: v3(this.direction.y,this.direction.z,this.direction.x).scale(Math.PI),
-            ignoreLighting: true,
-        }))
+        // this.addChild(new GLCuboid({
+        //     anchorPoint: v3(2.5,2.5,1),
+        //     position: v3(-2.5,-2.5,0),
+        //     colors: [this.color, Colors.k,Colors.k,Colors.k,Colors.k,Colors.k],
+        //     size: v3(5,5,1),
+        //     rotation: v3(this.direction.y,this.direction.z,this.direction.x).scale(Math.PI),
+        //     ignoreLighting: true,
+        // }))
     }
 }

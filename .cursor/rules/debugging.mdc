@@ -1,0 +1,10 @@
+---
+description: When debugging, please only log values once, when they change. Dont log too many things inside of a ticker. JSON.stringify objects. Use .str for @vector3
+globs: 
+alwaysApply: false
+---
+
+# Your rule content
+
+- You can @ files here
+- You can use markdown but dont have to

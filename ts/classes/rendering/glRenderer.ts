@@ -1,4 +1,4 @@
-import { vec4 } from 'gl-matrix';
+import { vec3, vec4 } from 'gl-matrix';
 import { Game } from '../../game';
 import { TickerReturnData } from '../ticker';
 import { Vector3 } from '../math/vector3';
@@ -10,6 +10,7 @@ import { Matrix4, m4 } from '../math/matrix4';
 import { Util } from '../util/utils';
 import { SpotLight } from '../lights/spot';
 import { AmbientLight } from '../lights/ambient';
+import { LightUniforms } from './glrInit';
 
 export interface bufferDataInitilizers {
     indices: WebGLBuffer;
@@ -36,16 +37,20 @@ export interface objectData {
 
 export class GLRenderer {
     private objects: (GLRendable)[] = [];
-    public gl: WebGLRenderingContext;
+    public gl: WebGL2RenderingContext;
     public glt: GLTranslator;
+    private lightData: LightUniforms;
 
     get t(): TickerReturnData {
         return this.game.t;
     }
 
     constructor(public game: Game) {
-        this.gl = this.game.renderer.dom.getContext('webgl');
-        this.gl.getExtension("OES_element_index_uint");
+        this.gl = this.game.renderer.dom.getContext('webgl2');
+        if (!this.gl) {
+            throw new Error('WebGL 2 not supported');
+        }
+
         this.gl.enable(this.gl.BLEND);
         this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
 
@@ -92,20 +97,33 @@ export class GLRenderer {
             .rotate(this.game.mode.camera.rotation)
             .translate(this.game.mode.camera.target.multiply(-1, -1, 1));
 
-        this.glt.sendUniform('uSampler', 0);
-        this.glt.sendUniform('uProjectionMatrix', this.getProjection().mat4);
-        this.glt.sendUniform('o_u_viewWorldPosition', camera.invert().position.vec);
-
         const light = this.game.level.lights.find((l) => l.lightType === 'spot') as SpotLight;
-        this.glt.sendUniform('o_u_lightDirection', light.direction.vec);
-        this.glt.sendUniform('o_u_innerLimit', Math.cos(Util.degToRad(light.limit[0])));
-        this.glt.sendUniform('o_u_outerLimit', Math.cos(Util.degToRad(light.limit[1])));
-        this.glt.sendUniform('o_u_innerRange', light.range[0]);
-        this.glt.sendUniform('o_u_outerRange', light.range[1]);
-        this.glt.sendUniform('o_u_lightColor', light.color.slice(0, 3));
-        this.glt.sendUniform('o_u_specularColor', light.specular.slice(0, 3));
-        this.glt.sendUniform('o_u_lightWorldPosition', light.globalPosition.multiply(1, 1, -1).vec);
-        this.glt.sendUniform('o_u_ambientLight', (this.game.level.lights.find((l) => l.lightType === 'ambient') as AmbientLight)?.color || [0, 0, 0]);
+
+        const transformData = {
+            uProjectionMatrix: this.getProjection().mat4,
+            uModelViewMatrix: camera.mat4,
+            o_u_viewWorldPosition: camera.invert().position.vec,
+            uNormalMatrix: camera.invert().transpose().mat4,
+            o_u_lightWorldPosition: light.globalPosition.multiply(1, 1, -1).vec,
+            o_u_world: camera.mat4,
+            o_u_worldViewProjection: this.getProjection().multiply(camera).mat4,
+            o_u_worldInverseTranspose: camera.invert().transpose().mat4
+        };
+        this.glt.updateTransformUBO(transformData);
+
+        this.lightData = {
+            o_u_lightDirection: light.direction.vec,
+            o_u_innerLimit: Math.cos(Util.degToRad(light.limit[0])),
+            o_u_outerLimit: Math.cos(Util.degToRad(light.limit[1])),
+            o_u_innerRange: light.range[0],
+            o_u_outerRange: light.range[1],
+            o_u_lightColor: vec3.fromValues(...(light.color.slice(0, 3) as [number, number, number])),
+            o_u_specularColor: vec3.fromValues(...(light.specular.slice(0, 3) as [number, number, number])),
+            o_u_ambientLight: vec3.fromValues(...(((this.game.level.lights.find((l) => l.lightType === 'ambient') as AmbientLight)?.color || [0, 0, 0]) as [number, number, number])),
+            o_u_shininess: 600,
+            o_u_ignoreLighting: 0
+        };
+        this.glt.updateLightUBO(this.lightData);
 
         this.drawChildren(this.game.level);
     }
@@ -127,35 +145,35 @@ export class GLRenderer {
     }
 
     renderMesh(mesh: GLRendable, currentModelview: Matrix4) {
-        // console.log(mesh.buffer.normalBuffer);
-        
         this.glt.sendBuffer(mesh.buffer.indices, 'element');
         this.glt.sendAttribute('aVertexNormal', mesh.buffer.normalBuffer);
-
-        this.glt.sendUniform('uModelViewMatrix', currentModelview.mat4);
-        // this.glt.sendUniform('uOpacity', mesh.opacity);
-        this.glt.sendUniform('uNormalMatrix', currentModelview.invert().transpose().mat4);
         this.glt.sendAttribute('aTextureCoord', mesh.buffer.textureCoord);
+        this.glt.sendAttribute('o_a_position', mesh.buffer.positionBuffer);
         this.glt.sendTexture(mesh.texture.texture);
 
         const projectionMatrix = this.getProjection();
-
         const cameraMatrix = m4();
         const viewMatrix = cameraMatrix.invert();
         const viewProjectionMatrix = projectionMatrix.multiply(viewMatrix);
-
         const worldViewProjectionMatrix = viewProjectionMatrix.multiply(currentModelview);
-        const worldInverseMatrix = currentModelview.invert();
-        const worldInverseTransposeMatrix = worldInverseMatrix.transpose();
 
-        this.glt.sendUniform('o_u_worldViewProjection', worldViewProjectionMatrix.mat4);
-        this.glt.sendUniform('o_u_worldInverseTranspose', worldInverseTransposeMatrix.mat4);
-        this.glt.sendUniform('o_u_shininess', 600);
-        this.glt.sendUniform('o_u_ignoreLighting', Number(mesh.ignoreLighting));
+        const transformData = {
+            uModelViewMatrix: currentModelview.mat4,
+            uProjectionMatrix: projectionMatrix.mat4,
+            uNormalMatrix: currentModelview.invert().transpose().mat4,
+            o_u_lightWorldPosition: this.game.level.lights.find(l => l.lightType === 'spot').globalPosition.multiply(1, 1, -1).vec,
+            o_u_viewWorldPosition: cameraMatrix.invert().position.vec,
+            o_u_world: currentModelview.mat4,
+            o_u_worldViewProjection: worldViewProjectionMatrix.mat4,
+            o_u_worldInverseTranspose: currentModelview.invert().transpose().mat4
+        };
+        this.glt.updateTransformUBO(transformData);
 
-        this.glt.sendAttribute('o_a_position', mesh.buffer.positionBuffer);
-        this.glt.sendUniform('o_u_world', currentModelview.mat4);
-
+        const lightData = {
+            ...this.lightData,
+            o_u_ignoreLighting: Number(mesh.ignoreLighting)
+        };
+        this.glt.updateLightUBO(lightData);
 
         this.glt.drawElements(mesh.verticesCount);
     }

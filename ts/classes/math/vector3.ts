@@ -53,6 +53,34 @@ export class Vector3 {
 	public set zy(v: Vector2) { this.z = v.x; this.y = v.y}
 
 
+
+	public get xzy() { return v3(this.x, this.z, this.y); }
+	public set xzy(v: Vector3) { this.x = v.x; this.z = v.y; this.y = v.z}
+
+	public get xyz() { return v3(this.x, this.y, this.z); }
+	public set xyz(v: Vector3) { this.x = v.x; this.y = v.y; this.z = v.z}
+
+	public get yxz() { return v3(this.y, this.x, this.z); }
+	public set yxz(v: Vector3) { this.y = v.x; this.x = v.y; this.z = v.z}
+
+	public get yzx() { return v3(this.y, this.z, this.x); }
+	public set yzx(v: Vector3) { this.y = v.x; this.z = v.y; this.x = v.z}
+
+	public get zxy() { return v3(this.z, this.x, this.y); }
+	public set zxy(v: Vector3) { this.z = v.x; this.x = v.y; this.y = v.z}
+
+	public get zyx() { return v3(this.z, this.y, this.x); }
+	public set zyx(v: Vector3) { this.z = v.x; this.y = v.y; this.x = v.z}
+
+	public get str() {
+		return this.vec.toString();
+	}
+
+	public get log() {
+		console.log(this.str);
+		return this.str;
+	}
+
 	public vec: vec3;
 
 	constructor(x: number = 0, y: number = 0, z: number = 0) {
@@ -124,11 +152,11 @@ export class Vector3 {
 		);
 	}
 
-	add(vector: Vector3) {
+	add(...vectors: Vector3[]) {
 		return new Vector3(
-			this.x + vector.x,
-			this.y + vector.y,
-			this.z + vector.z,
+			this.x + vectors.reduce((a, b) => a + b.x, 0),
+			this.y + vectors.reduce((a, b) => a + b.y, 0),
+			this.z + vectors.reduce((a, b) => a + b.z, 0),
 		);
 	}
 
@@ -143,27 +171,27 @@ export class Vector3 {
 		);
 	}
 
-	subtract(vector: Vector3) {
+	subtract(...vectors: Vector3[]) {
 		return new Vector3(
-			this.x - vector.x,
-			this.y - vector.y,
-			this.z - vector.z,
+			this.x - vectors.reduce((a, b) => a + b.x, 0),
+			this.y - vectors.reduce((a, b) => a + b.y, 0),
+			this.z - vectors.reduce((a, b) => a + b.z, 0),
 		);
 	}
 
-	scale(scalar: number) {
+	scale(...scalars: number[]) {
 		return new Vector3(
-			this.x * scalar,
-			this.y * scalar,
-			this.z * scalar,
+			this.x * scalars.reduce((a, b) => a * b, 1),
+			this.y * scalars.reduce((a, b) => a * b, 1),
+			this.z * scalars.reduce((a, b) => a * b, 1),
 		);
 	}
 
-	divide(vector: Vector3) {
+	divide(...vectors: Vector3[]) {
 		return new Vector3(
-			this.x / vector.x,
-			this.y / vector.y,
-			this.z / vector.z,
+			this.x / vectors.reduce((a, b) => a * b.x, 1),
+			this.y / vectors.reduce((a, b) => a * b.y, 1),
+			this.z / vectors.reduce((a, b) => a * b.z, 1),
 		);
 	}
 
@@ -226,6 +254,16 @@ export class Vector3 {
 			this.x * len,
 			this.y * len,
 			this.z * len
+		);
+	}
+	dot(vector: Vector3) {
+		return this.x * vector.x + this.y * vector.y + this.z * vector.z;
+	}
+	cross(vector: Vector3) {
+		return new Vector3(
+			this.y * vector.z - this.z * vector.y,
+			this.z * vector.x - this.x * vector.z,
+			this.x * vector.y - this.y * vector.x,
 		);
 	}
 }
