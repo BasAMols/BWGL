@@ -7779,7 +7779,7 @@ var GLRenderer = class {
     return new Matrix4().perspective(
       this.game.mode.camera.fov * Math.PI / 180,
       1,
-      2e4
+      2e5
     ).translate(this.game.mode.camera.offset.multiply(1, 1, -1)).rotate(this.game.mode.camera.rotation).translate(this.game.mode.camera.target.multiply(-1, -1, 1));
   }
   draw() {
@@ -10105,276 +10105,12 @@ var FBXScene = class _FBXScene extends GLGroup {
   }
 };
 
-// ts/modes/top/forklift/forkliftCamera.ts
-var ForkliftCamera = class extends GlController {
-  constructor(target) {
-    super({ autoReady: false });
-    this.target = target;
-    this.type = "controller";
-    this.order = "after";
-  }
-  get active() {
-    return super.active;
-  }
-  set active(value) {
-    super.active = value;
-    if (value) {
-      this.camera.offset = v3(0, 0, 20);
-      this.camera.rotation = v3(0.5, 0, 0);
-      this.camera.fov = 80;
-      const z = Util.clamp(this.camera.fov + this.button("zoom") * 0.05, 30, 120);
-      this.camera.fov = z;
-      const r = this.axis("camera").scale(5e-3).scale(1);
-      this.camera.rotation = v3(
-        Util.clamp(this.camera.rotation.x + r.y, -1, Math.PI / 2),
-        this.camera.rotation.y + r.x,
-        this.camera.rotation.z
-      );
-      const p = this.level.player;
-      this.camera.target = p.position.add(v3(p.anchorPoint.x, 10, p.anchorPoint.z), v3(0, 10, 0));
-    }
-  }
-  build() {
-    super.build();
-    this.active = true;
-  }
-  tick(o) {
-    super.tick(o);
-    if (glob.device.locked) {
-      const z = Util.clamp(this.camera.offset.z + this.button("zoom") * 0.05, 10, 120);
-      this.camera.offset.z = z;
-      const r = this.axis("camera").scale(5e-3).scale(1);
-      this.camera.rotation = v3(
-        Util.clamp(this.camera.rotation.x + r.y, -1, Math.PI / 2),
-        this.camera.rotation.y + r.x,
-        this.camera.rotation.z
-      );
-    }
-    const p = this.level.forklift;
-    this.camera.target = p.position.add(v3(p.anchorPoint.x, 10, p.anchorPoint.z), v3(0, 10, 0));
-  }
-};
-
-// ts/modes/top/forklift/driver_skeleton.ts
-var DriverSkel = class extends BlobSkeleton {
-  constructor() {
-    super();
-  }
-  build() {
-    super.build();
-    this.rotation.y = Math.PI / 2;
-    this.position.x = 9.2;
-    this.position.z = 8.7;
-    this.position.y = 2;
-    this.animator.add("driving", 1e3, {
-      torso: [[0, [0.2, 0, 0]]],
-      head: [[0, [-0.2, 0, 0]]],
-      lEye: [],
-      rEye: [],
-      lArm: [[0, [0.8, 0, 0, 0, -0.5, 0.2]]],
-      rArm: [[0, [0.8, 0, 0, 0, -0.5, 0.2]]],
-      lForearm: [[0, [0.3, 0, -0.3]]],
-      rForearm: [[0, [0.3, 0, 0.3]]],
-      lHand: [[0, [0, 0.3, 0]]],
-      rHand: [[0, [0, -0.3, 0]]],
-      lFingers: [[0, [0.6, 0, 0]]],
-      rFingers: [[0, [0.6, 0, 0]]],
-      lLeg: [[0, [1.4, -0.1, 0.1, 0, 0, 1]]],
-      rLeg: [[0, [1.4, 0.1, -0.1, 0, 0, 1]]],
-      lForeleg: [[0, [-0.8, 0, 0]]],
-      rForeleg: [[0, [-0.8, 0, 0]]],
-      lFoot: [],
-      rFoot: []
-    }, { loop: true, dynamic: true, ease: "easeInOutSine" });
-    this.animator.play("driving");
-  }
-  tick(obj) {
-    super.tick(obj);
-  }
-};
-
-// ts/modes/top/forklift/forklift_controller.ts
-var ForkliftController = class extends GlController {
-  constructor() {
-    super(...arguments);
-    this.intr = {
-      turn: 0,
-      angle: 0,
-      lift: 0,
-      speed: 0
-    };
-    this.cnst = {
-      maxTurn: 1.2,
-      maxAngle: 0.28,
-      maxLift: 25,
-      maxSpeed: 0.01,
-      liftPhase: 0.25,
-      liftSpeed: 6e-4,
-      turnSpeed: 4e-3,
-      angleSpeed: 2e-3,
-      runTime: 2500,
-      runSlowDownFactor: 0.6,
-      runSpeed: 0.15
-    };
-    this.stat = { driving: false };
-    this.velocity = Vector3.f(0);
-  }
-  setter(key, cond, interval) {
-    this.intr[key] = Util.clamp((this.intr[key] || 0) + (cond ? interval : -(interval * this.cnst.runSlowDownFactor)), 0, this.cnst.runTime);
-  }
-  setMovementVelocity(interval) {
-    const input = this.axis("movement");
-    this.turn(input.x);
-    this.setter("up", input.y === 1, interval);
-    this.setter("down", input.y === -1, interval);
-    this.intr.speed = Util.clamp((this.intr.up - this.intr.down) / this.cnst.runTime, -1, 1);
-    this.velocity = v3(
-      this.intr.speed * this.cnst.runSpeed,
-      0,
-      0
-    ).rotateXY(-this.parent.rotation.y);
-  }
-  setVelocity(obj) {
-    this.setMovementVelocity(obj.intervalS10);
-    this.parent.rotation.y = this.parent.rotation.y + this.intr.speed * this.intr.turn * 8e-3 * (obj.intervalS10 / 6);
-    const sc = this.velocity.scale(obj.intervalS10 / 6);
-    this.newPosition = this.parent.position.add(sc);
-  }
-  collide(obj) {
-    var _a;
-    const collisions = (_a = this.parent.zones[0]) == null ? void 0 : _a.calculateCollision();
-    collisions.forEach((v) => {
-      this.velocity.subtract(v);
-      this.parent.position = this.newPosition.clone();
-      this.newPosition = this.newPosition.add(v);
-    });
-  }
-  angle(v) {
-    if (v !== 0) {
-      this.setAngle(this.intr.angle + v * this.cnst.angleSpeed);
-    }
-  }
-  setAngle(v) {
-    this.intr.angle = Util.clamp(v, -0.13, 1);
-    this.parent.pillarOut.rotation = v3(0, 0, -this.intr.angle * this.cnst.maxAngle);
-  }
-  lift(v) {
-    if (v !== 0) {
-      this.setLift(this.intr.lift + v * this.cnst.liftSpeed);
-    }
-  }
-  setLift(v) {
-    this.intr.lift = Util.clamp(v, 0, 1);
-    this.parent.pillarCylinder.position.y = Util.clamp(this.intr.lift, 0, this.cnst.liftPhase) * this.cnst.maxLift;
-    this.parent.pillarCarriage.position.y = Util.clamp(this.intr.lift, 0, this.cnst.liftPhase) * this.cnst.maxLift;
-    this.parent.pillarMid.position.y = (Util.clamp(this.intr.lift, this.cnst.liftPhase, 1) - this.cnst.liftPhase) * this.cnst.maxLift;
-    this.parent.pillarIn.position.y = (Util.clamp(this.intr.lift, this.cnst.liftPhase, 1) - this.cnst.liftPhase) * this.cnst.maxLift;
-  }
-  turn(v) {
-    this.setTurn(v === 0 ? this.intr.turn * 0.99 : this.intr.turn + v * this.cnst.turnSpeed);
-  }
-  setTurn(v) {
-    this.intr.turn = Util.clamp(v, -1, 1);
-    this.parent.rearrightwheel.rotation.y = this.intr.turn * -this.cnst.maxTurn;
-    this.parent.rearleftwheel.rotation.y = this.intr.turn * -this.cnst.maxTurn;
-  }
-  tick(obj) {
-    super.tick(obj);
-    this.setVelocity(obj);
-    this.collide(obj);
-    this.parent.position = this.newPosition.clone();
-    this.parent.frontwheels.rotation.z = this.parent.frontwheels.rotation.z + this.intr.speed * this.cnst.maxSpeed;
-    this.parent.rearrightwheel.rotation.z = this.parent.rearrightwheel.rotation.z + this.intr.speed * this.cnst.maxSpeed * 1.33;
-    this.parent.rearleftwheel.rotation.z = this.parent.rearleftwheel.rotation.z + this.intr.speed * this.cnst.maxSpeed * 1.33;
-    this.lift(this.button("lift"));
-    this.angle(this.button("liftAngle"));
-  }
-};
-
-// ts/modes/top/forklift/forklift_actor.ts
-var Forklift = class extends Character {
-  constructor({
-    position = Vector3.f(0)
-  } = {}) {
-    super({
-      position,
-      size: v3(25.5, 21, 12),
-      anchorPoint: v3(18, 0, 6)
-    });
-    this.stat = { driving: false };
-    this.addControllers([
-      new Collider({
-        size: this.size,
-        position: v3(0, 0, 0),
-        fixed: false
-      }),
-      new ForkliftController(this),
-      this.cameraController = new ForkliftCamera(this)
-    ]);
-    GlElement.registerControllers(this);
-    this.addChild(this.driver = new DriverSkel());
-    this.setDriving(false);
-  }
-  build() {
-    super.build();
-    this.addChild(this.body = new FBXScene({ url: "/warehouse/Forklift/RearBumper/RearBumper.fbx", position: v3(4.5, 0, 6) }));
-    this.body.addChild(this.pillarOut = new FBXScene({ url: "/warehouse/Forklift/PillarOut/PillarOut.fbx", anchorPoint: v3(1.72114 * 10, 0.802073 * 10, 0 * 10), position: v3(0, 0, 0) }));
-    this.pillarOut.addChild(this.pillarMid = new FBXScene({ url: "/warehouse/Forklift/PillarMid/PillarMid.fbx", position: v3(0, 0, 0) }));
-    this.pillarMid.addChild(this.pillarIn = new FBXScene({ url: "/warehouse/Forklift/PillarIn/PillarIn.fbx", position: v3(0, 0, 0) }));
-    this.pillarIn.addChild(this.pillarCylinder = new FBXScene({ url: "/warehouse/Forklift/PillarCylinder/PillarCylinder.fbx", position: v3(0, 0, 0) }));
-    this.pillarCylinder.addChild(this.pillarCarriage = new FBXScene({ url: "/warehouse/Forklift/Carriage/Carriage.fbx", position: v3(0, 0, 0) }));
-    this.pillarCarriage.addChild(this.fork = new FBXScene({ url: "/warehouse/Forklift/Fork/Fork.fbx", position: v3(0, 0, 0) }));
-    this.body.addChild(this.steering = new FBXScene({ url: "/warehouse/Forklift/Steering.002/Steering.002.fbx", anchorPoint: v3(1.197459 * 10, 1.35123 * 10, 0.111042 * 10), position: v3(0, 0, 0) }));
-    this.body.addChild(this.frontwheels = new FBXScene({ url: "/warehouse/Forklift/FrontWheel.001/FrontWheel.001.fbx", anchorPoint: v3(1.65142 * 10, 0.335522 * 10, 6496e-6 * 10), position: v3(0, 0, 0) }));
-    this.body.addChild(this.rearrightwheel = new FBXScene({ url: "/warehouse/Forklift/RearWheel.003/RearWheel.003.fbx", anchorPoint: v3(7179e-6 * 10, 0.272209 * 10, -0.482427 * 10) }));
-    this.body.addChild(this.rearleftwheel = new FBXScene({ url: "/warehouse/Forklift/RearWheel.002/RearWheel.002.fbx", anchorPoint: v3(7179e-6 * 10, 0.272209 * 10, 0.482427 * 10) }));
-  }
-  setDriving(v) {
-    this.stat.driving = v;
-    this.driver.visible = v;
-    this.cameraController.active = v;
-  }
-};
-
-// ts/modes/top/garage.ts
-var Garage = class _Garage extends GLGroup {
-  constructor(attr) {
-    super({
-      position: attr.position,
-      controllers: [
-        new Collider({
-          size: v3(32, 28, 1),
-          position: v3(0, 0, 0),
-          fixed: true
-        }),
-        new Collider({
-          size: v3(5, 28, 143),
-          position: v3(-2, 0, 2),
-          fixed: true
-        }),
-        new Collider({
-          size: v3(5, 28, 143),
-          position: v3(32, 0, 2),
-          fixed: true
-        }),
-        new Collider({
-          size: v3(39, 28, 5),
-          position: v3(-2, 0, 143),
-          fixed: true
-        })
-      ]
-    });
-    _Garage.registerControllers(this);
-    this.controllers[0].position = v3(0, (attr.open || 0) * 24 + 1, 0);
-  }
-};
-
 // ts/modes/top/level.ts
 var TopLevel = class extends Level {
   constructor() {
     super();
     this.start = Vector2.zero;
-    this.background = [0.16, 0.16, 0.16, 1];
+    this.background = [0.37, 0.43, 0.72, 1];
     this.playArea = v2(371, 200);
     this.inputMap = new InputMap(
       {
@@ -10389,56 +10125,6 @@ var TopLevel = class extends Level {
       }
     );
     const thickness = 10;
-    this.addZone(new Collider({
-      position: v3(-215, -10, -160),
-      size: v3(371, 40, 2),
-      fixed: true
-    }));
-    this.addZone(new Collider({
-      position: v3(-215, -10, 43),
-      size: v3(41, 40, 6),
-      fixed: true
-    }));
-    this.addZone(new Collider({
-      position: v3(-158, -10, 43),
-      size: v3(99, 40, 6),
-      fixed: true
-    }));
-    this.addZone(new Collider({
-      position: v3(-28, -10, 43),
-      size: v3(18, 40, 6),
-      fixed: true
-    }));
-    this.addZone(new Collider({
-      position: v3(22, -10, 43),
-      size: v3(18, 40, 6),
-      fixed: true
-    }));
-    this.addZone(new Collider({
-      position: v3(72, -10, 43),
-      size: v3(18, 40, 6),
-      fixed: true
-    }));
-    this.addZone(new Collider({
-      position: v3(122, -10, 43),
-      size: v3(34, 40, 6),
-      fixed: true
-    }));
-    this.addZone(new Collider({
-      position: v3(-215, -10, 145),
-      size: v3(103, 40, 2),
-      fixed: true
-    }));
-    this.addZone(new Collider({
-      position: v3(-215, -10, -168),
-      size: v3(2, 40, 312),
-      fixed: true
-    }));
-    this.addZone(new Collider({
-      position: v3(156, -10, -168),
-      size: v3(2, 40, 215),
-      fixed: true
-    }));
   }
   build() {
     super.build();
@@ -10447,24 +10133,6 @@ var TopLevel = class extends Level {
       rotation: v3(0, 0, 0)
     });
     this.addChild(this.player);
-    this.garage1 = new Garage({
-      position: v3(-61, 0, 42),
-      open: 1
-    });
-    this.addChild(this.garage1);
-    this.garage2 = new Garage({
-      position: v3(-61 + 50, 0, 42),
-      open: 1
-    });
-    this.addChild(this.garage2);
-    this.garage3 = new Garage({
-      position: v3(-61 + 50 * 2, 0, 42)
-    });
-    this.addChild(this.garage3);
-    this.garage4 = new Garage({
-      position: v3(-61 + 50 * 3, 0, 42)
-    });
-    this.addChild(this.garage4);
     Level.registerControllers(this);
     this.addLight(new AmbientLight({
       color: [1, 1, 1]
@@ -10480,13 +10148,8 @@ var TopLevel = class extends Level {
     this.box = new Box({
       position: v3(30, 0, 10)
     });
-    this.forklift = new Forklift({
-      position: v3(0, 0, 20)
-    });
-    this.addChild(this.forklift);
-    this.addChild(new FBXScene({ url: "/warehouse/warehouse/warehouse.fbx" }));
-    this.forklift.setDriving(true);
-    this.player.setDriving(true);
+    this.addChild(new FBXScene({ url: "/islands.fbx", position: v3(0, -2100, 0) }));
+    this.player.setDriving(false);
   }
 };
 

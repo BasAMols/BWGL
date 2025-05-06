@@ -81,7 +81,7 @@ export class GLRenderer {
             .perspective(
                 (this.game.mode.camera.fov * Math.PI) / 180,
                 1,
-                20000
+                200000
             )
             .translate(this.game.mode.camera.offset.multiply(1, 1, -1))
             .rotate(this.game.mode.camera.rotation)
